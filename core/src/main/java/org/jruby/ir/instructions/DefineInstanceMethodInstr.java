@@ -10,6 +10,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedArityInstr {
     private final IRMethod method;
 
@@ -26,9 +28,9 @@ public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedAr
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
-        scope.getFlags().add(IRFlags.REQUIRES_VISIBILITY);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.REQUIRES_DYNSCOPE);
+        flags.add(IRFlags.REQUIRES_VISIBILITY);
         return true;
     }
 

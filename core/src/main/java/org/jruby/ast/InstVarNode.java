@@ -38,16 +38,15 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents an instance variable accessor.
  */
 public class InstVarNode extends Node implements INameNode, SideEffectFree {
-    private RubySymbol name;
+    private final RubySymbol name;
 
-    public InstVarNode(ISourcePosition position, RubySymbol name) {
-        super(position, false);
+    public InstVarNode(int line, RubySymbol name) {
+        super(line, false);
         this.name = name;
     }
 

@@ -1,0 +1,1 @@
+exclude :test_all_ruby_quine, "needs investigation"

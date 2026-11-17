@@ -16,6 +16,7 @@ import org.objectweb.asm.tree.LabelNode;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -34,7 +35,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class DynamicScopeGenerator {
     private static final NonBlockingHashMapLong<MethodHandle> specializedFactories = new NonBlockingHashMapLong<>();
-    private static ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
+    private static final ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
 
     public static final String SCOPES_PACKAGE = "org.jruby.runtime.scopes";
     public static final String SCOPES_PATH = SCOPES_PACKAGE.replaceAll("\\.", "/");
@@ -114,7 +115,9 @@ public class DynamicScopeGenerator {
 
             public Class<?> defineClass(String name, byte[] bytes) {
                 definedClasses.put(name, bytes);
-                return super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                Class<?> cls = super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                resolveClass(cls);
+                return cls;
             }
         };
 
@@ -126,11 +129,10 @@ public class DynamicScopeGenerator {
         new File(targetPath + "/" + SCOPES_PATH).mkdirs();
 
         definedClasses.forEach((key, value) -> {
-            try {
-                FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class");
+            try (FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class")) {
                 fos.write(value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
     }
@@ -174,6 +176,8 @@ public class DynamicScopeGenerator {
             final String baseName = p(DynamicScope.class);
 
             JiteClass jiteClass = new JiteClass(clsPath, baseName, new String[0]) {{
+                setSourceFile(clsPath + ".java");
+
                 // parent class constructor
                 defineMethod("<init>", ACC_PUBLIC, sig(void.class, StaticScope.class, DynamicScope.class), new CodeBlock() {{
                     aload(0);
@@ -236,38 +240,56 @@ public class DynamicScopeGenerator {
                     iload(3);
                     pushInt(1);
                     isub();
+
+                    line(6);
                     invokevirtual(baseName, "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
                     voidreturn();
                 }});
 
                 // optional overrides
                 defineMethod("getValueDepthZero", ACC_PUBLIC, sig(IRubyObject.class, int.class), new CodeBlock() {{
-                    line(6);
+                    line(7);
 
                     if (size > 0) genGetSwitch(clsPath, newFields, this, 1);
 
-                    line(1);
+                    line(8);
 
                     invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
                     athrow();
                 }});
 
                 defineMethod("setValueDepthZeroVoid", ACC_PUBLIC, sig(void.class, IRubyObject.class, int.class), new CodeBlock() {{
-                    line(6);
+                    line(9);
 
                     if (size > 0) genPutSwitch(clsPath, newFields, this, 2);
 
-                    line(1);
+                    line(10);
 
                     invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
                     athrow();
                 }});
 
+                // utilities
+
+                defineMethod("sizeError", ACC_PRIVATE | ACC_STATIC, sig(RuntimeException.class), new CodeBlock() {{
+                    line(11);
+                    newobj(p(RuntimeException.class));
+                    dup();
+                    ldc(clsName + " only supports scopes with " + size + " variables");
+
+                    line(12);
+                    invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                    areturn();
+                }});
+
+                // specialized getters and setters
+
                 for (int i = 0; i < SPECIALIZED_GETS.size(); i++) {
                     final int offset = i;
 
                     defineMethod(SPECIALIZED_GETS.get(offset), ACC_PUBLIC, sig(IRubyObject.class), new CodeBlock() {{
-                        line(6);
+                        // line numbers for specialized getters are 100 + offset
+                        line(100 + offset);
 
                         if (size <= offset) {
                             invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
@@ -284,7 +306,8 @@ public class DynamicScopeGenerator {
                     final int offset = i;
 
                     defineMethod(SPECIALIZED_GETS_OR_NIL.get(offset), ACC_PUBLIC, sig(IRubyObject.class, IRubyObject.class), new CodeBlock() {{
-                        line(6);
+                        // line numbers for specialized get-or-nils are 200 + offset
+                        line(200 + offset);
 
                         if (size <= offset) {
                             invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
@@ -315,7 +338,8 @@ public class DynamicScopeGenerator {
                     final int offset = i;
 
                     defineMethod(SPECIALIZED_SETS.get(offset), ACC_PUBLIC, sig(void.class, IRubyObject.class), new CodeBlock() {{
-                        line(6);
+                        // line numbers for specialized setters are 300 + offset
+                        line(300 + offset);
 
                         if (size <= offset) {
                             invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
@@ -330,18 +354,10 @@ public class DynamicScopeGenerator {
                 }
 
                 // fields
+
                 for (String prop : newFields) {
                     defineField(prop, ACC_PUBLIC, ci(IRubyObject.class), null);
                 }
-
-                // utilities
-                defineMethod("sizeError", ACC_PRIVATE | ACC_STATIC, sig(RuntimeException.class), new CodeBlock() {{
-                    newobj(p(RuntimeException.class));
-                    dup();
-                    ldc(clsName + " only supports scopes with " + size + " variables");
-                    invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
-                    areturn();
-                }});
             }};
 
             return defineClass(cdcl, jiteClass);

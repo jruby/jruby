@@ -30,7 +30,7 @@ import static org.jruby.util.StrptimeFormat.*;
 
 /**
  * This class is ported from RubyDateFormatter.Token in JRuby 9.1.5.0.
- * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
+ * @see <a href="https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java">RubyDateFormatter.java from 9.1.5.0</a>
  */
 public class StrptimeToken {
     static final StrptimeToken[] CONVERSION2TOKEN = new StrptimeToken[256];

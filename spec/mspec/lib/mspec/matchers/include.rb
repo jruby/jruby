@@ -15,17 +15,18 @@ class IncludeMatcher
   end
 
   def failure_message
-    ["Expected #{@actual.inspect}", "to include #{@element.inspect}"]
+    ["Expected #{MSpec.format(@actual)}", "to include #{MSpec.format(@element)}"]
   end
 
   def negative_failure_message
-    ["Expected #{@actual.inspect}", "not to include #{@element.inspect}"]
+    ["Expected #{MSpec.format(@actual)}", "not to include #{MSpec.format(@element)}"]
   end
 end
 
 # Cannot override #include at the toplevel in MRI
 module MSpecMatchers
   private def include(*expected)
+    MSpec.deprecate __method__, '.should.include?'
     IncludeMatcher.new(*expected)
   end
 end

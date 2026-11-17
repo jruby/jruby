@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 
 # Examples taken from http://www.unicode.org/reports/tr15/#Norm_Forms
@@ -48,15 +49,15 @@ describe "String#unicode_normalize" do
   end
 
   it "raises an Encoding::CompatibilityError if string is not in an unicode encoding" do
-    lambda do
+    -> do
       [0xE0].pack('C').force_encoding("ISO-8859-1").unicode_normalize(:nfd)
-    end.should raise_error(Encoding::CompatibilityError)
+    end.should.raise(Encoding::CompatibilityError)
   end
 
   it "raises an ArgumentError if the specified form is invalid" do
-    lambda {
+    -> {
       @angstrom.unicode_normalize(:invalid_form)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 end
 
@@ -101,15 +102,15 @@ describe "String#unicode_normalize!" do
   end
 
   it "raises an Encoding::CompatibilityError if the string is not in an unicode encoding" do
-    lambda {
+    -> {
       [0xE0].pack('C').force_encoding("ISO-8859-1").unicode_normalize!
-    }.should raise_error(Encoding::CompatibilityError)
+    }.should.raise(Encoding::CompatibilityError)
   end
 
   it "raises an ArgumentError if the specified form is invalid" do
     ohm = "\u2126"
-    lambda {
+    -> {
       ohm.unicode_normalize!(:invalid_form)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 end

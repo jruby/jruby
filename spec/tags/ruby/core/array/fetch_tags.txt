@@ -1,0 +1,1 @@
+fails:Array#fetch raises an IndexError if there is no element at index

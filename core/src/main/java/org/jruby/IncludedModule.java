@@ -2,15 +2,16 @@ package org.jruby;
 
 import java.util.Map;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class IncludedModule extends RubyClass {
+public class IncludedModule extends RubyClass implements DelegatedModule {
     public IncludedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, false);
         this.origin = origin;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
-            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
     }
 
@@ -35,22 +36,28 @@ public class IncludedModule extends RubyClass {
     }
 
     @Override
-    public String getName() {
-        return origin.getName();
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
     }
 
     @Override
-    public RubyModule getNonIncludedClass() {
+    public RubyModule getOrigin() {
         return origin;
     }
 
-   /**
-    * We don't want to reveal ourselves to Ruby code, so origin this
-    * operation.
-    */
+    @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
         return origin.id();
+    }
+
+    /**
+     * We don't want to reveal ourselves to Ruby code, so origin this
+     * operation.
+     */
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        return origin.__id__(context);
     }
 
     @Override

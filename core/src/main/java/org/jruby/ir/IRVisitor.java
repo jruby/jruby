@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
+import org.jruby.ir.operands.Integer;
 
 /**
  * Superclass for IR visitors.
@@ -30,12 +31,14 @@ public abstract class IRVisitor {
 
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
-    public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) { error(instr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
+    public void AsFixnumInstr(AsFixnumInstr fixnum) { error(fixnum); }
     public void AsStringInstr(AsStringInstr asstring) { error(asstring); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
+    public void BlockGivenCallInstr(BlockGivenCallInstr blockgivencallinstr) { error(blockgivencallinstr); }
+    public void BIntInstr(BIntInstr bIntInstr) { error(bIntInstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
     public void BNilInstr(BNilInstr bnilinstr) { error(bnilinstr); }
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
@@ -46,6 +49,7 @@ public abstract class IRVisitor {
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) { error(instr); }
     public void BuildCompoundStringInstr(BuildCompoundStringInstr instr) { error(instr); }
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) { error(instr); }
+    public void BuildNthRefInstr(BuildNthRefInstr instr) { error(instr); }
     public void BuildRangeInstr(BuildRangeInstr instr) { error(instr); }
     public void BuildSplatInstr(BuildSplatInstr instr) { error(instr); }
     public void CallInstr(CallInstr callinstr) { error(callinstr); }
@@ -53,8 +57,9 @@ public abstract class IRVisitor {
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
     public void CheckForLJEInstr(CheckForLJEInstr checkforljeinstr) { error(checkforljeinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
-    public void ConstMissingInstr(ConstMissingInstr constmissinginstr) { error(constmissinginstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
+    public void CoverBranchInstr(CoverBranchInstr coverbranchinstr) { error(coverbranchinstr); }
+    public void CoverMethodInstr(CoverMethodInstr covermethodinstr) { error(covermethodinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) { error(defineclassmethodinstr); }
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) { error(defineinstancemethodinstr); }
@@ -63,6 +68,7 @@ public abstract class IRVisitor {
     public void EQQInstr(EQQInstr eqqinstr) { error(eqqinstr); }
     public void ExceptionRegionEndMarkerInstr(ExceptionRegionEndMarkerInstr exceptionregionendmarkerinstr) { error(exceptionregionendmarkerinstr); }
     public void ExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) { error(exceptionregionstartmarkerinstr); }
+    public void FrameNameCallInstr(FrameNameCallInstr framenamecallinstr) { error(framenamecallinstr); }
     public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getclassvarcontainermoduleinstr) { error(getclassvarcontainermoduleinstr); }
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) { error(getclassvariableinstr); }
     public void GetFieldInstr(GetFieldInstr getfieldinstr) { error(getfieldinstr); }
@@ -71,6 +77,8 @@ public abstract class IRVisitor {
     public void InheritanceSearchConstInstr(InheritanceSearchConstInstr inheritancesearchconstinstr) { error(inheritancesearchconstinstr); }
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) { error(instancesuperinstr); }
     public void Instr(Instr instr) { error(instr); }
+    public void IntegerMathInstr(IntegerMathInstr instr) { error(instr); }
+    public void JavaCtorSuperInstr(JavaCtorSuperInstr instr) { error(instr); }
     public void JumpInstr(JumpInstr jumpinstr) { error(jumpinstr); }
     public void LabelInstr(LabelInstr labelinstr) { error(labelinstr); }
     public void LexicalSearchConstInstr(LexicalSearchConstInstr lexicalsearchconstinstr) { error(lexicalsearchconstinstr); }
@@ -78,14 +86,12 @@ public abstract class IRVisitor {
     public void LoadLocalVarInstr(LoadLocalVarInstr loadlocalvarinstr) { error(loadlocalvarinstr); }
     public void LoadImplicitClosure(LoadImplicitClosureInstr loadimplicitclosureinstr) { error(loadimplicitclosureinstr); }
     public void LoadFrameClosure(LoadFrameClosureInstr loadframeclosureinstr) { error(loadframeclosureinstr); }
+    public void LoadBlockImplicitClosure(LoadBlockImplicitClosureInstr loadblockimplicitclosureinstr) { error(loadblockimplicitclosureinstr); }
     public void MatchInstr(MatchInstr matchInstr) { error(matchInstr); }
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) { error(moduleversionguardinstr); }
     public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
     public void NopInstr(NopInstr nopinstr) { error(nopinstr); }
     public void NoResultCallInstr(NoResultCallInstr noresultcallinstr) { error(noresultcallinstr); }
-    @Deprecated public void OneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) { error(oneFixnumArgNoBlockCallInstr); }
-    @Deprecated public void OneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) { error(oneFloatArgNoBlockCallInstr); }
-    @Deprecated public void OneOperandArgNoBlockCallInstr(OneOperandArgNoBlockCallInstr oneOperandArgNoBlockCallInstr) { error(oneOperandArgNoBlockCallInstr); }
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) { error(optargmultipleasgninstr); }
     public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
     public void PopBlockFrameInstr(PopBlockFrameInstr instr) { error(instr); }
@@ -110,6 +116,7 @@ public abstract class IRVisitor {
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) { error(reifyclosureinstr); }
     public void ReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }
     public void ReceiveJRubyExceptionInstr(ReceiveJRubyExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }
+    public void ReceiveKeywordsInstr(ReceiveKeywordsInstr receiveKeywordsInstr) { error(receiveKeywordsInstr); }
     public void ReceiveKeywordArgInstr(ReceiveKeywordArgInstr receiveKeywordArgInstr) { error(receiveKeywordArgInstr); }
     public void ReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr receiveKeywordRestArgInstr) { error(receiveKeywordRestArgInstr); }
     public void ReceiveOptArgInstr(ReceiveOptArgInstr receiveoptarginstr) { error(receiveoptarginstr); }
@@ -123,6 +130,7 @@ public abstract class IRVisitor {
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
     public void ReturnOrRethrowSavedExcInstr(ReturnOrRethrowSavedExcInstr instr) { error(instr); }
+    public void ReceiveMethodCoverageInstr(ReceiveMethodCoverageInstr receivemethodcoverageinstr) { error(receivemethodcoverageinstr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
@@ -138,7 +146,6 @@ public abstract class IRVisitor {
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
     public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) { error(instr); }
     public void YieldInstr(YieldInstr yieldinstr) { error(yieldinstr); }
-    @Deprecated public void ZeroOperandArgNoBlockCallInstr(ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr) { error(zeroOperandArgNoBlockCallInstr); }
     public void ZSuperInstr(ZSuperInstr zsuperinstr) { error(zsuperinstr); }
 
     // "defined" instructions
@@ -163,7 +170,9 @@ public abstract class IRVisitor {
     public void Array(Array array) { error(array); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
+    public void BuiltinClass(BuiltinClass builtinClass) { error(builtinClass); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
+    public void ChilledString(ChilledString chilledString) { error(chilledString); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
     public void Complex(Complex complex) { error(complex); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
@@ -176,13 +185,13 @@ public abstract class IRVisitor {
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { error(flote); }
     public void GlobalVariable(GlobalVariable globalvariable) { error(globalvariable); }
     public void Hash(Hash hash) { error(hash); }
+    public void Integer(Integer integer) { error(integer); }
     public void IRException(IRException irexception) { error(irexception); }
     public void Label(Label label) { error(label); }
     public void LocalVariable(LocalVariable localvariable) { error(localvariable); }
     public void Nil(Nil nil) { error(nil); }
-    public void NthRef(NthRef nthref) { error(nthref); }
     public void NullBlock(NullBlock nullblock) { error(nullblock); }
-    public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
+    public void Range(Range range) { error(range); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
     public void Scope(Scope scope) { error(scope); }
@@ -190,7 +199,7 @@ public abstract class IRVisitor {
     public void Self(Self self) { error(self); }
     public void Splat(Splat splat) { error(splat); }
     public void StandardError(StandardError standarderror) { error(standarderror); }
-    public void StringLiteral(StringLiteral stringliteral) { error(stringliteral); }
+    public void MutableString(MutableString mutablestring) { error(mutablestring); }
     public void SValue(SValue svalue) { error(svalue); }
     public void Symbol(Symbol symbol) { error(symbol); }
     public void SymbolProc(SymbolProc symbolproc) { error(symbolproc); }
@@ -198,6 +207,7 @@ public abstract class IRVisitor {
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { error(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { error(temporaryfloatvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { error(temporaryfixnumvariable); }
+    public void TemporaryIntVariable(TemporaryIntVariable temporaryintvariable) { error(temporaryintvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { error(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) { error(undefinedvalue); }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) { error(unexecutablenil); }

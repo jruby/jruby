@@ -221,9 +221,11 @@ class Date
     xs.each { |x| x.freeze unless x.nil? }.freeze
   end
 
-  class Infinity < Numeric # :nodoc:
+  def infinite?
+    false
+  end
 
-    include Comparable
+  class Infinity < Numeric # :nodoc:
 
     def initialize(d=1) @d = d <=> 0 end
 
@@ -243,23 +245,25 @@ class Date
 
     def <=>(other)
       case other
-        when Infinity; return d <=> other.d
-        when Numeric; return d
-        else
-          begin
-            l, r = other.coerce(self)
-            return l <=> r
-          rescue NoMethodError
-          end
+      when Infinity; return d <=> other.d
+      when Float::INFINITY; return d <=> 1
+      when -Float::INFINITY; return d <=> -1
+      when Numeric; return d
+      else
+        begin
+          l, r = other.coerce(self)
+          return l <=> r
+        rescue NoMethodError
+        end
       end
       nil
     end
 
     def coerce(other)
       case other
-        when Numeric; return -d, d
-        else
-          super
+      when Numeric; return -d, d
+      else
+        super
       end
     end
 
@@ -425,14 +429,14 @@ class Date
   end
   private_class_method :valid_date_frags?
 
-  def self.valid_time_frags? (elem) # :nodoc:
+  def self.valid_time_frags?(elem) # :nodoc:
     h, min, s = elem.values_at(:hour, :min, :sec)
     _valid_time?(h, min, s)
   end
   private_class_method :valid_time_frags?
 
   def self.new_by_frags(elem, sg) # :nodoc:
-    raise ArgumentError, 'invalid date' unless elem
+    raise Date::Error, 'invalid date' unless elem
 
     # fast path
     if !elem.key?(:jd) && !elem.key?(:yday) &&
@@ -443,7 +447,7 @@ class Date
     elem = rewrite_frags(elem)
     elem = complete_frags(elem)
     unless jd = valid_date_frags?(elem, sg)
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
@@ -483,28 +487,28 @@ class Date
   # Day Number day 0.
   #
   # +sg+ specifies the Day of Calendar Reform.
-  def self.parse(str='-4712-01-01', comp=true, sg=ITALY)
-    elem = _parse(str, comp)
+  def self.parse(str='-4712-01-01', comp=true, sg=ITALY, limit: 128)
+    elem = _parse(str, comp, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.iso8601(str='-4712-01-01', sg=ITALY) # :nodoc:
-    elem = _iso8601(str)
+  def self.iso8601(str='-4712-01-01', sg=ITALY, limit: 128) # :nodoc:
+    elem = _iso8601(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.rfc3339(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
-    elem = _rfc3339(str)
+  def self.rfc3339(str='-4712-01-01T00:00:00+00:00', sg=ITALY, limit: 128) # :nodoc:
+    elem = _rfc3339(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.xmlschema(str='-4712-01-01', sg=ITALY) # :nodoc:
-    elem = _xmlschema(str)
+  def self.xmlschema(str='-4712-01-01', sg=ITALY, limit: 128) # :nodoc:
+    elem = _xmlschema(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.rfc2822(str='Mon, 1 Jan -4712 00:00:00 +0000', sg=ITALY) # :nodoc:
-    elem = _rfc2822(str)
+  def self.rfc2822(str='Mon, 1 Jan -4712 00:00:00 +0000', sg=ITALY, limit: 128) # :nodoc:
+    elem = _rfc2822(str, limit: limit)
     new_by_frags(elem, sg)
   end
   class << self; alias_method :rfc822, :rfc2822 end
@@ -514,8 +518,8 @@ class Date
     new_by_frags(elem, sg)
   end
 
-  def self.jisx0301(str='-4712-01-01', sg=ITALY) # :nodoc:
-    elem = _jisx0301(str)
+  def self.jisx0301(str='-4712-01-01', sg=ITALY, limit: 128) # :nodoc:
+    elem = _jisx0301(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
@@ -631,7 +635,7 @@ class DateTime < Date
   def self.ordinal(y=-4712, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_ordinal?(y, d, sg)) &&
            (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
@@ -658,7 +662,7 @@ class DateTime < Date
   def self.commercial(y=-4712, w=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_commercial?(y, w, d, sg)) &&
            (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
@@ -667,7 +671,7 @@ class DateTime < Date
   end
 
   def self.new_by_frags(elem, sg) # :nodoc:
-    raise ArgumentError, 'invalid date' unless elem
+    raise Date::Error, 'invalid date' unless elem
     
 
     # More work to do if not :civil
@@ -684,7 +688,7 @@ class DateTime < Date
       jd = valid_date_frags?(elem, sg)
     end
     unless jd && (fr = valid_time_frags?(elem))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400
     of = Rational(elem[:offset] || 0, 86400)
@@ -730,28 +734,28 @@ class DateTime < Date
   # Day Number day 0.
   #
   # +sg+ specifies the Day of Calendar Reform.
-  def self.parse(str='-4712-01-01T00:00:00+00:00', comp=true, sg=ITALY)
-    elem = _parse(str, comp)
+  def self.parse(str='-4712-01-01T00:00:00+00:00', comp=true, sg=ITALY, limit: 128)
+    elem = _parse(str, comp, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.iso8601(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
-    elem = _iso8601(str)
+  def self.iso8601(str='-4712-01-01T00:00:00+00:00', sg=ITALY, limit: 128) # :nodoc:
+    elem = _iso8601(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.rfc3339(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
-    elem = _rfc3339(str)
+  def self.rfc3339(str='-4712-01-01T00:00:00+00:00', sg=ITALY, limit: 128) # :nodoc:
+    elem = _rfc3339(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.xmlschema(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
-    elem = _xmlschema(str)
+  def self.xmlschema(str='-4712-01-01T00:00:00+00:00', sg=ITALY, limit: 128) # :nodoc:
+    elem = _xmlschema(str, limit: limit)
     new_by_frags(elem, sg)
   end
 
-  def self.rfc2822(str='Mon, 1 Jan -4712 00:00:00 +0000', sg=ITALY) # :nodoc:
-    elem = _rfc2822(str)
+  def self.rfc2822(str='Mon, 1 Jan -4712 00:00:00 +0000', sg=ITALY, limit: 128) # :nodoc:
+    elem = _rfc2822(str, limit: limit)
     new_by_frags(elem, sg)
   end
   class << self; alias_method :rfc822, :rfc2822 end
@@ -761,8 +765,8 @@ class DateTime < Date
     new_by_frags(elem, sg)
   end
 
-  def self.jisx0301(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
-    elem = _jisx0301(str)
+  def self.jisx0301(str='-4712-01-01T00:00:00+00:00', sg=ITALY, limit: 128) # :nodoc:
+    elem = _jisx0301(str, limit: limit)
     new_by_frags(elem, sg)
   end
 

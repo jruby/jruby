@@ -3,22 +3,22 @@ require_relative 'fixtures/classes'
 
 describe "Module#module_function" do
   it "is a private method" do
-    Module.should have_private_instance_method(:module_function)
+    Module.private_instance_methods(false).should.include?(:module_function)
   end
 
   describe "on Class" do
     it "is undefined" do
-      Class.should_not have_private_instance_method(:module_function, true)
+      Class.private_instance_methods(true).should_not.include?(:module_function)
     end
 
     it "raises a TypeError if calling after rebinded to Class" do
-      lambda {
+      -> {
         Module.instance_method(:module_function).bind(Class.new).call
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
 
-      lambda {
+      -> {
         Module.instance_method(:module_function).bind(Class.new).call :foo
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
     end
   end
 end
@@ -38,14 +38,12 @@ describe "Module#module_function with specific method names" do
     m.respond_to?(:test3).should == false
   end
 
-  it "returns the current module" do
-    x = nil
-    m = Module.new do
-      def test()  end
-      x = module_function :test
+  it "returns argument or arguments if given" do
+    Module.new do
+      def foo; end
+      module_function(:foo).should.equal?(:foo)
+      module_function(:foo, :foo).should == [:foo, :foo]
     end
-
-    x.should == m
   end
 
   it "creates an independent copy of the method, not a redirect" do
@@ -85,9 +83,9 @@ describe "Module#module_function with specific method names" do
 
     (o = mock('x')).extend(m)
     o.respond_to?(:test).should == false
-    m.should have_private_instance_method(:test)
+    m.private_instance_methods(false).should.include?(:test)
     o.send(:test).should == "hello"
-    lambda { o.test }.should raise_error(NoMethodError)
+    -> { o.test }.should.raise(NoMethodError)
   end
 
   it "makes the new Module methods public" do
@@ -96,7 +94,46 @@ describe "Module#module_function with specific method names" do
       module_function :test
     end
 
-    m.public_methods.map {|me| me.to_s }.include?('test').should == true
+    m.public_methods(false).should.include?(:test)
+  end
+
+  it "makes the new Module method public even if the instance method is private" do
+    m = Module.new do
+      private
+      def test() end
+      module_function :test
+    end
+
+    m.public_methods(false).should.include?(:test)
+    m.private_instance_methods(false).should.include?(:test)
+  end
+
+  it "makes the new Module method public even if the instance method is protected" do
+    m = Module.new do
+      protected
+      def test() end
+      module_function :test
+    end
+
+    m.public_methods(false).should.include?(:test)
+    m.private_instance_methods(false).should.include?(:test)
+  end
+
+  it "makes initialize, initialize_copy, initialize_clone, initialize_dup, and respond_to_missing? public Module methods" do
+    m = Module.new do
+      def initialize() end
+      def initialize_copy() end
+      def initialize_clone() end
+      def initialize_dup() end
+      def respond_to_missing?() end
+
+      module_function :initialize, :initialize_copy, :initialize_clone, :initialize_dup, :respond_to_missing?
+    end
+
+    [:initialize, :initialize_copy, :initialize_clone, :initialize_dup, :respond_to_missing?].each do |method|
+      m.public_methods(false).should.include?(method)
+      m.private_instance_methods(false).should.include?(method)
+    end
   end
 
   it "tries to convert the given names to strings using to_str" do
@@ -116,17 +153,17 @@ describe "Module#module_function with specific method names" do
   it "raises a TypeError when the given names can't be converted to string using to_str" do
     o = mock('123')
 
-    lambda { Module.new { module_function(o) } }.should raise_error(TypeError)
+    -> { Module.new { module_function(o) } }.should.raise(TypeError)
 
     o.should_receive(:to_str).and_return(123)
-    lambda { Module.new { module_function(o) } }.should raise_error(TypeError)
+    -> { Module.new { module_function(o) } }.should.raise(TypeError)
   end
 
   it "can make accessible private methods" do # JRUBY-4214
     m = Module.new do
       module_function :require
     end
-    m.respond_to?(:require).should be_true
+    m.respond_to?(:require).should == true
   end
 
   it "creates Module methods that super up the singleton class of the module" do
@@ -146,38 +183,82 @@ describe "Module#module_function with specific method names" do
 
     m.foo.should == ["m", "super_m"]
   end
+
+  context "methods created with define_method" do
+    context "passed a block" do
+      it "creates duplicates of the given instance methods" do
+        m = Module.new do
+          define_method :test1 do; end
+          module_function :test1
+        end
+
+        m.respond_to?(:test1).should == true
+      end
+    end
+
+    context "passed a method" do
+      it "creates duplicates of the given instance methods" do
+        module_with_method = Module.new do
+          def test1; end
+        end
+
+        c = Class.new do
+          extend module_with_method
+        end
+
+        m = Module.new do
+          define_method :test2, c.method(:test1)
+          module_function :test2
+        end
+
+        m.respond_to?(:test2).should == true
+      end
+    end
+
+    context "passed an unbound method" do
+      it "creates duplicates of the given instance methods" do
+        module_with_method = Module.new do
+          def test1; end
+        end
+
+        m = Module.new do
+          define_method :test2, module_with_method.instance_method(:test1)
+          module_function :test2
+        end
+
+        m.respond_to?(:test2).should == true
+      end
+    end
+  end
 end
 
 describe "Module#module_function as a toggle (no arguments) in a Module body" do
   it "makes any subsequently defined methods module functions with the normal semantics" do
-    m = Module.new {
+    m = Module.new do
       module_function
       def test1() end
       def test2() end
-    }
+    end
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
   end
 
-  it "returns the current module" do
-    x = nil
-    m = Module.new {
-      x = module_function
-    }
-
-    x.should == m
+  it "returns nil" do
+    Module.new do
+      module_function.should.equal?(nil)
+    end
   end
 
   it "stops creating module functions if the body encounters another toggle " \
      "like public/protected/private without arguments" do
-    m = Module.new {
+    m = Module.new do
       module_function
       def test1() end
       def test2() end
       public
       def test3() end
-    }
+    end
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
@@ -186,84 +267,194 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "does not stop creating module functions if the body encounters " \
      "public/protected/private WITH arguments" do
-    m = Module.new {
+    m = Module.new do
       def foo() end
       module_function
       def test1() end
       def test2() end
       public :foo
       def test3() end
-    }
+    end
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
     m.respond_to?(:test3).should == true
   end
 
+  it "makes the initialize-related and respond_to_missing? Module methods public when defined after toggle" do
+    m = Module.new do
+      module_function
+      def initialize() end
+      def initialize_copy() end
+      def initialize_clone() end
+      def initialize_dup() end
+      def respond_to_missing?() end
+    end
+
+    [:initialize, :initialize_copy, :initialize_clone, :initialize_dup, :respond_to_missing?].each do |method|
+      m.public_methods(false).should.include?(method)
+      m.private_instance_methods(false).should.include?(method)
+    end
+  end
+
   it "does not affect module_evaled method definitions also if outside the eval itself" do
-    m = Module.new {
+    m = Module.new do
       module_function
       module_eval { def test1() end }
       module_eval " def test2() end "
-    }
+    end
 
     m.respond_to?(:test1).should == false
     m.respond_to?(:test2).should == false
   end
 
   it "has no effect if inside a module_eval if the definitions are outside of it" do
-    m = Module.new {
+    m = Module.new do
       module_eval { module_function }
       def test1() end
       def test2() end
-    }
+    end
 
     m.respond_to?(:test1).should == false
     m.respond_to?(:test2).should == false
   end
 
   it "functions normally if both toggle and definitions inside a module_eval" do
-    m = Module.new {
-      module_eval {
+    m = Module.new do
+      module_eval do
         module_function
         def test1() end
         def test2() end
-      }
-    }
+      end
+    end
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
   end
 
-  it "affects evaled method definitions also even when outside the eval itself" do
-    m = Module.new {
+  it "affects eval'ed method definitions also even when outside the eval itself" do
+    m = Module.new do
       module_function
       eval "def test1() end"
-    }
+    end
 
     m.respond_to?(:test1).should == true
   end
 
   it "doesn't affect definitions when inside an eval even if the definitions are outside of it" do
-    m = Module.new {
+    m = Module.new do
       eval "module_function"
       def test1() end
-    }
+    end
 
     m.respond_to?(:test1).should == false
   end
 
   it "functions normally if both toggle and definitions inside a eval" do
-    m = Module.new {
+    m = Module.new do
       eval <<-CODE
         module_function
 
         def test1() end
         def test2() end
       CODE
-    }
+    end
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
+  end
+
+  context "when defining methods using define_method" do
+    context "passed a block" do
+      it "makes any subsequently defined methods module functions with the normal semantics" do
+        m = Module.new do
+          module_function
+          define_method :test1 do; end
+        end
+
+        m.respond_to?(:test1).should == true
+      end
+    end
+
+    context "passed a method" do
+      it "makes any subsequently defined methods module functions with the normal semantics" do
+        module_with_method = Module.new do
+          def test1; end
+        end
+
+        c = Class.new do
+          extend module_with_method
+        end
+
+        m = Module.new do
+          module_function
+          define_method :test2, c.method(:test1)
+        end
+
+        m.respond_to?(:test2).should == true
+      end
+    end
+
+    context "passed an unbound method" do
+      it "makes any subsequently defined methods module functions with the normal semantics" do
+        module_with_method = Module.new do
+          def test1; end
+        end
+
+        m = Module.new do
+          module_function
+          define_method :test2, module_with_method.instance_method(:test1)
+        end
+
+        m.respond_to?(:test2).should == true
+      end
+    end
+  end
+
+  context "when defining methods using define_method" do
+    it "makes the initialize-related and respond_to_missing? module methods public" do
+      m = Module.new do
+        module_function
+
+        define_method :initialize do; end
+        define_method :initialize_copy do; end
+        define_method :initialize_clone do; end
+        define_method :initialize_dup do; end
+        define_method :respond_to_missing? do; end
+      end
+
+      [:initialize, :initialize_copy, :initialize_clone, :initialize_dup, :respond_to_missing?].each do |method|
+        m.public_methods(false).should.include?(method)
+        m.private_instance_methods(false).should.include?(method)
+      end
+    end
+  end
+
+  context "when defining methods using alias" do
+    it "does not create module functions for the aliased method" do
+      m = Module.new do
+        def test; end
+
+        module_function
+        alias test_alias test
+      end
+
+      m.should_not.respond_to?(:test)
+      m.should_not.respond_to?(:test_alias)
+    end
+  end
+
+  context "when defining methods using alias_method" do
+    it "does not create module functions for the aliased method" do
+      m = Module.new do
+        def test; end
+
+        module_function
+        alias_method :test_alias, :test
+      end
+
+      m.should_not.respond_to?(:test)
+      m.should_not.respond_to?(:test_alias)
+    end
   end
 end

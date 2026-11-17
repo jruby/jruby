@@ -1,3 +1,0 @@
-windows:Net::FTP#put (binary mode) when passed a block yields the transmitted content as binary blocks of the passed size
-windows:Net::FTP#put (binary mode) when resuming an existing file sends the remaining content of the passed local_file to the passed remote_file
-windows:Net::FTP#put (text mode) sends the contents of the passed local_file, using \r\n as the newline separator

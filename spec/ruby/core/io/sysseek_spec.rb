@@ -4,7 +4,7 @@ require_relative 'fixtures/classes'
 require_relative 'shared/pos'
 
 describe "IO#sysseek" do
-  it_behaves_like :io_set_pos, :seek
+  it_behaves_like :io_set_pos, :sysseek
 end
 
 describe "IO#sysseek" do
@@ -21,13 +21,30 @@ describe "IO#sysseek" do
     @io.readline.should == "igne une.\n"
   end
 
+  it "accepts the symbol :CUR for SEEK_CUR" do
+    @io.sysseek(10, :CUR)
+    @io.readline.should == "igne une.\n"
+  end
+
   it "raises an error when called after buffered reads" do
     @io.readline
-    lambda { @io.sysseek(-5, IO::SEEK_CUR) }.should raise_error(IOError)
+    -> do
+      @io.sysseek(-5, IO::SEEK_CUR)
+    end.should.raise(IOError, "sysseek for buffered IO")
+  end
+
+  it "seeks normally even when called immediately after a buffered IO#read" do
+    @io.read(15)
+    @io.sysseek(-5, IO::SEEK_CUR).should == 10
   end
 
   it "moves the read position relative to the start with SEEK_SET" do
     @io.sysseek(43, IO::SEEK_SET)
+    @io.readline.should == "Aquí está la línea tres.\n"
+  end
+
+  it "accepts the symbol :SET for SEEK_SET" do
+    @io.sysseek(43, :SET)
     @io.readline.should == "Aquí está la línea tres.\n"
   end
 
@@ -36,9 +53,14 @@ describe "IO#sysseek" do
 
     # this is the safest way of checking the EOF when
     # sys-* methods are invoked
-    lambda { @io.sysread(1) }.should raise_error(EOFError)
+    -> { @io.sysread(1) }.should.raise(EOFError)
 
     @io.sysseek(-25, IO::SEEK_END)
+    @io.sysread(7).should == "cinco.\n"
+  end
+
+  it "accepts the symbol :END for SEEK_END" do
+    @io.sysseek(-25, :END)
     @io.sysread(7).should == "cinco.\n"
   end
 end

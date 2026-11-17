@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 struct sample_typed_wrapped_struct_parent {
-    int foo;
+  int foo;
 };
 
 void sample_typed_wrapped_struct_parent_free(void* st) {
@@ -32,7 +32,7 @@ static const rb_data_type_t sample_typed_wrapped_struct_parent_data_type = {
 };
 
 struct sample_typed_wrapped_struct {
-    int foo;
+  int foo;
 };
 
 void sample_typed_wrapped_struct_free(void* st) {
@@ -61,7 +61,7 @@ static const rb_data_type_t sample_typed_wrapped_struct_data_type = {
 };
 
 struct sample_typed_wrapped_struct_other {
-    int foo;
+  int foo;
 };
 
 void sample_typed_wrapped_struct_other_free(void* st) {
@@ -86,43 +86,55 @@ static const rb_data_type_t sample_typed_wrapped_struct_other_data_type = {
 
 
 VALUE sdaf_alloc_typed_func(VALUE klass) {
-    struct sample_typed_wrapped_struct* bar = (struct sample_typed_wrapped_struct *)malloc(sizeof(struct sample_typed_wrapped_struct));
-    bar->foo = 42;
-    return TypedData_Wrap_Struct(klass, &sample_typed_wrapped_struct_data_type, bar);
+  struct sample_typed_wrapped_struct* bar;
+  bar = (struct sample_typed_wrapped_struct *) malloc(sizeof(struct sample_typed_wrapped_struct));
+  bar->foo = 42;
+  return TypedData_Wrap_Struct(klass, &sample_typed_wrapped_struct_data_type, bar);
 }
 
 VALUE sdaf_typed_get_struct(VALUE self) {
-    struct sample_typed_wrapped_struct* bar;
-    TypedData_Get_Struct(self, struct sample_typed_wrapped_struct, &sample_typed_wrapped_struct_data_type, bar);
+  struct sample_typed_wrapped_struct* bar;
+  TypedData_Get_Struct(self, struct sample_typed_wrapped_struct, &sample_typed_wrapped_struct_data_type, bar);
 
-    return INT2FIX((*bar).foo);
+  return INT2FIX((*bar).foo);
 }
 
 VALUE sws_typed_wrap_struct(VALUE self, VALUE val) {
-    struct sample_typed_wrapped_struct* bar = (struct sample_typed_wrapped_struct *)malloc(sizeof(struct sample_typed_wrapped_struct));
-    bar->foo = FIX2INT(val);
-    return TypedData_Wrap_Struct(rb_cObject, &sample_typed_wrapped_struct_data_type, bar);
+  struct sample_typed_wrapped_struct* bar;
+  bar = (struct sample_typed_wrapped_struct *) malloc(sizeof(struct sample_typed_wrapped_struct));
+  bar->foo = FIX2INT(val);
+  return TypedData_Wrap_Struct(rb_cObject, &sample_typed_wrapped_struct_data_type, bar);
 }
 
-VALUE sws_typed_get_struct(VALUE self, VALUE obj) {
-    struct sample_typed_wrapped_struct* bar;
-    TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct, &sample_typed_wrapped_struct_data_type, bar);
+#ifndef RUBY_VERSION_IS_4_1
+#undef RUBY_UNTYPED_DATA_WARNING
+#define RUBY_UNTYPED_DATA_WARNING 0
+VALUE sws_untyped_wrap_struct(VALUE self, VALUE val) {
+  int* data = (int*) malloc(sizeof(int));
+  *data = FIX2INT(val);
+  return Data_Wrap_Struct(rb_cObject, NULL, free, data);
+}
+#endif
 
-    return INT2FIX((*bar).foo);
+VALUE sws_typed_get_struct(VALUE self, VALUE obj) {
+  struct sample_typed_wrapped_struct* bar;
+  TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct, &sample_typed_wrapped_struct_data_type, bar);
+
+  return INT2FIX((*bar).foo);
 }
 
 VALUE sws_typed_get_struct_different_type(VALUE self, VALUE obj) {
-    struct sample_typed_wrapped_struct_other* bar;
-    TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct_other, &sample_typed_wrapped_struct_other_data_type, bar);
+  struct sample_typed_wrapped_struct_other* bar;
+  TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct_other, &sample_typed_wrapped_struct_other_data_type, bar);
 
-    return INT2FIX((*bar).foo);
+  return INT2FIX((*bar).foo);
 }
 
 VALUE sws_typed_get_struct_parent_type(VALUE self, VALUE obj) {
-    struct sample_typed_wrapped_struct_parent* bar;
-    TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct_parent, &sample_typed_wrapped_struct_parent_data_type, bar);
+  struct sample_typed_wrapped_struct_parent* bar;
+  TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct_parent, &sample_typed_wrapped_struct_parent_data_type, bar);
 
-    return INT2FIX((*bar).foo);
+  return INT2FIX((*bar).foo);
 }
 
 VALUE sws_typed_get_struct_rdata(VALUE self, VALUE obj) {
@@ -138,14 +150,36 @@ VALUE sws_typed_get_struct_data_ptr(VALUE self, VALUE obj) {
 }
 
 VALUE sws_typed_change_struct(VALUE self, VALUE obj, VALUE new_val) {
-  struct sample_typed_wrapped_struct *old_struct, *new_struct;
-  new_struct = (struct sample_typed_wrapped_struct *)malloc(sizeof(struct sample_typed_wrapped_struct));
+  struct sample_typed_wrapped_struct *new_struct;
+  new_struct = (struct sample_typed_wrapped_struct *) malloc(sizeof(struct sample_typed_wrapped_struct));
   new_struct->foo = FIX2INT(new_val);
-  old_struct = RTYPEDDATA(obj)->data;
-  free(old_struct);
+  free(RTYPEDDATA(obj)->data);
   RTYPEDDATA(obj)->data = new_struct;
   return Qnil;
 }
+
+VALUE sws_typed_rb_check_type(VALUE self, VALUE obj, VALUE other) {
+  rb_check_type(obj, TYPE(other));
+  return Qtrue;
+}
+
+VALUE sws_typed_rb_check_typeddata_same_type(VALUE self, VALUE obj) {
+  return rb_check_typeddata(obj, &sample_typed_wrapped_struct_data_type) == DATA_PTR(obj) ? Qtrue : Qfalse;
+}
+
+VALUE sws_typed_rb_check_typeddata_same_type_parent(VALUE self, VALUE obj) {
+  return rb_check_typeddata(obj, &sample_typed_wrapped_struct_parent_data_type) == DATA_PTR(obj) ? Qtrue : Qfalse;
+}
+
+VALUE sws_typed_rb_check_typeddata_different_type(VALUE self, VALUE obj) {
+  return rb_check_typeddata(obj, &sample_typed_wrapped_struct_other_data_type) == DATA_PTR(obj) ? Qtrue : Qfalse;
+}
+
+#ifndef RUBY_VERSION_IS_4_1
+VALUE sws_typed_RTYPEDDATA_P(VALUE self, VALUE obj) {
+  return RTYPEDDATA_P(obj) ? Qtrue : Qfalse;
+}
+#endif
 
 void Init_typed_data_spec(void) {
   VALUE cls = rb_define_class("CApiAllocTypedSpecs", rb_cObject);
@@ -153,15 +187,24 @@ void Init_typed_data_spec(void) {
   rb_define_method(cls, "typed_wrapped_data", sdaf_typed_get_struct, 0);
   cls = rb_define_class("CApiWrappedTypedStructSpecs", rb_cObject);
   rb_define_method(cls, "typed_wrap_struct", sws_typed_wrap_struct, 1);
+#ifndef RUBY_VERSION_IS_4_1
+  rb_define_method(cls, "untyped_wrap_struct", sws_untyped_wrap_struct, 1);
+#endif
   rb_define_method(cls, "typed_get_struct", sws_typed_get_struct, 1);
   rb_define_method(cls, "typed_get_struct_other", sws_typed_get_struct_different_type, 1);
   rb_define_method(cls, "typed_get_struct_parent", sws_typed_get_struct_parent_type, 1);
   rb_define_method(cls, "typed_get_struct_rdata", sws_typed_get_struct_rdata, 1);
   rb_define_method(cls, "typed_get_struct_data_ptr", sws_typed_get_struct_data_ptr, 1);
   rb_define_method(cls, "typed_change_struct", sws_typed_change_struct, 2);
+  rb_define_method(cls, "rb_check_type", sws_typed_rb_check_type, 2);
+  rb_define_method(cls, "rb_check_typeddata_same_type", sws_typed_rb_check_typeddata_same_type, 1);
+  rb_define_method(cls, "rb_check_typeddata_same_type_parent", sws_typed_rb_check_typeddata_same_type_parent, 1);
+  rb_define_method(cls, "rb_check_typeddata_different_type", sws_typed_rb_check_typeddata_different_type, 1);
+#ifndef RUBY_VERSION_IS_4_1
+  rb_define_method(cls, "RTYPEDDATA_P", sws_typed_RTYPEDDATA_P, 1);
+#endif
 }
 
 #ifdef __cplusplus
 }
 #endif
-

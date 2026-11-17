@@ -9,7 +9,7 @@ describe "Float#next_float" do
     barely_positive.should < barely_positive.next_float
 
     midpoint = barely_positive / 2
-    [0.0, barely_positive].should include midpoint
+    [0.0, barely_positive].should.include? midpoint
   end
 
   it "returns Float::INFINITY for Float::INFINITY" do
@@ -44,6 +44,6 @@ describe "Float#next_float" do
   end
 
   it "returns NAN if NAN was the receiver" do
-    Float::NAN.next_float.nan?.should == true
+    Float::NAN.next_float.should.nan?
   end
 end

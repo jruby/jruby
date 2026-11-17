@@ -50,7 +50,7 @@ describe "C-API Thread function" do
     end
 
     it "returns nil if the value has not been set" do
-      @t.rb_thread_local_aref(Thread.current, :thread_capi_specs_undefined).should be_nil
+      @t.rb_thread_local_aref(Thread.current, :thread_capi_specs_undefined).should == nil
     end
   end
 
@@ -70,45 +70,55 @@ describe "C-API Thread function" do
   describe "rb_thread_create" do
     it "creates a new thread" do
       obj = Object.new
-      proc = lambda { |x| ScratchPad.record x }
+      proc = -> x { ScratchPad.record x }
       thr = @t.rb_thread_create(proc, obj)
-      thr.should be_kind_of(Thread)
+      thr.should.is_a?(Thread)
       thr.join
       ScratchPad.recorded.should == obj
     end
 
     it "handles throwing an exception in the thread" do
-      prc = lambda { |x|
+      prc = -> x {
         Thread.current.report_on_exception = false
         raise "my error"
       }
       thr = @t.rb_thread_create(prc, nil)
-      thr.should be_kind_of(Thread)
+      thr.should.is_a?(Thread)
 
-      lambda {
+      -> {
         thr.join
-      }.should raise_error(RuntimeError, "my error")
+      }.should.raise(RuntimeError, "my error")
     end
 
     it "sets the thread's group" do
-      thr = @t.rb_thread_create(lambda { |x| }, nil)
+      thr = @t.rb_thread_create(-> x { }, nil)
       begin
         thread_group = thr.group
-        thread_group.should be_an_instance_of(ThreadGroup)
+        thread_group.should.instance_of?(ThreadGroup)
       ensure
         thr.join
       end
     end
   end
 
+  describe "ruby_native_thread_p" do
+    it "returns non-zero for a ruby thread" do
+      @t.ruby_native_thread_p.should == true
+    end
+
+    it "returns zero for a non ruby thread" do
+      @t.ruby_native_thread_p_new_thread.should == false
+    end
+  end
+
   describe "rb_thread_call_without_gvl" do
-    it "runs a C function with the global lock unlocked" do
+    it "runs a C function with the global lock unlocked and can be woken by Thread#wakeup" do
       thr = Thread.new do
         @t.rb_thread_call_without_gvl
       end
 
       # Wait until it's blocking...
-      Thread.pass while thr.status and thr.status != "sleep"
+      Thread.pass until thr.stop?
 
       # The thread status is set to sleep by rb_thread_call_without_gvl(),
       # but the thread might not be in the blocking read(2) yet, so wait a bit.
@@ -117,20 +127,51 @@ describe "C-API Thread function" do
       # Wake it up, causing the unblock function to be run.
       thr.wakeup
 
-      # Make sure it stopped
-      thr.join(1).should_not be_nil
-
-      # And we got a proper value
-      thr.value.should be_true
+      # Make sure it stopped and we got a proper value
+      thr.value.should == true
     end
 
-    it "runs a C function with the global lock unlocked amd unlocks IO with the generic RUBY_UBF_IO" do
+    platform_is_not :windows do
+      it "runs a C function with the global lock unlocked and can be woken by a signal" do
+        # Ruby signal handlers run on the main thread, so we need to reverse roles here and have a thread interrupt us
+        thr = Thread.current
+        thr.should == Thread.main
+
+        going_to_block = false
+        interrupter = Thread.new do
+          # Wait until it's blocking...
+          Thread.pass until going_to_block and thr.stop?
+
+          # The thread status is set to sleep by rb_thread_call_without_gvl(),
+          # but the thread might not be in the blocking read(2) yet, so wait a bit.
+          sleep 0.1
+
+          # Wake it up by sending a signal
+          done = false
+          prev_handler = Signal.trap(:HUP) { done = true }
+          begin
+            Process.kill :HUP, Process.pid
+            sleep 0.001 until done
+          ensure
+            Signal.trap(:HUP, prev_handler)
+          end
+        end
+
+        going_to_block = true
+        # Make sure it stopped and we got a proper value
+        @t.rb_thread_call_without_gvl.should == true
+
+        interrupter.join
+      end
+    end
+
+    it "runs a C function with the global lock unlocked and unlocks IO with the generic RUBY_UBF_IO" do
       thr = Thread.new do
         @t.rb_thread_call_without_gvl_with_ubf_io
       end
 
       # Wait until it's blocking...
-      Thread.pass while thr.status and thr.status != "sleep"
+      Thread.pass until thr.stop?
 
       # The thread status is set to sleep by rb_thread_call_without_gvl(),
       # but the thread might not be in the blocking read(2) yet, so wait a bit.
@@ -139,11 +180,38 @@ describe "C-API Thread function" do
       # Wake it up, causing the unblock function to be run.
       thr.wakeup
 
-      # Make sure it stopped
-      thr.join(1).should_not be_nil
+      # Make sure it stopped and we got a proper value
+      thr.value.should == true
+    end
+  end
 
-      # And we got a proper value
-      thr.value.should be_true
+  ruby_version_is "4.0" do
+    describe "ruby_thread_has_gvl_p" do
+      it "returns true if the current thread has the GVL" do
+        @t.ruby_thread_has_gvl_p.should == true
+      end
+    end
+  end
+
+  ruby_version_is "4.1" do
+    describe "rb_nogvl with RB_NOGVL_PENDING_INTR_FAIL" do
+      it "does not enter the blocking region when the current thread has masked pending interrupts" do
+        interrupted = false
+
+        begin
+          Thread.handle_interrupt(Interrupt => :never) do
+            Thread.current.raise(Interrupt)
+
+            # The flag must not call the function (nil return) and errno is 0,
+            # consistent with the in-region skip path (the function never ran).
+            @t.rb_nogvl_pending_intr_fail.should == [false, nil, 0]
+          end
+        rescue Interrupt
+          interrupted = true
+        end
+
+        interrupted.should == true
+      end
     end
   end
 end

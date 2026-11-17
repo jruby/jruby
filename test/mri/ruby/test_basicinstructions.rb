@@ -117,7 +117,6 @@ class TestBasicInstructions < Test::Unit::TestCase
     assert_equal({1=>2}, {1=>2})
     assert_equal({1=>2, 3=>4}, {1=>2, 3=>4})
     assert_equal({1=>2, 3=>4}, {3=>4, 1=>2})
-    # assert_equal({1=>2, 3=>4}, {1,2, 3,4}) # 1.9 doesn't support
     assert_equal({"key"=>"val"}, {"key"=>"val"})
   end
 
@@ -429,7 +428,9 @@ class TestBasicInstructions < Test::Unit::TestCase
   end
 
   class CVarA
-    @@cv = 'CVarA@@cv'
+    def self.setup
+      @@cv = 'CVarA@@cv'
+    end
     def self.cv() @@cv end
     def self.cv=(v) @@cv = v end
     class << self
@@ -450,6 +451,7 @@ class TestBasicInstructions < Test::Unit::TestCase
   end
 
   def test_class_variable
+    CVarA.setup
     assert_equal 'CVarA@@cv',   CVarA.cv
     assert_equal 'CVarA@@cv',   CVarA.cv2
     assert_equal 'CVarA@@cv',   CVarA.new.cv

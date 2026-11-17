@@ -20,15 +20,8 @@ describe "Module#remove_method" do
     @module = Module.new { def method_to_remove; end }
   end
 
-  ruby_version_is ''...'2.5' do
-    it "is a private method" do
-      Module.should have_private_instance_method(:remove_method, false)
-    end
-  end
-  ruby_version_is '2.5' do
-    it "is a public method" do
-      Module.should have_public_instance_method(:remove_method, false)
-    end
+  it "is a public method" do
+    Module.public_instance_methods(false).should.include?(:remove_method)
   end
 
   it "removes the method from a class" do
@@ -48,6 +41,28 @@ describe "Module#remove_method" do
     x = child.new
     x.respond_to?(:method_to_remove).should == true
     x.method_to_remove.should == 1
+  end
+
+  it "updates the method implementation" do
+    m_module = Module.new do
+      def foo
+        'm'
+      end
+    end
+
+    a_class = Class.new do
+      include m_module
+
+      def foo
+        'a'
+      end
+    end
+
+    a = a_class.new
+    foo = -> { a.foo }
+    foo.call.should == 'a'
+    a_class.remove_method(:foo)
+    foo.call.should == 'm'
   end
 
   it "removes multiple methods with 1 call" do
@@ -73,14 +88,14 @@ describe "Module#remove_method" do
   end
 
   it "returns self" do
-    @module.send(:remove_method, :method_to_remove).should equal(@module)
+    @module.send(:remove_method, :method_to_remove).should.equal?(@module)
   end
 
   it "raises a NameError when attempting to remove method further up the inheritance tree" do
     Class.new(ModuleSpecs::Second) do
       -> {
         remove_method :method_to_remove
-      }.should raise_error(NameError)
+      }.should.raise(NameError)
     end
   end
 
@@ -88,7 +103,7 @@ describe "Module#remove_method" do
     Class.new(ModuleSpecs::Second) do
       -> {
         remove_method :blah
-      }.should raise_error(NameError)
+      }.should.raise(NameError)
     end
   end
 
@@ -97,20 +112,20 @@ describe "Module#remove_method" do
       @frozen = @module.dup.freeze
     end
 
-    it "raises a #{frozen_error_class} when passed a name" do
-      lambda { @frozen.send :remove_method, :method_to_remove }.should raise_error(frozen_error_class)
+    it "raises a FrozenError when passed a name" do
+      -> { @frozen.send :remove_method, :method_to_remove }.should.raise(FrozenError)
     end
 
-    it "raises a #{frozen_error_class} when passed a missing name" do
-      lambda { @frozen.send :remove_method, :not_exist }.should raise_error(frozen_error_class)
+    it "raises a FrozenError when passed a missing name" do
+      -> { @frozen.send :remove_method, :not_exist }.should.raise(FrozenError)
     end
 
     it "raises a TypeError when passed a not name" do
-      lambda { @frozen.send :remove_method, Object.new }.should raise_error(TypeError)
+      -> { @frozen.send :remove_method, Object.new }.should.raise(TypeError)
     end
 
     it "does not raise exceptions when no arguments given" do
-      @frozen.send(:remove_method).should equal(@frozen)
+      @frozen.send(:remove_method).should.equal?(@frozen)
     end
   end
 end

@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/script'
@@ -15,7 +13,7 @@ class MSpecTag < MSpecScript
     config[:ltags]   = []
   end
 
-  def options(argv=ARGV)
+  def options(argv = ARGV)
     options = MSpecOptions.new "mspec tag [options] (FILE|DIRECTORY|GLOB)+", 30, config
 
     options.doc " Ask yourself:"
@@ -33,6 +31,7 @@ class MSpecTag < MSpecScript
     options.pretend
     options.unguarded
     options.interrupt
+    options.timeout
 
     options.doc "\n How to display their output"
     options.formatters
@@ -113,6 +112,7 @@ class MSpecTag < MSpecScript
       MSpec.register_mode :pretend
       MSpec.register_mode :unguarded
       config[:formatter] = false
+      config[:xtags] = []
     else
       raise ArgumentError, "No recognized action given"
     end

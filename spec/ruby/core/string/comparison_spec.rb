@@ -61,12 +61,12 @@ describe "String#<=> with String" do
   end
 
   it "ignores encoding difference" do
-    ("ÄÖÛ".force_encoding("utf-8") <=> "ÄÖÜ".force_encoding("iso-8859-1")).should == -1
-    ("ÄÖÜ".force_encoding("utf-8") <=> "ÄÖÛ".force_encoding("iso-8859-1")).should == 1
+    ("ÄÖÛ".dup.force_encoding("utf-8") <=> "ÄÖÜ".dup.force_encoding("iso-8859-1")).should == -1
+    ("ÄÖÜ".dup.force_encoding("utf-8") <=> "ÄÖÛ".dup.force_encoding("iso-8859-1")).should == 1
   end
 
   it "returns 0 with identical ASCII-compatible bytes of different encodings" do
-    ("abc".force_encoding("utf-8") <=> "abc".force_encoding("iso-8859-1")).should == 0
+    ("abc".dup.force_encoding("utf-8") <=> "abc".dup.force_encoding("iso-8859-1")).should == 0
   end
 
   it "compares the indices of the encodings when the strings have identical non-ASCII-compatible bytes" do
@@ -75,13 +75,17 @@ describe "String#<=> with String" do
     (xff_1 <=> xff_2).should == -1
     (xff_2 <=> xff_1).should ==  1
   end
+
+  it "returns 0 when comparing 2 empty strings but one is not ASCII-compatible" do
+    ("" <=> "".dup.force_encoding('iso-2022-jp')).should == 0
+  end
 end
 
 # Note: This is inconsistent with Array#<=> which calls #to_ary instead of
 # just using it as an indicator.
 describe "String#<=>" do
   it "returns nil if its argument provides neither #to_str nor #<=>" do
-    ("abc" <=> mock('x')).should be_nil
+    ("abc" <=> mock('x')).should == nil
   end
 
   it "uses the result of calling #to_str for comparison when #to_str is defined" do
@@ -103,6 +107,6 @@ describe "String#<=>" do
     def obj.<=>(other); other <=> self; end
     obj.should_receive(:<=>).once
 
-    ("abc" <=> obj).should be_nil
+    ("abc" <=> obj).should == nil
   end
 end

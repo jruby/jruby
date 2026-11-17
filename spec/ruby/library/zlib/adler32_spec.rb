@@ -19,10 +19,10 @@ describe "Zlib.adler32" do
     Zlib.adler32(test_string, 1).should == 66391324
     Zlib.adler32(test_string, 2**8).should == 701435419
     Zlib.adler32(test_string, 2**16).should == 63966491
-    lambda { Zlib.adler32(test_string, 2**128) }.should raise_error(RangeError)
+    -> { Zlib.adler32(test_string, 2**128) }.should.raise(RangeError)
   end
 
-  it "calculates the Adler checksum for string and initial Adler value for Bignums" do
+  it "calculates the Adler checksum for string and initial Adler value for Integers" do
     test_string = "This is a test string! How exciting!%?"
     Zlib.adler32(test_string, 2**30).should == 1137642779
   end

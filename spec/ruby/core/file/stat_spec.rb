@@ -23,14 +23,14 @@ platform_is_not :windows do
 
         st = f.stat
 
-        st.file?.should == true
-        st.zero?.should == false
+        st.should.file?
+        st.should_not.zero?
         st.size.should == 8
         st.size?.should == 8
         st.blksize.should >= 0
-        st.atime.should be_kind_of(Time)
-        st.ctime.should be_kind_of(Time)
-        st.mtime.should be_kind_of(Time)
+        st.atime.should.is_a?(Time)
+        st.ctime.should.is_a?(Time)
+        st.mtime.should.is_a?(Time)
       end
     end
 
@@ -38,8 +38,29 @@ platform_is_not :windows do
       File.symlink(@file, @link)
       st = File.stat(@link)
 
-      st.file?.should == true
-      st.symlink?.should == false
+      st.should.file?
+      st.should_not.symlink?
+    end
+
+    it "returns an error when given missing non-ASCII path" do
+      missing_path = "/missingfilepath\xE3E4".b
+      -> {
+        File.stat(missing_path)
+      }.should.raise(SystemCallError) { |e|
+        [Errno::ENOENT, Errno::EILSEQ].should.include?(e.class)
+        e.message.should.include?(missing_path)
+      }
+    end
+
+    it "returns a File::Stat object for a binary path containing non-ASCII bytes" do
+      path = tmp("file_stat_binary_\u{3042}.txt")
+
+      begin
+        touch(path) { |f| f.write "rubinius" }
+        File.stat(path.b).size.should == 8
+      ensure
+        rm_r path
+      end
     end
   end
 end

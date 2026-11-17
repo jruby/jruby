@@ -31,15 +31,6 @@
 
 package org.jruby.runtime;
 
-import org.jruby.FlagRegistry;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyHash;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.ext.stringio.StringIO;
-
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -48,7 +39,6 @@ public final class Constants {
 
     public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
     public static final String RUBY_VERSION = "@version.ruby@";
-    public static final int    RUBY_REVISION = Integer.parseInt("@version.ruby.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
     public static final String VERSION = "@version.jruby@";
@@ -60,23 +50,21 @@ public final class Constants {
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
 
-    @Deprecated
-    public static final String DEFAULT_RUBY_VERSION = RUBY_MAJOR_VERSION;
-    
     /**
      * Default size for chained compilation.
      */
     public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
-    
+
     /**
-     * The max count of active methods eligible for JIT-compilation.
+     * The max count of active methods and blocks eligible for JIT-compilation.
+     * After this numbers of JIT-ed classes the compiler stops compiling.
      */
-    public static final int JIT_MAX_METHODS_LIMIT = 4096;
+    public static final int JIT_MAX_LIMIT = 10000;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    public static final int JIT_MAX_SIZE_LIMIT = 2000;
+    public static final int JIT_MAX_SIZE_LIMIT = 500;
 
     /**
      * The JIT threshold to the specified method invocation count.
@@ -90,22 +78,18 @@ public final class Constants {
     
     private static String jruby_revision = "@jruby.revision@";
 
-    @Deprecated
-    public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
+    public static final String BOGUS_REVISION = "ffffffffff";
 
     static {
         // This is populated here to avoid javac propagating the value to consumers
         // Broken apart like this to prevent substitution
         if (jruby_revision.equals("@" + "jruby.revision" + "@")) {
             // use a bogus revision
-            REVISION = "fffffff";
+            REVISION = BOGUS_REVISION;
         } else {
             REVISION = jruby_revision;
         }
     }
 
     private Constants() {}
-
-    @Deprecated
-    public static final int    RUBY_PATCHLEVEL = 0;
 }

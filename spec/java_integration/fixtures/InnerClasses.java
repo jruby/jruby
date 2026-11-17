@@ -96,4 +96,10 @@ public class InnerClasses {
 
     public static interface CapsInnerSerial extends CapsInnerInterface, Serializable {}
 
+    public static class ConflictsWithStaticFinalField {
+        public boolean ok() { return true; }
+    }
+
+    public static final ConflictsWithStaticFinalField ConflictsWithStaticFinalField = new ConflictsWithStaticFinalField();
+
 }

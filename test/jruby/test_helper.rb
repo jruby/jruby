@@ -2,29 +2,27 @@ require 'rbconfig'
 require 'jruby' if defined?(JRUBY_VERSION)
 
 module TestHelper
-  # TODO: Consider how this should work if we have --windows or similiar
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = Gem.win_platform?
   SEPARATOR = WINDOWS ? '\\' : '/'
-  # using the classloader setup to determine whether it runs inside
-  # ScriptingContainer or via commandline
+  # using the classloader setup to determine whether it runs inside ScriptingContainer or via commandline
   if defined?(JRUBY_VERSION)
     IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
   else
     IS_COMMAND_LINE_EXECUTION = true
   end
 
-  IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+  IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match(/!\//) || (!WINDOWS && RbConfig::CONFIG['bindir'].match(/:\//))
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            # assume the parent CL of jruby-classloader has a getUrls method
            urls = JRuby.runtime.getJRubyClassLoader.parent.getURLs.collect { |u| u.path }
            urls.unshift '.'
-           exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.Main"
+           exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.main.Main"
            exe
          else
            exe = '"' + File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME'])
-           exe += RbConfig::CONFIG['EXEEXT']  if RbConfig::CONFIG['EXEEXT']
+           exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            exe += '"'
            exe
          end
@@ -36,9 +34,9 @@ module TestHelper
     DEVNULL = '/dev/null'
   end
 
-  IS_JRUBY = defined?(JRUBY_VERSION) ? true : false
+  IS_JRUBY = RUBY_ENGINE == 'jruby'
 
-  if defined? JRUBY_VERSION
+  if IS_JRUBY
     arch = java.lang.System.getProperty('sun.arch.data.model')
     WINDOWS_JVM_64 = (WINDOWS && arch == '64')
   end
@@ -81,7 +79,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { sh "#{interpreter(options)} #{args.join(' ')}" }
+    sh "#{interpreter(options)} #{args.join(' ')}"
   end
 
   def jruby(*args)
@@ -100,7 +98,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}" }
+    sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}"
   end
 
   def sh(cmd)
@@ -109,14 +107,6 @@ module TestHelper
   end
 
   private
-
-  def with_jruby_shell_spawning
-    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
-    yield
-  ensure
-    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
-  end
 
   def quiet(&block)
     io = [STDOUT.dup, STDERR.dup]

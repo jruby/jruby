@@ -28,78 +28,63 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Convert.castAsProc;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
+
+@JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
-    public static void createGeneratorClass(Ruby runtime) {
-        RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyGenerator(runtime, klazz);
-            }
-        }, runtime.getEnumerator());
-
-        genc.includeModule(runtime.getEnumerable());
-        genc.defineAnnotatedMethods(RubyGenerator.class);
-
-        runtime.setGenerator(genc);
+    public static RubyClass createGeneratorClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Generator", Object, RubyGenerator::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyGenerator.class);
     }
 
     public RubyGenerator(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 
-    // generator_initialize
-    @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1)
+    @CRuby(value = "generator_initialize", file = "enumerator.c")
+    @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
-        final RubyProc proc;
-
-        if (args.length == 0) {
-            proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
+        if (Arity.checkArgumentCount(context, args, 0, 1) == 0) {
+            proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         } else {
-            if (!(args[0] instanceof RubyProc)) {
-                throw runtime.newTypeError(args[0], runtime.getProc());
-            }
+            proc = Convert.castAsProc(context, args[0]);
 
-            proc = (RubyProc) args[0];
-
-            if (block.isGiven()) {
-                runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
-            }
+            if (block.isGiven()) warn(context, "given block not used");
         }
 
-        // generator_init
-        this.proc = proc;
         return this;
     }
 
-    // generator_init_copy
+    @CRuby(value = "generator_init_copy", file = "enumerator.c")
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyGenerator)) {
-            throw context.runtime.newTypeError(other, context.runtime.getGenerator());
+        if (other instanceof RubyGenerator generator) {
+            checkFrozen();
+            this.proc = generator.proc;
+            return this;
         }
-
-        checkFrozen();
-
-        this.proc = ((RubyGenerator)other).proc;
-
-        return this;
+        throw typeError(context, other, context.runtime.getGenerator());
     }
 
-    // generator_each
-    @JRubyMethod(rest = true)
+    @CRuby(value = "generator_each", file = "enumerator.c")
+    @JRubyMethod(rest = true, keywords = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
+        return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));
     }
 
     public RubyProc getProc() {

@@ -69,6 +69,7 @@ final class FastLongMethodGenerator extends AbstractNumericMethodGenerator {
     }
 
 
+    @SuppressWarnings("ReturnValueIgnored")
     final static int getMaximumFastLongParameters() {
         try {
             com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeL6", CallContext.class, long.class,
@@ -93,6 +94,7 @@ final class FastLongMethodGenerator extends AbstractNumericMethodGenerator {
             case ULONG:
             case LONG_LONG:
             case ULONG_LONG:
+//            case LONGDOUBLE:
             case POINTER:
                 return true;
 

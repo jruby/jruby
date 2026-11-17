@@ -1,0 +1,2 @@
+fails:ObjectSpace::WeakKeyMap#[] compares keys with the same #hash value via #eql?
+fails:ObjectSpace::WeakKeyMap#[] returns nil and does not raise error when a key cannot be garbage collected

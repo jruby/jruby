@@ -1,2 +1,0 @@
-fails:Set#flatten when Set contains a Set-like object returns a copy of self with each included Set-like object flattened
-fails:Set#flatten! when Set contains a Set-like object flattens self, including Set-like objects

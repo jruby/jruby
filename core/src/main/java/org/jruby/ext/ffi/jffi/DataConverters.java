@@ -2,6 +2,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
 import org.jruby.*;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -13,15 +14,15 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
 
-/**
- *
- */
 public class DataConverters {
     @SuppressWarnings("unchecked")
     private static final Map<IRubyObject, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
 
-    @Deprecated
+    // Deprecated but no replacement
+    @Deprecated(since = "1.7.17")
     static boolean isEnumConversionRequired(Type type, RubyHash enums) {
         if (type instanceof Type.Builtin && enums != null && !enums.isEmpty()) {
             switch (type.getNativeType()) {
@@ -35,6 +36,7 @@ public class DataConverters {
                 case ULONG:
                 case LONG_LONG:
                 case ULONG_LONG:
+//                case LONGDOUBLE:
                     return true;
                     
                 default:
@@ -57,6 +59,7 @@ public class DataConverters {
                 case ULONG:
                 case LONG_LONG:
                 case ULONG_LONG:
+//                case LONGDOUBLE:
                     return true;
                     
                 default:
@@ -92,7 +95,8 @@ public class DataConverters {
         return null;
     }
 
-    @Deprecated
+    // Deprecated but no replacement
+    @Deprecated(since = "1.7.17")
     static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
         if (isEnumConversionRequired(type, enums)) {
             NativeDataConverter converter = enumConverters.get(enums);
@@ -167,13 +171,13 @@ public class DataConverters {
 
         private synchronized IRubyObject lookupAndCacheValue(ThreadContext context, IRubyObject obj) {
             IRubyObject value = enums instanceof Enums ? ((Enums)enums).mapSymbol(context, obj) : ((RubyHash)enums).fastARef(obj);
-            if (value.isNil() || !(value instanceof RubyInteger)) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
+            if (value.isNil() || !(value instanceof RubyInteger integer)) {
+                throw argumentError(context, "invalid enum value, " + obj.inspect(context));
             }
 
             IdentityHashMap<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>(symbolToValue);
-            s2v.put((RubySymbol) obj, (RubyInteger) value);
-            this.symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>(s2v);
+            s2v.put((RubySymbol) obj, integer);
+            this.symbolToValue = new IdentityHashMap<>(s2v);
 
             return value;
         }
@@ -217,28 +221,21 @@ public class DataConverters {
         }
 
         public IRubyObject fromNative(ThreadContext context, IRubyObject obj) {
-            if (!(obj instanceof Pointer)) {
-                throw context.runtime.newTypeError("internal error: non-pointer");
+            if (obj instanceof Pointer ptr) {
+                if (ptr.getAddress() == 0) return context.nil;
+
+                return new org.jruby.ext.ffi.jffi.Function(context.runtime, Access.getClass(context, "FFI", "Function"),
+                        new CodeMemoryIO(context.runtime, ptr), functionInfo, null);
             }
-            Pointer ptr = (Pointer) obj;
-            if (ptr.getAddress() == 0) {
-                return context.nil;
-            }
-            return new org.jruby.ext.ffi.jffi.Function(context.runtime,
-                    context.runtime.getModule("FFI").getClass("Function"),
-                    new CodeMemoryIO(context.runtime, ptr), functionInfo, null);
+
+            throw typeError(context, "internal error: non-pointer");
         }
 
         public IRubyObject toNative(ThreadContext context, IRubyObject obj) {
-            if (obj instanceof Pointer || obj.isNil()) {
-                return obj;
-            
-            } else if (obj instanceof RubyObject) {
-                return callbackFactory.getCallback((RubyObject) obj, callSite);
+            if (obj instanceof Pointer || obj.isNil()) return obj;
+            if (obj instanceof RubyObject rubyObj) return callbackFactory.getCallback(rubyObj, callSite);
 
-            } else {
-                throw context.runtime.newTypeError("wrong argument type.  Expected callable object");
-            }
+            throw typeError(context, "wrong argument type.  Expected callable object");
         }
     }
     

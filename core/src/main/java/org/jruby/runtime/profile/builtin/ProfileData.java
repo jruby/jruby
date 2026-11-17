@@ -220,7 +220,7 @@ public class ProfileData implements ProfileCollection {
         }
     }
     
-    String methodName(final int serial) {
+    public String methodName(final int serial) {
         if (serial == 0) return "(top)";
         return ProfilePrinter.methodName( getProfiledMethod(serial) );
     }

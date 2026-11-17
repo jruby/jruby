@@ -36,7 +36,7 @@ import org.jruby.embed.LocalVariableBehavior;
 
 /**
  * LocalContextProvider provides an instance of {@link org.jruby.embed.internal.LocalContext} from
- * a specified scope defined by {@link LocalContextScope}. Users can configure
+ * a specified scope defined by {@link org.jruby.embed.LocalContextScope LocalContextScope}. Users can configure
  * Ruby runtime by using methods of this interface before Ruby runtime is used.
  * Default scope is LocalContextScope.THREADSAFE.
  * 

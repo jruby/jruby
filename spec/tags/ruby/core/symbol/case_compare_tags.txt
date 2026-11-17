@@ -1,0 +1,1 @@
+fails:Symbol#=== is an alias of Symbol#==

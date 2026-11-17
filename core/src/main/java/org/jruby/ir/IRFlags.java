@@ -38,21 +38,8 @@ public enum IRFlags {
     //
     // This logic was extracted from an email thread on the JRuby mailing list -- Yehuda Katz & Charles Nutter
     // contributed this analysis above.
-    ACCESS_PARENTS_LOCAL_VARIABLES, // Closure is capturing parent(s) variable state
-    CAN_CAPTURE_CALLERS_BINDING,
-    CAN_RECEIVE_BREAKS,           // may receive a break during execution
-    CAN_RECEIVE_NONLOCAL_RETURNS, // may receive a non-local return during execution
-    HAS_BREAK_INSTRS,             // contains at least one break
     HAS_END_BLOCKS,               // has an end block. big de-opt flag
-    HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs => we don't need to manage bindings frame implicitly
-    HAS_LOOPS,                    // has a loop
-    HAS_NONLOCAL_RETURNS,         // has a non-local return
-    MAYBE_USING_REFINEMENTS,      // a call to 'using' discovered...is it "the" using...maybe?
-    RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
-    RECEIVES_KEYWORD_ARGS,        // receives keyword args
     REQUIRES_DYNSCOPE,            // does this scope require a dynamic scope?
-    USES_EVAL,                    // calls eval
-    USES_ZSUPER,                  // has zsuper instr
 
     REQUIRES_LASTLINE,
     REQUIRES_BACKREF,
@@ -64,10 +51,6 @@ public enum IRFlags {
     REQUIRES_CLASS,
     REQUIRES_FILENAME,
     REQUIRES_SCOPE,
-
-    DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
-    REUSE_PARENT_DYNSCOPE,        // for closures -- reuse parent's dynscope
-    CODE_COVERAGE,                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
     FLAGS_COMPUTED;               // Have these flags been computed yet?
 
     public static final EnumSet<IRFlags> REQUIRE_ALL_FRAME_FIELDS =

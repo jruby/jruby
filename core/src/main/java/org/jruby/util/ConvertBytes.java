@@ -4,7 +4,9 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConvertBytes {
@@ -35,11 +37,6 @@ public class ConvertBytes {
         this.end = str.getBegin() + end;
         this.badcheck = badcheck;
         this.base = base;
-    }
-
-    @Deprecated
-    public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
-        this(runtime, str, base, badcheck);
     }
 
     public static final byte[] intToBinaryBytes(int i) {
@@ -109,19 +106,60 @@ public class ConvertBytes {
     }
 
     public static final byte[] longToByteArray(long i, int radix, boolean upper) {
+        if (radix == 10) return longToCharBytes(i);
+
         return longToByteList(i, radix, upper ? UPPER_DIGITS : LOWER_DIGITS).bytes();
     }
 
-    public static final byte[] longToCharBytes(long i) {
-        return longToByteList(i, 10, LOWER_DIGITS).bytes();
-    }
-
+    /**
+     * Produce a new ByteList of the given long as a string in radix 10.
+     * @param i
+     * @return
+     */
     public static final ByteList longToByteList(long i) {
-        return longToByteList(i, 10, LOWER_DIGITS);
+        return longToByteListSimple(i);
     }
 
+    /**
+     * Produce a new ByteList of the given long as a string in the given radix.
+     *
+     * @param i
+     * @param radix
+     * @return
+     */
     public static final ByteList longToByteList(long i, int radix) {
+        if (radix == 10) return longToByteListSimple(i);
+
         return longToByteList(i, radix, LOWER_DIGITS);
+    }
+
+    /**
+     * Produce a ByteList of the radix 10 string form of the given long, possibly returning a cached instance for
+     * certain ranges. The result is suitable for places where transient ByteList are immediately appended into another
+     * buffer.
+     *
+     * @param i
+     * @return
+     */
+    public static final ByteList longToByteListCached(long i) {
+        if (i >= -256 && i < 256) return byteToSharedByteList((short) i);
+        return longToByteListSimple(i);
+    }
+
+    /**
+     * Return a cached ByteList for values -256..255. Any values outside this range are not cached and use of this
+     * method should be guarded appropriately. A short parameter is used to accommodate unsigned byte values 128..255.
+     * @param i
+     * @return
+     */
+    public static final ByteList byteToSharedByteList(short i) {
+        assert i >= -256 && i < 256 : "only -256 to 255 bytelists are cached";
+
+        return BYTE_RANGE_STRINGS[i + 256];
+    }
+
+    public static final void longIntoString(RubyString string, long i) {
+        longIntoStringSimple(string, i);
     }
 
     public static final ByteList longToByteList(long i, int radix, byte[] digitmap) {
@@ -129,11 +167,8 @@ public class ConvertBytes {
 
         if (i == Long.MIN_VALUE) return new ByteList(MIN_VALUE_BYTES[radix]);
 
-        boolean neg = false;
-        if (i < 0) {
-            i = -i;
-            neg = true;
-        }
+        boolean neg = i < 0;
+        if (neg) i = -i;
 
         // max 64 chars for 64-bit 2's complement integer
         int len = 64;
@@ -146,6 +181,84 @@ public class ConvertBytes {
         if (neg) buf[--pos] = (byte)'-';
 
         return new ByteList(buf, pos, len - pos);
+    }
+
+    public static final ByteList longToByteListSimple(long i) {
+        byte[] bytes = longToCharBytes(i);
+
+        return new ByteList(bytes, false);
+    }
+
+    public static final byte[] longToCharBytes(long i) {
+        if (i == 0) return ZERO_BYTES;
+
+        if (i == Long.MIN_VALUE) return MIN_VALUE_BYTES_RADIX_10;
+
+        boolean neg = i < 0;
+        if (neg) i = -i;
+
+        int newSize = sizeWithDecimalString(i, neg, 0);
+        byte[] bytes = new byte[newSize];
+
+        writeDecimalDigitsToArray(bytes, i, neg, 0, 0, newSize);
+
+        return bytes;
+    }
+
+    public static final void longIntoStringSimple(RubyString string, long i) {
+        if (i == 0) {
+            string.cat('0');
+            return;
+        }
+
+        if (i == Long.MIN_VALUE) {
+            string.cat(MIN_VALUE_BYTES_RADIX_10, 0, MIN_VALUE_BYTES_RADIX_10.length, USASCIIEncoding.INSTANCE);
+            return;
+        }
+
+        boolean neg = i < 0;
+        if (neg) i = -i;
+
+        // expand to hold all chars
+        int baseSize = string.size();
+
+        int newSize = sizeWithDecimalString(i, neg, baseSize);
+
+        // implicit modify to ensure the buffer is ready
+        string.resize(newSize);
+
+        ByteList byteList = string.getByteList();
+        byte[] bytes = byteList.getUnsafeBytes();
+        int beg = byteList.begin();
+
+        writeDecimalDigitsToArray(bytes, i, neg, beg, baseSize, newSize);
+    }
+
+    private static int sizeWithDecimalString(long i, boolean neg, int baseSize) {
+        int count = 0;
+        while (i > 9) {
+            i /= 10;
+            count++;
+        }
+        int newSize = baseSize + count + 1;
+
+        if (neg) newSize++;
+
+        return newSize;
+    }
+
+    private static void writeDecimalDigitsToArray(byte[] bytes, long i, boolean negative, int begin, int originalSize, int newSize) {
+        // write digits directly into the prepared byte array
+        for (int n = newSize - 1; i > 0; n--) {
+            bytes[begin + n] = decimalByteForDigit(i);
+            i /= 10;
+        }
+
+        if (negative) bytes[originalSize] = '-';
+    }
+
+    private static byte decimalByteForDigit(long i) {
+        return (byte) (i % 10 + '0');
     }
 
     private static final ByteList intToUnsignedByteList(int i, int shift, byte[] digitmap) {
@@ -185,11 +298,15 @@ public class ConvertBytes {
     private static final byte[] ZERO_BYTES = new byte[] {(byte)'0'};
 
     private static final byte[][] MIN_VALUE_BYTES;
+    private static final byte[] MIN_VALUE_BYTES_RADIX_10;
+    public static final int MIN_VALUE_BYTES_RADIX_10_LENGTH;
     static {
         MIN_VALUE_BYTES = new byte[37][];
         for (int i = 2; i <= 36; i++) {
             MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
         }
+        MIN_VALUE_BYTES_RADIX_10 = MIN_VALUE_BYTES[10];
+        MIN_VALUE_BYTES_RADIX_10_LENGTH = MIN_VALUE_BYTES_RADIX_10.length;
     }
 
     private static final byte[] LOWER_DIGITS = {
@@ -233,20 +350,19 @@ public class ConvertBytes {
         return out;
     }
 
-    /** rb_cstr_to_inum
-     *
-     */
+    @CRuby(value = "rb_cstr_to_inum", file = "bignum.c")
+    public static IRubyObject byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck, boolean exception) {
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum(exception);
+    }
+
+    @CRuby(value = "rb_str_convert_to_inum", file = "bignum.c")
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+        return (RubyInteger) byteListToInum(runtime, str, base, badcheck, true);
     }
 
+    @CRuby(value = "rb_str_convert_to_inum", file = "bignum.c")
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum();
-    }
-
-    @Deprecated
-    public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return byteListToInum(runtime, str, base, badcheck);
+        return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -286,6 +402,15 @@ public class ConvertBytes {
         spaceOrUnderscore['\r'] = true;
         spaceOrUnderscore[' '] = true;
         spaceOrUnderscore['_'] = true;
+    }
+
+    private static final ByteList[] BYTE_RANGE_STRINGS;
+    static {
+        BYTE_RANGE_STRINGS = new ByteList[512];
+        for (int i = -256; i < 256; i++) {
+            ByteList bytes = new ByteList(longToCharBytes(i), USASCIIEncoding.INSTANCE, false);
+            BYTE_RANGE_STRINGS[i + 256] = bytes;
+        }
     }
 
     public static byte[] bytesToUUIDBytes(byte[] randBytes, boolean upper) {
@@ -339,9 +464,7 @@ public class ConvertBytes {
         };
     }
 
-    /** conv_digit
-     *
-     */
+    @CRuby(value = "conv_digit", file = "bignum.c")
     private byte convertDigit(byte c) {
         if(c < 0) return -1;
         return conv_digit[c];
@@ -470,7 +593,7 @@ public class ConvertBytes {
                         break;
                     }
                 } else {
-                    us += 0;
+                    us = 0;
                 }
                 beg++;
             }
@@ -551,9 +674,12 @@ public class ConvertBytes {
         return 0;
     }
 
-    public RubyInteger byteListToInum() {
+    public IRubyObject byteListToInum(boolean exception) {
         if (str == null) {
-            if (badcheck) invalidString("Integer");
+            if (badcheck) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
             return RubyFixnum.zero(runtime);
         }
 
@@ -563,7 +689,10 @@ public class ConvertBytes {
 
         if (beg < end) {
             if(data[beg] == '+' || data[beg] == '-') {
-                if (badcheck) invalidString("Integer");
+                if (badcheck) {
+                    if (!exception) return runtime.getNil();
+                    invalidString("Integer");
+                }
                 return RubyFixnum.zero(runtime);
             }
         }
@@ -580,7 +709,10 @@ public class ConvertBytes {
         }
         c = convertDigit(c);
         if (c < 0 || c >= base) {
-            if (badcheck) invalidString("Integer");
+            if (badcheck) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
             return RubyFixnum.zero(runtime);
         }
 
@@ -594,10 +726,11 @@ public class ConvertBytes {
             int[] endPlace = new int[] { beg };
             long val = stringToLong(beg, endPlace, base);
             if (endPlace[0] < end && data[endPlace[0]] == '_') {
-                return bigParse(len, sign);
+                return bigParse(len, sign, exception);
             }
             if (badcheck) {
                 if (endPlace[0] == beg) {
+                    if (!exception) return runtime.getNil();
                     invalidString("Integer"); // no number
                 }
 
@@ -606,13 +739,14 @@ public class ConvertBytes {
                 }
 
                 if (endPlace[0] < end) {
+                    if (!exception) return runtime.getNil();
                     invalidString("Integer"); // trailing garbage
                 }
             }
 
             return sign ? runtime.newFixnum(val) : runtime.newFixnum(-val);
         }
-        return bigParse(len, sign);
+        return bigParse(len, sign, exception);
     }
 
     private int trailingLength() {
@@ -624,8 +758,9 @@ public class ConvertBytes {
         return newLen;
     }
 
-    private RubyInteger bigParse(int len, boolean sign) {
+    private IRubyObject bigParse(int len, boolean sign, boolean exception) {
         if (badcheck && beg < end && data[beg] == '_') {
+            if (!exception) return runtime.getNil();
             invalidString("Integer");
         }
 
@@ -641,7 +776,10 @@ public class ConvertBytes {
                 char cx = (char) c;
                 if (c == '_') {
                     if (nondigit != -1) {
-                        if (badcheck) invalidString("Integer");
+                        if (badcheck) {
+                            if (!exception) return runtime.getNil();
+                            invalidString("Integer");
+                        }
                         break;
                     }
                     nondigit = c;
@@ -661,7 +799,10 @@ public class ConvertBytes {
                 // no beg-- here because we don't null-terminate strings
                 if (str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
                 while (tmpStr < end && Character.isWhitespace(data[tmpStr])) tmpStr++;
-                if (tmpStr < end) invalidString("Integer");
+                if (tmpStr < end) {
+                    if (!exception) return runtime.getNil();
+                    invalidString("Integer");
+                }
 
             }
         }
@@ -672,10 +813,14 @@ public class ConvertBytes {
 
         if (badcheck) {
             if (str.getBegin() + 1 < beg && data[beg -1] == '_') {
+                if (!exception) return runtime.getNil();
                 invalidString("Integer");
             }
             while(beg < end && isSpace(beg)) beg++;
-            if (beg < end) invalidString("Integer");
+            if (beg < end) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
         }
 
         return RubyBignum.bignorm(runtime, z);
@@ -733,11 +878,9 @@ public class ConvertBytes {
         }
     }
 
-    /** rb_invalid_str
-     *
-     */
+    @CRuby(value = "rb_invalid_str", file = "error.c")
     private void invalidString(String type) {
-        IRubyObject s = RubyString.newString(runtime, str).inspect();
+        IRubyObject s = RubyString.newString(runtime, str).inspect(runtime.getCurrentContext());
         throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

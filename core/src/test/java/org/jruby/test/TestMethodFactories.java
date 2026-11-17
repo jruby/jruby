@@ -28,42 +28,63 @@
 package org.jruby.test;
 
 
-import org.jruby.CompatVersion;
-import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineModule;
 
-public class TestMethodFactories extends TestRubyBase {
-    public void setUp() {
-        runtime = Ruby.newInstance();
-    }
-    
+
+public class TestMethodFactories extends Base {
     public void testInvocationMethodFactory() {
-        RubyModule mod = runtime.defineModule("Wombat" + hashCode());
-
-        mod.defineAnnotatedMethods(MyBoundClass.class);
+        var mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
+        confirmMethods(mod);
+        confirmCheckArity(mod);
     }
 
     public void testReflectionMethodFactory() {
-        RubyModule mod = runtime.defineModule("Wombat" + hashCode());
-
-        mod.defineAnnotatedMethods(MyBoundClass.class);
+        RubyModule mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
 
         confirmMethods(mod);
     }
 
     private void confirmMethods(RubyModule mod) {
-        ThreadContext context = runtime.getCurrentContext();
-        
         assertTrue("module should have method defined", !mod.searchMethod("void_returning_method").isUndefined());
-        IRubyObject nil = runtime.getNil();
+        IRubyObject nil = context.nil;
         assertTrue("four-arg method should be callable",
                 mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind and be callable
+        assertTrue("one-arg method should be callable",
+                mod.searchMethod("one_arg_method").call(context, mod, mod.getMetaClass(), "one_arg_method", new IRubyObject[] {nil}).isTrue());
+        assertTrue("two-arg method should be callable",
+                mod.searchMethod("two_arg_method").call(context, mod, mod.getMetaClass(), "two_arg_method", new IRubyObject[] {nil, nil}).isTrue());
+        assertTrue("three-arg method should be callable",
+                mod.searchMethod("three_arg_method").call(context, mod, mod.getMetaClass(), "three_arg_method", new IRubyObject[] {nil, nil, nil}).isTrue());
+    }
+
+    // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+    private void confirmCheckArity(RubyModule mod) {
+        verifyCheckArityError(mod, context, "optWithCheckArityTrue", true);
+        verifyCheckArityError(mod, context, "optWithCheckArityFalse", false);
+        verifyCheckArityError(mod, context, "optWithCheckArityDefault", true);
+    }
+
+    private static void verifyCheckArityError(RubyModule mod, ThreadContext context, String method, boolean error) {
+        if (error) {
+            try {
+                mod.searchMethod(method).call(context, mod, mod.getMetaClass(), method);
+                if (error) fail("optCheckArityTrue should error with zero args");
+            } catch (ArgumentError ae) {
+                // pass
+                if (!error) fail(method + " should not error with zero args");
+                return;
+            }
+        }
     }
 
     public static class MyBoundClass {
@@ -74,8 +95,43 @@ public class TestMethodFactories extends TestRubyBase {
         // methods with required = 4 or higher should bind and be callable using reflection
         // JRUBY-3649
         @JRubyMethod(required = 4)
-        public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
-            return self.getRuntime().getTrue();
+        public static IRubyObject four_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] obj) {
+            return context.tru;
+        }
+
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind correctly
+        // instead of crashing with ArrayIndexOutOfBoundsException in loadArguments
+        @JRubyMethod(required = 1)
+        public static IRubyObject one_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 2)
+        public static IRubyObject two_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 3)
+        public static IRubyObject three_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1, checkArity = true)
+        public static IRubyObject optWithCheckArityTrue(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1, checkArity = false)
+        public static IRubyObject optWithCheckArityFalse(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1)
+        public static IRubyObject optWithCheckArityDefault(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
         }
     }
 
@@ -89,38 +145,14 @@ public class TestMethodFactories extends TestRubyBase {
     // Module methods define a second copy on singleton with proper implClass
     // jruby/jruby#3463
     public void testModuleMethodOwner() {
-        RubyModule mod = runtime.defineModule("GH3463Module");
+        RubyModule mod = defineModule(context, "GH3463Module").defineMethods(context, GH3463Module.class);
 
-        mod.defineAnnotatedMethods(GH3463Module.class);
+        DynamicMethod method = mod.singletonClass(context).searchMethod("a_module_method");
 
-        DynamicMethod method = mod.getSingletonClass().searchMethod("a_module_method");
+        assertEquals(mod.singletonClass(context), method.getImplementationClass());
 
-        assertEquals(mod.getSingletonClass(), method.getImplementationClass());
+        RubyMethod rubyMethod = (RubyMethod)mod.method(context, asSymbol(context, "a_module_method"), null);
 
-        RubyMethod rubyMethod = (RubyMethod)mod.method(runtime.newSymbol("a_module_method"));
-
-        assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
+        assertEquals(mod.singletonClass(context), rubyMethod.owner(context));
     }
-
-    @SuppressWarnings("deprecation")
-    public static class VersionedMethods {
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
-        public static IRubyObject method18(IRubyObject self) {
-            return self;
-        }
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_9)
-        public static IRubyObject method19(IRubyObject self) {
-            return self;
-        }
-    }
-
-    // #1194: ClassFormatError with Nokogiri 1.6.0
-    public void testVersionedMethods() {
-        RubyModule mod = runtime.defineModule("GH1194");
-
-        mod.defineAnnotatedMethods(VersionedMethods.class);
-
-        assertNotNull(mod.searchMethod("method"));
-    }
-
 }

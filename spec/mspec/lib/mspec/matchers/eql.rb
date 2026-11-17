@@ -9,18 +9,19 @@ class EqlMatcher
   end
 
   def failure_message
-    ["Expected #{@actual.pretty_inspect}",
-     "to have same value and type as #{@expected.pretty_inspect}"]
+    ["Expected #{MSpec.format(@actual)}",
+     "to have same value and type as #{MSpec.format(@expected)}"]
   end
 
   def negative_failure_message
-    ["Expected #{@actual.pretty_inspect}",
-     "not to have same value or type as #{@expected.pretty_inspect}"]
+    ["Expected #{MSpec.format(@actual)}",
+     "not to have same value or type as #{MSpec.format(@expected)}"]
   end
 end
 
 module MSpecMatchers
   private def eql(expected)
+    MSpec.deprecate __method__, '.should.eql?'
     EqlMatcher.new(expected)
   end
 end

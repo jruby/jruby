@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 with_feature :readline do
   describe "Readline::HISTORY.pop" do
     it "returns nil when the history is empty" do
-      Readline::HISTORY.pop.should be_nil
+      Readline::HISTORY.pop.should == nil
     end
 
     it "returns and removes the last item from the history" do
@@ -18,13 +18,6 @@ with_feature :readline do
 
       Readline::HISTORY.pop.should == "1"
       Readline::HISTORY.size.should == 0
-    end
-
-    it "taints the returned strings" do
-      Readline::HISTORY.push("1", "2", "3")
-      Readline::HISTORY.pop.tainted?.should be_true
-      Readline::HISTORY.pop.tainted?.should be_true
-      Readline::HISTORY.pop.tainted?.should be_true
     end
   end
 end

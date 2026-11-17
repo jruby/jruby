@@ -6,7 +6,7 @@ mvn verify -Papps
 ```
 or from the jruby root directory
 ```
-mvn -Papps
+./mvnw -Papps
 ```
 
 

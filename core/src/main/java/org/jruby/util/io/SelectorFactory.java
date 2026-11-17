@@ -36,9 +36,8 @@ import java.net.BindException;
 
 import org.jruby.Ruby;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
+import static org.jruby.api.Warn.warn;
+
 public class SelectorFactory {
     // If it doesn't work after 20 times it's unlikely to ever work. Bailout is only option.
     private final static int RETRY_MAX = 20; 
@@ -54,9 +53,7 @@ public class SelectorFactory {
                    e.getCause() instanceof BindException &&
                    retryCount < RETRY_MAX) {
                     retryCount++;
-                    if(runtime != null) {
-                        runtime.getWarnings().warn("try number " + retryCount + " to get a selector");
-                    }
+                    if (runtime != null) warn(runtime.getCurrentContext(), "try number " + retryCount + " to get a selector");
                 } else {
                     throw e;
                 }

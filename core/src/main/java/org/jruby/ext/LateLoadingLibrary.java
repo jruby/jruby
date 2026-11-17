@@ -37,7 +37,7 @@ import org.jruby.runtime.load.LoadService;
 public class LateLoadingLibrary implements Library {
     private final String libraryName;
     private final String className;
-    private ClassLoader classLoader;
+    private final ClassLoader classLoader;
     
     public LateLoadingLibrary(String libraryName, String className, ClassLoader classLoader) {
         this.libraryName = libraryName;

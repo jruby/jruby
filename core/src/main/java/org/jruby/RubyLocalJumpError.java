@@ -33,7 +33,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby LocalJumpError.
@@ -51,14 +54,11 @@ public class RubyLocalJumpError extends RubyStandardError {
         }
     }
     
-    private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = (runtime, klass) -> new RubyLocalJumpError(runtime, klass);
+    private static final ObjectAllocator LOCALJUMPERROR_ALLOCATOR = RubyLocalJumpError::new;
 
-    public static RubyClass define(Ruby runtime, RubyClass standardErrorClass) {
-        RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
-        
-        nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);
-
-        return nameErrorClass;
+    public static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "LocalJumpError", StandardError, LOCALJUMPERROR_ALLOCATOR).
+                defineMethods(context, RubyLocalJumpError.class);
     }
     
     private Reason reason;
@@ -91,5 +91,12 @@ public class RubyLocalJumpError extends RubyStandardError {
     @JRubyMethod
     public IRubyObject exit_value() {
         return (IRubyObject)getInternalVariable("exit_value");
+    }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyLocalJumpError exception = (RubyLocalJumpError)clone;
+        exception.reason = reason;
     }
 }

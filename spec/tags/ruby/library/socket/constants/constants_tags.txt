@@ -1,2 +1,1 @@
 fails:Socket::Constants defines SCM options
-fails:Socket::Constants defines error options

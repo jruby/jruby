@@ -34,6 +34,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.CallSite;
@@ -41,20 +42,17 @@ import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.argumentError;
 
 /** Implementation of the Comparable module.
  *
  */
 @JRubyModule(name="Comparable")
 public class RubyComparable {
-    public static RubyModule createComparable(Ruby runtime) {
-        RubyModule comparableModule = runtime.defineModule("Comparable");
-        runtime.setComparable(comparableModule);
-
-        comparableModule.defineAnnotatedMethods(RubyComparable.class);
-
-        return comparableModule;
+    public static RubyModule createComparable(ThreadContext context) {
+        return defineModule(context, "Comparable").defineMethods(context, RubyComparable.class);
     }
 
     /*  ================
@@ -62,27 +60,13 @@ public class RubyComparable {
      *  ================
      */
 
-    /** rb_cmpint
-     *
-     */
+    @CRuby("rb_cmpint")
     public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
-        if (val == context.nil) cmperr(a, b);
-        if (val instanceof RubyFixnum) {
-            final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
+        if (val == context.nil) cmperr(context, a, b);
+        if (val instanceof RubyFixnum fixnum) return Integer.compare(toInt(context, fixnum), 0);
+        if (val instanceof RubyBignum bignum) return bignum.signum(context) == -1 ? -1 : 1;
 
-            if (asInt > 0) {
-                return 1;
-            }
-
-            if (asInt < 0) {
-                return -1;
-            }
-
-            return 0;
-        }
-        if (val instanceof RubyBignum) return ((RubyBignum) val).getValue().signum() == -1 ? -1 : 1;
-
-        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        var zero = RubyFixnum.zero(context.runtime);
 
         if (op_gt.call(context, val, val, zero).isTrue()) return 1;
         if (op_lt.call(context, val, val, zero).isTrue()) return -1;
@@ -105,43 +89,33 @@ public class RubyComparable {
         return cmpint(context, op_gt, op_lt, cmpResult, a, b);
     }
 
-    /** rb_cmperr
-     *
-     */
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
-        IRubyObject target;
-        if (other.isImmediate() || !(other.isNil() || other.isTrue() || other == recv.getRuntime().getFalse())) {
-            target = other.inspect();
-        } else {
-            target = other.getType();
-        }
-
-        throw recv.getRuntime().newArgumentError("comparison of " + recv.getType() + " with " + target + " failed");
+        return cmperr(((RubyBasicObject) recv).getCurrentContext(), recv, other);
     }
 
-    /** rb_invcmp
-     *
-     */
+    @CRuby(value = "rb_cmperr", file = "compar.c")
+    public static IRubyObject cmperr(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        IRubyObject target = other.isImmediate() || !(other.isNil() || other.isTrue() || other == context.fals) ?
+                other.inspect(context) : other.getType();
+
+        throw argumentError(context, "comparison of " + recv.getType() + " with " + target + " failed");
+    }
+
+    @CRuby(value = "rb_invcmp", file = "compar.c")
     public static IRubyObject invcmp(final ThreadContext context, final IRubyObject recv, final IRubyObject other) {
-        return invcmp(context, DEFAULT_INVCMP, recv, other);
+        return invcmp(context, RubyComparable::invcmpRecursive, recv, other);
     }
 
-    private static final ThreadContext.RecursiveFunctionEx DEFAULT_INVCMP = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
-            if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.nil;
-            return sites(context).op_cmp.call(context, other, other, recv);
-        }
-    };
+    private static IRubyObject invcmpRecursive(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
+        if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.nil;
+        return sites(context).op_cmp.call(context, other, other, recv);
+    }
 
-    /** rb_invcmp
-     *
-     */
-    public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx func, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = context.safeRecurse(func, recv, other, "<=>", true);
-
-        if (result.isNil()) return result;
-        return RubyFixnum.newFixnum(context.runtime, -cmpint(context, result, recv, other));
+    @CRuby(value = "rb_invcmp", file = "compar.c")
+    public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx<IRubyObject> func, IRubyObject recv, IRubyObject other) {
+        var result = context.safeRecurse(func, recv, other, "<=>", true);
+        return result.isNil() ? context.nil : asFixnum(context, -cmpint(context, result, recv, other));
     }
 
     /*  ================
@@ -152,112 +126,108 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      *
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return callCmpMethod(context, recv, other, context.fals);
     }
 
-    @Deprecated
-    public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return op_equal(context, recv, other);
-    }
-
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
-        final Ruby runtime = context.runtime;
-
         if (recv == other) return context.tru;
 
-        IRubyObject result = context.safeRecurse(CMP_RECURSIVE, other, recv, "<=>", true);
+        var result = context.safeRecurse(
+                (ctx, obj, self, recur) -> recur ? ctx.nil : sites(ctx).op_cmp.call(ctx, self, self, obj),
+                other, recv, "<=>", true);
 
         // This is only to prevent throwing exceptions by cmperr - it has poor performance
-        if ( result.isNil() ) return returnValueOnError;
+        if (result.isNil()) return returnValueOnError;
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
+        return asBoolean(context, cmpint(context, result, recv, other) == 0);
     }
 
-    /** cmp_gt
-     *
-     */
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN
-    @JRubyMethod(name = ">", required = 1)
+    @CRuby(value = "cmp_gt", file = "compar.c")
+    @JRubyMethod(name = ">")
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) > 0);
+        return asBoolean(context, cmpint(context, result, recv, other) > 0);
     }
 
-    /** cmp_ge
-     *
-     */
-    @JRubyMethod(name = ">=", required = 1)
+    @CRuby(value = "cmp_ge", file = "compar.c")
+    @JRubyMethod(name = ">=")
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) >= 0);
+        return asBoolean(context, cmpint(context, result, recv, other) >= 0);
     }
 
-    /** cmp_lt
-     *
-     */
-    @JRubyMethod(name = "<", required = 1)
+    @CRuby(value = "cmp_lt", file = "compar.c")
+    @JRubyMethod(name = "<")
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
-
-        if (result.isNil()) cmperr(recv, other);
-
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) < 0);
+        return op_lt(context, sites(context).op_cmp, recv, other);
     }
 
     public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = cmp.call(context, recv, recv, other);
+        var result = cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) < 0);
+        return asBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
-    /** cmp_le
-     *
-     */
-    @JRubyMethod(name = "<=", required = 1)
+    @CRuby(value = "cmp_le", file = "compar.c")
+    @JRubyMethod(name = "<=")
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) <= 0);
+        return asBoolean(context, cmpint(context, result, recv, other) <= 0);
     }
 
-    /** cmp_between
-     *
-     */
-    @JRubyMethod(name = "between?", required = 2)
+    @CRuby(value = "cmp_between", file = "compar.c")
+    @JRubyMethod(name = "between?")
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
-        return context.runtime.newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+        return asBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+    }
+
+    @JRubyMethod(name = "clamp")
+    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        var range = castAsRange(context, arg);
+        var min = range.begin(context);
+        var max = range.end(context);
+
+        if (!max.isNil() && range.isExcludeEnd()) throw argumentError(context, "cannot clamp with an exclusive range");
+
+        return clamp(context, recv, min, max);
     }
 
     @JRubyMethod(name = "clamp")
     public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject min, IRubyObject max) {
-        int c;
-
         ComparableSites sites = sites(context);
         CallSite op_gt = sites.op_gt;
         CallSite op_lt = sites.op_lt;
         CallSite op_cmp = sites.op_cmp;
 
-        if (cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
-            throw context.runtime.newArgumentError("min argument must be smaller than max argument");
+        if (!min.isNil() && !max.isNil() && cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
+            throw argumentError(context, "min argument must be less than or equal to max argument");
         }
 
-        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
-        if (c == 0) return recv;
-        if (c < 0) return min;
-        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
-        if (c > 0) return max;
+        if (!min.isNil()) {
+            int c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
+            if (c == 0) return recv;
+            if (c < 0) return min;
+        }
+
+        if (!max.isNil()) {
+            int c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
+            if (c > 0) return max;
+        }
+
         return recv;
     }
 
@@ -265,13 +235,4 @@ public class RubyComparable {
         return context.sites.Comparable;
     }
 
-    private static class CmpRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
-            if (recur) return context.nil;
-            return sites(context).op_cmp.call(context, self, self, other);
-        }
-    }
-
-    private static final CmpRecursive CMP_RECURSIVE = new CmpRecursive();
 }

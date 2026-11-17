@@ -1,1 +1,0 @@
-fails:BigDecimal#add with Object tries to coerce the other operand to self

@@ -57,14 +57,25 @@ describe "Loading scripts from jar files" do
 end
 
 describe "Opening files from a jar file" do
-  # jruby/jruby#3399
-  it "silently fails to seek on those files" do
+  # jruby/jruby#3399, jruby/jruby#9727
+  it "successfully seeks on those files" do
     File.open("uri:classloader:jruby/kernel.rb") do |kernel_file|
       expect(kernel_file.pos).to eq(0)
       kernel_file.read(5)
-      expect(kernel_file.pos).to eq(0)
+      expect(kernel_file.pos).to eq(5)
       expect(kernel_file.seek(50)).to eq(0)
+      expect(kernel_file.pos).to eq(50)
+    end
+  end
+
+  it "behaves like pread on real files" do
+    File.open("uri:classloader:jruby/kernel.rb") do |kernel_file|
+      read1 = kernel_file.pread(5, 0)
       expect(kernel_file.pos).to eq(0)
+      kernel_file.seek(10)
+      expect(kernel_file.pread(5, 0)).to eq(read1)
+      expect(kernel_file.pos).to eq(10)
+      expect { kernel_file.pread(5, kernel_file.size) }.to raise_error(EOFError)
     end
   end
 end

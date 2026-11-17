@@ -1,34 +1,55 @@
 #ifndef RUBYSPEC_H
 #define RUBYSPEC_H
 
-/* Define convenience macros similar to the mspec guards to assist
- * with version incompatibilities.
- */
+/* Define convenience macros similar to the mspec
+ * guards to assist with version incompatibilities. */
 
 #include <ruby.h>
-#ifdef HAVE_RUBY_VERSION_H
-# include <ruby/version.h>
+#include <ruby/version.h>
+
+/* Before rb_len_t, lengths and indices were `long` */
+#ifndef RB_LEN2NUM
+typedef long rb_len_t;
+#endif
+
+/* copied from ext/-test-/cxxanyargs/cxxanyargs.cpp */
+#if 0 /* Ignore deprecation warnings */
+
+#elif defined(_MSC_VER)
+#pragma warning(disable : 4996)
+
+#elif defined(__INTEL_COMPILER)
+#pragma warning(disable : 1786)
+
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#elif defined(__SUNPRO_CC)
+#pragma error_messages (off,symdeprecated)
+
 #else
-# include <version.h>
+// :FIXME: improve here for your compiler.
+
 #endif
 
-#ifndef RUBY_VERSION_MAJOR
-#define RUBY_VERSION_MAJOR RUBY_API_VERSION_MAJOR
-#define RUBY_VERSION_MINOR RUBY_API_VERSION_MINOR
-#define RUBY_VERSION_TEENY RUBY_API_VERSION_TEENY
+#define RUBY_VERSION_BEFORE(major,minor) \
+  ((RUBY_API_VERSION_MAJOR < (major)) || \
+   (RUBY_API_VERSION_MAJOR == (major) && RUBY_API_VERSION_MINOR < (minor)))
+#define RUBY_VERSION_SINCE(major,minor) (!RUBY_VERSION_BEFORE(major, minor))
+
+#if RUBY_VERSION_SINCE(4, 1)
+#define RUBY_VERSION_IS_4_1
 #endif
 
-#define RUBY_VERSION_BEFORE(major,minor,teeny) \
-  ((RUBY_VERSION_MAJOR < (major)) || \
-   (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
-   (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
-
-#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 6)
-#define RUBY_VERSION_IS_2_6
+#if RUBY_VERSION_SINCE(4, 0)
+#define RUBY_VERSION_IS_4_0
 #endif
 
-#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 4)
-#define RUBY_VERSION_IS_2_4
+#if RUBY_VERSION_SINCE(3, 4)
+#define RUBY_VERSION_IS_3_4
 #endif
 
 #endif

@@ -1,2 +1,4 @@
 fails:UDPSocket#recvfrom_nonblock using IPv6 using a bound socket with data available the returned address Array uses the hostname of the client
 fails:UDPSocket#recvfrom_nonblock using IPv6 using a bound socket with data available the returned address Array uses the IP address of the client
+fails:UDPSocket#recvfrom_nonblock using IPv4 using a bound socket with data available preserves the encoding of the given buffer
+fails:UDPSocket#recvfrom_nonblock using IPv6 using a bound socket with data available preserves the encoding of the given buffer

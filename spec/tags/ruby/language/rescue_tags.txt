@@ -1,0 +1,1 @@
+fails:The rescue keyword capturing in a local variable (that defines it) captures successfully at the top-level

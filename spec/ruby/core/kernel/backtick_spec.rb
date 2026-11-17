@@ -11,7 +11,7 @@ describe "Kernel#`" do
   end
 
   it "is a private method" do
-    Kernel.should have_private_instance_method(:`)
+    Kernel.private_instance_methods(false).should.include?(:`)
   end
 
   it "returns the standard output of the executed sub-process" do
@@ -21,35 +21,39 @@ describe "Kernel#`" do
 
   it "lets the standard error stream pass through to the inherited stderr" do
     cmd = ruby_cmd('STDERR.print "error stream"')
-    lambda {
+    -> {
       `#{cmd}`.should == ""
     }.should output_to_fd("error stream", STDERR)
   end
 
   it "produces a String in the default external encoding" do
     Encoding.default_external = Encoding::SHIFT_JIS
-    `echo disc`.encoding.should equal(Encoding::SHIFT_JIS)
+    `echo disc`.encoding.should.equal?(Encoding::SHIFT_JIS)
   end
 
   it "raises an Errno::ENOENT if the command is not executable" do
-    lambda { `nonexistent_command` }.should raise_error(Errno::ENOENT)
+    -> { `nonexistent_command` }.should.raise(Errno::ENOENT)
   end
 
   platform_is_not :windows do
+    it "handles invalid UTF-8 bytes in command" do
+      `echo "testing\xC2 a non UTF-8 string"`.b.should == "testing\xC2 a non UTF-8 string\n".b
+    end
+
     it "sets $? to the exit status of the executed sub-process" do
       ip = 'world'
       `echo disc #{ip}`
-      $?.should be_kind_of(Process::Status)
-      $?.stopped?.should == false
-      $?.exited?.should == true
+      $?.should.is_a?(Process::Status)
+      $?.should_not.stopped?
+      $?.should.exited?
       $?.exitstatus.should == 0
-      $?.success?.should == true
+      $?.should.success?
       `echo disc #{ip}; exit 99`
-      $?.should be_kind_of(Process::Status)
-      $?.stopped?.should == false
-      $?.exited?.should == true
+      $?.should.is_a?(Process::Status)
+      $?.should_not.stopped?
+      $?.should.exited?
       $?.exitstatus.should == 99
-      $?.success?.should == false
+      $?.should_not.success?
     end
   end
 
@@ -57,17 +61,17 @@ describe "Kernel#`" do
     it "sets $? to the exit status of the executed sub-process" do
       ip = 'world'
       `echo disc #{ip}`
-      $?.should be_kind_of(Process::Status)
-      $?.stopped?.should == false
-      $?.exited?.should == true
+      $?.should.is_a?(Process::Status)
+      $?.should_not.stopped?
+      $?.should.exited?
       $?.exitstatus.should == 0
-      $?.success?.should == true
+      $?.should.success?
       `echo disc #{ip}& exit 99`
-      $?.should be_kind_of(Process::Status)
-      $?.stopped?.should == false
-      $?.exited?.should == true
+      $?.should.is_a?(Process::Status)
+      $?.should_not.stopped?
+      $?.should.exited?
       $?.exitstatus.should == 99
-      $?.success?.should == false
+      $?.should_not.success?
     end
   end
 end

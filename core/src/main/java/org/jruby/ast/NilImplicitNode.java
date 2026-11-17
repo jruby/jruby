@@ -1,7 +1,5 @@
 package org.jruby.ast;
 
-import org.jruby.lexer.yacc.InvalidSourcePosition;
-
 /**
  * A node which behaves like a nil node, but is not actually present in the AST as a syntactical
  * element (e.g. IDE's should ignore occurrences of this node. We have this as separate subclass
@@ -9,12 +7,30 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
  */
 public class NilImplicitNode extends NilNode implements InvisibleNode {
     public static final NilImplicitNode NIL = new NilImplicitNode();
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // shared singleton: it has no position of its own
+    }
     
     public NilImplicitNode() {
-        super(InvalidSourcePosition.INSTANCE);
+        super(-1);
     }
 
     public boolean isNil() {
         return true;
+    }
+
+    // NIL is shared by every parse, so marking it for one AST would mark it in all later ones.
+    @Override
+    public void setNewline() {
+    }
+
+    @Override
+    public void setBacktraceNewline() {
+    }
+
+    @Override
+    public void setLine(int line) {
     }
 }

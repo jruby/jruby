@@ -31,17 +31,29 @@ describe "Dir.foreach" do
   end
 
   it "raises a SystemCallError if passed a nonexistent directory" do
-    lambda { Dir.foreach(DirSpecs.nonexistent) {} }.should raise_error(SystemCallError)
+    -> { Dir.foreach(DirSpecs.nonexistent) {} }.should.raise(SystemCallError)
   end
 
   it "returns an Enumerator if no block given" do
-    Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(Enumerator)
+    Dir.foreach(DirSpecs.mock_dir).should.instance_of?(Enumerator)
     Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
+  end
+
+  it "accepts an encoding keyword for the encoding of the entries" do
+    dirs = Dir.foreach("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8").to_a.sort
+    dirs.each { |dir| dir.encoding.should == Encoding::UTF_8 }
+
+    dirs = Dir.foreach("#{DirSpecs.mock_dir}/deeply/nested", encoding: Encoding::ISO_8859_1).to_a.sort
+    dirs.each { |dir| dir.encoding.should == Encoding::ISO_8859_1 }
+
+    Dir.foreach("#{DirSpecs.mock_dir}/deeply/nested", encoding: Encoding::ISO_8859_1) do |f|
+      f.encoding.should == Encoding::ISO_8859_1
+    end
   end
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(Enumerator)
+      Dir.foreach(DirSpecs.mock_dir).should.instance_of?(Enumerator)
       Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
     end
 
@@ -50,6 +62,20 @@ describe "Dir.foreach" do
         it "should return nil" do
           Dir.foreach(DirSpecs.mock_dir).size.should == nil
         end
+      end
+    end
+  end
+
+  platform_is :darwin do
+    it "accepts a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+      dir = tmp("dir_foreach_\u{3042}")
+      non_utf8_dir = dir.encode(Encoding::Windows_31J)
+
+      begin
+        mkdir_p(dir)
+        Dir.foreach(non_utf8_dir).to_a.should.include?(".".encode(Encoding::Windows_31J))
+      ensure
+        rm_r dir
       end
     end
   end

@@ -36,13 +36,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Represents bidirectional, both Java and Ruby, variables. Users don't instantiate
  * BiVariable type objects. Instead, users can get this type object from
- * {@link BiVariableMap} after a variable is set to the map. Users can set variables
- * in Java program explicitly through put() methods in {@link ScriptingContainer}
- * and {@link BiVariableMap} or equivalents. However, variables in Ruby scripts are
+ * {@link org.jruby.embed.internal.BiVariableMap BiVariableMap} after a variable is set to the map. Users can set variables
+ * in Java program explicitly through put() methods in {@link org.jruby.embed.ScriptingContainer ScriptingContainer}
+ * and {@link org.jruby.embed.internal.BiVariableMap BiVariableMap} or equivalents. However, variables in Ruby scripts are
  * set in the map implicitly. When variables and constants
  * are used in the script, those are automatically saved in the map converting to this type.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface BiVariable {
     /**
@@ -115,7 +115,6 @@ public interface BiVariable {
      * Sets a org.jruby.runtime.builtin.IRubyObject type, Ruby object as a value
      * of this object. At the same time, an equivalent Java object is set automatically.
      *
-     * @param runtime is environment where a variable injection occurs
      * @param rubyObject is a variable value to be set.
      */
     public void setRubyObject(IRubyObject rubyObject);

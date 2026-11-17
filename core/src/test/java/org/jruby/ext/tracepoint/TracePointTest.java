@@ -1,14 +1,11 @@
 package org.jruby.ext.tracepoint;
 
 import junit.framework.TestCase;
-import org.apache.bsf.util.IOUtils;
-import org.apache.bsf.util.StringUtils;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.cli.Options;
 
 import java.io.IOException;
@@ -20,8 +17,7 @@ import java.io.InputStream;
  */
 public class TracePointTest extends TestCase {
 
-
-    public void testEventIsNotNil() throws IOException {
+    public void testEvents() throws IOException {
 
         boolean fullTraceEnabled = RubyInstanceConfig.FULL_TRACE_ENABLED;
         boolean debugFulltrace = Options.DEBUG_FULLTRACE.load();

@@ -37,14 +37,18 @@ import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.typeError;
 
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
  * just a stub.
- * <p>
  *
  * @author Charles O Nutter (headius@headius.com)
  */
@@ -53,59 +57,40 @@ public class RubyThreadGroup extends RubyObject {
     private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
     private boolean enclosed = false;
 
-    public static RubyClass createThreadGroupClass(Ruby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
-        runtime.setThreadGroup(threadGroupClass);
-
-        threadGroupClass.setClassIndex(ClassIndex.THREADGROUP);
-        
-        threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
+    public static RubyClass createThreadGroupClass(ThreadContext context, RubyClass Object) {
+        RubyClass ThreadGroup = defineClass(context, "ThreadGroup", Object, RubyThreadGroup::new).
+                classIndex(ClassIndex.THREADGROUP).
+                defineMethods(context, RubyThreadGroup.class);
         
         // create the default thread group
-        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
-        runtime.setDefaultThreadGroup(defaultThreadGroup);
-        threadGroupClass.defineConstant("Default", defaultThreadGroup);
+        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(context.runtime, ThreadGroup);
+        context.runtime.setDefaultThreadGroup(defaultThreadGroup);
+        ThreadGroup.defineConstant(context, "Default", defaultThreadGroup);
 
-        return threadGroupClass;
+        return ThreadGroup;
     }
 
-    private static final ObjectAllocator THREADGROUP_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new RubyThreadGroup(runtime, klazz);
-        }
-    };
-
-    @JRubyMethod(name = "add", required = 1)
-    public IRubyObject add(IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
+    @JRubyMethod(name = "add")
+    public IRubyObject add(ThreadContext context, IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread thread)) throw typeError(context, rubyThread, "Thread");
         
         // synchronize on the RubyThread for threadgroup updates
-        if (isFrozen()) {
-            throw getRuntime().newTypeError("can't add to the frozen thread group");
-        }
-
-        if (enclosed) {
-            throw getRuntime().newTypeError("can't move to the enclosed thread group");
-        }
-        
-        RubyThread thread = (RubyThread)rubyThread;
+        if (isFrozen()) throw typeError(context, "can't add to the frozen thread group");
+        if (enclosed) throw typeError(context, "can't move to the enclosed thread group");
 
         RubyThreadGroup threadGroup = thread.getThreadGroup();
 
         // edit by headius: ThreadGroup may be null, perhaps if this is an adopted thread etc
-        if(threadGroup != null) {
-            if (threadGroup.isFrozen()) {
-                throw getRuntime().newTypeError("can't move from the frozen thread group");
-            }
-
-            if (threadGroup.enclosed_p(block).isTrue()) {
-                throw getRuntime().newTypeError("can't move from the enclosed thread group");
-            }
+        if (threadGroup != null) {
+            if (threadGroup.isFrozen()) throw typeError(context, "can't move from the frozen thread group");
+            if (threadGroup.enclosed_p(block).isTrue()) throw typeError(context, "can't move from the enclosed thread group");
         }
 
         // we only add live threads
-        if (thread.alive_p().isTrue()) {
+        if (thread.isAlive()) {
             addDirectly(thread);
+        } else {
+            thread.setThreadGroup(this);
         }
         
         return this;
@@ -126,7 +111,6 @@ public class RubyThreadGroup extends RubyObject {
     
     public void remove(RubyThread rubyThread) {
         synchronized (rubyThread) {
-            rubyThread.setThreadGroup(null);
             rubyThreadList.remove(rubyThread);
         }
     }
@@ -139,18 +123,26 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     @JRubyMethod(name = "enclosed?")
+    public IRubyObject enclosed_p(ThreadContext context, Block block) {
+        return asBoolean(context, enclosed);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject enclosed_p(Block block) {
-        return getRuntime().newBoolean(enclosed);
+        return enclosed_p(getRuntime().getCurrentContext(), block);
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject list(Block block) {
+        return list(getCurrentContext(), block);
     }
 
     @JRubyMethod
-    public IRubyObject list(Block block) {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+    public IRubyObject list(ThreadContext context, Block block) {
+        var ary = newArray(context);
         synchronized (rubyThreadList) {
             for (RubyThread thread : rubyThreadList) {
-                if (thread != null) {
-                    ary.append(thread);
-                }
+                if (thread != null) ary.append(context, thread);
             }
         }
         return ary;
@@ -168,6 +160,13 @@ public class RubyThreadGroup extends RubyObject {
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
+    }
+
+    @Deprecated(since = "9.4.6.0")
+    public IRubyObject add(IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread)) throw typeError(getRuntime().getCurrentContext(), rubyThread, "Thread");
+
+        return add(((RubyThread) rubyThread).getContext(), rubyThread, block);
     }
 
 }

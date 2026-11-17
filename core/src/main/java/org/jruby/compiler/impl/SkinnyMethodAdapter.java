@@ -47,10 +47,6 @@ import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
-/**
- *
- * @author headius
- */
 public final class SkinnyMethodAdapter extends MethodVisitor {
     private final static boolean DEBUG;
 
@@ -73,17 +69,19 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     private final ClassVisitor cv;
     private final Label start;
     private final Label end;
+    private final String signature;
 
     private MethodVisitor method;
     private Printer printer;
 
-    public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
+    public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String genericTypeInformation, String[] exceptions) {
         super(ASM4);
-        setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
+        setMethodVisitor(cv.visitMethod(flags, name, signature, genericTypeInformation, exceptions));
         this.cv = cv;
         this.name = name;
         this.start = new Label();
         this.end = new Label();
+        this.signature = signature;
     }
 
     public ClassVisitor getClassVisitor() {
@@ -101,6 +99,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         } else {
             this.method = mv;
         }
+    }
+    
+    public String getSignature() {
+    	return signature;
     }
 
     /**
@@ -196,6 +198,14 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
             }
         } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
             sipush(value);
+        } else {
+            ldc(value);
+        }
+    }
+
+    public void pushLong(long value) {
+        if (value == 0) {
+            lconst_0();
         } else {
             ldc(value);
         }
@@ -558,6 +568,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     public void if_icmpgt(Label arg0) {
         getMethodVisitor().visitJumpInsn(IF_ICMPGT, arg0);
     }
+
+    public void if_icmpge(Label arg0) {
+        getMethodVisitor().visitJumpInsn(IF_ICMPGE, arg0);
+    }
     
     public void if_icmplt(Label arg0) {
         getMethodVisitor().visitJumpInsn(IF_ICMPLT, arg0);
@@ -621,6 +635,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
 
     public void local(int index, String name, Type type) {
+        getMethodVisitor().visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
+    }
+
+    public void local(int index, String name, Type type, Label start) {
         getMethodVisitor().visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
     }
 
@@ -950,18 +968,6 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitFieldInsn(arg0, arg1, arg2, arg3);
     }
 
-    @Override
-    @Deprecated
-    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
-    }
-
-    @Override
-    @Deprecated
-    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3, boolean arg4) {
-        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3, arg4);
-    }
-    
     @Override
     public void visitInvokeDynamicInsn(String arg0, String arg1, Handle arg2, Object... arg3) {
         getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);

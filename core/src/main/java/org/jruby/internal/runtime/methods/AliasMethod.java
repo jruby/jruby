@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -32,16 +33,22 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents a method which has been aliased.
@@ -53,13 +60,16 @@ import org.jruby.runtime.callsite.CacheEntry;
 public class AliasMethod extends DynamicMethod {
     private final CacheEntry entry;
     private final boolean findImplementer;
+    private final String newName;
+    private final String compoundName;
 
     /**
      * For some java native methods it is convenient to pass in a String instead
      * of a ByteList.
      */ 
-    public AliasMethod(RubyModule implementationClass, CacheEntry entry, String oldName) {
-        super(implementationClass, entry.method.getVisibility(), oldName);
+    public AliasMethod(RubyModule implementationClass, CacheEntry entry, String newName, String oldName) {
+        super(implementationClass, determineVisibility(newName, entry.method.getVisibility()), oldName);
+        entry.method.getRealMethod().setAliased();
 
         this.entry = entry;
 
@@ -70,84 +80,101 @@ public class AliasMethod extends DynamicMethod {
         // frame class to be available).
         // TODO: general support for DynamicMethod.needsClass etc, so we can easily make this determination.
         if (entry.method instanceof AbstractIRMethod) {
-            AbstractIRMethod irMethod = (AbstractIRMethod) entry.method;
-
-            // Ensure scope is ready for flags
-            irMethod.ensureInstrsReady();
-
-            IRScope irScope = irMethod.getIRScope();
-            if (irScope instanceof IRMethod
-                    && !irScope.getFlags().contains(IRFlags.REQUIRES_CLASS)) {
-                findImplementer = false;
-            }
+            findImplementer = ((AbstractIRMethod) entry.method).needsToFindImplementer();
         }
 
         this.findImplementer = findImplementer;
+
+        // encode both old and new names in one to pass a single string
+        this.newName = newName;
+        this.compoundName = "\0" + newName + "\0" + oldName;
+    }
+
+    private static List<String> ALWAYS_PRIVATE_NAMES = Arrays.asList("initialize", "initialize_copy", "initialize_clone", "initialize_dup", "respond_to_missing?");
+    private static Visibility determineVisibility(String newName, Visibility visibility) {
+        return ALWAYS_PRIVATE_NAMES.contains(newName) ?
+                Visibility.PRIVATE :
+                visibility;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, arg3);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, arg3, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, args, block);
     }
 
     public DynamicMethod dup() {
-        return new AliasMethod(implementationClass, entry, name);
+        return new AliasMethod(implementationClass, entry, newName, name);
+    }
+
+
+    @Override
+    public Signature getSignature() {
+        return entry.method.getSignature();
     }
 
     @Override
-    public Arity getArity(){
-        return entry.method.getArity();
+    public Signature getAritySignature() {
+        return entry.method.getAritySignature();
     }
 
+
+    @Override
     public String getOldName() {
-        return name;
+        return entry.method.getOldName();
     }
-    
+
+    /**
+     * The entry this alias points at, so that aliasing an alias can reuse it rather than wrap us.
+     */
+    public CacheEntry getEntry() {
+        return entry;
+    }
+
     @Override
     public DynamicMethod getRealMethod() {
         return entry.method.getRealMethod();
@@ -158,16 +185,15 @@ public class AliasMethod extends DynamicMethod {
         return entry.method.getSerialNumber();
     }
 
-    // MRI: vm_call0_body and aliased_callable_method_entry
     /* FIXME: This is not quite right. It appears that MRI does this logic at call time, but I believe
               the calculated class is cached somewhere along with the "callable" method entry. The code
               below means all aliases in modules will do the implementer search, unless we can detect
               that the related method does not need "super". We can improve this at cache time in either
               CacheEntry logic or CallSite logic.
      */
+    @CRuby(value = "vm_call0_body", file = "vm_eval.c")
+    @CRuby(value = "aliased_callable_method_entry", file = "vm_insnhelper.c")
     private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
-        if (entry.method.definedClass != null) return definedClass;
-
         if (findImplementer) {
             return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());
         } else {
@@ -175,4 +201,13 @@ public class AliasMethod extends DynamicMethod {
         }
     }
 
+    @Override
+    public boolean isNative() {
+        return entry.method.isNative();
+    }
+
+    @Override
+    public void setRuby2Keywords() {
+        entry.method.setRuby2Keywords();
+    }
 }

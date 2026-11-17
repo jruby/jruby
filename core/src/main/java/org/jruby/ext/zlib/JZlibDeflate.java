@@ -30,6 +30,7 @@ package org.jruby.ext.zlib;
 import com.jcraft.jzlib.JZlib;
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -37,14 +38,15 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ByteList;
 
-/**
- */
 @JRubyClass(name = "Zlib::Deflate", parent = "Zlib::ZStream")
 public class JZlibDeflate extends ZStream {
     public static final int BASE_SIZE = 100;
@@ -54,34 +56,30 @@ public class JZlibDeflate extends ZStream {
     private int strategy;
     private byte[] collected;
     private int collectedIdx;
-    protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new JZlibDeflate(runtime, klass);
-        }
-    };
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
-    @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
-        args = Arity.scanArgs(runtime, args, 1, 1);
-        int level = JZlib.Z_DEFAULT_COMPRESSION;
-        if (!args[1].isNil()) {
-            level = RubyNumeric.fix2int(args[1]);
-            checkLevel(runtime, level);
-        }
+        return s_deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
+    }
 
-        RubyClass klass = (RubyClass)(recv.isClass() ? recv : runtime.getClassFromPath("Zlib::Deflate"));
-        JZlibDeflate deflate = (JZlibDeflate) klass.allocate();
-        deflate.init(level, JZlib.DEF_WBITS, 8, JZlib.Z_DEFAULT_STRATEGY);
+    @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false, meta = true)
+    public static IRubyObject s_deflate(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        args = Arity.scanArgs(context, args, 1, 1);
+        int level = JZlib.Z_DEFAULT_COMPRESSION;
+        if (!args[1].isNil()) level = checkLevel(context, toInt(context, args[1]));
+
+        RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Deflate"));
+        JZlibDeflate deflate = (JZlibDeflate) klass.allocate(context);
+        deflate.init(context, level, JZlib.DEF_WBITS, 8, JZlib.Z_DEFAULT_STRATEGY);
 
         try {
-            IRubyObject result = deflate.deflate(args[0].convertToString().getByteList(), JZlib.Z_FINISH);
-            deflate.close();
+            IRubyObject result = deflate.deflate(context, args[0].convertToString().getByteList(), JZlib.Z_FINISH);
+            deflate.close(context);
             return result;
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -89,63 +87,43 @@ public class JZlibDeflate extends ZStream {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE)
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject _initialize(IRubyObject[] args) {
-        args = Arity.scanArgs(getRuntime(), args, 0, 4);
-        level = -1;
-        windowBits = JZlib.MAX_WBITS;
-        int memlevel = 8;
-        strategy = 0;
-        if (!args[0].isNil()) {
-            level = RubyNumeric.fix2int(args[0]);
-            checkLevel(getRuntime(), level);
-        }
-        if (!args[1].isNil()) {
-            windowBits = RubyNumeric.fix2int(args[1]);
-            checkWindowBits(getRuntime(), windowBits, false);
-        }
-        if (!args[2].isNil()) {
-            memlevel = RubyNumeric.fix2int(args[2]);
-            // We accepts any memlevel and ignores it. Memory setting means nothing on Java platform.
-        }
-        if (!args[3].isNil()) {
-            strategy = RubyNumeric.fix2int(args[3]);
-        }
-        init(level, windowBits, memlevel, strategy);
+        return _initialize(getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "initialize", optional = 4, checkArity = false, visibility = PRIVATE)
+    public IRubyObject _initialize(ThreadContext context, IRubyObject[] args) {
+        args = Arity.scanArgs(context, args, 0, 4);
+        level = !args[0].isNil() ? checkLevel(context, toInt(context, args[0])) : -1;
+        windowBits = !args[1].isNil() ? checkWindowBits(context, toInt(context, args[1]), false) : JZlib.MAX_WBITS;
+        int memlevel = !args[2].isNil() ? toInt(context, args[2]) : 8; // ignored. Memory setting means nothing on Java.
+        strategy = !args[3].isNil() ? toInt(context, args[3]) : 0;
+
+        init(context, level, windowBits, memlevel, strategy);
         return this;
     }
 
-    private void init(int level, int windowBits, int memlevel, int strategy) {
+    private void init(ThreadContext context, int level, int windowBits, int memlevel, int strategy) {
         flush = JZlib.Z_NO_FLUSH;
         flater = new com.jcraft.jzlib.Deflater();
 
         // TODO: Can we expect JZlib to check level, windowBits, and strategy here?
         // Then we should remove checkLevel, checkWindowsBits and checkStrategy.
         int err = flater.init(level, windowBits, memlevel);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
+
         err = flater.params(level, strategy);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
 
         collected = new byte[BASE_SIZE];
         collectedIdx = 0;
     }
 
-    @Override
     @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject _other) {
-        if (!(_other instanceof JZlibDeflate)) {
-            throw getRuntime().newTypeError("Expecting an instance of class JZlibDeflate");
-        }
-
-        if (this == _other) {
-            return this;
-        }
-
-        JZlibDeflate other = (JZlibDeflate) _other;
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject _other) {
+        if (!(_other instanceof JZlibDeflate other)) throw typeError(context, "Expecting an instance of class JZlibDeflate");
+        if (this == _other) return this;
 
         this.level = other.level;
         this.windowBits = other.windowBits;
@@ -157,84 +135,92 @@ public class JZlibDeflate extends ZStream {
         this.flush = other.flush;
         this.flater = new com.jcraft.jzlib.Deflater();
         int ret = this.flater.copy(other.flater);
-        if (ret != com.jcraft.jzlib.JZlib.Z_OK) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
+        if (ret != com.jcraft.jzlib.JZlib.Z_OK) throw RubyZlib.newStreamError(context, "stream error");
 
-        return (IRubyObject) this;
+        return this;
     }
 
-    @JRubyMethod(name = "<<", required = 1)
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject append(IRubyObject arg) {
-        checkClosed();
+        return append(getCurrentContext(), arg);
+    }
+
+    @JRubyMethod(name = "<<")
+    public IRubyObject append(ThreadContext context, IRubyObject arg) {
+        checkClosed(context);
         try {
-            append(arg.convertToString().getByteList());
+            append(context, arg.convertToString().getByteList());
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
         return this;
     }
 
-    @JRubyMethod(name = "params", required = 2)
+    @JRubyMethod(name = "params")
     public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
-        int l = RubyNumeric.fix2int(level);
-        checkLevel(getRuntime(), l);
-        
-        int s = RubyNumeric.fix2int(strategy);
-        checkStrategy(getRuntime(), s);
-        
+        int l = toInt(context, level);
+        checkLevel(context, l);
+
+        int s = toInt(context, strategy);
+        checkStrategy(context, s);
+
         if (flater.next_out == null) flater.setOutput(ByteList.NULL_ARRAY);
 
         int err = flater.params(l, s);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
-        
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
+
         if (collectedIdx != flater.next_out_index) collectedIdx = flater.next_out_index;
 
-        run();
-        return getRuntime().getNil();
+        run(context);
+        return context.nil;
     }
 
-    @JRubyMethod(name = "set_dictionary", required = 1)
+    @JRubyMethod(name = "set_dictionary")
     public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
         try {
             byte[] tmp = arg.convertToString().getBytes();
             int err = flater.setDictionary(tmp, tmp.length);
             if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-                throw RubyZlib.newStreamError(context.getRuntime(), "stream error: ");
+                throw RubyZlib.newStreamError(context, "stream error: ");
             }
-            run();
+            run(context);
             return arg;
         } catch (IllegalArgumentException iae) {
-            throw RubyZlib.newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+            throw RubyZlib.newStreamError(context, "stream error: " + iae.getMessage());
         }
     }
 
-    @JRubyMethod(name = "flush", optional = 1)
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject flush(IRubyObject[] args) {
-        int flush = 2; // SYNC_FLUSH
-        
-        if (args.length == 1 && !args[0].isNil()) flush = RubyNumeric.fix2int(args[0]);
-
-        return flush(flush);
+        return flush(getCurrentContext(), args);
     }
 
-    @JRubyMethod(name = "deflate", required = 1, optional = 1)
+    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
+    public IRubyObject flush(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
+        int flush = args.length == 1 && !args[0].isNil() ? toInt(context, args[0]) : 2; // SYNC_FLUSH
+
+        return flush(context, flush);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject deflate(IRubyObject[] args) {
-        args = Arity.scanArgs(getRuntime(), args, 1, 1);
-        if (internalFinished()) throw RubyZlib.newStreamError(getRuntime(), "stream error");
+        return deflate(getCurrentContext(), args);
+    }
 
-        ByteList data = null;
-        if (!args[0].isNil()) data = args[0].convertToString().getByteList();
+    @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false)
+    public IRubyObject deflate(ThreadContext context, IRubyObject[] args) {
+        args = Arity.scanArgs(context, args, 1, 1);
+        if (internalFinished()) throw RubyZlib.newStreamError(context, "stream error");
 
-        int flush = JZlib.Z_NO_FLUSH;
-        if (!args[1].isNil()) flush = RubyNumeric.fix2int(args[1]);
-        
+        ByteList data = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        int flush = !args[1].isNil() ? toInt(context, args[1]) : JZlib.Z_NO_FLUSH;
+
         try {
-            return deflate(data, flush);
+            return deflate(context, data, flush);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -254,8 +240,8 @@ public class JZlibDeflate extends ZStream {
     }
 
     @Override
-    protected void internalReset() {
-        init(level, windowBits, 8, strategy);
+    protected void internalReset(ThreadContext context) {
+        init(context, level, windowBits, 8, strategy);
     }
 
     @Override
@@ -269,8 +255,8 @@ public class JZlibDeflate extends ZStream {
     }
 
     @Override
-    protected IRubyObject internalFinish(Block block) {
-        return finish();
+    protected IRubyObject internalFinish(ThreadContext context, Block block) {
+        return finish(context);
     }
 
     @Override
@@ -278,46 +264,43 @@ public class JZlibDeflate extends ZStream {
         flater.end();
     }
 
-    private void append(ByteList obj) throws IOException {
+    private void append(ThreadContext context, ByteList obj) throws IOException {
         flater.setInput(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize(), true);
-        run();
+        run(context);
     }
 
-    private IRubyObject flush(int flush) {
+    private IRubyObject flush(ThreadContext context, int flush) {
         int last_flush = this.flush;
         this.flush = flush;
-        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyString(getRuntime());
+        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyBinaryString(context.runtime);
 
-        run();
+        run(context);
         this.flush = last_flush;
-        IRubyObject obj = RubyString.newString(getRuntime(), collected, 0, collectedIdx);
+        IRubyObject obj = newString(context, collected, 0, collectedIdx);
         collectedIdx = 0;
         flater.setOutput(collected);
         return obj;
     }
 
-    private IRubyObject deflate(ByteList str, int flush) throws IOException {
-        if (null != str) append(str);
+    private IRubyObject deflate(ThreadContext context, ByteList str, int flush) throws IOException {
+        if (null != str) append(context, str);
 
-        return flush(flush);
+        return flush(context, flush);
     }
 
-    private IRubyObject finish() {
-        return flush(JZlib.Z_FINISH);
+    private IRubyObject finish(ThreadContext context) {
+        return flush(context, JZlib.Z_FINISH);
     }
 
-    private void run() {
+    private void run(ThreadContext context) {
         if (internalFinished()) return;
 
         while (!internalFinished()) {
             flater.setOutput(collected, collectedIdx, collected.length - collectedIdx);
 
             int err = flater.deflate(flush);
-            switch (err) {
-                case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
-                    throw RubyZlib.newStreamError(getRuntime(), "stream error: ");
-                default:
-            }
+            if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error: ");
+
             if (collectedIdx == flater.next_out_index) break;
 
             collectedIdx = flater.next_out_index;

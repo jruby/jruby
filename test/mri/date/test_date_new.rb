@@ -27,9 +27,59 @@ class TestDateNew < Test::Unit::TestCase
   end
 
   def test_jd__ex
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.jd(0, 23,59,60,0)
     end
+  end
+
+  def test_valid_with_invalid_types
+    o = Object.new
+    assert_equal(false, Date.valid_jd?(o))
+    assert_equal(false, Date.valid_civil?(o, 1, 1))
+    assert_equal(false, Date.valid_civil?(1, o, 1))
+    assert_equal(false, Date.valid_civil?(1, 1, o))
+    assert_equal(false, Date.valid_ordinal?(o, 1))
+    assert_equal(false, Date.valid_ordinal?(1, o))
+    assert_equal(false, Date.valid_commercial?(o, 1, 1))
+    assert_equal(false, Date.valid_commercial?(1, o, 1))
+    assert_equal(false, Date.valid_commercial?(1, 1, o))
+  end
+
+  def test_invalid_types
+    o = Object.new
+    assert_raise(TypeError) { Date.julian_leap?(o) }
+    assert_raise(TypeError) { Date.gregorian_leap?(o) }
+    assert_raise(TypeError) { Date.jd(o) }
+    assert_raise(TypeError) { Date.new(o) }
+    assert_raise(TypeError) { Date.new(1, o) }
+    assert_raise(TypeError) { Date.new(1, 1, o) }
+    assert_raise(TypeError) { Date.ordinal(o) }
+    assert_raise(TypeError) { Date.ordinal(1, o) }
+    assert_raise(TypeError) { Date.commercial(o) }
+    assert_raise(TypeError) { Date.commercial(1, o) }
+    assert_raise(TypeError) { Date.commercial(1, 1, o) }
+
+    assert_raise(TypeError) { DateTime.jd(o) }
+    assert_raise(TypeError) { DateTime.jd(1, o) }
+    assert_raise(TypeError) { DateTime.jd(1, 1, o) }
+    assert_raise(TypeError) { DateTime.jd(1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.new(o) }
+    assert_raise(TypeError) { DateTime.new(1, o) }
+    assert_raise(TypeError) { DateTime.new(1, 1, o) }
+    assert_raise(TypeError) { DateTime.new(1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.new(1, 1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.new(1, 1, 1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.ordinal(o) }
+    assert_raise(TypeError) { DateTime.ordinal(1, o) }
+    assert_raise(TypeError) { DateTime.ordinal(1, 1, o) }
+    assert_raise(TypeError) { DateTime.ordinal(1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.ordinal(1, 1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.commercial(o) }
+    assert_raise(TypeError) { DateTime.commercial(1, o) }
+    assert_raise(TypeError) { DateTime.commercial(1, 1, o) }
+    assert_raise(TypeError) { DateTime.commercial(1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.commercial(1, 1, 1, 1, o) }
+    assert_raise(TypeError) { DateTime.commercial(1, 1, 1, 1, 1, o) }
   end
 
   def test_ordinal
@@ -68,10 +118,10 @@ class TestDateNew < Test::Unit::TestCase
   end
 
   def test_ordinal__ex
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.ordinal(2001,366)
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.ordinal(2001,365, 23,59,60, 0)
     end
   end
@@ -115,6 +165,10 @@ class TestDateNew < Test::Unit::TestCase
     assert_equal([2001, 2, 3, 4, 5, 6, 0],
 		 [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
     assert_equal(1.to_r/2, d.sec_fraction)
+
+    d = DateTime.civil(2001, 2)
+    assert_equal([2001, 2, 1, 0, 0, 0, 0],
+		 [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
   end
 
   def test_civil__neg
@@ -127,13 +181,13 @@ class TestDateNew < Test::Unit::TestCase
   end
 
   def test_civil__ex
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.civil(2001,2,29)
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.civil(2001,2,28, 23,59,60, 0)
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.civil(2001,2,28, 24,59,59, 0)
     end
   end
@@ -194,55 +248,55 @@ class TestDateNew < Test::Unit::TestCase
   end
 
   def test_commercial__ex
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.commercial(1997,53,1)
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.commercial(1997,52,1, 23,59,60, 0)
     end
   end
 
   def test_weeknum
-    d = Date.__send__(:weeknum)
-    dt = DateTime.__send__(:weeknum)
+    d = Date.weeknum
+    dt = DateTime.weeknum
     assert_equal([-4712, 1, 1], [d.year, d.mon, d.mday])
     assert_equal([-4712, 1, 1], [dt.year, dt.mon, dt.mday])
     assert_equal([0, 0, 0], [dt.hour, dt.min, dt.sec])
 
-    d = Date.__send__(:weeknum, 2002,11,4, 0)
+    d = Date.weeknum(2002,11,4, 0)
     assert_equal(2452355, d.jd)
 
-    d = DateTime.__send__(:weeknum, 2002,11,4, 0, 11,22,33)
+    d = DateTime.weeknum(2002,11,4, 0, 11,22,33)
     assert_equal(2452355, d.jd)
     assert_equal([11,22,33], [d.hour, d.min, d.sec])
 
-    assert_raise(ArgumentError) do
-      Date.__send__(:weeknum, 1999,53,0, 0)
+    assert_raise(Date::Error) do
+      Date.weeknum(1999,53,0, 0)
     end
-    assert_raise(ArgumentError) do
-      Date.__send__(:weeknum, 1999,-53,-1, 0)
+    assert_raise(Date::Error) do
+      Date.weeknum(1999,-53,-1, 0)
     end
   end if Date.respond_to?(:weeknum, true)
 
   def test_nth_kday
-    d = Date.__send__(:nth_kday)
-    dt = DateTime.__send__(:nth_kday)
+    d = Date.nth_kday
+    dt = DateTime.nth_kday
     assert_equal([-4712, 1, 1], [d.year, d.mon, d.mday])
     assert_equal([-4712, 1, 1], [dt.year, dt.mon, dt.mday])
     assert_equal([0, 0, 0], [dt.hour, dt.min, dt.sec])
 
-    d = Date.__send__(:nth_kday, 1992,2, 5,6)
+    d = Date.nth_kday(1992,2, 5,6)
     assert_equal(2448682, d.jd)
 
-    d = DateTime.__send__(:nth_kday, 1992,2, 5,6, 11,22,33)
+    d = DateTime.nth_kday(1992,2, 5,6, 11,22,33)
     assert_equal(2448682, d.jd)
     assert_equal([11,22,33], [d.hour, d.min, d.sec])
 
-    assert_raise(ArgumentError) do
-      Date.__send__(:nth_kday, 2006,5, 5,0)
+    assert_raise(Date::Error) do
+      Date.nth_kday(2006,5, 5,0)
     end
-    assert_raise(ArgumentError) do
-      Date.__send__(:nth_kday, 2006,5, -5,0)
+    assert_raise(Date::Error) do
+      Date.nth_kday(2006,5, -5,0)
     end
   end if Date.respond_to?(:nth_kday, true)
 
@@ -267,4 +321,12 @@ class TestDateNew < Test::Unit::TestCase
     assert_in_delta(t, t2, t - z + 2)
   end
 
+  def test_memsize
+    require 'objspace'
+    t = DateTime.now
+    size = ObjectSpace.memsize_of(t)
+    t.__send__(:initialize_copy, Date.today)
+    assert_instance_of(DateTime, t)
+    assert_equal(size, ObjectSpace.memsize_of(t), "not reallocated but memsize changed")
+  end
 end

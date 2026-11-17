@@ -7,7 +7,7 @@ describe "BasicObject#singleton_method_added" do
   end
 
   it "is a private method" do
-    BasicObject.should have_private_instance_method(:singleton_method_added)
+    BasicObject.private_instance_methods(false).should.include?(:singleton_method_added)
   end
 
   it "is called when a singleton method is defined on an object" do
@@ -35,7 +35,7 @@ describe "BasicObject#singleton_method_added" do
       end
     end
 
-    ScratchPad.recorded.should_not include(:new_instance_method)
+    ScratchPad.recorded.should_not.include?(:new_instance_method)
   end
 
   it "is called when a singleton method is defined on a module" do
@@ -82,5 +82,66 @@ describe "BasicObject#singleton_method_added" do
       end
     end
     ScratchPad.recorded.should == [:singleton_method_added, :new_method_with_define_method]
+  end
+
+  describe "when singleton_method_added is undefined" do
+    it "raises NoMethodError for a metaclass" do
+      class BasicObjectSpecs::NoSingletonMethodAdded
+        class << self
+          undef_method :singleton_method_added
+        end
+
+        -> {
+          def self.foo
+          end
+        }.should.raise(NoMethodError, /undefined method [`']singleton_method_added' for/)
+      end
+    ensure
+      BasicObjectSpecs.send(:remove_const, :NoSingletonMethodAdded)
+    end
+
+    it "raises NoMethodError for a singleton instance" do
+      object = Object.new
+      class << object
+        undef_method :singleton_method_added
+
+        -> {
+          def foo
+          end
+        }.should.raise(NoMethodError, /undefined method [`']singleton_method_added' for #<Object:/)
+
+        -> {
+          define_method(:bar) {}
+        }.should.raise(NoMethodError, /undefined method [`']singleton_method_added' for #<Object:/)
+      end
+
+      -> {
+        object.define_singleton_method(:baz) {}
+      }.should.raise(NoMethodError, /undefined method [`']singleton_method_added' for #<Object:/)
+    end
+
+    it "calls #method_missing" do
+      ScratchPad.record []
+      object = Object.new
+      class << object
+        def method_missing(*args)
+          ScratchPad << args
+        end
+
+        undef_method :singleton_method_added
+
+        def foo
+        end
+
+        define_method(:bar) {}
+      end
+      object.define_singleton_method(:baz) {}
+
+      ScratchPad.recorded.should == [
+        [:singleton_method_added, :foo],
+        [:singleton_method_added, :bar],
+        [:singleton_method_added, :baz],
+      ]
+    end
   end
 end

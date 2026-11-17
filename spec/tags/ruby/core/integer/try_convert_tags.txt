@@ -1,0 +1,2 @@
+fails:Integer.try_convert sends #to_int to the argument and raises TypeError if it's not a kind of Integer
+fails:Integer.try_convert responds with a different error message when it raises a TypeError, depending on the type of the non-Integer object :to_int returns

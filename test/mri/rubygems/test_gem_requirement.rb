@@ -1,15 +1,23 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+
+require_relative "helper"
 require "rubygems/requirement"
 
 class TestGemRequirement < Gem::TestCase
-
   def test_concat
-    r = req '>= 1'
+    r = req ">= 1"
 
-    r.concat ['< 2']
+    r.concat ["< 2"]
 
-    assert_equal [['>=', v(1)], ['<', v(2)]], r.requirements
+    assert_equal [[">=", v(1)], ["<", v(2)]], r.requirements
+  end
+
+  def test_initialize_copy
+    r = req("= 1.2")
+    r2 = r.dup
+
+    assert_equal r.requirements, r2.requirements
+    refute_same r.requirements, r2.requirements
   end
 
   def test_equals2
@@ -20,6 +28,14 @@ class TestGemRequirement < Gem::TestCase
     refute_requirement_equal "= 1.2", "= 1.3"
     refute_requirement_equal "= 1.3", "= 1.2"
 
+    refute_requirement_equal "~> 1.3", "~> 1.3.0"
+    refute_requirement_equal "~> 1.3.0", "~> 1.3"
+
+    assert_requirement_equal ["> 2", "~> 1.3", "~> 1.3.1"], ["~> 1.3.1", "~> 1.3", "> 2"]
+
+    assert_requirement_equal ["> 2", "~> 1.3"], ["> 2.0", "~> 1.3"]
+    assert_requirement_equal ["> 2.0", "~> 1.3"], ["> 2", "~> 1.3"]
+
     refute_equal Object.new, req("= 1.2")
     refute_equal req("= 1.2"), Object.new
   end
@@ -28,6 +44,7 @@ class TestGemRequirement < Gem::TestCase
     assert_requirement_equal "= 2", "2"
     assert_requirement_equal "= 2", ["2"]
     assert_requirement_equal "= 2", v(2)
+    assert_requirement_equal "2.0", "2"
   end
 
   def test_create
@@ -52,37 +69,44 @@ class TestGemRequirement < Gem::TestCase
   end
 
   def test_for_lockfile
-    assert_equal ' (~> 1.0)', req('~> 1.0').for_lockfile
+    assert_equal " (~> 1.0)", req("~> 1.0").for_lockfile
 
-    assert_equal ' (~> 1.0, >= 1.0.1)', req('>= 1.0.1', '~> 1.0').for_lockfile
+    assert_equal " (~> 1.0, >= 1.0.1)", req(">= 1.0.1", "~> 1.0").for_lockfile
 
-    duped = req '= 1.0'
-    duped.requirements << ['=', v('1.0')]
+    duped = req "= 1.0"
+    duped.requirements << ["=", v("1.0")]
 
-    assert_equal ' (= 1.0)', duped.for_lockfile
+    assert_equal " (= 1.0)", duped.for_lockfile
 
     assert_nil Gem::Requirement.default.for_lockfile
   end
 
   def test_parse
-    assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse('  1')
-    assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse('= 1')
-    assert_equal ['>', Gem::Version.new(1)], Gem::Requirement.parse('> 1')
-    assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse("=\n1")
+    assert_equal ["=", Gem::Version.new(1)], Gem::Requirement.parse("  1")
+    assert_equal ["=", Gem::Version.new(1)], Gem::Requirement.parse("= 1")
+    assert_equal [">", Gem::Version.new(1)], Gem::Requirement.parse("> 1")
+    assert_equal ["=", Gem::Version.new(1)], Gem::Requirement.parse("=\n1")
+    assert_equal ["=", Gem::Version.new(1)], Gem::Requirement.parse("1.0")
 
-    assert_equal ['=', Gem::Version.new(2)],
-      Gem::Requirement.parse(Gem::Version.new('2'))
+    assert_equal ["=", Gem::Version.new(2)],
+      Gem::Requirement.parse(Gem::Version.new("2"))
+  end
+
+  unless Gem.java_platform? && ENV["JRUBY_OPTS"].to_s.include?("--debug")
+    def test_parse_deduplication
+      assert_same "~>", Gem::Requirement.parse("~> 1").first
+    end
   end
 
   def test_parse_bad
     [
       nil,
-      '',
-      '! 1',
-      '= junk',
-      '1..2',
+      "",
+      "! 1",
+      "= junk",
+      "1..2",
     ].each do |bad|
-      e = assert_raises Gem::Requirement::BadRequirementError do
+      e = assert_raise Gem::Requirement::BadRequirementError do
         Gem::Requirement.parse bad
       end
 
@@ -93,29 +117,27 @@ class TestGemRequirement < Gem::TestCase
   end
 
   def test_prerelease_eh
-    r = req '= 1'
+    r = req "= 1"
 
     refute r.prerelease?
 
-    r = req '= 1.a'
+    r = req "= 1.a"
 
     assert r.prerelease?
 
-    r = req '> 1.a', '< 2'
+    r = req "> 1.a", "< 2"
 
     assert r.prerelease?
   end
 
   def test_satisfied_by_eh_bang_equal
-    r = req '!= 1.2'
+    r = req "!= 1.2"
 
     assert_satisfied_by "1.1", r
     refute_satisfied_by "1.2", r
     assert_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
-      assert_satisfied_by nil, r
-    end
+    assert_satisfied_by nil, r
   end
 
   def test_satisfied_by_eh_blank
@@ -125,9 +147,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     refute_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
-      assert_satisfied_by nil, r
-    end
+    refute_satisfied_by nil, r
   end
 
   def test_satisfied_by_eh_equal
@@ -137,9 +157,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     refute_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
-      assert_satisfied_by nil, r
-    end
+    refute_satisfied_by nil, r
   end
 
   def test_satisfied_by_eh_gt
@@ -149,9 +167,7 @@ class TestGemRequirement < Gem::TestCase
     refute_satisfied_by "1.2", r
     assert_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
-      r.satisfied_by? nil
-    end
+    refute_satisfied_by nil, r
   end
 
   def test_satisfied_by_eh_gte
@@ -161,7 +177,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     assert_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       r.satisfied_by? nil
     end
   end
@@ -173,7 +189,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     refute_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       r.satisfied_by? nil
     end
   end
@@ -185,7 +201,7 @@ class TestGemRequirement < Gem::TestCase
     refute_satisfied_by "1.2", r
     refute_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       r.satisfied_by? nil
     end
   end
@@ -197,7 +213,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     refute_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       r.satisfied_by? nil
     end
   end
@@ -209,7 +225,7 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.2", r
     assert_satisfied_by "1.3", r
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       r.satisfied_by? nil
     end
   end
@@ -226,6 +242,8 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "0.2.33",      "= 0.2.33"
     assert_satisfied_by "0.2.34",      "> 0.2.33"
     assert_satisfied_by "1.0",         "= 1.0"
+    assert_satisfied_by "1.0.0",       "= 1.0"
+    assert_satisfied_by "1.0",         "= 1.0.0"
     assert_satisfied_by "1.0",         "1.0"
     assert_satisfied_by "1.8.2",       "> 1.8.0"
     assert_satisfied_by "1.112",       "> 1.111"
@@ -235,7 +253,6 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "10.3.2",      "> 9.3.2"
     assert_satisfied_by "1.0.0.0",     "= 1.0"
     assert_satisfied_by "10.3.2",      "!= 9.3.4"
-    assert_satisfied_by "10.3.2",      "> 9.3.2"
     assert_satisfied_by "10.3.2",      "> 9.3.2"
     assert_satisfied_by " 9.3.2",      ">= 9.3.2"
     assert_satisfied_by "9.3.2 ",      ">= 9.3.2"
@@ -255,22 +272,28 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "3.0.rc2",     "< 3.0.1"
 
     assert_satisfied_by "3.0.rc2",     "> 0"
+
+    assert_satisfied_by "5.0.0.rc2",   "~> 5.a"
+    refute_satisfied_by "5.0.0.rc2",   "~> 5.x"
+
+    assert_satisfied_by "5.0.0",       "~> 5.a"
+    assert_satisfied_by "5.0.0",       "~> 5.x"
   end
 
   def test_illformed_requirements
-    [ ">>> 1.3.5", "> blah" ].each do |rq|
-      assert_raises Gem::Requirement::BadRequirementError, "req [#{rq}] should fail" do
+    [">>> 1.3.5", "> blah"].each do |rq|
+      assert_raise Gem::Requirement::BadRequirementError, "req [#{rq}] should fail" do
         Gem::Requirement.new rq
       end
     end
   end
 
   def test_satisfied_by_eh_non_versions
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       req(">= 0").satisfied_by? Object.new
     end
 
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       req(">= 0").satisfied_by? Gem::Requirement.default
     end
   end
@@ -313,6 +336,7 @@ class TestGemRequirement < Gem::TestCase
   def test_satisfied_by_boxed
     refute_satisfied_by "1.3",   "~> 1.4"
     assert_satisfied_by "1.4",   "~> 1.4"
+    assert_satisfied_by "1.4.0", "~> 1.4"
     assert_satisfied_by "1.5",   "~> 1.4"
     refute_satisfied_by "2.0",   "~> 1.4"
 
@@ -324,17 +348,31 @@ class TestGemRequirement < Gem::TestCase
     refute_satisfied_by "2.0",   "~> 1.4.4"
   end
 
+  def test_satisfied_by_explicitly_bounded
+    req = [">= 1.4.4", "< 1.5"]
+
+    assert_satisfied_by "1.4.5",     req
+    assert_satisfied_by "1.5.0.rc1", req
+    refute_satisfied_by "1.5.0",     req
+
+    req = [">= 1.4.4", "< 1.5.a"]
+
+    assert_satisfied_by "1.4.5",     req
+    refute_satisfied_by "1.5.0.rc1", req
+    refute_satisfied_by "1.5.0",     req
+  end
+
   def test_specific
-    refute req('> 1') .specific?
-    refute req('>= 1').specific?
+    refute req("> 1") .specific?
+    refute req(">= 1").specific?
 
-    assert req('!= 1').specific?
-    assert req('< 1') .specific?
-    assert req('<= 1').specific?
-    assert req('= 1') .specific?
-    assert req('~> 1').specific?
+    assert req("!= 1").specific?
+    assert req("< 1") .specific?
+    assert req("<= 1").specific?
+    assert req("= 1") .specific?
+    assert req("~> 1").specific?
 
-    assert req('> 1', '> 2').specific? # GIGO
+    assert req("> 1", "> 2").specific? # GIGO
   end
 
   def test_bad
@@ -355,39 +393,107 @@ class TestGemRequirement < Gem::TestCase
   end
 
   def test_hash_with_multiple_versions
-    r1 = req('1.0', '2.0')
-    r2 = req('2.0', '1.0')
+    r1 = req("1.0", "2.0")
+    r2 = req("2.0", "1.0")
     assert_equal r1.hash, r2.hash
 
-    r1 = req('1.0', '2.0').tap { |r| r.concat(['3.0']) }
-    r2 = req('3.0', '1.0').tap { |r| r.concat(['2.0']) }
+    r1 = req("1.0", "2.0").tap {|r| r.concat(["3.0"]) }
+    r2 = req("3.0", "1.0").tap {|r| r.concat(["2.0"]) }
     assert_equal r1.hash, r2.hash
+  end
+
+  def test_hash_returns_equal_hashes_for_equivalent_requirements
+    refute_requirement_hash_equal "= 1.2", "= 1.3"
+    refute_requirement_hash_equal "= 1.3", "= 1.2"
+
+    refute_requirement_hash_equal "~> 1.3", "~> 1.3.0"
+    refute_requirement_hash_equal "~> 1.3.0", "~> 1.3"
+
+    assert_requirement_hash_equal ["> 2", "~> 1.3", "~> 1.3.1"], ["~> 1.3.1", "~> 1.3", "> 2"]
+
+    assert_requirement_hash_equal ["> 2", "~> 1.3"], ["> 2.0", "~> 1.3"]
+    assert_requirement_hash_equal ["> 2.0", "~> 1.3"], ["> 2", "~> 1.3"]
+
+    assert_requirement_hash_equal "= 1.0", "= 1.0.0"
+    assert_requirement_hash_equal "= 1.1", "= 1.1.0"
+    assert_requirement_hash_equal "= 1", "= 1.0.0"
+
+    assert_requirement_hash_equal "1.0", "1.0.0"
+    assert_requirement_hash_equal "1.1", "1.1.0"
+    assert_requirement_hash_equal "1", "1.0.0"
+  end
+
+  class Exploit < RuntimeError
+  end
+
+  def self.exploit(arg)
+    raise Exploit, "arg = #{arg}"
+  end
+
+  def test_marshal_load_attack
+    wa = Gem::Net::WriteAdapter.allocate
+    wa.instance_variable_set(:@socket, self.class)
+    wa.instance_variable_set(:@method_id, :exploit)
+    request_set = Gem::RequestSet.allocate
+    request_set.instance_variable_set(:@git_set, "id")
+    request_set.instance_variable_set(:@sets, wa)
+    wa = Gem::Net::WriteAdapter.allocate
+    wa.instance_variable_set(:@socket, request_set)
+    wa.instance_variable_set(:@method_id, :resolve)
+    ent = Gem::Package::TarReader::Entry.allocate
+    ent.instance_variable_set(:@read, 0)
+    ent.instance_variable_set(:@header, "aaa")
+    io = Gem::Net::BufferedIO.allocate
+    io.instance_variable_set(:@io, ent)
+    io.instance_variable_set(:@debug_output, wa)
+    reader = Gem::Package::TarReader.allocate
+    reader.instance_variable_set(:@io, io)
+    requirement = Gem::Requirement.allocate
+    requirement.instance_variable_set(:@requirements, reader)
+    m = [Gem::SpecFetcher, Gem::Installer, requirement]
+    e = assert_raise(TypeError) do
+      Marshal.load(Marshal.dump(m))
+    end
+    assert_equal(e.message, "wrong @requirements")
   end
 
   # Assert that two requirements are equal. Handles Gem::Requirements,
   # strings, arrays, numbers, and versions.
 
-  def assert_requirement_equal expected, actual
+  def assert_requirement_equal(expected, actual)
     assert_equal req(expected), req(actual)
   end
 
   # Assert that +version+ satisfies +requirement+.
 
-  def assert_satisfied_by version, requirement
+  def assert_satisfied_by(version, requirement)
     assert req(requirement).satisfied_by?(v(version)),
       "#{requirement} is satisfied by #{version}"
   end
 
+  # Assert that two requirement hashes are equal. Handles Gem::Requirements,
+  # strings, arrays, numbers, and versions.
+
+  def assert_requirement_hash_equal(expected, actual)
+    assert_equal req(expected).hash, req(actual).hash
+  end
+
   # Refute the assumption that two requirements are equal.
 
-  def refute_requirement_equal unexpected, actual
+  def refute_requirement_equal(unexpected, actual)
     refute_equal req(unexpected), req(actual)
   end
 
   # Refute the assumption that +version+ satisfies +requirement+.
 
-  def refute_satisfied_by version, requirement
+  def refute_satisfied_by(version, requirement)
     refute req(requirement).satisfied_by?(v(version)),
       "#{requirement} is not satisfied by #{version}"
+  end
+
+  # Refute the assumption that two requirements hashes are equal.
+
+  def refute_requirement_hash_equal(unexpected, actual)
+    refute_equal req(unexpected).hash, req(actual).hash
   end
 end

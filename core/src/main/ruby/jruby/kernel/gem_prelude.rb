@@ -1,14 +1,25 @@
-if Object.const_defined?(:Gem)
+# Note: this file is modified from CRuby's gem_prelude.rb and should be carefully updated
+begin
+  require 'rubygems'
+rescue LoadError => e
+  raise unless e.path == 'rubygems'
+
+  warn "`RubyGems' were not loaded."
+else
+  require 'bundled_gems'
+
   begin
-    require 'rubygems.rb'
-  rescue LoadError # java -jar lib/jruby.jar -e '...'
-    warn 'RubyGems not found; disabling gems' if $VERBOSE
-  else
-    begin
-      gem 'did_you_mean'
-      require 'did_you_mean'
-      Gem.clear_paths
-    rescue LoadError # Gem::LoadError < LoadError
-    end if Object.const_defined?(:DidYouMean)
-  end
-end
+    require 'did_you_mean'
+  rescue LoadError
+    warn "`did_you_mean' was not loaded."
+  end if defined?(DidYouMean)
+
+  begin
+    require 'syntax_suggest/core_ext'
+  rescue LoadError
+    warn "`syntax_suggest' was not loaded."
+  end if defined?(SyntaxSuggest)
+
+  # clear RubyGems paths so they can be reinitialized after boot
+  Gem.clear_paths
+end if defined?(Gem)

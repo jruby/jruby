@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a range literal.
@@ -47,11 +46,9 @@ public class DotNode extends Node {
     private final boolean exclusive;
     private final boolean isLiteral;
 
-    public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
-            boolean isLiteral) {
-        super(position, beginNode.containsVariableAssignment() || endNode.containsVariableAssignment());
+    public DotNode(int line, Node beginNode, Node endNode, boolean exclusive, boolean isLiteral) {
+        super(line, beginNode.containsVariableAssignment() || endNode.containsVariableAssignment());
         
-        assert beginNode != null : "beginNode is not null";
         assert endNode != null : "endNode is not null";
         
         this.beginNode = beginNode;

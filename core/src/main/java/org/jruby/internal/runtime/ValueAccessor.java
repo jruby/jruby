@@ -31,10 +31,6 @@ package org.jruby.internal.runtime;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class ValueAccessor implements IAccessor {
     private volatile IRubyObject value;
 

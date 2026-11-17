@@ -7,6 +7,7 @@ import org.jruby.runtime.load.Library;
 
 public class EtcLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyEtc.createEtcModule(runtime);
+        var context = runtime.getCurrentContext();
+        RubyEtc.createEtcModule(context);
     }
 }

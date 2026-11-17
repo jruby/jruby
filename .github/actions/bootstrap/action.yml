@@ -1,0 +1,53 @@
+name: Bootstrap JRuby
+description: Set up Java, build JRuby with Maven, and install the bundled gems
+
+inputs:
+  java-version:
+    description: Java version to set up
+    default: '21'
+  distribution:
+    description: Java distribution to set up
+    default: 'zulu'
+  remove-old-java:
+    description: Remove the JDKs preinstalled on Linux runners other than 21
+    default: 'true'
+  build-args:
+    description: Arguments passed to the Maven wrapper
+    default: '-Pbootstrap clean package'
+  bundle-install:
+    description: Run bundle install after the build
+    default: 'true'
+  jruby-flags:
+    description: Flags passed to bin/jruby for bundle install
+    default: '--dev'
+
+runs:
+  using: composite
+  steps:
+    - name: remove default java except 21
+      if: runner.os == 'Linux' && inputs.remove-old-java == 'true'
+      shell: bash
+      run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
+    - name: set up java ${{ inputs.java-version }}
+      uses: actions/setup-java@v6
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}
+        cache: 'maven'
+        cache-dependency-path: "**/pom.rb"
+        cache-read-only: true
+
+    # tool/ci-retry.sh is a bash script. It also runs on Windows because GitHub's
+    # Windows runner images include Git for Windows, and `shell: bash` uses its bash:
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell
+    # A Windows runner without Git for Windows (e.g. a bare self-hosted one) fails here.
+    - name: build
+      shell: bash
+      # ./mvnw is the POSIX Maven wrapper script, which supports Git Bash (MINGW).
+      run: tool/ci-retry.sh ./mvnw -ntp ${{ inputs.build-args }}
+    - name: bundle install
+      if: inputs.bundle-install == 'true'
+      shell: bash
+      # bin/jruby is a POSIX launcher script, so Windows calls the native
+      # bin/jruby.exe instead (what PowerShell picked for `bin/jruby` before).
+      run: tool/ci-retry.sh ${{ runner.os == 'Windows' && 'bin/jruby.exe' || 'bin/jruby' }} ${{ inputs.jruby-flags }} -S bundle install

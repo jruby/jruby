@@ -64,6 +64,92 @@ class TestDir < Test::Unit::TestCase
     Dir.foreach('./testDir_1') {|f| files << f }
     assert_equal(['.', '..', "file1", "file2"], files.sort)
   end
+  
+  def test_dir_new_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/new_enc", "w") {|f|
+      f.write("hello")
+    }         
+    
+    dir = Dir.new("./testDir_1", encoding: "ASCII-8BIT")
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+    
+    dir = Dir.new("./testDir_1", encoding: Encoding.find("ASCII-8BIT"))
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+  end
+
+  def test_dir_open_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding", "w") {|f|
+      f.write("hello")
+    }
+    
+    dir = Dir.open("./testDir_1", encoding: "ASCII-8BIT")
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+  end
+  
+  def test_dir_entries_enc_static
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding_type", "w") {|f|
+      f.write("hello")
+    }
+
+    file = Dir.entries('./testDir_1', encoding: Encoding.find("ASCII-8BIT"))[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+    
+    file = Dir.entries('./testDir_1', encoding: "ASCII-8BIT")[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)    
+  end
+  
+  def test_dir_entries_enc_instance
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding_type", "w") {|f|
+      f.write("hello")
+    }
+
+    file = Dir.open('./testDir_1', encoding: Encoding.find("ASCII-8BIT")).entries[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+
+    file = Dir.open('./testDir_1', encoding: "ASCII-8BIT").entries[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+
+  end
+
+  def test_dir_foreach_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/foreach_enc", "w") {|f|
+      f.write("hello")
+    }
+    files = []
+    Dir.foreach('./testDir_1', encoding: Encoding.find("UTF-8")) {|f| files << f}
+    assert_equal(Encoding.find("UTF-8"), files[0].encoding)
+
+    files = []
+    Dir.foreach('./testDir_1', encoding: Encoding.find("ASCII-8BIT")) {|f| files << f}
+    assert_equal(Encoding.find("ASCII-8BIT"), files[0].encoding)
+
+    files = []
+    Dir.foreach('./testDir_1', encoding: "ASCII-8BIT") {|f| files << f}
+    assert_equal(Encoding.find("ASCII-8BIT"), files[0].encoding)
+  end
 
   def test_entries_via_uri_classloader
     jar_file = File.expand_path('../jar_with_relative_require1.jar', __FILE__)
@@ -80,6 +166,8 @@ class TestDir < Test::Unit::TestCase
     # Test unescaped special char that is meant to be used with another
     # (i.e. bogus glob pattern)
     assert_equal([], Dir.glob("{"))
+    assert_equal([], Dir.glob('[*BoGuS_RANDOM-stuff'))
+    Dir.glob('[*') # used to ArrayIndexOutOfBoundsException
   end
 
   def test_glob_empty_string
@@ -120,9 +208,21 @@ class TestDir < Test::Unit::TestCase
     glob_val = Dir.glob('./testDir_3/**/*tmp1') { |f| vals << f }
     assert_equal(true, glob_val.nil?)
     assert_equal(1, vals.size)
-    assert_equal(true, File.exists?(vals[0])) unless vals.empty?
+    assert_equal(true, File.exist?(vals[0])) unless vals.empty?
   ensure
     FileUtils.rm_r("testDir_3") rescue nil
+  end
+
+  def test_glob_dir
+    Dir.mkdir('testDir_4')
+    Dir.mkdir('testDir_4/a')
+    Dir.mkdir('testDir_4/b')
+    FileUtils.touch('testDir_4/file.txt')
+    assert_equal(Dir.glob('testDir_4/*/'), ['testDir_4/a/', 'testDir_4/b/'])
+    Dir.chdir("testDir_4") do
+      assert_equal(Dir.glob('*/'), ['a/', 'b/'])
+    end
+    FileUtils.rm_r("testDir_4") rescue nil
   end
 
   def test_dir_dot_does_not_throw_exception
@@ -293,11 +393,6 @@ class TestDir < Test::Unit::TestCase
     Dir.unlink utf8_dir rescue nil
   end
 
-  # JRUBY-5286
-  def test_pwd_tainted
-    assert Dir.pwd.tainted?
-  end
-
   if WINDOWS
     def test_chdir_slash_windows
       @orig_pwd = Dir.pwd
@@ -313,7 +408,7 @@ class TestDir < Test::Unit::TestCase
 
         letters = ['C:/', 'D:/', 'E:/', 'F:/', 'C:\\', 'D:\\', 'E:\\']
         letters.each { |letter|
-          next unless File.exists?(letter)
+          next unless File.exist?(letter)
           Dir.chdir(letter)
           pwd = Dir.pwd
           Dir.chdir(slash)
@@ -519,7 +614,7 @@ class TestDir < Test::Unit::TestCase
   else
     # http://jira.codehaus.org/browse/JRUBY-1375
     def test_mkdir_on_protected_directory_fails
-      Dir.mkdir("testDir_5") unless File.exists?("testDir_5")
+      Dir.mkdir("testDir_5") unless File.exist?("testDir_5")
       File.chmod(0400, 'testDir_5')
       assert_raises(Errno::EACCES) do
         Dir.mkdir("testDir_5/another_dir")

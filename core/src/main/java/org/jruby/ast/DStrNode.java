@@ -36,16 +36,16 @@ package org.jruby.ast;
 import org.jcodings.Encoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.ir.builder.StringStyle;
 
 /**
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
  */
 public class DStrNode extends DNode implements ILiteralNode {
-    private boolean frozen;
+    private StringStyle stringStyle = StringStyle.Mutable;
 
-    public DStrNode(ISourcePosition position, Encoding encoding) {
-        super(position, encoding);
+    public DStrNode(int line, Encoding encoding) {
+        super(line, encoding);
     }
 
     @Override
@@ -62,11 +62,11 @@ public class DStrNode extends DNode implements ILiteralNode {
         return iVisitor.visitDStrNode(this);
     }
 
-    public boolean isFrozen() {
-        return frozen;
+    public StringStyle getStringStyle() {
+        return stringStyle;
     }
 
-    public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+    public void setStringStyle(StringStyle frozen) {
+        this.stringStyle = frozen;
     }
 }

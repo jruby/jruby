@@ -74,6 +74,109 @@ class TestLambdaParameters < Test::Unit::TestCase
     assert_raise(ArgumentError, bug9605) {proc(&plus).call [1,2]}
   end
 
+  def test_proc_inside_lambda_inside_method_return_inside_lambda_inside_method
+    def self.a
+      -> do
+        p = Proc.new{return :a}
+        p.call
+      end.call
+    end
+    assert_equal(:a, a)
+
+    def self.b
+      lambda do
+        p = Proc.new{return :b}
+        p.call
+      end.call
+    end
+    assert_equal(:b, b)
+  end
+
+  def test_proc_inside_lambda_inside_method_return_inside_lambda_outside_method
+    def self.a
+      -> do
+        p = Proc.new{return :a}
+        p.call
+      end
+    end
+    assert_equal(:a, a.call)
+
+    def self.b
+      lambda do
+        p = Proc.new{return :b}
+        p.call
+      end
+    end
+    assert_equal(:b, b.call)
+  end
+
+  def test_proc_inside_lambda_inside_method_return_outside_lambda_inside_method
+    def self.a
+      -> do
+        Proc.new{return :a}
+      end.call.call
+    end
+    assert_raise(LocalJumpError) {a}
+
+    def self.b
+      lambda do
+        Proc.new{return :b}
+      end.call.call
+    end
+    assert_raise(LocalJumpError) {b}
+  end
+
+  def test_proc_inside_lambda_inside_method_return_outside_lambda_outside_method
+    def self.a
+      -> do
+        Proc.new{return :a}
+      end
+    end
+    assert_raise(LocalJumpError) {a.call.call}
+
+    def self.b
+      lambda do
+        Proc.new{return :b}
+      end
+    end
+    assert_raise(LocalJumpError) {b.call.call}
+  end
+
+  def test_proc_inside_lambda2_inside_method_return_outside_lambda1_inside_method
+    def self.a
+      -> do
+        -> do
+          Proc.new{return :a}
+        end.call.call
+      end.call
+    end
+    assert_raise(LocalJumpError) {a}
+
+    def self.b
+      lambda do
+        lambda do
+          Proc.new{return :a}
+        end.call.call
+      end.call
+    end
+    assert_raise(LocalJumpError) {b}
+  end
+
+  def test_proc_inside_lambda_toplevel
+    assert_separately [], <<~RUBY
+      lambda{
+        $g = proc{ return :pr }
+      }.call
+      begin
+        $g.call
+      rescue LocalJumpError
+        # OK!
+      else
+        raise
+      end
+    RUBY
+  end
+
   def test_instance_exec
     bug12568 = '[ruby-core:76300] [Bug #12568]'
     assert_nothing_raised(ArgumentError, bug12568) do
@@ -157,6 +260,21 @@ class TestLambdaParameters < Test::Unit::TestCase
     assert_equal(42, return_in_callee(42), feature8693)
   end
 
+  def break_in_current(val)
+    1.tap(&->(*) {break 0})
+    val
+  end
+
+  def break_in_callee(val)
+    yield_block(&->(*) {break 0})
+    val
+  end
+
+  def test_break
+    assert_equal(42, break_in_current(42))
+    assert_equal(42, break_in_callee(42))
+  end
+
   def test_do_lambda_source_location
     exp_lineno = __LINE__ + 3
     lmd = ->(x,
@@ -179,5 +297,32 @@ class TestLambdaParameters < Test::Unit::TestCase
     file, lineno = lmd.source_location
     assert_match(/^#{ Regexp.quote(__FILE__) }$/, file)
     assert_equal(exp_lineno, lineno, "must be at the beginning of the block")
+  end
+
+  def test_not_orphan_return
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1(&-> { return 42 }) end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { return 42 }).call end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { return 42 }) end }.m2.call)
+  end
+
+  def test_not_orphan_break
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1(&-> { break 42 }) end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { break 42 }).call end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { break 42 }) end }.m2.call)
+  end
+
+  def test_not_orphan_next
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1(&-> { next 42 }) end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { next 42 }).call end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1(&-> { next 42 }) end }.m2.call)
   end
 end

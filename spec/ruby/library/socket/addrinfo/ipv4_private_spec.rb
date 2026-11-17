@@ -8,18 +8,18 @@ describe "Addrinfo#ipv4_private?" do
     end
 
     it "returns true for a private address" do
-      Addrinfo.ip('10.0.0.0').ipv4_private?.should == true
-      Addrinfo.ip('10.0.0.5').ipv4_private?.should == true
+      Addrinfo.ip('10.0.0.0').should.ipv4_private?
+      Addrinfo.ip('10.0.0.5').should.ipv4_private?
 
-      Addrinfo.ip('172.16.0.0').ipv4_private?.should == true
-      Addrinfo.ip('172.16.0.5').ipv4_private?.should == true
+      Addrinfo.ip('172.16.0.0').should.ipv4_private?
+      Addrinfo.ip('172.16.0.5').should.ipv4_private?
 
-      Addrinfo.ip('192.168.0.0').ipv4_private?.should == true
-      Addrinfo.ip('192.168.0.5').ipv4_private?.should == true
+      Addrinfo.ip('192.168.0.0').should.ipv4_private?
+      Addrinfo.ip('192.168.0.5').should.ipv4_private?
     end
 
     it "returns false for a public address" do
-      @other.ipv4_private?.should be_false
+      @other.ipv4_private?.should == false
     end
   end
 
@@ -29,19 +29,17 @@ describe "Addrinfo#ipv4_private?" do
     end
 
     it "returns false" do
-      @other.ipv4_private?.should be_false
+      @other.ipv4_private?.should == false
     end
   end
 
-  with_feature :unix_socket do
-    describe "for a unix socket" do
-      before :each do
-        @addrinfo = Addrinfo.unix("/tmp/sock")
-      end
+  describe "for a unix socket" do
+    before :each do
+      @addrinfo = Addrinfo.unix("/tmp/sock")
+    end
 
-      it "returns false" do
-        @addrinfo.ipv4_private?.should be_false
-      end
+    it "returns false" do
+      @addrinfo.ipv4_private?.should == false
     end
   end
 end

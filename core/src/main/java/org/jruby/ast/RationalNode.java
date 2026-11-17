@@ -7,19 +7,18 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
-/**
- *
- * @author enebo
- */
-public class RationalNode extends NumericNode implements SideEffectFree {
+import org.jruby.Ruby;
+import org.jruby.RubyRational;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
+
+public class RationalNode extends NumericNode implements LiteralValue, SideEffectFree {
     private final NumericNode numerator;
     private final NumericNode denominator;
 
-    public RationalNode(ISourcePosition position, NumericNode numerator, NumericNode denominator) {
-        super(position);
+    public RationalNode(int line, NumericNode numerator, NumericNode denominator) {
+        super(line);
 
         this.numerator = numerator;
         this.denominator = denominator;
@@ -32,12 +31,12 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     @Override
     public NumericNode negate() {
-        return new RationalNode(getPosition(), numerator.negate(), denominator);
+        return new RationalNode(getLine(), numerator.negate(), denominator);
     }
 
     @Override
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(numerator, denominator);
     }
 
     @Override
@@ -51,5 +50,11 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     public NumericNode getDenominator() {
         return denominator;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return RubyRational.newRationalCanonicalize(runtime.getCurrentContext(),
+                numerator.literalValue(runtime), denominator.literalValue(runtime));
     }
 }

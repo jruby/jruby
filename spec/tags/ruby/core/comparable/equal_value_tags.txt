@@ -1,1 +1,0 @@
-fails:Comparable#== when #<=> calls super calls the defined #<=> only once for different objects

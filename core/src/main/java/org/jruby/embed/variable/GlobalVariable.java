@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * An implementation of BiVariable for a Ruby global variable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class GlobalVariable extends AbstractVariable {
 
@@ -51,7 +51,7 @@ public class GlobalVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a global
      * variable is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of GlobalVariable
@@ -83,7 +83,6 @@ public class GlobalVariable extends AbstractVariable {
     /**
      * Retrieves global variables from Ruby after the evaluation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
@@ -114,7 +113,6 @@ public class GlobalVariable extends AbstractVariable {
      * Retrieves a global variable by key from Ruby after the evaluation.
      *
      * @param runtime Ruby runtime
-     * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save a retrieved global variable.
      * @param key name of the global variable
      */
@@ -137,7 +135,7 @@ public class GlobalVariable extends AbstractVariable {
 
     static {
         final String[] NAMES = {
-            "$DEBUG", "$F", "$FILENAME", "$KCODE", "$LOAD_PATH", "$SAFE", "$VERBOSE", "$CLASSPATH", "$LOADED_FEATURES",
+            "$DEBUG", "$F", "$FILENAME", "$LOAD_PATH", "$VERBOSE", "$CLASSPATH", "$LOADED_FEATURES",
             "$PROGRAM_NAME", "$FIELD_SEPARATOR", "$ERROR_POSITION", "$DEFAULT_OUTPUT", "$PREMATCH", "$RS", "$MATCH",
             "$LAST_READ_LINE", "$FS", "$INPUT_RECORD_SEPARATOR", "$PID", "$NR", "$ERROR_INFO", "$PROCESS_ID",
             "$OUTPUT_RECORD_SEPARATOR", "$INPUT_LINE_NUMBER", "$LAST_PAREN_MATCH", "$LAST_MATCH_INFO", "$CHILD_STATUS",
@@ -185,7 +183,7 @@ public class GlobalVariable extends AbstractVariable {
     @Override
     public void setJavaObject(Ruby runtime, Object javaObject) {
         updateByJavaObject(runtime, javaObject);
-        tryEagerInjection(runtime, null);
+        tryEagerInjection(null);
     }
 
     /**
@@ -197,24 +195,18 @@ public class GlobalVariable extends AbstractVariable {
         // do nothing
     }
 
-    @Deprecated
-    public void tryEagerInjection(Ruby runtime, IRubyObject receiver) {
-        tryEagerInjection(receiver);
-    }
-
     /**
      * Injects a global variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
      *
-     * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
     public void tryEagerInjection(final IRubyObject receiver) {
         // wreckages of global local vars might remain on runtime, which may cause
         // assertion error since those names doesn't start from "$"
-        final String name = this.name.startsWith("$") ? this.name : ("$" + this.name);
+        final String name = this.name.startsWith("$") ? this.name : ('$' + this.name);
         synchronized (getRuntime()) {
-            getRuntime().getGlobalVariables().set(name.intern(), irubyObject);
+            getRuntime().getGlobalVariables().set(name, rubyObject);
         }
     }
 
@@ -225,7 +217,7 @@ public class GlobalVariable extends AbstractVariable {
     @Override
     public void remove() {
         synchronized (getRuntime()) {
-            getRuntime().getGlobalVariables().clear(name.intern());
+            getRuntime().getGlobalVariables().clear(name);
         }
     }
 

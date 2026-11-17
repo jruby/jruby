@@ -24,24 +24,24 @@ describe "IO#gets" do
     end
   end
 
+  it "sets $_ to nil after the last line has been read" do
+    while @io.gets
+    end
+    $_.should == nil
+  end
+
   it "returns nil if called at the end of the stream" do
     IOSpecs.lines.length.times { @io.gets }
     @io.gets.should == nil
   end
 
   it "raises IOError on closed stream" do
-    lambda { IOSpecs.closed_io.gets }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.gets }.should.raise(IOError)
   end
 
   describe "with no separator" do
     it "returns the next line of string that is separated by $/" do
       IOSpecs.lines.each { |line| line.should == @io.gets }
-    end
-
-    it "returns tainted strings" do
-      while line = @io.gets
-        line.tainted?.should == true
-      end
     end
 
     it "updates lineno with each invocation" do
@@ -60,12 +60,6 @@ describe "IO#gets" do
   describe "with nil separator" do
     it "returns the entire contents" do
       @io.gets(nil).should == IOSpecs.lines.join("")
-    end
-
-    it "returns tainted strings" do
-      while line = @io.gets(nil)
-        line.tainted?.should == true
-      end
     end
 
     it "updates lineno with each invocation" do
@@ -96,12 +90,6 @@ describe "IO#gets" do
       @io.gets.should == IOSpecs.lines[4]
     end
 
-    it "returns tainted strings" do
-      while line = @io.gets("")
-        line.tainted?.should == true
-      end
-    end
-
     it "updates lineno with each invocation" do
       while @io.gets("")
         @io.lineno.should == @count += 1
@@ -120,12 +108,6 @@ describe "IO#gets" do
       @io.gets("la linea").should == "Voici la ligne une.\nQui \303\250 la linea"
     end
 
-    it "returns tainted strings" do
-      while line = @io.gets("la")
-        line.tainted?.should == true
-      end
-    end
-
     it "updates lineno with each invocation" do
       while (@io.gets("la"))
         @io.lineno.should == @count += 1
@@ -137,11 +119,48 @@ describe "IO#gets" do
         $..should == @count += 1
       end
     end
+
+    describe "that consists of multiple bytes" do
+      platform_is_not :windows do
+        it "should match the separator even if the buffer is filled over successive reads" do
+          IO.pipe do |read, write|
+
+            # Write part of the string with the separator split between two write calls. We want
+            # the read to intertwine such that when the read starts the full data isn't yet
+            # available in the buffer.
+            write.write("Aquí está la línea tres\r\n")
+
+            t = Thread.new do
+              # Continue reading until the separator is encountered or the pipe is closed.
+              read.gets("\r\n\r\n")
+            end
+
+            # Write the other half of the separator, which should cause the `gets` call to now
+            # match. Explicitly close the pipe for good measure so a bug in `gets` doesn't block forever.
+            Thread.pass until t.stop?
+
+            write.write("\r\nelse\r\n\r\n")
+            write.close
+
+            t.value.bytes.should == "Aquí está la línea tres\r\n\r\n".bytes
+            read.read(8).bytes.should == "else\r\n\r\n".bytes
+          end
+        end
+      end
+    end
   end
 
   describe "when passed chomp" do
     it "returns the first line without a trailing newline character" do
       @io.gets(chomp: true).should == IOSpecs.lines_without_newline_characters[0]
+    end
+
+    it "raises exception when options passed as Hash" do
+      -> { @io.gets({ chomp: true }) }.should.raise(TypeError)
+
+      -> {
+        @io.gets("\n", 1, { chomp: true })
+      }.should.raise(ArgumentError, "wrong number of arguments (given 3, expected 0..2)")
     end
   end
 end
@@ -156,11 +175,11 @@ describe "IO#gets" do
   end
 
   it "raises an IOError if the stream is opened for append only" do
-    lambda { File.open(@name, "a:utf-8") { |f| f.gets } }.should raise_error(IOError)
+    -> { File.open(@name, "a:utf-8") { |f| f.gets } }.should.raise(IOError)
   end
 
   it "raises an IOError if the stream is opened for writing only" do
-    lambda { File.open(@name, "w:utf-8") { |f| f.gets } }.should raise_error(IOError)
+    -> { File.open(@name, "w:utf-8") { |f| f.gets } }.should.raise(IOError)
   end
 end
 
@@ -223,6 +242,16 @@ describe "IO#gets" do
 
   it "reads all bytes when pass a separator and reading more than all bytes" do
     @io.gets("\t", 100).should == "one\n\ntwo\n\nthree\nfour\n"
+  end
+
+  it "returns empty string when 0 passed as a limit" do
+    @io.gets(0).should == ""
+    @io.gets(nil, 0).should == ""
+    @io.gets("", 0).should == ""
+  end
+
+  it "does not accept limit that doesn't fit in a C off_t" do
+    -> { @io.gets(2**128) }.should.raise(RangeError)
   end
 end
 
@@ -295,25 +324,25 @@ describe "IO#gets" do
   end
 
   it "overwrites the default external encoding with the IO object's own external encoding" do
-    Encoding.default_external = Encoding::ASCII_8BIT
+    Encoding.default_external = Encoding::BINARY
     Encoding.default_internal = Encoding::UTF_8
     @io = new_io @name, 'r'
     @io.set_encoding Encoding::IBM866
     @io.gets.encoding.should == Encoding::UTF_8
   end
 
-  it "ignores the internal encoding if the default external encoding is ASCII-8BIT" do
-    Encoding.default_external = Encoding::ASCII_8BIT
+  it "ignores the internal encoding if the default external encoding is BINARY" do
+    Encoding.default_external = Encoding::BINARY
     Encoding.default_internal = Encoding::UTF_8
     @io = new_io @name, 'r'
-    @io.gets.encoding.should == Encoding::ASCII_8BIT
+    @io.gets.encoding.should == Encoding::BINARY
   end
 
-  it "transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT" do
-    Encoding.default_external = Encoding::ASCII_8BIT
+  it "ignores the internal encoding if the IO object's external encoding is BINARY" do
+    Encoding.default_external = Encoding::BINARY
     Encoding.default_internal = Encoding::UTF_8
     @io = new_io @name, 'r'
-    @io.set_encoding Encoding::ASCII_8BIT, Encoding::UTF_8
-    @io.gets.encoding.should == Encoding::UTF_8
+    @io.set_encoding Encoding::BINARY, Encoding::UTF_8
+    @io.gets.encoding.should == Encoding::BINARY
   end
 end

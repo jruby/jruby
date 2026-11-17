@@ -1,9 +1,8 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
 require_relative 'shared/basic'
 require_relative 'shared/unicode'
-require_relative 'shared/taint'
 
 describe "Array#pack with format 'U'" do
   it_behaves_like :array_pack_basic, 'U'
@@ -16,7 +15,16 @@ describe "Array#pack with format 'u'" do
   it_behaves_like :array_pack_basic, 'u'
   it_behaves_like :array_pack_basic_non_float, 'u'
   it_behaves_like :array_pack_arguments, 'u'
-  it_behaves_like :array_pack_taint, 'u'
+
+  it "calls #to_str to convert an Object to a String" do
+    obj = mock("pack u string")
+    obj.should_receive(:to_str).and_return("``abcdef")
+    [obj].pack("u*").should == "(8&!A8F-D968`\n"
+  end
+
+  it "will not implicitly convert a number to a string" do
+    -> { [0].pack('u') }.should.raise(TypeError)
+  end
 
   it "encodes an empty string as an empty string" do
     [""].pack("u").should == ""
@@ -112,16 +120,16 @@ describe "Array#pack with format 'u'" do
 
   it "raises a TypeError if #to_str does not return a String" do
     obj = mock("pack m non-string")
-    lambda { [obj].pack("u") }.should raise_error(TypeError)
+    -> { [obj].pack("u") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed nil" do
-    lambda { [nil].pack("u") }.should raise_error(TypeError)
+    -> { [nil].pack("u") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed an Integer" do
-    lambda { [0].pack("u") }.should raise_error(TypeError)
-    lambda { [bignum_value].pack("u") }.should raise_error(TypeError)
+    -> { [0].pack("u") }.should.raise(TypeError)
+    -> { [bignum_value].pack("u") }.should.raise(TypeError)
   end
 
   it "sets the output string to US-ASCII encoding" do

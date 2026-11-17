@@ -1,44 +1,21 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
-
-describe "Kernel.at_exit" do
-  it "is a private method" do
-    Kernel.should have_private_instance_method(:at_exit)
-  end
-
-  it "runs after all other code" do
-    ruby_exe("at_exit {print 5}; print 6").should == "65"
-  end
-
-  it "runs in reverse order of registration" do
-    code = "at_exit {print 4};at_exit {print 5}; print 6; at_exit {print 7}"
-    ruby_exe(code).should == "6754"
-  end
-
-  it "allows calling exit inside at_exit handler" do
-    code = "at_exit {print 3}; at_exit {print 4; exit; print 5}; at_exit {print 6}"
-    ruby_exe(code).should == "643"
-  end
-
-  it "gives access to the last raised exception" do
-    code = <<-EOC
-      at_exit do
-        puts "The exception matches: \#{$! == $exception}"
-      end
-
-      begin
-        raise "foo"
-      rescue => $exception
-        raise
-      end
-    EOC
-
-    result = ruby_exe(code, args: "2>&1", escape: true)
-    result.should =~ /The exception matches: true/
-  end
-
-end
+require_relative '../../shared/kernel/at_exit'
 
 describe "Kernel#at_exit" do
-  it "needs to be reviewed for spec completeness"
+  it_behaves_like :kernel_at_exit, :at_exit
+
+  it "is a private method" do
+    Kernel.private_instance_methods(false).should.include?(:at_exit)
+  end
+
+  it "raises ArgumentError if called without a block" do
+    -> { at_exit }.should.raise(ArgumentError, "called without a block")
+  end
+end
+
+describe "Kernel.at_exit" do
+  it "is a public method" do
+    Kernel.public_methods(false).should.include?(:at_exit)
+  end
 end

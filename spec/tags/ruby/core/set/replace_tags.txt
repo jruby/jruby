@@ -1,0 +1,2 @@
+fails(we do not track iteration in progress in set or hash):Set#replace raises RuntimeError when called during iteration
+fails:Set#replace transfers compare_by_identity flag of the argument if it is a Set

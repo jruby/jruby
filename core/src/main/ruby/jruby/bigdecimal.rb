@@ -17,8 +17,9 @@ module BigMath
   #   #=> "1.000000000000"
   #
   def log(x, prec)
-    raise ArgumentError if x.nil? || !x.is_a?(Numeric)
-    raise Math::DomainError if x.is_a?(Complex) || x <= 0
+    raise ArgumentError.new("#{x.inspect} can't be coerced into BigDecimal") if x.nil? || !x.is_a?(Numeric)
+    raise Math::DomainError.new("#{x.class} argument for BigDecimal.log") if x.is_a?(Complex)
+    raise Math::DomainError.new("Zero or negative argument for BigDecimal.log") if x <= 0
     raise ArgumentError unless (true if Integer(prec) rescue false)
     prec = prec.to_i
     raise ArgumentError if prec < 1
@@ -78,7 +79,8 @@ module BigMath
   end
 
   def exp(x, prec)
-    raise ArgumentError if x.nil? || !x.is_a?(Numeric) || x.is_a?(Complex)
+    raise ArgumentError.new("#{x.inspect} can't be coerced into BigDecimal") if x.nil? || !x.is_a?(Numeric)
+    raise ArgumentError.new("#{x.class} can't be coerced into BigDecimal") if x.is_a?(Complex)
     raise ArgumentError unless (true if Integer(prec) rescue false)
     prec = prec.to_i
     raise ArgumentError if prec < 1

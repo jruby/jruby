@@ -1,4 +1,0 @@
-windows(JRUBY-4820):File#size returns the file's size as a Fixnum
-windows(JRUBY-4820):File#size returns the file's size in bytes
-windows(JRUBY-4820):File#size returns the file's current size even if modified
-windows(JRUBY-4820):File#size for an empty file returns 0

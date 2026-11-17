@@ -52,30 +52,30 @@ describe "Logger#add" do
   end
 
   it "receives a block" do
-    lambda {
+    -> {
       @logger.log(nil, "test", "TestApp") do
         1+1
       end
-    }.should_not raise_error
+    }.should_not.raise
   end
 
   it "calls the block if message is nil" do
     temp = 0
-    lambda {
+    -> {
       @logger.log(nil, nil, "TestApp") do
         temp = 1+1
       end
-    }.should_not raise_error
+    }.should_not.raise
     temp.should == 2
   end
 
   it "ignores the block if the message is not nil" do
     temp = 0
-    lambda {
+    -> {
       @logger.log(nil, "not nil", "TestApp") do
         temp = 1+1
       end
-    }.should_not raise_error
+    }.should_not.raise
     temp.should == 0
   end
 end

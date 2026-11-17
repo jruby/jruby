@@ -1,1 +1,0 @@
-fails:ENV.index returns the index associated with the passed value

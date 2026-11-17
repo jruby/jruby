@@ -178,7 +178,12 @@ class TestDateStrptime < Test::Unit::TestCase
      [['11:33:44 PM AMT', '%I:%M:%S %p %Z'], [nil,nil,nil,23,33,44,'AMT',nil,nil], __LINE__],
      [['11:33:44 P.M. AMT', '%I:%M:%S %p %Z'], [nil,nil,nil,23,33,44,'AMT',nil,nil], __LINE__],
 
-     [['fri1feb034pm+5', '%a%d%b%y%H%p%Z'], [2003,2,1,16,nil,nil,'+5',5*3600,5]]
+     [['fri1feb034pm+5', '%a%d%b%y%H%p%Z'], [2003,2,1,16,nil,nil,'+5',5*3600,5]],
+     [['E.  Australia Standard Time', '%Z'], [nil,nil,nil,nil,nil,nil,'E.  Australia Standard Time',10*3600,nil], __LINE__],
+
+     # out of range
+     [['+0.9999999999999999999999', '%Z'], [nil,nil,nil,nil,nil,nil,'+0.9999999999999999999999',+1*3600,nil], __LINE__],
+     [['+9999999999999999999999.0', '%Z'], [nil,nil,nil,nil,nil,nil,'+9999999999999999999999.0',nil,nil], __LINE__],
     ].each do |x, y|
       h = Date._strptime(*x)
       a = h.values_at(:year,:mon,:mday,:hour,:min,:sec,:zone,:offset,:wday)
@@ -291,6 +296,11 @@ class TestDateStrptime < Test::Unit::TestCase
     assert_not_nil(Date._strptime('Januari', '%B'))
     assert_nil(Date._strptime('Sundai,', '%A,'))
     assert_nil(Date._strptime('Januari,', '%B,'))
+
+    assert_nil(Date._strptime('+24:00', '%Z')[:offset])
+    assert_nil(Date._strptime('+23:60', '%Z')[:offset])
+    assert_nil(Date._strptime('+23:00:60', '%Z')[:offset])
+    assert_nil(Date._strptime('+23:00:60', '%Z')[:offset])
   end
 
   def test_strptime
@@ -459,28 +469,28 @@ class TestDateStrptime < Test::Unit::TestCase
   end
 
   def test_strptime__ex
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.strptime('')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.strptime('')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.strptime('2001-02-29', '%F')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.strptime('2001-02-29T23:59:60', '%FT%T')
     end
-    assert_nothing_raised(ArgumentError) do
+    assert_nothing_raised(Date::Error) do
       DateTime.strptime('2001-03-01T23:59:60', '%FT%T')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       DateTime.strptime('2001-03-01T23:59:61', '%FT%T')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.strptime('23:55', '%H:%M')
     end
-    assert_raise(ArgumentError) do
+    assert_raise(Date::Error) do
       Date.strptime('01-31-2011', '%m/%d/%Y')
     end
   end

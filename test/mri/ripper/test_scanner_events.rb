@@ -15,13 +15,23 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
   def test_event_coverage
     dispatched = Ripper::SCANNER_EVENTS.map {|event,_| event }
     dispatched.each do |e|
-      assert_equal true, respond_to?("test_#{e}", true), "event not tested: #{e}"
+      assert_respond_to(self, ["test_#{e}", true], "event not tested: #{e}")
     end
   end
 
-  def scan(target, str)
+  def scan(target, str, &error)
     sym = "on_#{target}".intern
-    Ripper.lex(str).select {|_1,type,_2| type == sym }.map {|_1,_2,tok| tok }
+    lexer = Ripper::Lexer.new(str)
+    if error
+      lexer.singleton_class.class_eval do
+        define_method(:on_error) {|ev|
+          yield __callee__, ev, token()
+        }
+        alias on_parse_error on_error
+        alias compile_error on_error
+      end
+    end
+    lexer.lex.select {|_,type,_| type == sym }.map {|_,_,tok| tok }
   end
 
   def test_tokenize
@@ -43,16 +53,18 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  Ripper.tokenize("1  .foo\n")
     assert_equal ["1", "\n", "  ", ".", "foo", "\n"],
                  Ripper.tokenize("1\n  .foo\n")
+    assert_equal ["def", " ", "f", ";", " ", "(", "x", ")", "::", "A", " ", "="],
+                 Ripper.tokenize("def f; (x)::A =")
   end
 
   def test_lex
-    assert_equal [],
+    assert_lex   [],
                  Ripper.lex('')
-    assert_equal [[[1,0], :on_ident, "a", Ripper::EXPR_CMDARG]],
+    assert_lex   [[[1,0], :on_ident, "a", Ripper::EXPR_CMDARG]],
                  Ripper.lex('a')
-    assert_equal [[[1, 0], :on_kw, "nil", Ripper::EXPR_END]],
+    assert_lex   [[[1, 0], :on_kw, "nil", Ripper::EXPR_END]],
                  Ripper.lex("nil")
-    assert_equal [[[1, 0], :on_kw, "def", Ripper::EXPR_FNAME],
+    assert_lex   [[[1, 0], :on_kw, "def", Ripper::EXPR_FNAME],
                   [[1, 3], :on_sp, " ", Ripper::EXPR_FNAME],
                   [[1, 4], :on_ident, "m", Ripper::EXPR_ENDFN],
                   [[1, 5], :on_lparen, "(", Ripper::EXPR_BEG | Ripper::EXPR_LABEL],
@@ -60,59 +72,66 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                   [[1, 7], :on_rparen, ")", Ripper::EXPR_ENDFN],
                   [[1, 8], :on_kw, "end", Ripper::EXPR_END]],
                  Ripper.lex("def m(a)end")
-    assert_equal [[[1, 0], :on_int, "1", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+    assert_lex   [[[1, 0], :on_int, "1", Ripper::EXPR_END],
                   [[1, 1], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[2, 0], :on_int, "2", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+                  [[2, 0], :on_int, "2", Ripper::EXPR_END],
                   [[2, 1], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[3, 0], :on_int, "3", Ripper::EXPR_END | Ripper::EXPR_ENDARG]],
+                  [[3, 0], :on_int, "3", Ripper::EXPR_END]],
                  Ripper.lex("1\n2\n3")
-    assert_equal [[[1, 0], :on_heredoc_beg, "<<""EOS", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_heredoc_beg, "<<""EOS", Ripper::EXPR_BEG],
                   [[1, 5], :on_nl, "\n", Ripper::EXPR_BEG],
                   [[2, 0], :on_tstring_content, "heredoc\n", Ripper::EXPR_BEG],
                   [[3, 0], :on_heredoc_end, "EOS", Ripper::EXPR_BEG]],
                  Ripper.lex("<<""EOS\nheredoc\nEOS")
-    assert_equal [[[1, 0], :on_heredoc_beg, "<<""EOS", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_heredoc_beg, "<<""EOS", Ripper::EXPR_BEG],
                   [[1, 5], :on_nl, "\n", Ripper::EXPR_BEG],
                   [[2, 0], :on_heredoc_end, "EOS", Ripper::EXPR_BEG]],
                  Ripper.lex("<<""EOS\nEOS"),
                  "bug#4543"
-    assert_equal [[[1, 0], :on_regexp_beg, "/", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_regexp_beg, "/", Ripper::EXPR_BEG],
                   [[1, 1], :on_tstring_content, "foo\nbar", Ripper::EXPR_BEG],
                   [[2, 3], :on_regexp_end, "/", Ripper::EXPR_BEG]],
                  Ripper.lex("/foo\nbar/")
-    assert_equal [[[1, 0], :on_regexp_beg, "/", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_regexp_beg, "/", Ripper::EXPR_BEG],
                   [[1, 1], :on_tstring_content, "foo\n\u3020", Ripper::EXPR_BEG],
                   [[2, 3], :on_regexp_end, "/", Ripper::EXPR_BEG]],
                  Ripper.lex("/foo\n\u3020/")
-    assert_equal [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
                   [[1, 1], :on_tstring_content, "foo\n\xe3\x80\xa0", Ripper::EXPR_BEG],
-                  [[2, 3], :on_tstring_end, "'", Ripper::EXPR_END | Ripper::EXPR_ENDARG]],
+                  [[2, 3], :on_tstring_end, "'", Ripper::EXPR_END]],
                  Ripper.lex("'foo\n\xe3\x80\xa0'")
-    assert_equal [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
                   [[1, 1], :on_tstring_content, "\u3042\n\u3044", Ripper::EXPR_BEG],
-                  [[2, 3], :on_tstring_end, "'", Ripper::EXPR_END | Ripper::EXPR_ENDARG]],
+                  [[2, 3], :on_tstring_end, "'", Ripper::EXPR_END]],
                  Ripper.lex("'\u3042\n\u3044'")
-    assert_equal [[[1, 0], :on_rational, "1r", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+    assert_lex   [[[1, 0], :on_rational, "1r", Ripper::EXPR_END],
                   [[1, 2], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[2, 0], :on_imaginary, "2i", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+                  [[2, 0], :on_imaginary, "2i", Ripper::EXPR_END],
                   [[2, 2], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[3, 0], :on_imaginary, "3ri", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+                  [[3, 0], :on_imaginary, "3ri", Ripper::EXPR_END],
                   [[3, 3], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[4, 0], :on_rational, "4.2r", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+                  [[4, 0], :on_rational, "4.2r", Ripper::EXPR_END],
                   [[4, 4], :on_nl, "\n", Ripper::EXPR_BEG],
-                  [[5, 0], :on_imaginary, "5.6ri", Ripper::EXPR_END | Ripper::EXPR_ENDARG],
+                  [[5, 0], :on_imaginary, "5.6ri", Ripper::EXPR_END],
                  ],
                  Ripper.lex("1r\n2i\n3ri\n4.2r\n5.6ri")
-     assert_equal [[[1, 0], :on_heredoc_beg, "<<~EOS", Ripper::EXPR_BEG],
-                   [[1, 6], :on_nl, "\n", Ripper::EXPR_BEG],
-                   [[2, 0], :on_ignored_sp, "  ", Ripper::EXPR_BEG],
-                   [[2, 2], :on_tstring_content, "heredoc\n", Ripper::EXPR_BEG],
-                   [[3, 0], :on_heredoc_end, "EOS", Ripper::EXPR_BEG]
+    assert_lex   [[[1, 0], :on_heredoc_beg, "<<~EOS", Ripper::EXPR_BEG],
+                  [[1, 6], :on_nl, "\n", Ripper::EXPR_BEG],
+                  [[2, 0], :on_ignored_sp, "  ", Ripper::EXPR_BEG],
+                  [[2, 2], :on_tstring_content, "heredoc\n", Ripper::EXPR_BEG],
+                  [[3, 0], :on_heredoc_end, "EOS", Ripper::EXPR_BEG]
                  ],
                  Ripper.lex("<<~EOS\n  heredoc\nEOS")
-    assert_equal [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
+    assert_lex   [[[1, 0], :on_tstring_beg, "'", Ripper::EXPR_BEG],
                   [[1, 1], :on_tstring_content, "foo", Ripper::EXPR_BEG]],
                  Ripper.lex("'foo")
+  end
+
+  def assert_lex(expected, *rest)
+    expected = expected.map do |pos, type, tok, state, *rest|
+      [pos, type, tok, Ripper::Lexer::State.new(state), *rest]
+    end
+    assert_equal(expected, *rest)
   end
 
   def test_location
@@ -160,6 +179,11 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
   def test_backtick
     assert_equal ["`"],
                  scan('backtick', %q[p `make all`])
+  end
+
+  def test_colon2_call
+    assert_equal ["::"],
+                 scan('op', %q[ a::b ])
   end
 
   def test_comma
@@ -259,6 +283,8 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('embvar', '"#@ivar"')
     assert_equal ['#'],
                  scan('embvar', '"#@@cvar"')
+    assert_equal [],
+                 scan('embvar', '"#@1"')
     assert_equal [],
                  scan('embvar', '"#lvar"')
     assert_equal [],
@@ -693,7 +719,7 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('words_sep', '%w( w w w )')
     assert_equal [' ', "\n", ' ', ' '],
                  scan('words_sep', "%w( w\nw w )")
-    assert_equal ["\n\n", "\n ", ' ', ' '],
+    assert_equal ["\n", "\n", "\n", ' ', ' ', ' '],
                  scan('words_sep', "%w(\n\nw\n w w )")
   end
 
@@ -740,6 +766,7 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
     assert_equal [" E\n\n"],
                  scan('tstring_content', "<<""'E'\n E\n\n"),
                  bug10392
+                 scan('tstring_content', "tap{<<""EOS}\n""there\n""heredoc\#@1xxx\nEOS")
   end
 
   def test_heredoc_end
@@ -840,6 +867,11 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('sp', "%w(  w  )")
     assert_equal [],
                  scan('sp', "p(/ /)")
+
+    assert_equal ["\\\n"],
+                 scan('sp', "\\\n")
+    assert_equal ['\ '],
+                 scan('sp', '\ ')
   end
 
   # `nl' event always means End-Of-Statement.
@@ -881,6 +913,13 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('ignored_nl', "1;\r\n")
   end
 
+  def test_ignored_sp
+    assert_equal [],
+                 scan('ignored_sp', "<<~EOS\nheredoc\nEOS")
+    assert_equal ["  "],
+                 scan('ignored_sp', "<<~EOS\n  heredoc\nEOS")
+  end
+
   def test___end__
     assert_equal [],
                  scan('__end__', "")
@@ -903,6 +942,26 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('CHAR', "?a")
     assert_equal [],
                  scan('CHAR', "@ivar")
+
+    assert_equal ["?\\M-H"], scan('CHAR', '?\\M-H')
+
+    assert_equal ["?\\u0041"],
+                 scan('CHAR', "?\\u0041")
+
+    assert_equal ["?\\u{41}"],
+                 scan('CHAR', "?\\u{41}")
+
+    err = nil
+    assert_equal [], scan('CHAR', '?\\') {|*e| err = e}
+    assert_equal([:on_parse_error, "Invalid escape character syntax", "?\\"], err)
+
+    err = nil
+    assert_equal [], scan('CHAR', '?\\M ') {|*e| err = e}
+    assert_equal([:on_parse_error, "Invalid escape character syntax", "?\\M "], err)
+
+    err = nil
+    scan('CHAR', '?\u{41 42}') {|*e| err = e}
+    assert_equal [:on_parse_error, "Multiple codepoints at single character literal", "42"], err
   end
 
   def test_label
@@ -930,4 +989,35 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('tlambda_arg', '-> {}')
   end
 
+  def test_invalid_char
+    err = nil
+    assert_equal(['a'], scan('ident', "\ea") {|*e| err = e})
+    assert_equal(:compile_error, err[0])
+    assert_match(/Invalid char/, err[1])
+    assert_equal("\e", err[2])
+  end
+
+  def test_invalid_escape
+    err = nil
+    assert_equal ["\\C-\u{3042}"], scan('tstring_content', %["\\C-\u{3042}"]) {|*e| err = e}
+    assert_equal [:on_parse_error, "Invalid escape character syntax", "\\C-\u{3042}"], err
+  end
+
+  def test_invalid_hex_escape_string
+    err = nil
+    assert_equal ['\\x', 'U'], scan('tstring_content', '"\\xU"') {|*e| err = e}
+    assert_equal [:on_parse_error, "invalid hex escape", "\\x"], err
+  end
+
+  def test_invalid_hex_escape_regexp
+    err = nil
+    assert_equal ['\\x', 'U'], scan('tstring_content', '/\\xU/') {|*e| err = e}
+    assert_equal [:on_parse_error, "invalid hex escape", "\\x"], err
+  end
+
+  def test_error_token
+    src = "{a:,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n""hello}"
+    err = scan('parse_error', src) {|*e| break e}
+    assert_equal "", err[2]
+  end
 end if ripper_test

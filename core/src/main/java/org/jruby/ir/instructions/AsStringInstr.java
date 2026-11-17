@@ -1,19 +1,17 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -32,31 +30,20 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
                 scope.getManager().getRuntime().newSymbol(TO_S),
                 nonNull(source),
                 Operand.EMPTY_ARRAY,
+                0,
                 isPotentiallyRefined);
-    }
 
-    private AsStringInstr(IRScope scope, Variable result, Operand source, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(
-                scope,
-                Operation.AS_STRING,
-                CallType.FUNCTIONAL,
-                result,
-                scope.getManager().getRuntime().newSymbol(TO_S),
-                nonNull(source),
-                Operand.EMPTY_ARRAY,
-                isPotentiallyRefined,
-                callSite,
-                callSiteId);
+        assert isPotentiallyRefined : "AsStringInstr should only be needed in refined scopes";
     }
 
     private static Operand nonNull(Operand source) {
-        return source == null ? StringLiteral.EMPTY_STRING : source;
+        return source == null ? MutableString.EMPTY_STRING : source;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new AsStringInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii),
-                getReceiver().cloneForInlining(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     @Override
@@ -75,11 +62,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object receiver = getReceiver().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (isPotentiallyRefined()) {
-            return IRRuntimeHelpers.asString(context, self, (IRubyObject) receiver, getCallSite());
-        }
-
-        return ((IRubyObject) receiver).asString();
+        return IRRuntimeHelpers.asString(context, self, (IRubyObject) receiver, getCallSite());
     }
 
     @Override

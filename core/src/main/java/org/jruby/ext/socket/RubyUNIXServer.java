@@ -32,12 +32,14 @@ package org.jruby.ext.socket;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
+import org.jruby.api.Define;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,20 +49,16 @@ import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
+
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
-    private static ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUNIXServer(runtime, klass);
-        }
-    };
-
-    static void createUNIXServer(Ruby runtime) {
-        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
-
-        runtime.getObject().setConstant("UNIXserver", rb_cUNIXServer);
-        
-        rb_cUNIXServer.defineAnnotatedMethods(RubyUNIXServer.class);
+    static void createUNIXServer(ThreadContext context, RubyClass UNIXSocket) {
+        defineClass(context, "UNIXServer", UNIXSocket, RubyUNIXServer::new).
+                defineMethods(context, RubyUNIXServer.class);
     }
 
     public RubyUNIXServer(Ruby runtime, RubyClass type) {
@@ -69,14 +67,25 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        init_unixsock(context.runtime, path, true);
+        init_unixsock(context, path, true);
 
         return this;
     }
 
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        UnixSocketChannel socketChannel = acceptChannel(context);
+
+        RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
+
+        sock.init_sock(context.runtime, socketChannel, "");
+
+        return sock;
+    }
+
+    private UnixSocketChannel acceptChannel(ThreadContext context) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerAcceptChannel(context, scheduler);
 
         try {
 
@@ -89,17 +98,44 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
                 } else {
                     UnixSocketChannel socketChannel = asUnixServer().accept();
+                    // null when another thread made the channel nonblocking and took the connection first
+                    if (socketChannel == null) continue;
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-
-                    sock.init_sock(context.runtime, socketChannel, "");
-
-                    return sock;
+                    return socketChannel;
                 }
             }
 
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private UnixSocketChannel schedulerAcceptChannel(ThreadContext context, IRubyObject scheduler) {
+        while (true) {
+            SelectableChannel selectable = (SelectableChannel) getChannel();
+            UnixSocketChannel socketChannel;
+
+            synchronized (selectable.blockingLock()) {
+                boolean oldBlocking = selectable.isBlocking();
+
+                try {
+                    selectable.configureBlocking(false);
+                    socketChannel = ((UnixServerSocketChannel) selectable).accept();
+                } catch (IOException ioe) {
+                    if (!"accept failed: Resource temporarily unavailable".equals(ioe.getMessage())) {
+                        throw context.runtime.newIOErrorFromException(ioe);
+                    }
+                    socketChannel = null;
+                } finally {
+                    try {selectable.configureBlocking(oldBlocking);} catch (IOException ioe) {}
+                }
+            }
+
+            if (socketChannel != null) return socketChannel;
+
+            // outside the blocking lock, which a sibling fiber may need to accept on this server
+            schedulerWaitAcceptable(context, scheduler);
         }
     }
 
@@ -126,11 +162,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                     UnixSocketChannel socketChannel = ((UnixServerSocketChannel) selectable).accept();
 
                     if (socketChannel == null) {
-                        if (!ex) return runtime.newSymbol("wait_readable");
+                        if (!ex) return asSymbol(context, "wait_readable");
                         throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                     }
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
 
                     sock.init_sock(context.runtime, socketChannel, "");
 
@@ -142,7 +178,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
             } catch (IOException ioe) {
                 if (ioe.getMessage().equals("accept failed: Resource temporarily unavailable")) {
-                    if (!ex) return runtime.newSymbol("wait_readable");
+                    if (!ex) return asSymbol(context, "wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("accept");
                 }
 
@@ -154,27 +190,22 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod
     public IRubyObject listen(ThreadContext context, IRubyObject log) {
         // TODO listen backlog
-        return context.runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
-        RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
-        return context.runtime.newFixnum(((UnixSocketChannel) socket.getChannel()).getFD());
+        return asFixnum(context, newChannelFD(context.runtime, acceptChannel(context)).bestFileno());
     }
 
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
-        return context.runtime.newString(openFile.getPath());
+        return newString(context, openFile.getPath());
     }
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        return runtime.newArray(
-                runtime.newString("AF_UNIX"),
-                runtime.newString(openFile.getPath()));
+        return newArray(context, newString(context, "AF_UNIX"), newString(context, openFile.getPath()));
     }
 
     @JRubyMethod
@@ -185,15 +216,13 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @Override
     protected UnixSocketAddress getUnixSocketAddress() {
         SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return socketAddress instanceof UnixSocketAddress address ? address : null;
     }
 
     @Override
-    protected UnixSocketAddress getUnixRemoteSocket() {
+    protected UnixSocketAddress getUnixRemoteSocket(ThreadContext context) {
         SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return socketAddress instanceof UnixSocketAddress address ? address : null;
     }
 
     private UnixServerSocketChannel asUnixServer() {

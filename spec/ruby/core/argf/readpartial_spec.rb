@@ -16,7 +16,7 @@ describe "ARGF.readpartial" do
 
   it "raises an ArgumentError if called without a maximum read length" do
     argf [@file1_name] do
-      lambda { @argf.readpartial }.should raise_error(ArgumentError)
+      -> { @argf.readpartial }.should.raise(ArgumentError)
     end
   end
 
@@ -29,7 +29,7 @@ describe "ARGF.readpartial" do
 
   it "clears output buffer even if EOFError is raised because @argf is at end" do
     begin
-      output = "to be cleared"
+      output = +"to be cleared"
 
       argf [@file1_name] do
         @argf.read
@@ -59,8 +59,8 @@ describe "ARGF.readpartial" do
       @argf.readpartial(@file1.size)
       @argf.readpartial(1)
       @argf.readpartial(@file2.size)
-      lambda { @argf.readpartial(1) }.should raise_error(EOFError)
-      lambda { @argf.readpartial(1) }.should raise_error(EOFError)
+      -> { @argf.readpartial(1) }.should.raise(EOFError)
+      -> { @argf.readpartial(1) }.should.raise(EOFError)
     end
   end
 
@@ -69,7 +69,7 @@ describe "ARGF.readpartial" do
       print ARGF.readpartial(#{@stdin.size})
       ARGF.readpartial(1) rescue print $!.class
     STR
-    stdin = ruby_exe(ruby_str, args: "< #{@stdin_name}", escape: true)
+    stdin = ruby_exe(ruby_str, args: "< #{@stdin_name}")
     stdin.should == @stdin + "EOFError"
   end
 end

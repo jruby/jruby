@@ -33,12 +33,13 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.Windows_31JEncoding;
 
 public enum KCode {
     NIL(null, ASCIIEncoding.INSTANCE, 0),
     NONE("NONE", ASCIIEncoding.INSTANCE, 0),
     UTF8("UTF8", UTF8Encoding.INSTANCE, 64),
-    SJIS("SJIS", SJISEncoding.INSTANCE, 48),
+    SJIS("SJIS", Windows_31JEncoding.INSTANCE, 48),
     EUC("EUC", EUCJPEncoding.INSTANCE, 32);
 
     private final String kcode;

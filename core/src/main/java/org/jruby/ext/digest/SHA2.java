@@ -36,6 +36,7 @@ import org.jruby.runtime.load.Library;
 public class SHA2 implements Library {
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.ext.digest.RubyDigest.createDigestSHA2(runtime);
+        var context = runtime.getCurrentContext();
+        org.jruby.ext.digest.RubyDigest.createDigestSHA2(context);
     }
 }

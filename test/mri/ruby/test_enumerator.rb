@@ -69,18 +69,17 @@ class TestEnumerator < Test::Unit::TestCase
 
   def test_initialize
     assert_equal([1, 2, 3], @obj.to_enum(:foo, 1, 2, 3).to_a)
-    _, err = capture_io do
-      assert_equal([1, 2, 3], Enumerator.new(@obj, :foo, 1, 2, 3).to_a)
-    end
-    assert_match 'Enumerator.new without a block is deprecated', err
+    assert_raise(ArgumentError) {
+      Enumerator.new(@obj, :foo, 1, 2, 3)
+    }
     assert_equal([1, 2, 3], Enumerator.new { |y| i = 0; loop { y << (i += 1) } }.take(3))
     assert_raise(ArgumentError) { Enumerator.new }
 
     enum = @obj.to_enum
     assert_raise(NoMethodError) { enum.each {} }
     enum.freeze
-    assert_raise(FrozenError) {
-      capture_io do
+    assert_raise(ArgumentError) {
+      capture_output do
         # warning: Enumerator.new without a block is deprecated; use Object#to_enum
         enum.__send__(:initialize, @obj, :foo)
       end
@@ -113,6 +112,11 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal([[1,2,3],[4,5,6],[7,8,9],[10]], (1..10).each_slice(3).to_a)
   end
 
+  def test_each_slice_size
+    assert_equal(4, (1..10).each_slice(3).size)
+    assert_equal(Float::INFINITY, 1.step.each_slice(3).size)
+  end
+
   def test_cons
     a = [[1,2,3], [2,3,4], [3,4,5], [4,5,6], [5,6,7], [6,7,8], [7,8,9], [8,9,10]]
     assert_equal(a, (1..10).each_cons(3).to_a)
@@ -121,6 +125,17 @@ class TestEnumerator < Test::Unit::TestCase
   def test_with_index
     assert_equal([[1,0],[2,1],[3,2]], @obj.to_enum(:foo, 1, 2, 3).with_index.to_a)
     assert_equal([[1,5],[2,6],[3,7]], @obj.to_enum(:foo, 1, 2, 3).with_index(5).to_a)
+  end
+
+  def test_with_index_under_gc_compact_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    EnvUtil.under_gc_compact_stress do
+      assert_equal([[1, 0], [2, 1], [3, 2]], @obj.to_enum(:foo, 1, 2, 3).with_index.to_a)
+      assert_equal([[1, 5], [2, 6], [3, 7]], @obj.to_enum(:foo, 1, 2, 3).with_index(5).to_a)
+
+      s = 1 << (8 * 1.size - 2)
+      assert_equal([[1, s], [2, s + 1], [3, s + 2]], @obj.to_enum(:foo, 1, 2, 3).with_index(s).to_a)
+    end
   end
 
   def test_with_index_large_offset
@@ -240,6 +255,26 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(res, exc.result)
   end
 
+  def test_stopiteration_rescue
+    e = [1].each
+    res = e.each {}
+    e.next
+    exc0 = assert_raise(StopIteration) { e.peek }
+    assert_include(exc0.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_nil(exc0.cause)
+    assert_equal(res, exc0.result)
+
+    exc1 = assert_raise(StopIteration) { e.next }
+    assert_include(exc1.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_same(exc0, exc1.cause)
+    assert_equal(res, exc1.result)
+
+    exc2 = assert_raise(StopIteration) { e.next }
+    assert_include(exc2.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_same(exc0, exc2.cause)
+    assert_equal(res, exc2.result)
+  end
+
   def test_next_values
     o = Object.new
     def o.each
@@ -301,8 +336,11 @@ class TestEnumerator < Test::Unit::TestCase
       yield
     end
     ary = []
-    e = o.to_enum.each(ary)
-    e.next
+    e = o.to_enum { 1 }
+    assert_equal(1, e.size)
+    e_arg = e.each(ary)
+    assert_equal(nil, e_arg.size)
+    e_arg.next
     assert_equal([1], ary)
   end
 
@@ -404,6 +442,12 @@ class TestEnumerator < Test::Unit::TestCase
     e = (0..10).each_cons(2)
     assert_equal("#<Enumerator: 0..10:each_cons(2)>", e.inspect)
 
+    e = (0..10).each_with_object({})
+    assert_equal("#<Enumerator: 0..10:each_with_object({})>", e.inspect)
+
+    e = (0..10).each_with_object(a: 1)
+    assert_equal("#<Enumerator: 0..10:each_with_object(a: 1)>", e.inspect)
+
     e = Enumerator.new {|y| y.yield; 10 }
     assert_match(/\A#<Enumerator: .*:each>/, e.inspect)
 
@@ -476,8 +520,29 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal([1], y.yield(1))
     assert_equal([1, 2], y.yield(2))
     assert_equal([1, 2, 3], y.yield(3))
+    assert_equal([1, 2, 3, 4], y.yield(4, 5))
+
+    a = []
+    y = Enumerator::Yielder.new {|*x| a.concat(x) }
+    assert_equal([1], y.yield(1))
+    assert_equal([1, 2, 3], y.yield(2, 3))
 
     assert_raise(LocalJumpError) { Enumerator::Yielder.new }
+
+    # to_proc (explicit)
+    a = []
+    y = Enumerator::Yielder.new {|x| a << x }
+    b = y.to_proc
+    assert_kind_of(Proc, b)
+    assert_equal([1], b.call(1))
+    assert_equal([1], a)
+
+    # to_proc (implicit)
+    e = Enumerator.new { |y|
+      assert_kind_of(Enumerator::Yielder, y)
+      [1, 2, 3].each(&y)
+    }
+    assert_equal([1, 2, 3], e.to_a)
   end
 
   def test_size
@@ -505,14 +570,14 @@ class TestEnumerator < Test::Unit::TestCase
   def test_size_for_enum_created_from_array
     arr = %w[hello world]
     %i[each each_with_index reverse_each sort_by! sort_by map map!
-      keep_if reject! reject select! select delete_if].each do |method|
+      keep_if reject! reject select! select filter! filter delete_if].each do |method|
       assert_equal arr.size, arr.send(method).size
     end
   end
 
   def test_size_for_enum_created_from_enumerable
     %i[find_all reject map flat_map partition group_by sort_by min_by max_by
-      minmax_by each_with_index reverse_each each_entry].each do |method|
+      minmax_by each_with_index reverse_each each_entry filter_map].each do |method|
       assert_equal nil, @obj.send(method).size
       assert_equal 42, @sized.send(method).size
     end
@@ -522,7 +587,7 @@ class TestEnumerator < Test::Unit::TestCase
 
   def test_size_for_enum_created_from_hash
     h = {a: 1, b: 2, c: 3}
-    methods = %i[delete_if reject reject! select select! keep_if each each_key each_pair]
+    methods = %i[delete_if reject reject! select select! filter filter! keep_if each each_key each_pair]
     enums = methods.map {|method| h.send(method)}
     s = enums.group_by(&:size)
     assert_equal([3], s.keys, ->{s.reject!{|k| k==3}.inspect})
@@ -532,7 +597,7 @@ class TestEnumerator < Test::Unit::TestCase
   end
 
   def test_size_for_enum_created_from_env
-    %i[each_pair reject! delete_if select select! keep_if].each do |method|
+    %i[each_pair reject! delete_if select select! filter filter! keep_if].each do |method|
       assert_equal ENV.size, ENV.send(method).size
     end
   end
@@ -632,7 +697,7 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal 4, (1..10).step(3).size
     assert_equal 3, (1...10).step(3).size
     assert_equal Float::INFINITY, (42..Float::INFINITY).step(2).size
-    assert_raise(ArgumentError){ (1..10).step(-2).size }
+    assert_equal 0, (1..10).step(-2).size
   end
 
   def test_size_for_downup_to
@@ -661,5 +726,348 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal([0, 1], u.force)
     assert_equal([0, 1], u.force)
   end
-end
 
+  def test_compact
+    u = [0, 1, nil, 2, 3, nil].to_enum.lazy.compact
+    assert_equal([0, 1, 2, 3], u.force)
+  end
+
+  def test_enum_chain_and_plus
+    r = 1..5
+
+    e1 = r.chain()
+    assert_kind_of(Enumerator::Chain, e1)
+    assert_equal(5, e1.size)
+    ary = []
+    e1.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5], ary)
+
+    e2 = r.chain([6, 7, 8])
+    assert_kind_of(Enumerator::Chain, e2)
+    assert_equal(8, e2.size)
+    ary = []
+    e2.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8], ary)
+
+    e3 = r.chain([6, 7], 8.step)
+    assert_kind_of(Enumerator::Chain, e3)
+    assert_equal(Float::INFINITY, e3.size)
+    ary = []
+    e3.take(10).each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], ary)
+
+    # `a + b + c` should not return `Enumerator::Chain.new(a, b, c)`
+    # because it is expected that `(a + b).each` be called.
+    e4 = e2.dup
+    class << e4
+      attr_reader :each_is_called
+      def each
+        super
+        @each_is_called = true
+      end
+    end
+    e5 = e4 + 9.step
+    assert_kind_of(Enumerator::Chain, e5)
+    assert_equal(Float::INFINITY, e5.size)
+    ary = []
+    e5.take(10).each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], ary)
+    assert_equal(true, e4.each_is_called)
+  end
+
+  def test_chained_enums
+    a = (1..5).each
+
+    e0 = Enumerator::Chain.new()
+    assert_kind_of(Enumerator::Chain, e0)
+    assert_equal(0, e0.size)
+    ary = []
+    e0.each { |x| ary << x }
+    assert_equal([], ary)
+
+    e1 = Enumerator::Chain.new(a)
+    assert_kind_of(Enumerator::Chain, e1)
+    assert_equal(5, e1.size)
+    ary = []
+    e1.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5], ary)
+
+    e2 = Enumerator::Chain.new(a, [6, 7, 8])
+    assert_kind_of(Enumerator::Chain, e2)
+    assert_equal(8, e2.size)
+    ary = []
+    e2.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8], ary)
+
+    e3 = Enumerator::Chain.new(a, [6, 7], 8.step)
+    assert_kind_of(Enumerator::Chain, e3)
+    assert_equal(Float::INFINITY, e3.size)
+    ary = []
+    e3.take(10).each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], ary)
+
+    e4 = Enumerator::Chain.new(a, Enumerator.new { |y| y << 6 << 7 << 8 })
+    assert_kind_of(Enumerator::Chain, e4)
+    assert_equal(nil, e4.size)
+    ary = []
+    e4.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 6, 7, 8], ary)
+
+    e5 = Enumerator::Chain.new(e1, e2)
+    assert_kind_of(Enumerator::Chain, e5)
+    assert_equal(13, e5.size)
+    ary = []
+    e5.each { |x| ary << x }
+    assert_equal([1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 8], ary)
+
+    rewound = []
+    e1.define_singleton_method(:rewind) { rewound << object_id }
+    e2.define_singleton_method(:rewind) { rewound << object_id }
+    e5.rewind
+    assert_equal(rewound, [e2.object_id, e1.object_id])
+
+    rewound = []
+    a = [1]
+    e6 = Enumerator::Chain.new(a)
+    a.define_singleton_method(:rewind) { rewound << object_id }
+    e6.rewind
+    assert_equal(rewound, [])
+
+    assert_equal(
+      '#<Enumerator::Chain: [' +
+        '#<Enumerator::Chain: [' +
+          '#<Enumerator: 1..5:each>' +
+        ']>, ' +
+        '#<Enumerator::Chain: [' +
+          '#<Enumerator: 1..5:each>, ' +
+          '[6, 7, 8]' +
+        ']>' +
+      ']>',
+      e5.inspect
+    )
+  end
+
+  def test_chain_with_index
+    assert_equal([[3, 0], [4, 1]], [3].chain([4]).with_index.to_a)
+  end
+
+  def test_lazy_chain
+    ea = (10..).lazy.select(&:even?).take(10)
+    ed = (20..).lazy.select(&:odd?)
+    chain = (ea + ed).select{|x| x % 3 == 0}
+    assert_equal(12, chain.next)
+    assert_equal(18, chain.next)
+    assert_equal(24, chain.next)
+    assert_equal(21, chain.next)
+    assert_equal(27, chain.next)
+    assert_equal(33, chain.next)
+  end
+
+  def test_lazy_chain_under_gc_compact_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    EnvUtil.under_gc_compact_stress do
+      ea = (10..).lazy.select(&:even?).take(10)
+      ed = (20..).lazy.select(&:odd?)
+      chain = (ea + ed).select{|x| x % 3 == 0}
+      assert_equal(12, chain.next)
+      assert_equal(18, chain.next)
+      assert_equal(24, chain.next)
+      assert_equal(21, chain.next)
+      assert_equal(27, chain.next)
+      assert_equal(33, chain.next)
+    end
+  end
+
+  def test_chain_undef_methods
+    chain = [1].to_enum + [2].to_enum
+    meths = (chain.methods & [:feed, :next, :next_values, :peek, :peek_values])
+    assert_equal(0, meths.size)
+  end
+
+  def test_produce
+    assert_raise(ArgumentError) { Enumerator.produce }
+    assert_raise(ArgumentError) { Enumerator.produce(a: 1, b: 1) {} }
+
+    # Without initial object
+    passed_args = []
+    enum = Enumerator.produce { |obj| passed_args << obj; (obj || 0).succ }
+    assert_instance_of(Enumerator, enum)
+    assert_equal Float::INFINITY, enum.size
+    assert_equal [1, 2, 3], enum.take(3)
+    assert_equal [nil, 1, 2], passed_args
+
+    # With initial object
+    passed_args = []
+    enum = Enumerator.produce(1) { |obj| passed_args << obj; obj.succ }
+    assert_instance_of(Enumerator, enum)
+    assert_equal Float::INFINITY, enum.size
+    assert_equal [1, 2, 3], enum.take(3)
+    assert_equal [1, 2], passed_args
+
+    # Raising StopIteration
+    words = "The quick brown fox jumps over the lazy dog.".scan(/\w+/)
+    enum = Enumerator.produce { words.shift or raise StopIteration }
+    assert_equal Float::INFINITY, enum.size
+    assert_instance_of(Enumerator, enum)
+    assert_equal %w[The quick brown fox jumps over the lazy dog], enum.to_a
+
+    # Raising StopIteration
+    object = [[[["abc", "def"], "ghi", "jkl"], "mno", "pqr"], "stuv", "wxyz"]
+    enum = Enumerator.produce(object) { |obj|
+      obj.respond_to?(:first) or raise StopIteration
+      obj.first
+    }
+    assert_equal Float::INFINITY, enum.size
+    assert_instance_of(Enumerator, enum)
+    assert_nothing_raised {
+      assert_equal [
+        [[[["abc", "def"], "ghi", "jkl"], "mno", "pqr"], "stuv", "wxyz"],
+        [[["abc", "def"], "ghi", "jkl"], "mno", "pqr"],
+        [["abc", "def"], "ghi", "jkl"],
+        ["abc", "def"],
+        "abc",
+      ], enum.to_a
+    }
+
+    # With size keyword argument
+    enum = Enumerator.produce(1, size: 10) { |obj| obj.succ }
+    assert_equal 10, enum.size
+    assert_equal [1, 2, 3], enum.take(3)
+
+    enum = Enumerator.produce(1, size: -> { 5 }) { |obj| obj.succ }
+    assert_equal 5, enum.size
+
+    enum = Enumerator.produce(1, size: nil) { |obj| obj.succ }
+    assert_equal nil, enum.size
+
+    enum = Enumerator.produce(1, size: Float::INFINITY) { |obj| obj.succ }
+    assert_equal Float::INFINITY, enum.size
+
+    # Without initial value but with size
+    enum = Enumerator.produce(size: 3) { |obj| (obj || 0).succ }
+    assert_equal 3, enum.size
+    assert_equal [1, 2, 3], enum.take(3)
+  end
+
+  def test_chain_each_lambda
+    c = Class.new do
+      include Enumerable
+      attr_reader :is_lambda
+      def each(&block)
+        return to_enum unless block
+        @is_lambda = block.lambda?
+      end
+    end
+    e = c.new
+    e.chain.each{}
+    assert_equal(false, e.is_lambda)
+    e.chain.each(&->{})
+    assert_equal(true, e.is_lambda)
+  end
+
+  def test_product_new
+    # 0-dimensional
+    e = Enumerator::Product.new
+    assert_instance_of(Enumerator::Product, e)
+    assert_kind_of(Enumerator, e)
+    assert_equal(1, e.size)
+    elts = []
+    e.each { |x| elts << x }
+    assert_equal [[]], elts
+    assert_equal elts, e.to_a
+    heads = []
+    e.each { |x,| heads << x }
+    assert_equal [nil], heads
+
+    # 1-dimensional
+    e = Enumerator::Product.new(1..3)
+    assert_instance_of(Enumerator::Product, e)
+    assert_kind_of(Enumerator, e)
+    assert_equal(3, e.size)
+    elts = []
+    e.each { |x| elts << x }
+    assert_equal [[1], [2], [3]], elts
+    assert_equal elts, e.to_a
+
+    # 2-dimensional
+    e = Enumerator::Product.new(1..3, %w[a b])
+    assert_instance_of(Enumerator::Product, e)
+    assert_kind_of(Enumerator, e)
+    assert_equal(3 * 2, e.size)
+    elts = []
+    e.each { |x| elts << x }
+    assert_equal [[1, "a"], [1, "b"], [2, "a"], [2, "b"], [3, "a"], [3, "b"]], elts
+    assert_equal elts, e.to_a
+    heads = []
+    e.each { |x,| heads << x }
+    assert_equal [1, 1, 2, 2, 3, 3], heads
+
+    # Any enumerable is 0 size
+    assert_equal(0, Enumerator::Product.new([], 1..).size)
+
+    # Reject keyword arguments
+    assert_raise(ArgumentError) {
+      Enumerator::Product.new(1..3, foo: 1, bar: 2)
+    }
+  end
+
+  def test_s_product
+    # without a block
+    e = Enumerator.product(1..3, %w[a b])
+    assert_instance_of(Enumerator::Product, e)
+
+    # with a block
+    elts = []
+    ret = Enumerator.product(1..3) { |x| elts << x }
+    assert_equal(nil, ret)
+    assert_equal [[1], [2], [3]], elts
+    assert_equal elts, Enumerator.product(1..3).to_a
+
+    # an infinite enumerator and a finite enumerable
+    e = Enumerator.product(1.., 'a'..'c')
+    assert_equal(Float::INFINITY, e.size)
+    assert_equal [[1, "a"], [1, "b"], [1, "c"], [2, "a"]], e.take(4)
+
+    # an infinite enumerator and an unknown enumerator
+    e = Enumerator.product(1.., Enumerator.new { |y| y << 'a' << 'b' })
+    assert_equal(Float::INFINITY, e.size)
+    assert_equal [[1, "a"], [1, "b"], [2, "a"], [2, "b"]], e.take(4)
+
+    # an infinite enumerator and an unknown enumerator
+    e = Enumerator.product(1..3, Enumerator.new { |y| y << 'a' << 'b' })
+    assert_equal(nil, e.size)
+    assert_equal [[1, "a"], [1, "b"], [2, "a"], [2, "b"]], e.take(4)
+
+    assert_equal(0, Enumerator.product([], 1..).size)
+
+    # Reject keyword arguments
+    assert_raise(ArgumentError) {
+      Enumerator.product(1..3, foo: 1, bar: 2)
+    }
+  end
+
+  def test_freeze
+    e = 3.times.freeze
+    assert_raise(FrozenError) { e.next }
+    assert_raise(FrozenError) { e.next_values }
+    assert_raise(FrozenError) { e.peek }
+    assert_raise(FrozenError) { e.peek_values }
+    assert_raise(FrozenError) { e.feed 1 }
+    assert_raise(FrozenError) { e.rewind }
+  end
+
+  def test_sum_of_numeric
+    num = Class.new(Numeric) do
+      attr_reader :to_f
+      def initialize(val)
+        @to_f = Float(val)
+      end
+    end
+
+    ary = [5, 10, 20].map {|i| num.new(i)}
+
+    assert_equal(35.0, ary.sum)
+    enum = ary.each
+    assert_equal(35.0, enum.sum)
+  end
+end

@@ -35,6 +35,18 @@ class TestAlias < Test::Unit::TestCase
     end
   end
 
+  class Alias4 < Alias0
+    alias foo1 foo
+    alias foo2 foo1
+    alias foo3 foo2
+  end
+
+  class Alias5 < Alias4
+    alias foo1 foo
+    alias foo3 foo2
+    alias foo2 foo1
+  end
+
   def test_alias
     x = Alias2.new
     assert_equal "foo", x.bar
@@ -47,10 +59,18 @@ class TestAlias < Test::Unit::TestCase
     assert_raise(NoMethodError) { x.quux }
   end
 
-  class C
-    def m
-      $SAFE
-    end
+  def test_alias_inspect
+    o = Alias4.new
+    assert_equal("TestAlias::Alias4(TestAlias::Alias0)#foo()", o.method(:foo).inspect.split[1])
+    assert_equal("TestAlias::Alias4(TestAlias::Alias0)#foo1(foo)()", o.method(:foo1).inspect.split[1])
+    assert_equal("TestAlias::Alias4(TestAlias::Alias0)#foo2(foo)()", o.method(:foo2).inspect.split[1])
+    assert_equal("TestAlias::Alias4(TestAlias::Alias0)#foo3(foo)()", o.method(:foo3).inspect.split[1])
+
+    o = Alias5.new
+    assert_equal("TestAlias::Alias5(TestAlias::Alias0)#foo()", o.method(:foo).inspect.split[1])
+    assert_equal("TestAlias::Alias5(TestAlias::Alias0)#foo1(foo)()", o.method(:foo1).inspect.split[1])
+    assert_equal("TestAlias::Alias5(TestAlias::Alias0)#foo2(foo)()", o.method(:foo2).inspect.split[1])
+    assert_equal("TestAlias::Alias5(TestAlias::Alias0)#foo3(foo)()", o.method(:foo3).inspect.split[1])
   end
 
   def test_nonexistmethod
@@ -232,5 +252,93 @@ class TestAlias < Test::Unit::TestCase
     }
     assert_equal(:foo, k.instance_method(:bar).original_name)
     assert_equal(:foo, name)
+  end
+
+  def test_alias_suppressing_redefinition
+    assert_in_out_err(%w[-w], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      class A
+        def foo; end
+        alias foo foo
+        def foo; end
+      end
+    end;
+  end
+
+  class C2
+    public :system
+    alias_method :bar, :system
+    alias_method :system, :bar
+  end
+
+  def test_zsuper_alias_visibility
+    assert(C2.new.respond_to?(:system))
+  end
+
+  def test_alias_memory_leak
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", rss: true)
+    begin;
+      class A
+        500.times do
+          1000.times do |i|
+            define_method(:"foo_#{i}") {}
+
+            alias :"foo_#{i}" :"foo_#{i}"
+
+            remove_method :"foo_#{i}"
+          end
+          GC.start
+        end
+      end
+    end;
+  end
+
+  def test_alias_complemented_method
+    assert_in_out_err(%w[-w], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      module M
+        def foo = 1
+        self.extend M
+      end
+
+      3.times{|i|
+        module M
+          alias foo2 foo
+          remove_method :foo
+          def foo = 2
+        ensure
+          remove_method :foo
+          alias foo foo2
+          remove_method :foo2
+        end
+
+        M.foo
+
+        original_foo = M.method(:foo)
+
+        M.class_eval do
+          remove_method :foo
+          def foo = 3
+        end
+
+        M.class_eval do
+          remove_method :foo
+          define_method :foo, original_foo
+        end
+      }
+    end;
+  end
+
+  def test_undef_method_error_message_with_zsuper_method
+    modules = [
+      Module.new { private :class },
+      Module.new { prepend Module.new { private :class } },
+    ]
+    message = "undefined method 'class' for module '%s'"
+    modules.each do |mod|
+      assert_raise_with_message(NameError, message % mod) do
+        mod.alias_method :xyz, :class
+      end
+    end
   end
 end

@@ -1,4 +1,4 @@
-# -*- encoding: binary -*-
+# encoding: binary
 require_relative '../../spec_helper'
 
 describe "Time#_dump" do
@@ -10,22 +10,22 @@ describe "Time#_dump" do
   end
 
   it "is a private method" do
-    Time.should have_private_instance_method(:_dump, false)
+    Time.private_instance_methods(false).should.include?(:_dump)
   end
 
   # http://redmine.ruby-lang.org/issues/show/627
   it "preserves the GMT flag" do
-    @t.gmt?.should == true
+    @t.should.gmt?
     dump = @t.send(:_dump).unpack("VV").first
     ((dump >> 30) & 0x1).should == 1
 
-    @local.gmt?.should == false
+    @local.should_not.gmt?
     dump = @local.send(:_dump).unpack("VV").first
     ((dump >> 30) & 0x1).should == 0
   end
 
   it "dumps a Time object to a bytestring" do
-    @s.should be_an_instance_of(String)
+    @s.should.instance_of?(String)
     @s.should == [3222863947, 2235564032].pack("VV")
   end
 

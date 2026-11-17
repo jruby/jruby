@@ -1,5 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
+require 'tmpdir'
+
 describe "RubyGems extensions" do
 
   before(:all) { require 'rubygems' }
@@ -14,16 +16,19 @@ describe "RubyGems extensions" do
   end
 
   it "should keep URLs together when splitting paths" do
-    url_paths = ["file:/var/tmp",
-                 "http://jruby.org",
-                 "classpath:/META-INF/jruby.home",
-                 "uri:classpath:/META-INF/jruby.home",
-                 "uri:classpath:/",
-                 "uri:jar:file://META-INF/jruby.home!/some/path",
-                 "jar:file:/var/tmp/some.jar!/some/path"]
-    Gem.use_paths(nil, url_paths)
-    expect(Gem.path).to include(*url_paths)
-    expect(Gem.path).not_to include("file", "http", "classpath", "jar", "uri", "classloader")
+    Dir.mktmpdir do |tmpdir|
+      tmpdir = File.realpath(tmpdir)
+      url_paths = ["file:#{tmpdir}",
+                   "http://jruby.org",
+                   "classpath:/META-INF/jruby.home",
+                   "uri:classpath:/META-INF/jruby.home",
+                   "uri:classpath:/",
+                   "uri:jar:file://META-INF/jruby.home!/some/path",
+                   "jar:file:#{tmpdir}/some.jar!/some/path"]
+      Gem.use_paths(nil, url_paths)
+      expect(Gem.path).to include(*url_paths)
+      expect(Gem.path).not_to include("file", "http", "classpath", "jar", "uri", "classloader")
+    end
   end
 
   it "should not create gem subdirectories on a non-file: URL" do

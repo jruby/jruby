@@ -11,11 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
-<<<<<<< HEAD
- * Copyright (C) 2017 Miguel Landaeta <miguel@miguel.cc>
- *
-=======
->>>>>>> master
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,15 +28,18 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.KeyError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author Miguel Landaeta
- */
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+
 @JRubyClass(name="KeyError", parent="IndexError")
 public class RubyKeyError extends RubyIndexError {
+    private static final String[] VALID_KEYS = {"receiver", "key"};
     private IRubyObject receiver;
     private IRubyObject key;
 
@@ -55,11 +53,9 @@ public class RubyKeyError extends RubyIndexError {
         this.key = key;
     }
 
-    static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass KeyError = runtime.defineClass("KeyError", superClass, (runtime1, klass) -> new RubyKeyError(runtime1, klass));
-        KeyError.defineAnnotatedMethods(RubyKeyError.class);
-        KeyError.setReifiedClass(RubyKeyError.class);
-        return KeyError;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "KeyError", IndexError, RubyKeyError::new).
+                reifiedClass(RubyKeyError.class).defineMethods(context, RubyKeyError.class);
     }
 
     @Override
@@ -68,12 +64,80 @@ public class RubyKeyError extends RubyIndexError {
     }
 
     @JRubyMethod
-    public IRubyObject receiver() {
-        return receiver;
+    public IRubyObject initialize(ThreadContext context) {
+        return context.nil;
     }
 
     @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject messageOrKwargs) {
+        IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, messageOrKwargs, VALID_KEYS);
+
+        if (receiverKey == null) return initialize(context, messageOrKwargs, null);
+
+        return initializeCommon(context, context.nil, receiverKey);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject kwargs) {
+        IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, kwargs, VALID_KEYS);
+
+        return initializeCommon(context, message, receiverKey);
+    }
+
+    private IRubyObject initializeCommon(ThreadContext context, IRubyObject message, IRubyObject[] receiverKey) {
+        IRubyObject receiver;
+        IRubyObject key;
+        if (receiverKey == null) {
+            receiver = null;
+            key = null;
+        } else {
+            receiver = receiverKey[0];
+            key = receiverKey[1];
+        }
+
+        setMessage(message);
+        this.receiver = receiver;
+        this.key = key;
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject receiver, IRubyObject key) {
+        setMessage(message);
+        this.receiver = receiver;
+        this.key = key;
+
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject receiver() {
+        return receiver(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject receiver(ThreadContext context) {
+        if (receiver == null) throw argumentError(context, "no receiver is available");
+        return receiver;
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject key() {
+        return key(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject key(ThreadContext context) {
+        if (key == null) throw argumentError(context, "no key is available");
         return key;
+    }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyKeyError exception = (RubyKeyError)clone;
+        exception.receiver = receiver;
+        exception.key = key;
     }
 }

@@ -1,7 +1,7 @@
 # Import Java packages
 include Java
 
-import javax.swing.JFrame
+java_import javax.swing.JFrame
 
 frame = JFrame.new("Hello Swing")
 button = javax.swing.JButton.new("Klick Me!")

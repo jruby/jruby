@@ -34,14 +34,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a 'retry' statement.
  */
 public class RetryNode extends Node implements NonLocalControlFlowNode {
-    public RetryNode(ISourcePosition position) {
-        super(position, false);
+    public RetryNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {

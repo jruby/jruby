@@ -31,6 +31,8 @@ package org.jruby.javasupport;
 import java.io.InputStream;
 import java.util.List;
 
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyInstanceConfig;
@@ -43,20 +45,24 @@ import org.jruby.ast.Node;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.UriLikePathHelper;
 
 /**
- * Utility functions to help embedders out.   These function consolidate logic that is
- * used between BSF and JSR 223.  People who are embedding JRuby 'raw' should use these
- * as well.  If at a later date, we discover a flaw or change how we do things, this
- * utility class should provide some insulation.
+ * Utility functions to help embedders out.
+ * These function consolidate logic that is used between BSF and JSR 223.
+ * People who are embedding JRuby 'raw' should use these as well.
+ * If at a later date, we discover a flaw or change how we do things, this utility class should provide some insulation.
  *
+ * <pre>
  * Example:
- * Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
- * RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
- * IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
- * SomeClassOrInterface javaObject = (SomeClassOrInterface) JavaEmbedUtils.rubyToJava(rubyObject);
- * runtime.terminate();
+ *
+ *   Ruby runtime = JavaEmbedUtils.initialize(List.of("a/custom/load/path"));
+ *
+ *   RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+ *   IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
+ *   SomeClassOrInterface javaObject = JavaEmbedUtils.rubyToJava(rubyObject, SomeClassOrInterface.class);
+ *
+ *   runtime.terminate();
+ * </pre>
  */
 public class JavaEmbedUtils {
     /**
@@ -94,7 +100,7 @@ public class JavaEmbedUtils {
             }
 
             public IRubyObject[] convertToJavaArray(IRubyObject array) {
-                return ((RubyArray) array).toJavaArray();
+                return ((RubyArray<?>) array).toJavaArray(array.getRuntime().getCurrentContext());
             }
 
             public RubyInteger convertToRubyInteger(IRubyObject obj) {
@@ -157,7 +163,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, String script, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, runtime.parseEval(script, filename, null, lineNumber));
+                return new InterpretedEvalUnit(runtime, runtime.getParserManager().parseEval(filename, lineNumber, script, null));
             }
 
             /**
@@ -170,7 +176,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, runtime.parseFile(in, filename, null, lineNumber));
+                return new InterpretedEvalUnit(runtime, runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE)));
             }
         };
     }
@@ -191,15 +197,20 @@ public class JavaEmbedUtils {
      */
     public static class InterpretedEvalUnit implements EvalUnit {
         private final Ruby runtime;
-        private final Node node;
+        private final ParseResult result;
 
-        protected InterpretedEvalUnit(Ruby runtime, Node node) {
+        protected InterpretedEvalUnit(Ruby runtime, ParseResult result) {
             this.runtime = runtime;
-            this.node = node;
+            this.result = result;
+        }
+
+        @Deprecated(since = "9.4.6.0")
+        protected InterpretedEvalUnit(Ruby runtime, Node node) {
+            this(runtime, (ParseResult) node);
         }
 
         public IRubyObject run() {
-            return runtime.runInterpreter(node);
+            return runtime.runInterpreter(result);
         }
     }
 
@@ -222,18 +233,11 @@ public class JavaEmbedUtils {
      * @param returnType is the type we want it to conform to
      * @return the result of the invocation.
      */
-    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args,
-            Class returnType) {
+    @SuppressWarnings("deprecation")
+    public static <T> T invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class<T> returnType) {
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
-
-        // Create Ruby proxies for any input arguments that are not primitives.
-        for (int i = 0; i < rubyArgs.length; i++) {
-            IRubyObject obj = rubyArgs[i];
-
-            if (obj instanceof JavaObject) rubyArgs[i] = Java.wrap(runtime, obj);
-        }
 
         IRubyObject result = rubyReceiver.callMethod(runtime.getCurrentContext(), method, rubyArgs);
 
@@ -243,7 +247,12 @@ public class JavaEmbedUtils {
     /**
      * Convert a Ruby object to a Java object.
      */
-    public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
+    public static <T> T rubyToJava(IRubyObject value, Class<T> type) {
+        return value.toJava(type);
+    }
+
+    // @Deprecated(since = "9.4.1.0")
+    public static <T> T rubyToJava(Ruby runtime, IRubyObject value, Class<T> type) {
         return value.toJava(type);
     }
 
@@ -252,19 +261,16 @@ public class JavaEmbedUtils {
      * @param value to be converted
      * @return the converted object
      */
-    public static Object rubyToJava(IRubyObject value) {
-        return value.toJava(Object.class);
+    public static <T> T rubyToJava(IRubyObject value) {
+        return (T) value.toJava(Object.class);
     }
 
     /**
      *  Convert a java object to a Ruby object.
      */
+    @SuppressWarnings("deprecation")
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
-        if (value instanceof IRubyObject) return (IRubyObject) value;
-
-        IRubyObject result = JavaUtil.convertJavaToUsableRubyObject(runtime, value);
-
-        return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, value);
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, boolean value) {
@@ -280,11 +286,11 @@ public class JavaEmbedUtils {
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, double value) {
-        return javaToRuby(runtime, new Double(value));
+        return javaToRuby(runtime, Double.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, float value) {
-        return javaToRuby(runtime, new Float(value));
+        return javaToRuby(runtime, Float.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, int value) {

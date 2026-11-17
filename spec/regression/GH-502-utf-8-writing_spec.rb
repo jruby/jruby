@@ -14,7 +14,7 @@ describe 'utf-16BE should write regardless of underlying locale encoding' do
     file = Tempfile.new 'temp'
     path = file.path
     file.write str
-    file.close
+    file.flush
 
     read = File.read(path, :encoding => 'utf-16be', :binmode => true)
     expect(read).to eq(str)
@@ -22,6 +22,7 @@ describe 'utf-16BE should write regardless of underlying locale encoding' do
     read = File.open(path, 'rb:utf-16be') { |f| f.read }
     expect(read).to eq(str)
 
-    File.unlink(path)
+  ensure
+    file.close! rescue nil
   end
 end

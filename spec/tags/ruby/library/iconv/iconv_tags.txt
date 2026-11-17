@@ -1,3 +1,0 @@
-fails:Iconv#iconv raises Iconv::InvalidCharacter when an incomplete character or shift sequence happens at the end of the input buffer
-fails:The 'utf-16be' decoder treats possible byte-order marks as regular characters
-fails:The 'utf-16le' decoder treats possible byte-order marks as regular characters

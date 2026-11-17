@@ -37,16 +37,15 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * The access to a Constant.
  */
 public class ConstNode extends Node implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
-    public ConstNode(ISourcePosition position, RubySymbol name) {
-        super(position, false);
+    public ConstNode(int line, RubySymbol name) {
+        super(line, false);
         this.name = name;
     }
 

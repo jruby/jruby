@@ -1,5 +1,15 @@
-require_relative 'shared/name'
+require_relative "../../spec_helper"
 
 describe "Encoding#name" do
-  it_behaves_like :encoding_name, :name
+  it "returns a String" do
+    Encoding.list.each do |e|
+      e.name.should.instance_of?(String)
+    end
+  end
+
+  it "uniquely identifies an encoding" do
+    Encoding.list.each do |e|
+      e.should == Encoding.find(e.name)
+    end
+  end
 end

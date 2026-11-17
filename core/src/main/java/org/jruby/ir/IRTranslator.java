@@ -3,11 +3,12 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.RootNode;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
+import org.jruby.runtime.ThreadContext;
 
 import java.io.IOException;
 
@@ -18,20 +19,19 @@ import java.io.IOException;
  * @param <S> type of specific for translator object
  */
 public abstract class IRTranslator<R, S> {
-    public R execute(Ruby runtime, ParseResult result, S specificObject) {
-        IRScriptBody scope = null;
+    public R execute(ThreadContext context, ParseResult result, S specificObject) {
+        IRScriptBody scope;
 
         if (result instanceof IRScriptBody) { // Already have it (likely from read from persistent store).
             scope = (IRScriptBody) result;
-        } else if (result instanceof RootNode) { // Need to perform create IR from AST
-            // FIXME: In terms of writing and reading we should emit enough to rebuild IC + minimal IRScope state
-            InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), (RootNode) result);
+        } else {
+            InterpreterContext ic = IRBuilder.buildRoot(context.runtime.getIRManager(), result);
             scope = (IRScriptBody) ic.getScope();
-            scope.setScriptDynamicScope(((RootNode) result).getScope());
+            scope.setScriptDynamicScope(result.getDynamicScope());
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {
-                    IRWriter.persist(new IRWriterStream(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
+                    IRWriter.persist(new IRWriterStream(IRFileExpert.getIRPersistedFile(scope.getFile())), scope);
                 } catch (IOException ex) {
                     ex.printStackTrace(); // FIXME: Handle errors better
                     return null;
@@ -39,8 +39,8 @@ public abstract class IRTranslator<R, S> {
             }
         }
 
-        return execute(runtime, scope, specificObject);
+        return execute(context, scope, specificObject);
     }
 
-    protected abstract R execute(Ruby runtime, IRScriptBody producedIrScope, S specificObject);
+    protected abstract R execute(ThreadContext context, IRScriptBody producedIrScope, S specificObject);
 }

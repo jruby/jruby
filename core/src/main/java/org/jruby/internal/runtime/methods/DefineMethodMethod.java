@@ -14,12 +14,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class DefineMethodMethod extends MixedModeIRMethod {
 
-    private Block capturedBlock;
+    private final Block capturedBlock;
 
     public DefineMethodMethod(IRScope method, Visibility visibility, RubyModule implementationClass, Block capturedBlock) {
         super(method, visibility, implementationClass);
 
         this.capturedBlock = capturedBlock;
+    }
+
+    public Block getCapturedBlock() {
+        return capturedBlock;
     }
 
     @Override

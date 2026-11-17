@@ -83,8 +83,17 @@ describe "java package" do
     begin
       javax.script(1)
     rescue ArgumentError => e
-      expect( e.message ).to eql "Java package 'javax' does not have a method `script' with 1 argument"
+      expect( e.message ).to eql "Java package 'javax' does not have a method 'script' with 1 argument"
     else; fail 'error not raised' end
+  end
+
+  # See GH issue ruboto/JRuby9K_POC#7
+  it "allows calling const_missing" do
+    expect(java.lang.const_missing(:System)).to eq(java.lang.System)
+  end
+
+  it "allows calling method_missing" do
+    expect(java.lang.method_missing(:reflect)).to eq(java.lang.reflect)
   end
 
 end

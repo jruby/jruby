@@ -38,9 +38,9 @@ describe "BasicSocket#setsockopt" do
 
   platform_is_not :windows do
     it "raises EINVAL if passed wrong linger value" do
-      lambda do
+      -> do
         @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER, 0)
-      end.should raise_error(Errno::EINVAL)
+      end.should.raise(Errno::EINVAL)
     end
   end
 
@@ -70,9 +70,9 @@ describe "BasicSocket#setsockopt" do
       n.should_not == [0].pack("i")
 
       platform_is_not :windows do
-        lambda {
+        -> {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "")
-        }.should raise_error(SystemCallError)
+        }.should.raise(SystemCallError)
       end
 
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "blah").should == 0
@@ -80,9 +80,9 @@ describe "BasicSocket#setsockopt" do
       n.should_not == [0].pack("i")
 
       platform_is_not :windows do
-        lambda {
+        -> {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "0")
-        }.should raise_error(SystemCallError)
+        }.should.raise(SystemCallError)
       end
 
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00\x00").should == 0
@@ -90,15 +90,15 @@ describe "BasicSocket#setsockopt" do
       n.should == [0].pack("i")
 
       platform_is_not :windows do
-        lambda {
+        -> {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "1")
-        }.should raise_error(SystemCallError)
+        }.should.raise(SystemCallError)
       end
 
       platform_is_not :windows do
-        lambda {
+        -> {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00")
-        }.should raise_error(SystemCallError)
+        }.should.raise(SystemCallError)
       end
 
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [1].pack('i')).should == 0
@@ -125,9 +125,9 @@ describe "BasicSocket#setsockopt" do
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
     n.unpack('i')[0].should >= 1
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, nil).should == 0
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
 
     @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, 1).should == 0
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
@@ -137,25 +137,25 @@ describe "BasicSocket#setsockopt" do
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
     n.unpack('i')[0].should >= 2
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "")
-    }.should raise_error(SystemCallError)
+    }.should.raise(SystemCallError)
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "bla")
-    }.should raise_error(SystemCallError)
+    }.should.raise(SystemCallError)
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "0")
-    }.should raise_error(SystemCallError)
+    }.should.raise(SystemCallError)
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "1")
-    }.should raise_error(SystemCallError)
+    }.should.raise(SystemCallError)
 
-    lambda {
+    -> {
       @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "\x00\x00\x00")
-    }.should raise_error(SystemCallError)
+    }.should.raise(SystemCallError)
 
     @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, "\x00\x00\x01\x00").should == 0
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
@@ -207,7 +207,7 @@ describe "BasicSocket#setsockopt" do
       onoff, seconds = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger
       seconds.should == 10
       # Both results can be produced depending on the OS and value of Socket::SO_LINGER
-      [true, Socket::SO_LINGER].should include(onoff)
+      [true, Socket::SO_LINGER].should.include?(onoff)
     end
   end
 end
@@ -224,7 +224,7 @@ describe 'BasicSocket#setsockopt' do
 
     describe 'using separate arguments with Symbols' do
       it 'raises TypeError when the first argument is nil' do
-        lambda { @socket.setsockopt(nil, :REUSEADDR, true) }.should raise_error(TypeError)
+        -> { @socket.setsockopt(nil, :REUSEADDR, true) }.should.raise(TypeError)
       end
 
       it 'sets a boolean option' do
@@ -251,7 +251,7 @@ describe 'BasicSocket#setsockopt' do
 
       platform_is_not :windows do
         it 'raises Errno::EINVAL when setting an invalid option value' do
-          lambda { @socket.setsockopt(:SOCKET, :OOBINLINE, 'bla') }.should raise_error(Errno::EINVAL)
+          -> { @socket.setsockopt(:SOCKET, :OOBINLINE, 'bla') }.should.raise(Errno::EINVAL)
         end
       end
     end
@@ -305,32 +305,59 @@ describe 'BasicSocket#setsockopt' do
 
       it 'raises ArgumentError when passing 2 arguments' do
         option = Socket::Option.bool(:INET, :SOCKET, :REUSEADDR, true)
-        lambda { @socket.setsockopt(option, :REUSEADDR) }.should raise_error(ArgumentError)
+        -> { @socket.setsockopt(option, :REUSEADDR) }.should.raise(ArgumentError)
       end
 
       it 'raises TypeError when passing 3 arguments' do
         option = Socket::Option.bool(:INET, :SOCKET, :REUSEADDR, true)
-        lambda { @socket.setsockopt(option, :REUSEADDR, true) }.should raise_error(TypeError)
+        -> { @socket.setsockopt(option, :REUSEADDR, true) }.should.raise(TypeError)
       end
     end
   end
 
-  with_feature :unix_socket do
-    describe 'using a UNIX socket' do
-      before do
-        @path = SocketSpecs.socket_path
-        @server = UNIXServer.new(@path)
-      end
+  describe 'using a UNIX socket' do
+    before do
+      @path = SocketSpecs.socket_path
+      @server = UNIXServer.new(@path)
+    end
 
-      after do
-        @server.close
-        rm_r @path
-      end
+    after do
+      @server.close
+      rm_r @path
+    end
 
-      it 'sets a boolean option' do
-        @server.setsockopt(:SOCKET, :REUSEADDR, true)
-        @server.getsockopt(:SOCKET, :REUSEADDR).bool.should == true
-      end
+    it 'sets a boolean option' do
+      @server.setsockopt(:SOCKET, :REUSEADDR, true)
+      @server.getsockopt(:SOCKET, :REUSEADDR).bool.should == true
+    end
+  end
+end
+
+platform_is_not :windows do
+  describe "BasicSocket#setsockopt on a UNIXSocket" do
+    before :each do
+      @a, @b = UNIXSocket.pair
+    end
+
+    after :each do
+      @a.close
+      @b.close
+    end
+
+    it "sets the send and receive buffer sizes" do
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, 16384).should == 0
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_RCVBUF, 16384).should == 0
+
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).int.should >= 16384
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_RCVBUF).int.should >= 16384
+    end
+
+    it "sets SO_KEEPALIVE" do
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true).should == 0
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, false).should == 0
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == false
     end
   end
 end

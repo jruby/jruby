@@ -38,21 +38,12 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
     }
 
     @Override
-    public final Arity getArity() {
-        return arity;
-    }
-
-    @Override
     public final boolean isNative() {
         return true;
     }
 
     public DynamicMethod getMethodForCaching() {
         return compiledInvoker != null ? compiledInvoker : this;
-    }
-
-    Signature getSignature() {
-        return signature;
     }
 
     CallContext getCallContext() {
@@ -63,8 +54,13 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return function.getFunctionAddress();
     }
 
+    @Deprecated(since = "10.0.0.0")
     protected final NativeInvoker getNativeInvoker() {
-        return compiledInvoker != null ? compiledInvoker : tryCompilation();
+        return getNativeInvoker(getImplementationClass().getRuntime().getCurrentContext());
+    }
+
+    protected final NativeInvoker getNativeInvoker(ThreadContext context) {
+        return compiledInvoker != null ? compiledInvoker : tryCompilation(context);
     }
 
     private synchronized JITHandle getJITHandle() {
@@ -74,16 +70,13 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return jitHandle;
     }
 
-    private synchronized NativeInvoker tryCompilation() {
-
-        if (compiledInvoker != null) {
-            return compiledInvoker;
-        }
+    private synchronized NativeInvoker tryCompilation(ThreadContext context) {
+        if (compiledInvoker != null) return compiledInvoker;
 
         NativeInvoker invoker = getJITHandle().compile(getImplementationClass(), function, signature, getName());
         if (invoker != null) {
             compiledInvoker = invoker;
-            getImplementationClass().invalidateCacheDescendants();
+            getImplementationClass().invalidateCacheDescendants(context);
             return compiledInvoker;
         }
         
@@ -92,7 +85,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         //
         if (getJITHandle().compilationFailed()) {
             compiledInvoker = defaultInvoker;
-            getImplementationClass().invalidateCacheDescendants();
+            getImplementationClass().invalidateCacheDescendants(context);
         }
         
         return defaultInvoker;
@@ -101,13 +94,13 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
                             RubyModule clazz, String name, IRubyObject[] args) {
-        return getNativeInvoker().call(context, self, clazz, name, args);
+        return getNativeInvoker(context).call(context, self, clazz, name, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return getNativeInvoker().call(context, self, clazz, name, args, block);
+        return getNativeInvoker(context).call(context, self, clazz, name, args, block);
     }
 
     public final NativeInvoker forceCompilation() {

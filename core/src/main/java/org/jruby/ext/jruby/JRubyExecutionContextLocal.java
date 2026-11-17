@@ -39,6 +39,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.argumentError;
+
 public abstract class JRubyExecutionContextLocal extends RubyObject {
     private IRubyObject default_value;
     private RubyProc default_proc;
@@ -49,21 +51,20 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         default_proc = null;
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
-            if (args.length != 0) {
-                throw context.runtime.newArgumentError("wrong number of arguments");
-            }
+            if (args.length != 0) throw argumentError(context, "wrong number of arguments");
+
             default_proc = block.getProcObject();
             if (default_proc == null) {
-                default_proc = RubyProc.newProc(context.runtime, block, block.type);
+                default_proc = RubyProc.newProc(context.runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC);
             }
         } else {
             if (args.length == 1) {
                 default_value = args[0];
             } else if (args.length != 0) {
-                throw context.runtime.newArgumentError("wrong number of arguments");
+                throw argumentError(context, "wrong number of arguments");
             }
         }
         return context.nil;
@@ -74,12 +75,17 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         return default_value;
     }
 
-    @JRubyMethod(name = "default_proc")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getDefaultProc() {
-        return (default_proc != null) ? default_proc : getRuntime().getNil();
+        return getDefaultProc(getCurrentContext());
     }
 
-    @JRubyMethod(name = "value", required = 0)
+    @JRubyMethod(name = "default_proc")
+    public IRubyObject getDefaultProc(ThreadContext context) {
+        return (default_proc != null) ? default_proc : context.nil;
+    }
+
+    @JRubyMethod(name = "value")
     public IRubyObject getValue(ThreadContext context) {
         final IRubyObject value;
         final Map<Object, IRubyObject> contextVariables;
@@ -92,14 +98,14 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             // pre-set for the sake of terminating recursive calls
             contextVariables.put(this, context.nil);
             final IRubyObject new_value;
-            new_value = default_proc.call(context, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+            new_value = default_proc.call(context, IRubyObject.NULL_ARRAY);
             contextVariables.put(this, new_value);
             return new_value;
         }
         return default_value;
     }
 
-    @JRubyMethod(name = "value=", required = 1)
+    @JRubyMethod(name = "value=")
     public IRubyObject setValue(ThreadContext context, IRubyObject value) {
         getContextVariables(context).put(this, value);
         return value;

@@ -1,2 +1,2 @@
-fails:Enumerator::Lazy#drop sets difference of given count with old size to new size
-fails:Enumerator::Lazy#drop on a nested Lazy sets difference of given count with old size to new size
+fails:Enumerator::Lazy#drop value packing of source yields (matches Enumerable#drop) yields a single nil for a zero-argument source yield
+fails:Enumerator::Lazy#drop value packing of source yields (matches Enumerable#drop) yields a packed Array for a multi-argument source yield

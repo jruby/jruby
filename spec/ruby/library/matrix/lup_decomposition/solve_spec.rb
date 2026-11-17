@@ -6,9 +6,9 @@ describe "Matrix::LUPDecomposition#solve" do
     it "raises an error for singular matrices" do
       a = Matrix[[1, 2, 3], [1, 3, 5], [2, 5, 8]]
       lu = Matrix::LUPDecomposition.new(a)
-      lambda {
+      -> {
         lu.solve(a)
-      }.should raise_error(Matrix::ErrNotRegular)
+      }.should.raise(Matrix::ErrNotRegular)
     end
 
     describe "for non singular matrices" do
@@ -31,9 +31,9 @@ describe "Matrix::LUPDecomposition#solve" do
 
       it "raises an error when given a matrix of the wrong size" do
         values = Matrix[[1, 2, 3, 4], [0, 1, 2, 3]]
-        lambda {
+        -> {
           @lu.solve(values)
-        }.should raise_error(Matrix::ErrDimensionMismatch)
+        }.should.raise(Matrix::ErrDimensionMismatch)
       end
 
       it "returns the right vector when given a vector of the appropriate size" do
@@ -44,9 +44,9 @@ describe "Matrix::LUPDecomposition#solve" do
 
       it "raises an error when given a vector of the wrong size" do
         values = Vector[14, 55]
-        lambda {
+        -> {
           @lu.solve(values)
-        }.should raise_error(Matrix::ErrDimensionMismatch)
+        }.should.raise(Matrix::ErrDimensionMismatch)
       end
     end
   end

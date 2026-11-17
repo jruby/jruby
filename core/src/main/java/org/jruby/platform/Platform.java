@@ -40,16 +40,8 @@ import org.jruby.runtime.Helpers;
  * Platform specific constants.
  */
 public abstract class Platform {
-    private static final Platform INSTANCE = initPlatform();
-    public static Platform getPlatform() {
-        return INSTANCE;
-    }
-    protected Platform() {
-    }
 
-    public static void main(String[] args) {
-        System.out.println(System.getProperties());
-    }
+    private Platform() { }
 
     public String getPackageName() {
         return String.format("%s.%s.%s", Platform.class.getPackage().getName(), OS, ARCH);
@@ -62,6 +54,7 @@ public abstract class Platform {
     private static final String WINDOWS = "windows";
     private static final String LINUX = "linux";
     private static final String FREEBSD = "freebsd";
+    private static final String DRAGONFLYBSD = "dragonflybsd";
     private static final String OPENBSD = "openbsd";
     private static final String SOLARIS = "solaris";
     private static final String OPENVMS = "openvms";
@@ -69,11 +62,6 @@ public abstract class Platform {
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
     private static final String OPENJ9 = "Eclipse OpenJ9 VM";
-
-    @Deprecated // no longer used
-    public static final Map<String, String> OS_NAMES = Helpers.map("Mac OS X", DARWIN);
-    @Deprecated // no longer used
-    public static final Map<String, String> ARCH_NAMES = Helpers.map("x86", "i386");
     
     private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
@@ -106,44 +94,62 @@ public abstract class Platform {
         return arch;
     }
 
+
+    /**
+     * Gets the version of the Java platform that JRuby is running on.
+     */
+    private static int initJavaVersion() {
+        int version = 5;
+        try {
+            String versionString = SafePropertyAccessor.getProperty("java.version");
+            if (versionString != null) {
+                // remove additional version identifiers, e.g. -ea
+                versionString = versionString.split("-|\\+")[0];
+                String[] v = versionString.split("\\.");
+                if (v[0].equals("1")) {
+                    // Pre Java 9, 1.x style
+                    version = Integer.valueOf(v[1]);
+                } else {
+                    // Java 9+, x.y.z style
+                    version = Integer.valueOf(v[0]);
+                }
+            }
+        } catch (Exception ex) {
+            version = 0;
+        }
+
+        return version;
+    }
+
     public static final String ARCH = initArchitecture();
     public static final String OS = initOperatingSystem();
     public static final String JVM = getProperty("java.vm.name", "unknown");
     public static final String OS_VERSION = getProperty("os.version", "unknown");
+    /**
+     * An integer value representing the major Java/JDK release, e.g. 8 for java 1.8, 9 for java 9.
+     */
+    public static final int JAVA_VERSION = initJavaVersion();
 
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
 
     public static final boolean IS_MAC = OS.equals(DARWIN);
     public static final boolean IS_FREEBSD = OS.equals(FREEBSD);
+    public static final boolean IS_DRAGONFLYBSD = OS.equals(DRAGONFLYBSD);
     public static final boolean IS_OPENBSD = OS.equals(OPENBSD);
     public static final boolean IS_LINUX = OS.equals(LINUX);
     public static final boolean IS_WSL = IS_LINUX && OS_VERSION.contains("Microsoft");
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
-    public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
+    public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD || IS_DRAGONFLYBSD;
     public static final boolean IS_OPENVMS = OS.equals(OPENVMS);
     public static final String NAME = String.format("%s-%s", ARCH, OS);
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
+    public static final int BIT_WIDTH = jnr.ffi.Platform.getNativePlatform().is32Bit() ? 32 : 64;
 
     public static final boolean IS_GCJ = JVM.equals(GCJ);
     public static final boolean IS_J9 = JVM.equals(OPENJ9) || JVM.equals(IBM);
     public static final boolean IS_IBM = IS_J9;
-
-    private static Platform initPlatform(){
-        try {
-            if (IS_WINDOWS)
-                return new NTPlatform();
-
-            if (IS_SOLARIS)
-                return new SolarisPlatform();
-
-            // Punt
-            return new UnixPlatform();
-        } catch (UnsupportedOperationException e) {
-            return new UnsupportedPlatform();
-        }
-    }
 
     /**
      * An extension over <code>System.getProperty</code> method.
@@ -162,5 +168,4 @@ public abstract class Platform {
         }
     }
 
-    public abstract long[] getGroups(IRubyObject recv);
 }

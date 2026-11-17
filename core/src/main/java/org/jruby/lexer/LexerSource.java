@@ -38,6 +38,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.io.IOException;
 import java.nio.channels.Channel;
 
 /**
@@ -89,7 +90,7 @@ public abstract class LexerSource {
 
     public abstract int getOffset();
 
-    public abstract Channel getRemainingAsChannel();
+    public abstract Channel getRemainingAsChannel() throws IOException;
 
-    public abstract IRubyObject getRemainingAsIO();
+    public abstract IRubyObject getRemainingAsIO() throws IOException;
 }

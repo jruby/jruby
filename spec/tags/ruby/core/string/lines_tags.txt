@@ -1,2 +1,1 @@
-fails:String#lines when `chomp` keyword argument is passed removes only specified separator
-fails:String#lines when `chomp` keyword argument is passed ignores new line characters when separator is specified
+fails:String#lines when passed '' (paragraph mode, broken by 2 or more successive newlines) removes trailing newlines with `chomp: true`

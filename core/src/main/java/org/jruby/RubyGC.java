@@ -36,8 +36,12 @@ import java.lang.management.ManagementFactory;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -55,65 +59,129 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyGC {
     private static volatile boolean gcDisabled = false;
     private static volatile boolean stress = false;
+    private static volatile boolean autoCompact = false;
+    private static volatile boolean measureTotalTime = false;
 
-    public static RubyModule createGCModule(Ruby runtime) {
-        RubyModule result = runtime.defineModule("GC");
-        runtime.setGC(result);
-        
-        result.defineAnnotatedMethods(RubyGC.class);
-        
-        return result;        
+    public static RubyModule createGCModule(ThreadContext context) {
+        return defineModule(context, "GC").defineMethods(context, RubyGC.class);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject start(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(meta = true)
+    public static IRubyObject config(ThreadContext context, IRubyObject recv) {
+        return RubyHash.newHash(
+            context.runtime,
+            RubySymbol.newSymbol(context.runtime, "implementation"),
+            RubyString.newString(context.runtime, "java")
+        );
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject config(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg.isNil()) {
+            return config(context, recv);
+        } else if (arg instanceof RubyHash) {
+            if (((RubyHash) arg).hasKey(RubySymbol.newSymbol(context.runtime, "implementation"))) {
+                throw context.runtime.newArgumentError("Attempting to set read-only key \"Implementation\"");
+            }
+            return config(context, recv);
+        } else {
+            throw context.runtime.newArgumentError("ArgumentError");
+        }
+    }
+
+    @JRubyMethod(meta = true, optional = 1, checkArity = false)
+    public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return context.nil;
     }
 
-    @JRubyMethod
-    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(optional = 1, checkArity = false)
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
         return context.nil;
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
+    public static IRubyObject measure_total_time(ThreadContext context, IRubyObject self) {
+        // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
+        // from a particular point we will need to record time and do some extra math.
+        return asBoolean(context, measureTotalTime);
+    }
+
+    @JRubyMethod(meta = true, name = "measure_total_time=")
+    public static IRubyObject measure_total_time_set(ThreadContext context, IRubyObject self, IRubyObject value) {
+        // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
+        // from a particular point we will need to record time and do some extra math.
+        measureTotalTime = value.isTrue();
+        return context.nil;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject total_time(ThreadContext context, IRubyObject self) {
+        return asFixnum(context, getCollectionTime());
+    }
+
+    @JRubyMethod(meta = true)
     public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.enable");
         boolean old = gcDisabled;
         gcDisabled = false;
-        return runtime.newBoolean(old);
+        return asBoolean(context, old);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, ID.GC_DISABLE_UNIMPLEMENTED, "GC.disable");
         boolean old = gcDisabled;
         gcDisabled = true;
-        return runtime.newBoolean(old);
+        return asBoolean(context, old);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(stress);
+        return asBoolean(context, stress);
     }
 
-    @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "stress=", meta = true)
     public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        emptyImplementationWarning(runtime, ID.GC_STRESS_UNIMPLEMENTED, "GC.stress=");
+        emptyImplementationWarning(context.runtime, ID.GC_STRESS_UNIMPLEMENTED, "GC.stress=");
         stress = arg.isTrue();
-        return runtime.newBoolean(stress);
+        return asBoolean(context, stress);
     }
     
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject count(ThreadContext context, IRubyObject recv) {
         try {
-            int count = getCollectionCount();
-            return context.runtime.newFixnum(count);
+            return asFixnum(context, getCollectionCount());
         } catch (Throwable t) {
             return RubyFixnum.minus_one(context.runtime);
         }
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject auto_compact(ThreadContext context, IRubyObject recv) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact");
+
+        return asBoolean(context, autoCompact);
+    }
+
+    @JRubyMethod(name = "auto_compact=", meta = true)
+    public static IRubyObject auto_compact_set(ThreadContext context, IRubyObject recv, IRubyObject autoCompact) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact=");
+
+        RubyGC.autoCompact = autoCompact.isTrue();
+
+        return autoCompact;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject compact(ThreadContext context, IRubyObject recv) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.compact");
+
+        return context.nil;
     }
 
     private static void emptyImplementationWarning(Ruby runtime, ID id, String name) {

@@ -1,4 +1,4 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
 require_relative 'shared/basic'
@@ -35,8 +35,10 @@ describe :string_unpack_8bit, shared: true do
     ].should be_computed_by(:unpack, unpack_format(3))
   end
 
-  it "ignores NULL bytes between directives" do
-    "abc".unpack(unpack_format("\000", 2)).should == [97, 98]
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      "abc".unpack(unpack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown unpack directive/)
   end
 
   it "ignores spaces between directives" do

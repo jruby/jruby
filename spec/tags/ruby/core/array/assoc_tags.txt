@@ -1,0 +1,1 @@
+fails:Array#assoc calls to_ary on non-array elements

@@ -1,2 +1,0 @@
-fails:UNIXSocket partial closability if the write end is closed then the other side can read past EOF without blocking
-fails:UNIXSocket partial closability closing the write end ensures that the other side can read until EOF

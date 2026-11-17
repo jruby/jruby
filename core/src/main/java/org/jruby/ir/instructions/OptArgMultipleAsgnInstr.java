@@ -44,8 +44,6 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArray());
-        e.encode(getIndex());
         e.encode(getMinArgsLength());
     }
 

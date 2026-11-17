@@ -28,26 +28,23 @@
 
 package org.jruby.util;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
 public interface SignalFacade {
-    IRubyObject trap(IRubyObject recv, IRubyObject block, IRubyObject sig);
-    IRubyObject trap(Ruby runtime, BlockCallback block, String sig);
+    IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject block, IRubyObject sig);
+    IRubyObject trap(ThreadContext context, BlockCallback block, String sig);
     /**
      * Restores the platform (JVM's) default signal handler.
      */
-    IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig);
+    IRubyObject restorePlatformDefault(ThreadContext context, IRubyObject recv, IRubyObject sig);
     /**
      * Restores the OS default signal handler.
      */
-    IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig);
+    IRubyObject restoreOSDefault(ThreadContext context, IRubyObject recv, IRubyObject sig);
     /**
      * Ignores this signal.
      */
-    IRubyObject ignore(IRubyObject recv, IRubyObject sig);
+    IRubyObject ignore(ThreadContext context, IRubyObject recv, IRubyObject sig);
 }// SignalFacade

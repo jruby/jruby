@@ -6,19 +6,51 @@ describe "Thread#[]=" do
     Thread.current[:value] = nil
   end
 
-  it "raises a #{frozen_error_class} if the thread is frozen" do
+  it "raises a FrozenError if the thread is frozen" do
     Thread.new do
       th = Thread.current
       th.freeze
       -> {
         th[:foo] = "bar"
-      }.should raise_error(frozen_error_class, /frozen/)
+      }.should.raise(FrozenError, "can't modify frozen thread locals")
     end.join
   end
 
+  it "accepts Strings and Symbols" do
+    t1 = Thread.new do
+      Thread.current[:value] = 1
+    end.join
+    t2 = Thread.new do
+      Thread.current["value"] = 2
+    end.join
+
+    t1[:value].should == 1
+    t2[:value].should == 2
+  end
+
+  it "removes a key if the value is nil" do
+    thread = Thread.new {}.join
+    thread[:value] = 1
+    thread[:value] = nil
+
+    thread.key?(:value).should == false
+    thread.keys.should_not.include?(:value)
+  end
+
+  it "converts a key that is neither String nor Symbol with #to_str" do
+    key = mock('value')
+    key.should_receive(:to_str).and_return('value')
+
+    th = Thread.new do
+      Thread.current[key] = 1
+    end.join
+
+    th[:value].should == 1
+  end
+
   it "raises exceptions on the wrong type of keys" do
-    lambda { Thread.current[nil] = true }.should raise_error(TypeError)
-    lambda { Thread.current[5] = true }.should raise_error(TypeError)
+    -> { Thread.current[nil] = true }.should.raise(TypeError)
+    -> { Thread.current[5] = true }.should.raise(TypeError)
   end
 
   it "is not shared across fibers" do
@@ -28,7 +60,7 @@ describe "Thread#[]=" do
       Thread.current[:value].should == 1
     end
     fib.resume
-    Thread.current[:value].should be_nil
+    Thread.current[:value].should == nil
     Thread.current[:value] = 2
     fib.resume
     Thread.current[:value] = 2

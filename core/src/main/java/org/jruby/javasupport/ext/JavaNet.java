@@ -50,10 +50,9 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public abstract class JavaNet {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.net.URL.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("open", new URLOpenMethod(proxyClass));
-        });
+    public static void define(ThreadContext context) {
+        JavaExtensions.put(context.runtime, java.net.URL.class, (proxyClass) ->
+            proxyClass.addMethodInternal(context, "open", new URLOpenMethod(proxyClass)));
     }
 
     private static final class URLOpenMethod extends JavaMethod.JavaMethodZeroOrNBlock {

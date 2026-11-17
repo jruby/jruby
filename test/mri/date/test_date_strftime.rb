@@ -48,7 +48,7 @@ class TestDateStrftime < Test::Unit::TestCase
     '%t'=>["\t",{}],
     '%u'=>['6',{:cwday=>6}],
     '%V'=>['05',{:cweek=>5}],
-    '%v'=>[' 3-Feb-2001',{:mday=>3,:mon=>2,:year=>2001}],
+    '%v'=>[' 3-FEB-2001',{:mday=>3,:mon=>2,:year=>2001}],
     '%z'=>['+0000',{:zone=>'+0000',:offset=>0}],
     '%+'=>['Sat Feb  3 00:00:00 +00:00 2001',
       {:wday=>6,:mon=>2,:mday=>3,
@@ -125,7 +125,7 @@ class TestDateStrftime < Test::Unit::TestCase
 
   def test_strftime__3_2
     s = Time.now.strftime('%G')
-    skip if s.empty? || s == '%G'
+    omit if s.empty? || s == '%G'
     (Date.new(1970,1,1)..Date.new(2037,12,31)).each do |d|
       t = Time.utc(d.year,d.mon,d.mday)
       assert_equal(t.strftime('%G'), d.strftime('%G'))
@@ -186,11 +186,14 @@ class TestDateStrftime < Test::Unit::TestCase
     (-24..24).collect{|x| '%+.2d' % x}.each do |hh|
       %w(00 30).each do |mm|
 	r = hh + mm
-	if r[-4,4] == '2430'
-	  r = '+0000'
-	end
+	next if r.end_with?('2430')
 	d = DateTime.parse(s + hh + mm)
 	assert_equal(r, d.strftime('%z'))
+      end
+    end
+    %w[+2430 -2430].each do |r|
+      assert_warning(/invalid offset/) do
+        DateTime.parse(s + r)
       end
     end
   end
@@ -406,6 +409,17 @@ class TestDateStrftime < Test::Unit::TestCase
     assert_equal('S64.01.07', Date.parse('1989-01-07').jisx0301)
     assert_equal('H01.01.08', Date.parse('1989-01-08').jisx0301)
     assert_equal('H18.09.01', Date.parse('2006-09-01').jisx0301)
+    assert_equal('H31.04.30', Date.parse('2019-04-30').jisx0301)
+    assert_equal('R01.05.01', Date.parse('2019-05-01').jisx0301)
+
+    assert_equal(d2, DateTime.iso8601('2001-02-03T04:05:06.123456+00:00', limit: 64))
+    assert_equal(d2, DateTime.rfc3339('2001-02-03T04:05:06.123456+00:00', limit: 64))
+    assert_equal(d2, DateTime.jisx0301('H13.02.03T04:05:06.123456+00:00', limit: 64))
+
+    exceeds = /string length \(\d+\) exceeds/
+    assert_raise_with_message(ArgumentError, exceeds) {DateTime.iso8601('2001-02-03T04:05:06.123456+00:00', limit: 1)}
+    assert_raise_with_message(ArgumentError, exceeds) {DateTime.rfc3339('2001-02-03T04:05:06.123456+00:00', limit: 1)}
+    assert_raise_with_message(ArgumentError, exceeds) {DateTime.jisx0301('H13.02.03T04:05:06.123456+00:00', limit: 1)}
 
     %w(M06.01.01
        M45.07.29
@@ -414,7 +428,10 @@ class TestDateStrftime < Test::Unit::TestCase
        S01.12.25
        S64.01.07
        H01.01.08
-       H18.09.01).each do |s|
+       H18.09.01
+       H31.04.30
+       R01.05.01
+    ).each do |s|
       assert_equal(s, Date.parse(s).jisx0301)
     end
 

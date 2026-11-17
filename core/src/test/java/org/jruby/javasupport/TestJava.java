@@ -1,10 +1,12 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.test.HashBase;
+import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
 
 import org.jruby.test.ThrowingConstructor;
@@ -20,7 +22,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testProxyCreation() {
         final Ruby runtime = Ruby.newInstance();
         try {
-            Java.getProxyClass(runtime, B.class);
+            Java.getProxyClass(runtime.getCurrentContext(), B.class);
             assert(true);
         }
         catch (AssertionError ae) {
@@ -38,11 +40,10 @@ public class TestJava extends junit.framework.TestCase {
         method = Java.getFunctionalInterfaceMethod(java.io.Serializable.class);
         assertNull(method);
 
-        //if ( Java.JAVA8 ) { // compare and equals both abstract
+        // compare and equals both abstract
         method = Java.getFunctionalInterfaceMethod(java.util.Comparator.class);
         assertNotNull(method);
         assertEquals("compare", method.getName());
-        //}
 
         method = Java.getFunctionalInterfaceMethod(java.lang.Comparable.class);
         assertNotNull(method);
@@ -77,39 +78,16 @@ public class TestJava extends junit.framework.TestCase {
     private static interface NonFxRunnable extends Runnable { public void doRun() ; }
 
     @Test
-    public void test_get_java_class() {
-        final Ruby runtime = Ruby.newInstance();
-        final RubyModule self = runtime.getJavaSupport().getJavaModule();
-        RubyString name;
-
-        name = runtime.newString("java.lang.Integer");
-        assert Java.get_java_class(self, name) != null;
-
-        try {
-            name = runtime.newString("java.lang.BOGUS22");
-            Java.get_java_class(self, name);
-            assert false;
-        }
-        catch (RaiseException ex) {
-            assertEquals("(NameError) cannot load Java class java.lang.BOGUS22", ex.getMessage());
-            assertNotNull(ex.getCause());
-            assertEquals(ClassNotFoundException.class, ex.getCause().getClass());
-        }
-    }
-
-    @Test
     public void testJavaConstructorExceptionHandling() throws Exception {
         final Ruby runtime = Ruby.newInstance();
-        JavaConstructor constructor = JavaConstructor.create(runtime,
-                ThrowingConstructor.class.getDeclaredConstructor(Integer.class)
-        );
-        assert constructor.new_instance(new IRubyObject[] { runtime.newFixnum(0) }) != null;
+        ThreadContext context = runtime.getCurrentContext();
+        JavaConstructor constructor = JavaConstructor.wrap(ThrowingConstructor.class.getDeclaredConstructor(Integer.class));
 
-        assert constructor.new_instance(new Object[] { 1 }) != null;
+        assertNotNull(constructor.newInstanceDirect(context, new Object[] { 1 }));
 
         try {
-            constructor.new_instance(new Object[0]);
-            assert false;
+            constructor.newInstanceDirect(context, new Object[0]);
+            assertTrue("raise exception expected", false);
         }
         catch (RaiseException ex) {
             assertEquals("(ArgumentError) wrong number of arguments (given 0, expected 1)", ex.getMessage());
@@ -119,8 +97,8 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(new Object[] { -1 });
-            assert false;
+            constructor.newInstanceDirect(context, new Object[] { -1 });
+            assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {
             assertEquals("param == -1", ex.getMessage());
@@ -130,12 +108,40 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(new Object[] { null }); // new IllegalStateException() null cause message
-            assert false;
+            constructor.newInstanceDirect(context, new Object[] { null }); // new IllegalStateException() null cause message
+            assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {
             assertEquals(null, ex.getMessage());
         }
     }
 
+    @Test
+    public void testOverrideNewOnConcreteJavaProxySubClassRegression() {
+        String script =
+            "class FormatImpl < java.text.SimpleDateFormat\n" +
+            "  include Enumerable\n" +
+            "  public_class_method :new\n" +
+            "  class << self\n" +
+            "    def new(thread_provider: true)\n" +
+            "      super()\n" +
+            "    end\n" +
+            "  end\n" +
+            "end\n";
+
+        final Ruby runtime = Ruby.newInstance();
+        runtime.evalScriptlet(script);
+
+        assertNotNull(runtime.evalScriptlet("FormatImpl.new")); // used to cause an infinite loop
+        assertTrue(runtime.evalScriptlet("FormatImpl.new").toJava(Object.class) instanceof SimpleDateFormat);
+    }
+
+    @Test
+    public void testHashMethodOnJavaProxy() {
+        final Ruby runtime = Ruby.newInstance();
+        // we internally shuffle around the subclasses (due interface module includes in the Java class) in a map,
+        // calling hashCode -> HashBase.hash() would: (ArgumentError) wrong number of arguments (given 0, expected 1)
+        var hashBase = Java.getProxyClass(runtime.getCurrentContext(), HashBase.class);
+        assertEquals(hashBase.id, hashBase.hashCode());
+    }
 }

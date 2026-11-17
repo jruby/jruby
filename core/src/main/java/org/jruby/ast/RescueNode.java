@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a rescue statement
@@ -46,8 +45,8 @@ public class RescueNode extends Node {
     private final RescueBodyNode rescueNode;
     private final Node elseNode;
     
-    public RescueNode(ISourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
-        super(position, bodyNode != null && bodyNode.containsVariableAssignment() ||
+    public RescueNode(int line, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
+        super(line, bodyNode != null && bodyNode.containsVariableAssignment() ||
                 rescueNode != null && rescueNode.containsVariableAssignment() ||
                 elseNode != null && elseNode.containsVariableAssignment());
         this.bodyNode = bodyNode;

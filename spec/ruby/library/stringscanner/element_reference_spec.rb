@@ -7,7 +7,8 @@ describe "StringScanner#[]" do
   end
 
   it "returns nil if there is no current match" do
-    @s[0].should be_nil
+    @s[0].should == nil
+    @s[:wday].should == nil
   end
 
   it "returns the n-th subgroup in the most recent match" do
@@ -34,18 +35,24 @@ describe "StringScanner#[]" do
 
   it "raises a TypeError if the given index is nil" do
     @s.scan(/(\w+) (\w+) (\d+) /)
-    lambda { @s[nil]}.should raise_error(TypeError)
+    -> { @s[nil]}.should.raise(TypeError)
   end
 
   it "raises a TypeError when a Range is as argument" do
     @s.scan(/(\w+) (\w+) (\d+) /)
-    lambda { @s[0..2]}.should raise_error(TypeError)
+    -> { @s[0..2]}.should.raise(TypeError)
   end
 
-  it "raises a IndexError when there's no named capture" do
+  it "raises a IndexError when there's no any named capture group in the regexp" do
     @s.scan(/(\w+) (\w+) (\d+) /)
-    lambda { @s["wday"]}.should raise_error(IndexError)
-    lambda { @s[:wday]}.should raise_error(IndexError)
+    -> { @s["wday"]}.should.raise(IndexError)
+    -> { @s[:wday]}.should.raise(IndexError)
+  end
+
+  it "raises a IndexError when given a not existing capture group name" do
+    @s.scan(/(?<a>\w+) (?<b>\w+) (?<c>\d+) /)
+    -> { @s["wday"]}.should.raise(IndexError)
+    -> { @s[:wday]}.should.raise(IndexError)
   end
 
   it "returns named capture" do

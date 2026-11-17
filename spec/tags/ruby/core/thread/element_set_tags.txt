@@ -1,0 +1,1 @@
+fails:Thread#[]= removes a key if the value is nil

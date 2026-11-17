@@ -33,6 +33,6 @@ package org.jruby.ast;
  * Does the node contain an argument list?
  */
 public interface IArgumentNode {
-    public Node getArgsNode();
-    public Node setArgsNode(Node argsNode);
+    Node getArgsNode();
+    Node setArgsNode(Node argsNode);
 }

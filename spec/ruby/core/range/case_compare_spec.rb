@@ -3,26 +3,15 @@ require_relative 'shared/cover_and_include'
 require_relative 'shared/cover'
 
 describe "Range#===" do
-  ruby_version_is ""..."2.6" do
-    it "returns the result of calling #include? on self" do
-      range = 0...10
-      range.should_receive(:include?).with(2).and_return(:true)
-      (range === 2).should == :true
-    end
-
-    it "requires #succ method to be implemented" do
-      range = RangeSpecs::WithoutSucc.new(0)..RangeSpecs::WithoutSucc.new(10)
-
-      lambda do
-        range === RangeSpecs::WithoutSucc.new(2)
-      end.should raise_error(TypeError, /can't iterate from/)
-    end
+  it "returns the result of calling #cover? on self" do
+    range = RangeSpecs::WithoutSucc.new(0)..RangeSpecs::WithoutSucc.new(10)
+    (range === RangeSpecs::WithoutSucc.new(2)).should == true
   end
 
-  ruby_version_is "2.6" do
-    it "returns the result of calling #cover? on self" do
-      range = RangeSpecs::WithoutSucc.new(0)..RangeSpecs::WithoutSucc.new(10)
-      (range === RangeSpecs::WithoutSucc.new(2)).should == true
-    end
+  it_behaves_like :range_cover_and_include, :===
+  it_behaves_like :range_cover, :===
+
+  it "returns true on any value if begin and end are both nil" do
+    (nil..nil).should === 1
   end
 end

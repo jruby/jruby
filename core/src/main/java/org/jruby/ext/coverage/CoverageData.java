@@ -27,111 +27,391 @@
 package org.jruby.ext.coverage;
 
 import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jruby.Ruby;
-import org.jruby.runtime.EventHook;
-import org.jruby.runtime.RubyEvent;
+import java.util.Set;
+
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MethodMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.IntList;
 
+import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
+
+/**
+ * Runtime-wide Coverage state: the enabled modes, whether measurement is running, and one {@link FileCoverage}
+ * per file parsed since Coverage was set up.
+ */
 public class CoverageData {
-    public static final String STARTED = "";        // no load/require ruby file can be "" so we
-    private static final int[] SVALUE = new int[0];  // use it as a holder to know if start occurs
-    private volatile Map<String, int[]> coverage;
+    public enum CoverageDataState {
+        IDLE,
+        SUSPENDED,
+        RUNNING
+    };
 
+    private volatile Map<String, FileCoverage> coverage;
+    private volatile int mode;                      // actual mode (currentMode == 0 is mode of LINES).
+    private volatile int currentMode;               // listed mode for sake of reporting.
+    private volatile CoverageDataState state = IDLE;
+
+    public static final int NONE = 0;
+    public static final int LINES = 1 << 0;
+    public static final int BRANCHES = 1 << 1;
+    public static final int METHODS = 1 << 2;
+    public static final int ONESHOT_LINES = 1 << 3;
+    public static final int EVAL = 1 << 4;
+    public static final int ALL = LINES | BRANCHES | METHODS | EVAL;
+
+    /**
+     * Has coverage been setup?
+     */
     public boolean isCoverageEnabled() {
-        return coverage != null && coverage.get(STARTED) != null;
+        return state != IDLE;
     }
 
-    public Map<String, int[]> getCoverage() {
+    public boolean isEvalCovered() {
+        return (mode & EVAL) != 0;
+    }
+
+    /**
+     * Is coverage actively collecting info?
+     */
+    public boolean isRunning() {
+        return state == RUNNING;
+    }
+
+    public int getMode() {
+        return mode;
+    }
+
+    public boolean isOneshot() {
+        return (mode & ONESHOT_LINES) != 0;
+    }
+
+    /**
+     * True when line counts are collected (lines or oneshot_lines mode).
+     */
+    public boolean isLinesEnabled() {
+        return (mode & LINES) != 0;
+    }
+
+    /**
+     * True when method calls are counted (methods mode).
+     */
+    public boolean isMethodsEnabled() {
+        return (mode & METHODS) != 0;
+    }
+
+    /**
+     * True when branches are counted (branches mode).
+     */
+    public boolean isBranchesEnabled() {
+        return (mode & BRANCHES) != 0;
+    }
+
+    /**
+     * Data collected so far, by file name. Null when Coverage is not set up.
+     */
+    public Map<String, FileCoverage> getCoverage() {
       return coverage;
     }
 
-    public synchronized void setCoverageEnabled(Ruby runtime, boolean enabled) {
-        Map<String, int[]> coverage = this.coverage;
+    /**
+     * Update coverage data for the given file and line number.
+     *
+     * @param filename the file the line belongs to
+     * @param line zero-based line number
+     * @return true if the line was counted. False if there is nowhere to count it: a negative line, an
+     *         untracked file, a file with no line counts, a line past the end of them, or a line without code.
+     */
+    public synchronized boolean coverLine(String filename, int line) {
+        Map<String, FileCoverage> coverage = this.coverage;
 
-        if (coverage == null) coverage = new HashMap<String, int[]>();
+        if (coverage == null) return false;
 
-        if (enabled) {
-            coverage.put(STARTED, SVALUE);
-            runtime.addEventHook(COVERAGE_HOOK);
+        // negative lines are not included in coverage
+        if (line < 0) return false;
+
+        FileCoverage file = coverage.get(filename);
+
+        if (file == null) return false;
+
+        IntList lines = file.getLines();
+
+        if (lines == null) return false;
+
+        if (isOneshot()) {
+            lines.add(line);
         } else {
-            coverage.remove(STARTED);
+            if (lines.size() <= line) return false;
+
+            int count = lines.get(line);
+            // a line without code (-1) has no count, even if it was asked to count one
+            if (count < 0) return false;
+
+            lines.set(line, count + 1);
         }
 
-        this.coverage = coverage;
+        return true;
     }
 
-    public synchronized Map<String, int[]> resetCoverage(Ruby runtime) {
-        Map<String, int[]> coverage = this.coverage;
-        runtime.removeEventHook(COVERAGE_HOOK);
-        coverage.remove(STARTED);
+    /**
+     * The data collected so far, as an unshared copy that can be read without holding this lock. A result is
+     * built from the copy, since converting it runs Ruby code, which must not run under this lock.
+     *
+     * <p>When clear is true the counts are reset as they are read, in one step. A call counted while the
+     * result is being built is then reported once rather than dropped, which is what
+     * Coverage.result(clear: true) needs.</p>
+     *
+     * @param clear reset the counts as they are read, but keep measuring
+     * @return a copy by file name, or null when coverage is not set up
+     */
+    public synchronized Map<String, FileCoverage> snapshot(boolean clear) {
+        Map<String, FileCoverage> coverage = this.coverage;
 
+        if (coverage == null) return null;
 
-        for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
-            String key = entry.getKey();
+        Map<String, FileCoverage> snapshot = new LinkedHashMap<>(coverage.size());
+        boolean oneshot = isOneshot();
 
-            // on reset we do not reset files where no execution ever happened but we do reset
-            // any files visited to be an empty array.  Why?  I don't know.  Matching MRI.
-            if (hasCodeBeenPartiallyCovered(entry.getValue())) coverage.put(key, SVALUE);
+        for (Map.Entry<String, FileCoverage> entry : coverage.entrySet()) {
+            snapshot.put(entry.getKey(), entry.getValue().snapshot(clear, oneshot));
         }
 
-        this.coverage = null;
+        return snapshot;
+    }
+
+    public synchronized void resumeCoverage() {
+        setupCoverage();
+
+        this.state = RUNNING;
+    }
+
+    public synchronized void suspendCoverage() {
+        this.state = SUSPENDED;
+    }
+
+    public synchronized void setCoverage(int mode, int currentMode, CoverageDataState state) {
+        this.state = state;
+        this.mode = mode;
+        this.currentMode = currentMode;
+        setupCoverage();
+    }
+
+    private void setupCoverage() {
+        // files are reported in parse order, as in MRI
+        if (this.coverage == null) this.coverage = new LinkedHashMap<>();
+    }
+
+    /**
+     * Stop measuring and hand back what was collected. Detaches every counter from its method entry, so no
+     * method is left instrumented after a run.
+     *
+     * @param context the current thread context
+     * @return the data collected since coverage was set up
+     */
+    public Map<String, FileCoverage> resetCoverage(ThreadContext context) {
+        Map<String, FileCoverage> coverage;
+        // By identity: RubyModule#hashCode can dispatch to a Ruby hash method, which must not run here.
+        Set<RubyModule> detached = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        synchronized (this) {
+            coverage = this.coverage;
+
+            this.coverage = null;
+            this.mode = CoverageData.NONE;
+
+            if (coverage != null) {
+                for (FileCoverage file : coverage.values()) {
+                    for (MethodCoverage method : file.getMethods()) {
+                        if (method.detach()) detached.add(method.getOwner());
+                    }
+                }
+            }
+        }
+
+        // Lets call sites bound to the counting path re-resolve. Kept outside our lock to avoid a deadlock: this
+        // takes the hierarchy lock, and a method being defined holds the method table lock then waits here.
+        for (RubyModule owner : detached) {
+            owner.invalidateCacheDescendants(context);
+        }
 
         return coverage;
     }
 
-    private boolean hasCodeBeenPartiallyCovered(int[] lines) {
-        for (int i = 0; i < lines.length; i++) {
-            if (lines[i] > 0) return true;
-        }
-
-        return false;
-    }
-
-    public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
-        assert lines != null;
+    /**
+     * Register a file that was just parsed. Every file parsed while Coverage is set up gets a {@link FileCoverage},
+     * which makes it appear in Coverage.result. Line counts are only prepared in lines mode.
+     *
+     * <p>A file loaded again starts its line and branch counts over, as in MRI, where the new code gets new
+     * counters. An eval naming a file that was already parsed counts into that file's entry instead. Method entries
+     * are kept either way: MRI sums the calls of all the methods defined at the same place.</p>
+     *
+     * @param filename the parsed file
+     * @param startingLines per-line counts from the parser (-1 for lines without code). Ignored unless lines are counted.
+     * @param eval whether the code was parsed for an eval rather than loaded from the file
+     * @return the file's entry. Null when Coverage is not set up or the file has no name.
+     */
+    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines, boolean eval) {
+        Map<String, FileCoverage> coverage = this.coverage;
 
         if (filename == null) {
             // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
             // we opt to ignore scripts with no filename, since coverage means nothing
-            return coverage;
+            return null;
         }
 
-        Map<String, int[]> coverage = this.coverage;
+        if (coverage == null) return null;
 
-        if (coverage != null) {
-            coverage.put(filename, lines);
+        FileCoverage file = coverage.get(filename);
+
+        if (file == null) {
+            file = new FileCoverage();
+            coverage.put(filename, file);
+        } else if (!eval) {
+            file.restart();
         }
 
-        return coverage;
+        if (isLinesEnabled()) {
+            IntList existing = file.getLines();
+
+            if (isOneshot()) {
+                if (existing == null) file.setLines(new IntList());
+            } else {
+                // an eval adds its lines to those of the file it names
+                file.setLines(existing == null ? new IntList(startingLines) : mergeLines(existing, startingLines));
+            }
+        }
+
+        return file;
     }
 
-    private static final EnumSet<RubyEvent> COVERAGE_EVENTS = EnumSet.of(RubyEvent.COVERAGE);
-    
-    private final EventHook COVERAGE_HOOK = new EventHook() {
-        @Override
-        public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (coverage == null || line <= 0) return; // Should not be needed but I predict serialization of IR might hit this.
+    private IntList mergeLines(IntList existing, int[] startingLines) {
+        IntList result = existing;
+        int existingSize = existing.size();
+        int startingLinesLength = startingLines.length;
 
-            int[] lines = coverage.get(file);
-            if (lines == null) return;           // no coverage lines for this record.  bail out (should never happen)
-            if (lines.length == 0) return;       // coverage is dead for this record.  result() has been called once
-                                                 // and we marked it as such as an empty list.
-            lines[line - 1] += 1;                // increment usage count by one.
+        if (existingSize < startingLinesLength) {
+            int[] newLines = new int[startingLinesLength];
+            System.arraycopy(existing.toIntArray(), 0, newLines, 0, existingSize);
+            Arrays.fill(newLines, existingSize, startingLinesLength, -1);
+            result = new IntList(newLines);
         }
 
-        @Override
-        public boolean isInterestedInEvent(RubyEvent event) {
-            return event == RubyEvent.COVERAGE;
+        for (int i = 0; i < startingLinesLength; i++) {
+            int existingValue = result.get(i);
+            int newValue = startingLines[i];
+
+            if (newValue == -1) continue;
+
+            if (existingValue == -1) {
+                result.set(i, newValue);
+            } else {
+                result.set(i, existingValue + newValue);
+            }
         }
 
-        @Override
-        public EnumSet<RubyEvent> eventSet() {
-            return COVERAGE_EVENTS;
+        return result;
+    }
+
+    /**
+     * Called when a method entry is added to a module. In methods mode, if the method comes from a tracked file,
+     * this creates a {@link MethodCoverage} counter and attaches it to the entry. This is the equivalent of MRI's
+     * per-method-entry counters.
+     *
+     * <p>Entries that only forward to another entry (aliases, visibility changes of inherited methods) get no
+     * counter. Their calls count toward the entry they forward to, as in MRI.</p>
+     *
+     * <p>The entry is keyed by the name of the method it runs, as MRI keys it by the method's original_id. That
+     * is not always the name it is added under: define_method(:new, old_method) adds a copy of old_method, which
+     * keeps its name.</p>
+     *
+     * @param method the entry being added, after any wrapping or duplication done by the module
+     */
+    public void registerMethod(DynamicMethod method) {
+        // Every method entry in the process comes through here whenever coverage is set up, so decide without
+        // taking the lock that coverLine holds: in lines-only mode there is nothing to do.
+        if (!isMethodsEnabled() || this.coverage == null) return;
+
+        if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
+
+        registerMethodLocked(method);
+    }
+
+    private synchronized void registerMethodLocked(DynamicMethod method) {
+        Map<String, FileCoverage> coverage = this.coverage;
+        if (coverage == null) return;
+
+        DynamicMethod real = method.getRealMethod();
+        if (real.getMethodCoverage() != null) return; // already counted
+
+        IRScope scope = definitionScope(real);
+        if (scope == null) return;
+
+        // The body only counts its calls if it was parsed with the counting instructions in it, which code parsed
+        // before methods mode was on was not. Leave such a method out rather than list it with a count stuck at zero.
+        if ((scope.getCoverageMode() & METHODS) == 0) return;
+
+        FileCoverage file = coverage.get(scope.getFile());
+        if (file == null) return;
+
+        int startLine = scope.getLine() + 1;
+        if (startLine <= 0) return; // MRI skips methods with a non-positive line (eval with a line offset)
+
+        RubyModule owner = method.getImplementationClass();
+        if (owner == null) return;
+
+        // -1 means no span was recorded (Prism does not supply them yet). Keep the marker, do not make it line 0.
+        int endLine = scope.getEndLine();
+        if (endLine >= 0) endLine++;
+
+        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), real.getName(),
+                startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
+
+        file.getMethods().add(methodCoverage);
+        real.setMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * The IR scope holding the Ruby source of a method entry: the IRMethod of a def, or the IRClosure of a block
+     * or lambda passed to define_method. Null for anything else, such as native methods and attr accessors.
+     */
+    private static IRScope definitionScope(DynamicMethod method) {
+        if (method instanceof AbstractIRMethod irMethod) {
+            IRScope scope = irMethod.getIRScope();
+
+            return scope instanceof IRMethod ? scope : null;
         }
-    };
-    
+
+        if (method instanceof ProcMethod procMethod) {
+            BlockBody body = procMethod.getProc().getBlock().getBody();
+
+            return body instanceof IRBlockBody irBody ? irBody.getScope() : null;
+        }
+
+        return null;
+    }
+
+    public CoverageDataState getCurrentState() {
+        return state;
+    }
+
+    public void setCurrentState(CoverageDataState state) {
+        this.state = state;
+    }
+
+    public int getCurrentMode() {
+        return currentMode;
+    }
 }

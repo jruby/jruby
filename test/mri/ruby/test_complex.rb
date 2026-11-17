@@ -123,6 +123,10 @@ class Complex_Test < Test::Unit::TestCase
     assert_raise(TypeError){Complex(Object.new)}
     assert_raise(ArgumentError){Complex()}
     assert_raise(ArgumentError){Complex(1,2,3)}
+    c = Complex(1,0)
+    assert_same(c, Complex(c))
+    assert_same(c, Complex(c, exception: false))
+    assert_raise(ArgumentError){Complex(c, bad_keyword: true)}
 
     if (0.0/0).nan?
       assert_nothing_raised{Complex(0.0/0)}
@@ -216,6 +220,17 @@ class Complex_Test < Test::Unit::TestCase
   def test_polar
     assert_equal([1,2], Complex.polar(1,2).polar)
     assert_equal(Complex.polar(1.0, Math::PI * 2 / 3), Complex.polar(1, Math::PI * 2 / 3))
+
+    one = 1+0i
+    c = Complex.polar(0, one)
+    assert_equal(0, c)
+    assert_predicate(c.real, :real?)
+    c = Complex.polar(one, 0)
+    assert_equal(1, c)
+    assert_predicate(c.real, :real?)
+    c = Complex.polar(one)
+    assert_equal(1, c)
+    assert_predicate(c.real, :real?)
   end
 
   def test_uplus
@@ -269,6 +284,39 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(Rational(5,3),Rational(2)), c + Rational(2,3))
   end
 
+  def test_add_with_redefining_int_plus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Integer
+        remove_method :+
+        def +(other); 42; end
+      end
+      a = Complex(1, 2) + Complex(0, 1)
+      puts a == Complex(42, 42)
+    end;
+  end
+
+  def test_add_with_redefining_float_plus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Float
+        remove_method :+
+        def +(other); 42.0; end
+      end
+      a = Complex(1.0, 2.0) + Complex(0, 1)
+      puts a == Complex(42.0, 42.0)
+    end;
+  end
+
+  def test_add_with_redefining_rational_plus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Rational
+        remove_method :+
+        def +(other); 355/113r; end
+      end
+      a = Complex(1r, 2r) + Complex(0, 1)
+      puts a == Complex(355/113r, 355/113r)
+    end;
+  end
+
   def test_sub
     c = Complex(1,2)
     c2 = Complex(2,3)
@@ -280,6 +328,39 @@ class Complex_Test < Test::Unit::TestCase
 
     assert_equal(Complex(Rational(-1,1),Rational(2)), c - Rational(2))
     assert_equal(Complex(Rational(1,3),Rational(2)), c - Rational(2,3))
+  end
+
+  def test_sub_with_redefining_int_minus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Integer
+        remove_method :-
+        def -(other); 42; end
+      end
+      a = Complex(1, 2) - Complex(0, 1)
+      puts a == Complex(42, 42)
+    end;
+  end
+
+  def test_sub_with_redefining_float_minus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Float
+        remove_method :-
+        def -(other); 42.0; end
+      end
+      a = Complex(1.0, 2.0) - Complex(0, 1)
+      puts a == Complex(42.0, 42.0)
+    end;
+  end
+
+  def test_sub_with_redefining_rational_minus
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Rational
+        remove_method :-
+        def -(other); 355/113r; end
+      end
+      a = Complex(1r, 2r) - Complex(0, 1)
+      puts a == Complex(355/113r, 355/113r)
+    end;
   end
 
   def test_mul
@@ -300,6 +381,42 @@ class Complex_Test < Test::Unit::TestCase
     c = Complex(0, Float::INFINITY)
     assert_equal(Complex(0, Float::INFINITY), c * Complex(1, 0))
     assert_equal(Complex(-Float::INFINITY, 0), c * Complex(0, 1))
+
+    assert_equal(Complex(-0.0, -0.0), Complex(-0.0, 0) * Complex(0, 0))
+  end
+
+  def test_mul_with_redefining_int_mult
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Integer
+        remove_method :*
+        def *(other); 42; end
+      end
+      a = Complex(2, 0) * Complex(1, 2)
+      puts a == Complex(0, 84)
+    end;
+  end
+
+  def test_mul_with_redefining_float_mult
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Float
+        remove_method :*
+        def *(other); 42.0; end
+      end
+      a = Complex(2.0, 0.0) * Complex(1, 2)
+      puts a == Complex(0.0, 84.0)
+    end;
+  end
+
+
+  def test_mul_with_redefining_rational_mult
+    assert_in_out_err([], <<-'end;', ['true'], [])
+      class Rational
+        remove_method :*
+        def *(other); 355/113r; end
+      end
+      a = Complex(2r, 0r) * Complex(1, 2)
+      puts a == Complex(0r, 2*355/113r)
+    end;
   end
 
   def test_div
@@ -323,6 +440,15 @@ class Complex_Test < Test::Unit::TestCase
 
     assert_equal(Complex(Rational(1,2),Rational(1)), c / Rational(2))
     assert_equal(Complex(Rational(3,2),Rational(3)), c / Rational(2,3))
+
+    c = Complex(1)
+    [ 1, Rational(1), c ].each do |d|
+      r = c / d
+      assert_instance_of(Complex, r)
+      assert_equal(1, r)
+      assert_predicate(r.real, :integer?)
+      assert_predicate(r.imag, :integer?)
+    end
   end
 
   def test_quo
@@ -402,10 +528,86 @@ class Complex_Test < Test::Unit::TestCase
     assert_in_delta(-0.393, r.imag, 0.001)
   end
 
+  def test_expt_for_special_angle
+    c = Complex(1, 0) ** 100000000000000000000000000000000
+    assert_equal(Complex(1, 0), c)
+
+    c = Complex(-1, 0) ** 10000000000000000000000000000000
+    assert_equal(Complex(1, 0), c)
+
+    c = Complex(-1, 0) ** 10000000000000000000000000000001
+    assert_equal(Complex(-1, 0), c)
+
+    c = Complex(0, 1) ** 100000000000000000000000000000000
+    assert_equal(Complex(1, 0), c)
+
+    c = Complex(0, 1) ** 100000000000000000000000000000001
+    assert_equal(Complex(0, 1), c)
+
+    c = Complex(0, 1) ** 100000000000000000000000000000002
+    assert_equal(Complex(-1, 0), c)
+
+    c = Complex(0, 1) ** 100000000000000000000000000000003
+    assert_equal(Complex(0, -1), c)
+
+    c = Complex(0, -1) ** 100000000000000000000000000000000
+    assert_equal(Complex(1, 0), c)
+
+    c = Complex(0, -1) ** 100000000000000000000000000000001
+    assert_equal(Complex(0, -1), c)
+
+    c = Complex(0, -1) ** 100000000000000000000000000000002
+    assert_equal(Complex(-1, 0), c)
+
+    c = Complex(0, -1) ** 100000000000000000000000000000003
+    assert_equal(Complex(0, 1), c)
+
+    c = Complex(1, 1) ** 1
+    assert_equal(Complex(1, 1), c)
+
+    c = Complex(1, 1) ** 2
+    assert_equal(Complex(0, 2), c)
+
+    c = Complex(1, 1) ** 3
+    assert_equal(Complex(-2, 2), c)
+
+    c = Complex(1, 1) ** 4
+    assert_equal(Complex(-4, 0), c)
+
+    c = Complex(1, 1) ** 5
+    assert_equal(Complex(-4, -4), c)
+
+    c = Complex(1, 1) ** 6
+    assert_equal(Complex(0, -8), c)
+
+    c = Complex(1, 1) ** 7
+    assert_equal(Complex(8, -8), c)
+
+    c = Complex(-2, -2) ** 3
+    assert_equal(Complex(16, -16), c)
+
+    c = Complex(2, -2) ** 3
+    assert_equal(Complex(-16, -16), c)
+
+    c = Complex(-2, 2) ** 3
+    assert_equal(Complex(16, 16), c)
+
+    c = Complex(0.0, -888888888888888.0)**8888
+    assert_not_predicate(c.real, :nan?)
+    assert_not_predicate(c.imag, :nan?)
+  end
+
   def test_cmp
-    assert_raise(NoMethodError){1 <=> Complex(1,1)}
-    assert_raise(NoMethodError){Complex(1,1) <=> 1}
-    assert_raise(NoMethodError){Complex(1,1) <=> Complex(1,1)}
+    assert_nil(Complex(5, 1) <=> Complex(2))
+    assert_nil(5 <=> Complex(2, 1))
+
+    assert_equal(1, Complex(5) <=> Complex(2))
+    assert_equal(-1, Complex(2) <=> Complex(3))
+    assert_equal(0, Complex(2) <=> Complex(2))
+
+    assert_equal(1, Complex(5) <=> 2)
+    assert_equal(-1, Complex(2) <=> 3)
+    assert_equal(0, Complex(2) <=> 2)
   end
 
   def test_eqeq
@@ -436,20 +638,24 @@ class Complex_Test < Test::Unit::TestCase
     assert_raise_with_message(TypeError, /C\u{1f5ff}/) { Complex(1).coerce(obj) }
   end
 
-  class ObjectX
-    def +(x) Rational(1) end
+  class ObjectX < Numeric
+    def initialize(real = true, n = 1) @n = n; @real = real; end
+    def +(x) Rational(@n) end
     alias - +
     alias * +
     alias / +
     alias quo +
     alias ** +
-    def coerce(x) [x, Complex(1)] end
+    def coerce(x) [x, Complex(@n)] end
+    def real?; @real; end
   end
 
   def test_coerce2
     x = ObjectX.new
-    %w(+ - * / quo **).each do |op|
-      assert_kind_of(Numeric, Complex(1).__send__(op, x))
+    y = ObjectX.new(false)
+    %w(+ - * / quo ** <=>).each do |op|
+      assert_kind_of(Numeric, Complex(1).__send__(op, x), op)
+      assert_kind_of(Numeric, Complex(1).__send__(op, y), op)
     end
   end
 
@@ -533,6 +739,17 @@ class Complex_Test < Test::Unit::TestCase
 
     assert_instance_of(String, c.inspect)
     assert_equal('(1+2i)', c.inspect)
+  end
+
+  def test_inspect_to_s_frozen_bug_20337
+    assert_separately([], <<~'RUBY')
+      class Numeric
+        def inspect = super.freeze
+      end
+      c = Complex(Numeric.new, 1)
+      assert_match(/\A\(#<Numeric:/, c.inspect)
+      assert_match(/\A#<Numeric:/, c.to_s)
+    RUBY
   end
 
   def test_marshal
@@ -712,20 +929,42 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(0), '_5'.to_c)
     assert_equal(Complex(5), '5_'.to_c)
     assert_equal(Complex(5), '5x'.to_c)
+    assert_equal(Complex(51), '5_1'.to_c)
+    assert_equal(Complex(5), '5__1'.to_c)
     assert_equal(Complex(5), '5+_3i'.to_c)
     assert_equal(Complex(5), '5+3_i'.to_c)
     assert_equal(Complex(5,3), '5+3i_'.to_c)
     assert_equal(Complex(5,3), '5+3ix'.to_c)
+    assert_equal(Complex(5,31), '5+3_1i'.to_c)
+    assert_equal(Complex(5), '5+3__1i'.to_c)
+    assert_equal(Complex(51), Complex('5_1'))
+    assert_equal(Complex(5,31), Complex('5+3_1i'))
+    assert_equal(Complex(5,31), Complex('5+3_1I'))
+    assert_equal(Complex(5,31), Complex('5+3_1j'))
+    assert_equal(Complex(5,31), Complex('5+3_1J'))
+    assert_equal(Complex(0,31), Complex('3_1i'))
+    assert_equal(Complex(0,31), Complex('3_1I'))
+    assert_equal(Complex(0,31), Complex('3_1j'))
+    assert_equal(Complex(0,31), Complex('3_1J'))
     assert_raise(ArgumentError){ Complex('')}
     assert_raise(ArgumentError){ Complex('_')}
     assert_raise(ArgumentError){ Complex("\f\n\r\t\v5\0")}
     assert_raise(ArgumentError){ Complex('_5')}
     assert_raise(ArgumentError){ Complex('5_')}
+    assert_raise(ArgumentError){ Complex('5__1')}
     assert_raise(ArgumentError){ Complex('5x')}
     assert_raise(ArgumentError){ Complex('5+_3i')}
     assert_raise(ArgumentError){ Complex('5+3_i')}
     assert_raise(ArgumentError){ Complex('5+3i_')}
     assert_raise(ArgumentError){ Complex('5+3ix')}
+    assert_raise(ArgumentError){ Complex('5+3__1i')}
+    assert_raise(ArgumentError){ Complex('5+3__1I')}
+    assert_raise(ArgumentError){ Complex('5+3__1j')}
+    assert_raise(ArgumentError){ Complex('5+3__1J')}
+    assert_raise(ArgumentError){ Complex('3__1i')}
+    assert_raise(ArgumentError){ Complex('3__1I')}
+    assert_raise(ArgumentError){ Complex('3__1j')}
+    assert_raise(ArgumentError){ Complex('3__1J')}
 
     assert_equal(Complex(Rational(1,5)), '1/5'.to_c)
     assert_equal(Complex(Rational(-1,5)), '-1/5'.to_c)
@@ -746,10 +985,38 @@ class Complex_Test < Test::Unit::TestCase
 
   end
 
+  def test_Complex_with_invalid_exception
+    assert_raise(ArgumentError) {
+      Complex("0", exception: 1)
+    }
+  end
+
+  def assert_complex_with_exception(error, *args, message: "")
+    assert_raise(error, message) do
+      Complex(*args, exception: true)
+    end
+    assert_nothing_raised(error, message) do
+      assert_nil(Complex(*args, exception: false))
+      assert_nil($!)
+    end
+  end
+
+  def test_Complex_with_exception
+    assert_complex_with_exception(ArgumentError, '5x')
+    assert_complex_with_exception(TypeError, nil)
+    assert_complex_with_exception(TypeError, Object.new)
+    assert_complex_with_exception(TypeError, 1, nil)
+    assert_complex_with_exception(TypeError, 1, Object.new)
+
+    o = Object.new
+    def o.to_c; raise; end
+    assert_complex_with_exception(RuntimeError, o)
+    assert_complex_with_exception(TypeError, 1, o)
+  end
+
   def test_respond
     c = Complex(1,1)
     assert_not_respond_to(c, :%)
-    assert_not_respond_to(c, :<=>)
     assert_not_respond_to(c, :div)
     assert_not_respond_to(c, :divmod)
     assert_not_respond_to(c, :floor)
@@ -796,6 +1063,29 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Rational(3), Rational(Complex(3)))
     assert_raise(RangeError){Complex(3,2).to_r}
     assert_raise(RangeError){Rational(Complex(3,2))}
+  end
+
+  def test_to_r_with_float
+    assert_equal(Rational(3), Complex(3, 0.0).to_r)
+    assert_raise(RangeError){Complex(3, 1.0).to_r}
+  end
+
+  def test_to_r_with_numeric_obj
+    c = Class.new(Numeric)
+
+    num = 0
+    c.define_method(:to_s) { num.to_s }
+    c.define_method(:==) { num == it }
+    c.define_method(:<)  { num <  it }
+
+    o = c.new
+    assert_equal(Rational(3), Complex(3, o).to_r)
+
+    num = 1
+    assert_raise(RangeError){Complex(3, o).to_r}
+
+    c.define_method(:to_r) { 0r }
+    assert_equal(Rational(3), Complex(3, o).to_r)
   end
 
   def test_to_c
@@ -958,4 +1248,49 @@ class Complex_Test < Test::Unit::TestCase
   def test_known_bug
   end
 
+  def test_canonicalize_internal
+    obj = Class.new(Numeric) do
+      attr_accessor :real
+      alias real? real
+    end.new
+    obj.real = true
+    c = Complex.rect(obj, 1);
+    obj.real = false
+    c = c.conj
+    assert_equal(obj, c.real)
+    assert_equal(-1, c.imag)
+  end
+
+  def test_canonicalize_polar
+    error = "not a real"
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(1i)
+    end
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(1i, 0)
+    end
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(0, 1i)
+    end
+    n = Class.new(Numeric) do
+      def initialize(x = 1)
+        @x = x
+      end
+      def real?
+        (@x -= 1) > 0
+      end
+    end
+    obj = n.new
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(obj)
+    end
+    obj = n.new
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(obj, 0)
+    end
+    obj = n.new
+    assert_raise_with_message(TypeError, error) do
+      Complex.polar(1, obj)
+    end
+  end
 end

@@ -38,29 +38,29 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author  jpetersen
- */
+import static org.jruby.api.Convert.asFixnum;
+
 @JRubyClass(name={"TrueClass", "FalseClass"})
-public class RubyBoolean extends RubyObject implements Constantizable {
+public class RubyBoolean extends RubyObject implements Constantizable, Appendable, SimpleHash {
+    public static final int TRUE_ID = 20;
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
+    private final RubyString toS;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
                 (value ? runtime.getTrueClass() : runtime.getFalseClass()),
                 false); // Don't put in object space
 
-        if (!value) flags = FALSE_F;
+        if (!value) flags = FALSE;
+        setFrozen(true);
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -71,11 +71,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
+
+        toS = RubyString.newString(runtime, value ? TRUE_BYTES : FALSE_BYTES);
+        toS.setFrozen(true);
     }
     
     @Override
     public ClassIndex getNativeClassIndex() {
-        return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
+        return (flags & FALSE) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
     @Override
@@ -83,8 +86,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
 
@@ -101,45 +103,40 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return constant;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime) {
-        RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFalseClass(falseClass);
-        falseClass.setClassIndex(ClassIndex.FALSE);
-        falseClass.setReifiedClass(RubyBoolean.class);
-        
-        falseClass.defineAnnotatedMethods(False.class);
-        falseClass.defineAnnotatedMethods(RubyBoolean.class);
-
-        falseClass.getMetaClass().undefineMethod("new");
-
-        return falseClass;
+    public static void finishFalseClass(ThreadContext context, RubyClass False) {
+        False.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.FALSE).
+                defineMethods(context, False.class, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
-    public static RubyClass createTrueClass(Ruby runtime) {
-        RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setTrueClass(trueClass);
-        trueClass.setClassIndex(ClassIndex.TRUE);
-        trueClass.setReifiedClass(RubyBoolean.class);
-        
-        trueClass.defineAnnotatedMethods(True.class);
-        trueClass.defineAnnotatedMethods(RubyBoolean.class);
-        
-        trueClass.getMetaClass().undefineMethod("new");
-
-        return trueClass;
+    public static void finishTrueClass(ThreadContext context, RubyClass True) {
+        True.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.TRUE).
+                defineMethods(context, True.class, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
-    
+
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
-    static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
+    @Deprecated(since = "10.0.0.0")
+    public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
+    }
+
+    public static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        target.append(toS);
+    }
 
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
             super(runtime, false);
-
-            flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
@@ -157,9 +154,19 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return oth.isTrue() ? context.tru : fals;
         }
 
+        @Deprecated(since = "10.0.0.0")
+        public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
+            return context.runtime.getFalseString();
+        }
+
+        @Deprecated(since = "10.0.0.0")
+        public RubyString inspect() {
+            return getRuntime().getFalseString();
+        }
+
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString false_to_s(IRubyObject fals) {
-            return RubyString.newStringShared(fals.getRuntime(), FALSE_BYTES);
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getFalseString();
         }
 
         @Override
@@ -171,13 +178,13 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
     }
 
-    static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
+    public static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
 
     public static class True extends RubyBoolean {
         True(Ruby runtime) {
             super(runtime, true);
 
-            flags |= FROZEN_F;
+            setFrozen(true);
         }
         
         @JRubyMethod(name = "&")
@@ -195,9 +202,19 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return oth.isTrue() ? context.fals : tru;
         }
 
+        @Deprecated(since = "10.0.0.0")
+        public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
+            return context.runtime.getTrueString();
+        }
+
+        @Deprecated(since = "10.0.0.0")
+        public RubyString inspect() {
+            return getRuntime().getTrueString();
+        }
+
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString true_to_s(IRubyObject tru) {
-            return RubyString.newStringShared(tru.getRuntime(), TRUE_BYTES);
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getTrueString();
         }
 
         @Override
@@ -211,7 +228,11 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        if ((flags & FALSE_F) == 0) {
+            return context.runtime.getTrueHash();
+        } else {
+            return context.runtime.getFalseHash();
+        }
     }
 
     @Override
@@ -219,22 +240,35 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return hashCode;
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
-        if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 20);
+        if ((flags & FALSE) == 0) {
+            return metaClass.runtime.getTrueID();
         } else {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
     }
 
     @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
+    public RubyInteger __id__(ThreadContext context) {
+        if ((flags & FALSE_F) == 0) {
+            return context.runtime.getTrueID();
+        } else {
+            return RubyFixnum.zero(context.runtime);
+        }
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public void marshalTo(org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
+    }
+
+    @Deprecated(since = "9.4.0.0")
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }
 

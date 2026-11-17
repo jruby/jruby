@@ -13,7 +13,7 @@ describe 'Socket.udp_server_loop_on' do
 
   describe 'when no connections are available' do
     it 'blocks the caller' do
-      lambda { Socket.udp_server_loop_on([@server]) }.should block_caller
+      -> { Socket.udp_server_loop_on([@server]) }.should block_caller
     end
   end
 
@@ -41,7 +41,7 @@ describe 'Socket.udp_server_loop_on' do
       end
 
       msg.should == 'hello'
-      src.should be_an_instance_of(Socket::UDPSource)
+      src.should.instance_of?(Socket::UDPSource)
     end
   end
 end

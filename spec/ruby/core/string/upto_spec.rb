@@ -53,13 +53,13 @@ describe "String#upto" do
   end
 
   it "raises a TypeError if other can't be converted to a string" do
-    lambda { "abc".upto(123) { }      }.should raise_error(TypeError)
-    lambda { "abc".upto(mock('x')){ } }.should raise_error(TypeError)
+    -> { "abc".upto(123) { }      }.should.raise(TypeError)
+    -> { "abc".upto(mock('x')){ } }.should.raise(TypeError)
   end
 
 
   it "does not work with symbols" do
-    lambda { "a".upto(:c).to_a }.should raise_error(TypeError)
+    -> { "a".upto(:c).to_a }.should.raise(TypeError)
   end
 
   it "returns non-alphabetic characters in the ASCII range for single letters" do
@@ -74,6 +74,18 @@ describe "String#upto" do
     a.should == ["a", "b", "c"]
   end
 
+  it "works with non-ASCII ranges" do
+    a = []
+    'Σ'.upto('Ω') { |s| a << s }
+    a.should == ["Σ", "Τ", "Υ", "Φ", "Χ", "Ψ", "Ω"]
+  end
+
+  it "raises Encoding::CompatibilityError when incompatible characters are given" do
+    char1 = 'a'.dup.force_encoding("EUC-JP")
+    char2 = 'b'.dup.force_encoding("ISO-2022-JP")
+    -> { char1.upto(char2) {} }.should.raise(Encoding::CompatibilityError, "incompatible character encodings: EUC-JP and ISO-2022-JP")
+  end
+
   describe "on sequence of numbers" do
     it "calls the block as Integer#upto"  do
       "8".upto("11").to_a.should == 8.upto(11).map(&:to_s)
@@ -83,7 +95,7 @@ describe "String#upto" do
   describe "when no block is given" do
     it "returns an enumerator" do
       enum = "aaa".upto("baa", true)
-      enum.should be_an_instance_of(Enumerator)
+      enum.should.instance_of?(Enumerator)
       enum.count.should == 26**2
     end
 

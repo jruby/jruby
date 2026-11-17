@@ -5,13 +5,13 @@ import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.*;
@@ -87,9 +87,10 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     }
 
     private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int nestingLevel) {
-        int clBaseDepth = nestingLevel + (cl.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1);
-        cl.getFullInterpreterContext().setUpUseDefLocalVarMaps();
-        for (LocalVariable lv: cl.getUsedLocalVariables()) {
+        FullInterpreterContext fic = cl.getFullInterpreterContext();
+        int clBaseDepth = nestingLevel + (fic.reuseParentDynScope() ? 0 : 1);
+        fic.setUpUseDefLocalVarMaps();
+        for (LocalVariable lv: fic.getUsedLocalVariables()) {
             // This can happen where an outer scope variable
             // is not used in this scope but is used in a nested
             // scope. Ex: ~jruby/bin/ast:21
@@ -112,7 +113,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     }
 
     public void identifyInits(Set<Variable> undefinedVars) {
-        int parentScopeDepth = problem.getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1;
+        int parentScopeDepth = problem.getFIC().reuseParentDynScope() ? 0 : 1;
 
         initSolution();
         for (Instr i: basicBlock.getInstrs()) {

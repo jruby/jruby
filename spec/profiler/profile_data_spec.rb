@@ -89,7 +89,7 @@ describe JRuby::Profiler, "::ProfileData" do
     end
     
   end
-  
+
   context "after profiling recursive methods" do
     def profile
       obj = ProfilerTest.new
@@ -97,11 +97,11 @@ describe JRuby::Profiler, "::ProfileData" do
         obj.recurse(3)
       end
     end
-    
+
     before do
       profile
     end
-    
+
     it "should have the correct invocations with recursiveDepths" do
       current = top_invocation
       4.times do |i|
@@ -125,6 +125,30 @@ describe JRuby::Profiler, "::ProfileData" do
       get_inv("ProfilerTest#test_instance_method").should be_nil
     end
     
+  end
+
+  context "when profiling refined methods" do
+    def profile
+      refinement = Module.new do
+        refine(String) do
+          def to_s
+            super
+          end
+        end
+      end
+
+      @profile_data = JRuby::Profiler.profile do
+        @call_to_s_result = "string".to_s
+      end
+    end
+
+    before do
+      profile
+    end
+
+    it "should complete successfully" do
+      @call_to_s_result.should == "string"
+    end
   end
 end
 

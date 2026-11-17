@@ -1,5 +1,7 @@
 class Proc
   def curry(curried_arity = nil)
+    curried_arity = JRuby::Type.coerce_to_int(curried_arity) unless curried_arity.nil?
+
     if lambda? && curried_arity
       if arity >= 0 && curried_arity != arity
         raise ArgumentError, "wrong number of arguments (given %i, expected %i)" % [
@@ -30,6 +32,33 @@ class Proc
     end
 
     Proc.__make_curry_proc__(self, [], curried_arity || arity)
+  end
+
+  # From https://github.com/marcandre/backports, MIT license (with modifications)
+  def <<(g)
+    lambda = if g.kind_of? Proc
+               g.lambda?
+             else
+               raise TypeError, "callable object is expected" unless g.respond_to?(:call)
+               true
+             end
+
+    if lambda
+      lambda { |*args, **kw, &blk| call(g.call(*args, **kw, &blk)) }
+    else
+      proc { |*args, **kw, &blk| call(g.call(*args, **kw, &blk)) }
+    end
+  end
+
+  # From https://github.com/marcandre/backports, MIT license (with modifications)
+  def >>(g)
+    raise TypeError, "callable object is expected" unless g.respond_to?(:call)
+
+    if lambda?
+      lambda { |*args, **kw, &blk| g.call(call(*args, **kw, &blk)) }
+    else
+      proc { |*args, **kw, &blk| g.call(call(*args, **kw, &blk)) }
+    end
   end
 
   # Create a singleton class based on Proc that re-defines these methods but
@@ -70,7 +99,7 @@ class Proc
     end
 
     # Replace the curried proc's class with our prototype singleton class
-    JRuby.send(:set_meta_class, f, Curried)
+    JRuby::Util.send(:set_meta_class, f, Curried)
 
     f
   end

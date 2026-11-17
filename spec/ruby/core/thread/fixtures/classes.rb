@@ -1,10 +1,3 @@
-unless defined? Channel
-  require 'thread'
-  class Channel < Queue
-    alias receive shift
-  end
-end
-
 module ThreadSpecs
 
   class SubThread < Thread
@@ -13,12 +6,38 @@ module ThreadSpecs
     end
   end
 
+  class NewThreadToRaise
+    def self.raise(*args, **kwargs, &block)
+      thread = Thread.new do
+        Thread.current.report_on_exception = false
+
+        if block_given?
+          block.call do
+            sleep
+          end
+        else
+          sleep
+        end
+      end
+
+      Thread.pass until thread.stop?
+
+      thread.raise(*args, **kwargs)
+
+      thread.join
+    ensure
+      thread.kill if thread.alive?
+      Thread.pass while thread.alive? # Thread#kill may not terminate a thread immediately so it may be detected as a leaked one
+    end
+  end
+
   class Status
-    attr_reader :thread, :inspect, :status
+    attr_reader :thread, :inspect, :status, :to_s
     def initialize(thread)
       @thread = thread
       @alive = thread.alive?
       @inspect = thread.inspect
+      @to_s = thread.to_s
       @status = thread.status
       @stop = thread.stop?
     end
@@ -188,7 +207,7 @@ module ThreadSpecs
 
   def self.join_dying_thread_with_outer_ensure(kill_method_name=:kill)
     t = dying_thread_with_outer_ensure(kill_method_name) { yield }
-    lambda { t.join }.should raise_error(RuntimeError, "In dying thread")
+    -> { t.join }.should.raise(RuntimeError, "In dying thread")
     return t
   end
 

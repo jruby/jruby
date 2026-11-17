@@ -1,4 +1,5 @@
 require_relative '../../spec_helper'
+
 require_relative 'fixtures/classes'
 require 'matrix'
 
@@ -22,8 +23,8 @@ describe "Matrix#*" do
 
   it "returns the result of multiplying the elements of self and a Bignum" do
     (@a * bignum_value).should == Matrix[
-      [9223372036854775808, 18446744073709551616],
-      [27670116110564327424, 36893488147419103232]
+      [18446744073709551616, 36893488147419103232],
+      [55340232221128654848, 73786976294838206464]
     ]
   end
 
@@ -32,7 +33,7 @@ describe "Matrix#*" do
   end
 
   it "raises a Matrix::ErrDimensionMismatch if the matrices are different sizes" do
-    lambda { @a * Matrix[ [1] ] }.should raise_error(Matrix::ErrDimensionMismatch)
+    -> { @a * Matrix[ [1] ] }.should.raise(Matrix::ErrDimensionMismatch)
   end
 
   it "returns a zero matrix if (nx0) * (0xn)" do
@@ -52,17 +53,17 @@ describe "Matrix#*" do
   end
 
   it "raises a TypeError if other is of wrong type" do
-    lambda { @a * nil        }.should raise_error(TypeError)
-    lambda { @a * "a"        }.should raise_error(TypeError)
-    lambda { @a * [ [1, 2] ] }.should raise_error(TypeError)
-    lambda { @a * Object.new }.should raise_error(TypeError)
+    -> { @a * nil        }.should.raise(TypeError)
+    -> { @a * "a"        }.should.raise(TypeError)
+    -> { @a * [ [1, 2] ] }.should.raise(TypeError)
+    -> { @a * Object.new }.should.raise(TypeError)
   end
 
   describe "for a subclass of Matrix" do
     it "returns an instance of that subclass" do
       m = MatrixSub.ins
-      (m*m).should be_an_instance_of(MatrixSub)
-      (m*1).should be_an_instance_of(MatrixSub)
+      (m*m).should.instance_of?(MatrixSub)
+      (m*1).should.instance_of?(MatrixSub)
     end
   end
 end

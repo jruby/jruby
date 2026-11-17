@@ -37,7 +37,7 @@ import org.jruby.RubyObject;
  * a local variable is available during only one evaluation. After the evaluation,
  * the variable vanishes.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class TransientLocalVariable extends AbstractVariable {
 
@@ -47,7 +47,7 @@ public class TransientLocalVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a
      * transient local variable is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of TransientLocalVariable
@@ -89,7 +89,6 @@ public class TransientLocalVariable extends AbstractVariable {
      * Doesn't do anything since a transient local variable should not be retrieved
      * from Ruby.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved local variables.
      */

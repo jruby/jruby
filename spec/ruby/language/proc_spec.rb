@@ -22,7 +22,7 @@ describe "A Proc" do
     end
 
     it "raises an ArgumentError if a value is passed" do
-      lambda { @l.call(0) }.should raise_error(ArgumentError)
+      lambda { @l.call(0) }.should.raise(ArgumentError)
     end
   end
 
@@ -36,7 +36,7 @@ describe "A Proc" do
     end
 
     it "raises an ArgumentError if a value is passed" do
-      lambda { @l.call(0) }.should raise_error(ArgumentError)
+      lambda { @l.call(0) }.should.raise(ArgumentError)
     end
   end
 
@@ -57,11 +57,11 @@ describe "A Proc" do
       obj = mock("block yield to_ary")
       obj.should_not_receive(:to_ary)
 
-      @l.call(obj).should equal(obj)
+      @l.call(obj).should.equal?(obj)
     end
 
     it "raises an ArgumentError if no value is passed" do
-      lambda { @l.call }.should raise_error(ArgumentError)
+      lambda { @l.call }.should.raise(ArgumentError)
     end
   end
 
@@ -71,11 +71,11 @@ describe "A Proc" do
     end
 
     it "raises an ArgumentError if passed no values" do
-      lambda { @l.call }.should raise_error(ArgumentError)
+      lambda { @l.call }.should.raise(ArgumentError)
     end
 
     it "raises an ArgumentError if passed one value" do
-      lambda { @l.call(0) }.should raise_error(ArgumentError)
+      lambda { @l.call(0) }.should.raise(ArgumentError)
     end
 
     it "assigns the values passed to the arguments" do
@@ -86,7 +86,7 @@ describe "A Proc" do
       obj = mock("proc call to_ary")
       obj.should_not_receive(:to_ary)
 
-      lambda { @l.call(obj) }.should raise_error(ArgumentError)
+      lambda { @l.call(obj) }.should.raise(ArgumentError)
     end
   end
 
@@ -96,7 +96,7 @@ describe "A Proc" do
     end
 
     it "raises an ArgumentError if passed no values" do
-      lambda { @l.call }.should raise_error(ArgumentError)
+      lambda { @l.call }.should.raise(ArgumentError)
     end
 
     it "does not destructure a single Array value yielded" do
@@ -104,7 +104,7 @@ describe "A Proc" do
     end
 
     it "assigns all passed values after the first to the rest argument" do
-        @l.call(1, 2, 3).should == [1, [2, 3]]
+      @l.call(1, 2, 3).should == [1, [2, 3]]
     end
 
     it "does not call #to_ary to convert a single passed object to an Array" do
@@ -161,17 +161,29 @@ describe "A Proc" do
     end
   end
 
+  describe "taking |*a, b| arguments" do
+    it "assigns [] to the argument when passed no values" do
+      proc { |*a, b| [a, b] }.call.should == [[], nil]
+    end
+  end
+
+  describe "taking |a, *b, c| arguments" do
+    it "assigns [] to the argument when passed no values" do
+      proc { |a, *b, c| [a, b, c] }.call.should == [nil, [], nil]
+    end
+  end
+
   describe "taking |a, | arguments" do
     before :each do
       @l = lambda { |a, | a }
     end
 
     it "raises an ArgumentError when passed no values" do
-      lambda { @l.call }.should raise_error(ArgumentError)
+      lambda { @l.call }.should.raise(ArgumentError)
     end
 
     it "raises an ArgumentError when passed more than one value" do
-      lambda { @l.call(1, 2) }.should raise_error(ArgumentError)
+      lambda { @l.call(1, 2) }.should.raise(ArgumentError)
     end
 
     it "assigns the argument the value passed" do
@@ -196,7 +208,7 @@ describe "A Proc" do
     end
 
     it "raises an ArgumentError when passed no values" do
-      lambda { @l.call }.should raise_error(ArgumentError)
+      lambda { @l.call }.should.raise(ArgumentError)
     end
 
     it "destructures a single Array value yielded" do
@@ -214,7 +226,42 @@ describe "A Proc" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @l.call(obj) }.should raise_error(TypeError)
+      lambda { @l.call(obj) }.should.raise(TypeError)
     end
+  end
+
+  describe "taking |*a, **kw| arguments" do
+    before :each do
+      @p = proc { |*a, **kw| [a, kw] }
+    end
+
+    it 'does not autosplat keyword arguments' do
+      @p.call([1, {a: 1}]).should == [[[1, {a: 1}]], {}]
+    end
+  end
+
+  describe "taking |required keyword arguments, **kw| arguments" do
+    it "raises ArgumentError for missing required argument" do
+      p = proc { |a:, **kw| [a, kw] }
+      -> { p.call() }.should.raise(ArgumentError)
+    end
+  end
+
+  evaluate <<-ruby do
+    @p = proc { |**nil| :ok }
+    ruby
+
+    @p.call().should == :ok
+    -> { @p.call(a: 1) }.should.raise(ArgumentError, 'no keywords accepted')
+    -> { @p.call(**{a: 1}) }.should.raise(ArgumentError, 'no keywords accepted')
+    -> { @p.call("a" => 1) }.should.raise(ArgumentError, 'no keywords accepted')
+  end
+
+  evaluate <<-ruby do
+    @p = proc { |a, **nil| a }
+    ruby
+
+    @p.call({a: 1}).should == {a: 1}
+    -> { @p.call(a: 1) }.should.raise(ArgumentError, 'no keywords accepted')
   end
 end

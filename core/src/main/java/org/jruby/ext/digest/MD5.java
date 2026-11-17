@@ -36,6 +36,7 @@ import org.jruby.runtime.load.Library;
 public class MD5 implements Library {
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.ext.digest.RubyDigest.createDigestMD5(runtime);
+        var context = runtime.getCurrentContext();
+        org.jruby.ext.digest.RubyDigest.createDigestMD5(context);
     }
 }

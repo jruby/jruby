@@ -8,6 +8,7 @@ class TestSuper < Test::Unit::TestCase
     def array(*a) a end
     def optional(a = 0) a end
     def keyword(**a) a end
+    def forward(*a) a end
   end
   class Single1 < Base
     def single(*) super end
@@ -63,6 +64,16 @@ class TestSuper < Test::Unit::TestCase
       [x, y]
     end
   end
+  class Forward < Base
+    def forward(...)
+      w = super()
+      x = super
+      y = super(...)
+      a = 1
+      z = super(a, ...)
+      [w, x, y, z]
+    end
+  end
 
   def test_single1
     assert_equal(1, Single1.new.single(1))
@@ -102,11 +113,11 @@ class TestSuper < Test::Unit::TestCase
   def test_optional2
     assert_raise(ArgumentError) do
       # call Base#optional with 2 arguments; the 2nd arg is supplied
-      assert_equal(9, Optional2.new.optional(9))
+      Optional2.new.optional(9)
     end
     assert_raise(ArgumentError) do
       # call Base#optional with 2 arguments
-      assert_equal(9, Optional2.new.optional(9, 2))
+      Optional2.new.optional(9, 2)
     end
   end
   def test_optional3
@@ -132,6 +143,11 @@ class TestSuper < Test::Unit::TestCase
   end
   def test_keyword2
     assert_equal([{foo: "changed1"}, {foo: "changed2"}], Keyword2.new.keyword)
+  end
+  def test_forwardable(...)
+    assert_equal([[],[],[],[1]], Forward.new.forward())
+    assert_equal([[],[1,2],[1,2],[1,1,2]], Forward.new.forward(1,2))
+    assert_equal([[],[:test],[:test],[1,:test]], Forward.new.forward(:test, ...))
   end
 
   class A
@@ -300,6 +316,29 @@ class TestSuper < Test::Unit::TestCase
           super()
         end
       end
+    }
+    obj = sub_class.new
+    assert_raise_with_message(TypeError, /Sub\u{30af 30e9 30b9}/) do
+      obj.foo
+    end
+  end
+
+  def test_super_in_instance_eval_in_module
+    super_class = EnvUtil.labeled_class("Super\u{30af 30e9 30b9}") {
+      def foo
+        return [:super, self]
+      end
+    }
+    mod = EnvUtil.labeled_module("Mod\u{30af 30e9 30b9}") {
+      def foo
+        x = Object.new
+        x.instance_eval do
+          super()
+        end
+      end
+    }
+    sub_class = EnvUtil.labeled_class("Sub\u{30af 30e9 30b9}", super_class) {
+      include mod
     }
     obj = sub_class.new
     assert_raise_with_message(TypeError, /Sub\u{30af 30e9 30b9}/) do
@@ -498,6 +537,55 @@ class TestSuper < Test::Unit::TestCase
     assert_equal(%w[B A], result, bug9721)
   end
 
+  # [Bug #18329]
+  def test_super_missing_prepended_module
+    a = Module.new do
+      def probe(*methods)
+        prepend(probing_module(methods))
+      end
+
+      def probing_module(methods)
+        Module.new do
+          methods.each do |method|
+            define_method(method) do |*args, **kwargs, &block|
+              super(*args, **kwargs, &block)
+            end
+          end
+        end
+      end
+    end
+
+    b = Class.new do
+      extend a
+
+      probe :danger!, :missing
+
+      def danger!; end
+    end
+
+    o = b.new
+    o.danger!
+    begin
+      original_gc_stress = GC.stress
+      GC.stress = true
+      2.times { o.missing rescue NoMethodError }
+    ensure
+      GC.stress = original_gc_stress
+    end
+  end
+
+  def test_zsuper_kw_splat_not_mutable
+    extend(Module.new{def a(**k) k[:a] = 1 end})
+    extend(Module.new do
+      def a(**k)
+        before = k.dup
+        super
+        [before, k]
+      end
+    end)
+    assert_equal(*a)
+  end
+
   def test_from_eval
     bug10263 = '[ruby-core:65122] [Bug #10263a]'
     a = Class.new do
@@ -545,6 +633,72 @@ class TestSuper < Test::Unit::TestCase
     }
   end
 
+  def test_super_with_included_prepended_module_method_caching_bug_20716
+    a = Module.new do
+      def test(*args)
+        super
+      end
+    end
+
+    b = Module.new do
+      def test(a)
+        a
+      end
+    end
+
+    c = Class.new
+
+    b.prepend(a)
+    c.include(b)
+
+    assert_equal(1, c.new.test(1))
+
+    b.class_eval do
+      begin
+        verbose_bak, $VERBOSE = $VERBOSE, nil
+        def test
+          :test
+        end
+      ensure
+        $VERBOSE = verbose_bak
+      end
+    end
+
+    assert_equal(:test, c.new.test)
+  end
+
+  def test_super_with_prepended_module_after_include_method_caching
+    m = Module.new do
+      def test
+        :m
+      end
+    end
+
+    c = Class.new { include m }
+
+    m.prepend(Module.new do
+      def test
+        super
+      end
+    end)
+
+    # prime the super call-site cache through the prepended module
+    assert_equal(:m, c.new.test)
+
+    m.class_eval do
+      begin
+        verbose_bak, $VERBOSE = $VERBOSE, nil
+        def test
+          :redefined
+        end
+      ensure
+        $VERBOSE = verbose_bak
+      end
+    end
+
+    assert_equal(:redefined, c.new.test)
+  end
+
   class TestFor_super_with_modified_rest_parameter_base
     def foo *args
       args
@@ -559,5 +713,111 @@ class TestSuper < Test::Unit::TestCase
   end
   def test_super_with_modified_rest_parameter
     assert_equal [13], TestFor_super_with_modified_rest_parameter.new.foo
+  end
+
+  def test_super_with_define_method
+    superklass1 = Class.new do
+      def foo; :foo; end
+      def bar; :bar; end
+      def boo; :boo; end
+    end
+    superklass2 = Class.new(superklass1) do
+      alias baz boo
+      def boo; :boo2; end
+    end
+    subklass = Class.new(superklass2)
+    [:foo, :bar, :baz, :boo].each do |sym|
+      subklass.define_method(sym){ super() }
+    end
+    assert_equal :foo, subklass.new.foo
+    assert_equal :bar, subklass.new.bar
+    assert_equal :boo, subklass.new.baz
+    assert_equal :boo2, subklass.new.boo
+  end
+
+  def test_super_attr_writer # [Bug #16785]
+    writer_class = Class.new do
+      attr_writer :test
+    end
+    superwriter_class = Class.new(writer_class) do
+      def initialize
+        @test = 1 # index: 1
+      end
+
+      def test=(test)
+        super(test)
+      end
+    end
+    inherited_class = Class.new(superwriter_class) do
+      def initialize
+        @a = nil
+        @test = 2 # index: 2
+      end
+    end
+
+    superwriter = superwriter_class.new
+    superwriter.test = 3 # set ic->index of superwriter_class#test= to 1
+
+    inherited = inherited_class.new
+    inherited.test = 4 # it may set 4 to index=1 while it should be index=2
+
+    assert_equal 3, superwriter.instance_variable_get(:@test)
+    assert_equal 4, inherited.instance_variable_get(:@test)
+  end
+
+  def test_super_attr_reader
+    reader_class = Class.new do
+      attr_reader :test
+    end
+    superreader_class = Class.new(reader_class) do
+      def initialize
+        @test = 1 # index: 1
+      end
+
+      def test
+        super
+      end
+    end
+    inherited_class = Class.new(superreader_class) do
+      def initialize
+        @a = nil
+        @test = 2 # index: 2
+      end
+    end
+
+    superreader = superreader_class.new
+    assert_equal 1, superreader.test # set ic->index of superreader_class#test to 1
+
+    inherited = inherited_class.new
+    assert_equal 2, inherited.test # it may read index=1 while it should be index=2
+  end
+
+  def test_define_initialize_in_basic_object
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      class ::BasicObject
+        alias_method :initialize, :initialize
+        def initialize
+          @bug = "[Bug #21992]"
+        end
+      end
+
+      assert_not_nil Object.new
+    end;
+  end
+
+  def test_super_in_basic_object
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      class ::BasicObject
+        def no_super
+          super()
+        rescue ::NameError
+          :ok
+        end
+      end
+
+      assert_equal :ok, "[Bug #21694]".no_super
+    end;
   end
 end

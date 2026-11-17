@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
@@ -6,6 +7,14 @@ describe "String#upcase" do
   it "returns a copy of self with all lowercase letters upcased" do
     "Hello".upcase.should == "HELLO"
     "hello".upcase.should == "HELLO"
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hello".encode("US-ASCII").upcase.encoding.should == Encoding::US_ASCII
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.upcase.should == "AB\xE4\xC4\0CD".b
   end
 
   describe "full Unicode case mapping" do
@@ -19,13 +28,29 @@ describe "String#upcase" do
       upcased.should == "ASSET"
       upcased.size.should == 5
       upcased.bytesize.should == 5
-      upcased.ascii_only?.should be_true
+      upcased.ascii_only?.should == true
     end
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).upcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).upcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).upcase(:ascii).should == "\x83AAB".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
     it "does not upcase non-ASCII characters" do
       "aßet".upcase(:ascii).should == "AßET"
+    end
+
+    it "works with substrings" do
+      "prefix té"[-2..-1].upcase(:ascii).should == "Té"
     end
   end
 
@@ -39,7 +64,7 @@ describe "String#upcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "i".upcase(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { "i".upcase(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -53,34 +78,34 @@ describe "String#upcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "iß".upcase(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { "iß".upcase(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    lambda { "abc".upcase(:fold) }.should raise_error(ArgumentError)
+    -> { "abc".upcase(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    lambda { "abc".upcase(:invalid_option) }.should raise_error(ArgumentError)
+    -> { "abc".upcase(:invalid_option) }.should.raise(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "".taint.upcase.tainted?.should == true
-    "X".taint.upcase.tainted?.should == true
-    "x".taint.upcase.tainted?.should == true
-  end
-
-  it "returns a subclass instance for subclasses" do
-    StringSpecs::MyString.new("fooBAR").upcase.should be_an_instance_of(StringSpecs::MyString)
+  it "returns a String instance for subclasses" do
+    StringSpecs::MyString.new("fooBAR").upcase.should.instance_of?(String)
   end
 end
 
 describe "String#upcase!" do
   it "modifies self in place" do
     a = "HeLlO"
-    a.upcase!.should equal(a)
+    a.upcase!.should.equal?(a)
     a.should == "HELLO"
+  end
+
+  it "modifies self in place for non-ascii-compatible encodings" do
+    a = "HeLlO".encode("utf-16le")
+    a.upcase!
+    a.should == "HELLO".encode("utf-16le")
   end
 
   describe "full Unicode case mapping" do
@@ -90,6 +115,12 @@ describe "String#upcase!" do
       a.should == "ÄÖÜ"
     end
 
+    it "works for non-ascii-compatible encodings" do
+      a = "äöü".encode("utf-16le")
+      a.upcase!
+      a.should == "ÄÖÜ".encode("utf-16le")
+    end
+
     it "updates string metadata for self" do
       upcased = "aßet"
       upcased.upcase!
@@ -97,7 +128,7 @@ describe "String#upcase!" do
       upcased.should == "ASSET"
       upcased.size.should == 5
       upcased.bytesize.should == 5
-      upcased.ascii_only?.should be_true
+      upcased.ascii_only?.should == true
     end
   end
 
@@ -106,6 +137,12 @@ describe "String#upcase!" do
       a = "aßet"
       a.upcase!(:ascii)
       a.should == "AßET"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "abc".encode("utf-16le")
+      a.upcase!(:ascii)
+      a.should == "ABC".encode("utf-16le")
     end
   end
 
@@ -123,7 +160,7 @@ describe "String#upcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "i"; a.upcase!(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "i"; a.upcase!(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -141,16 +178,35 @@ describe "String#upcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "iß"; a.upcase!(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "iß"; a.upcase!(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    lambda { a = "abc"; a.upcase!(:fold) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.upcase!(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    lambda { a = "abc"; a.upcase!(:invalid_option) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.upcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.upcase!.should.equal?(a)
+    a.should == "AB\xE4\xC4\0CD".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.upcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.upcase!
+    slice.should == "ABCD"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do
@@ -159,8 +215,8 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
-    lambda { "HeLlo".freeze.upcase! }.should raise_error(frozen_error_class)
-    lambda { "HELLO".freeze.upcase! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError when self is frozen" do
+    -> { "HeLlo".freeze.upcase! }.should.raise(FrozenError)
+    -> { "HELLO".freeze.upcase! }.should.raise(FrozenError)
   end
 end

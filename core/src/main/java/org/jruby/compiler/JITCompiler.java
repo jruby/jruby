@@ -34,25 +34,40 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
+import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.cli.Options;
+import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static org.jruby.api.Access.instanceConfig;
 
 public class JITCompiler implements JITCompilerMBean {
     private static final Logger LOG = LoggerFactory.getLogger(JITCompiler.class);
@@ -65,6 +80,8 @@ public class JITCompiler implements JITCompilerMBean {
     final Ruby runtime;
     final RubyInstanceConfig config;
 
+    final Map<String, ClassDefiningClassLoader> loaderMap; // weak valued map
+
     public JITCompiler(Ruby runtime) {
         this.runtime = runtime;
         this.config = runtime.getInstanceConfig();
@@ -76,6 +93,19 @@ public class JITCompiler implements JITCompilerMBean {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Ruby-" + runtime.getRuntimeNumber() + "-JIT", Thread.MIN_PRIORITY));
+
+        switch (Options.JIT_LOADER_MODE.load()) {
+            case SHARED:
+                this.loaderMap = new SharedClassLoaderMap(new ClassDefiningJRubyClassLoader(runtime.getJRubyClassLoader()));
+                break;
+            case SHARED_SOURCE:
+                this.loaderMap = new WeakValuedMap<>();
+                break;
+            case UNIQUE:
+            default:
+                this.loaderMap = null;
+                break;
+        }
     }
 
     public long getSuccessCount() {
@@ -164,38 +194,44 @@ public class JITCompiler implements JITCompilerMBean {
 
     public Runnable getTaskFor(ThreadContext context, Compilable method) {
         if (method instanceof MixedModeIRMethod) {
-            return new MethodJITTask(this, (MixedModeIRMethod) method, method.getClassName(context));
+            return new MethodJITTask(this, (MixedModeIRMethod) method, method.getOwnerName(context));
         } else if (method instanceof MixedModeIRBlockBody) {
-            return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getClassName(context));
+            return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getOwnerName(context));
         } else if (method instanceof CompiledIRMethod) {
-            return new MethodCompiledJITTask(this, (CompiledIRMethod) method, method.getClassName(context));
+            return new MethodCompiledJITTask(this, (CompiledIRMethod) method, method.getOwnerName(context));
         }
 
         return new FullBuildTask(this, method);
     }
 
-    public void buildThresholdReached(ThreadContext context, final Compilable method) {
-        final RubyInstanceConfig config = context.runtime.getInstanceConfig();
+    public void buildThresholdReached(ThreadContext context, final Compilable method, boolean force) {
+        final RubyInstanceConfig config = instanceConfig(context);
 
-        // Disable any other jit tasks from entering queue
-        method.setCallCount(-1);
+        final Runnable task = getTaskFor(context, method);
 
-        Runnable jitTask = getTaskFor(context, method);
+        if (task instanceof Task && config.getJitMax() >= 0 && config.getJitMax() < getSuccessCount()) {
+            if (config.isJitLogging()) {
+                JITCompiler.log(context, method, method.getName(), "skipping: jit.max threshold reached");
+            }
+            return;
+        }
 
         try {
-            if (config.getJitBackground() && config.getJitThreshold() > 0) {
+            if (!force && config.getJitBackground() && config.getJitThreshold() > 0) {
                 try {
-                    executor.submit(jitTask);
+                    executor.submit(task);
                 } catch (RejectedExecutionException ree) {
                     // failed to submit, just run it directly
-                    jitTask.run();
+                    task.run();
                 }
             } else {
                 // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
                 method.ensureInstrsReady();
                 // just run directly
-                jitTask.run();
+                task.run();
             }
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             throw new NotCompilableException(e);
         }
@@ -221,22 +257,166 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
-        boolean isBlock = implementationClass == null;
-        String className = isBlock ? "<block>" : implementationClass.getBaseName();
-        if (className == null) className = "<anon class>";
+    ClassDefiningClassLoader getLoaderFor(final String source) {
+        if (source != null && loaderMap != null) {
+            ClassDefiningClassLoader loader = loaderMap.get(source);
+            if (loader == null) {
+                synchronized (loaderMap) {
+                    loader = loaderMap.get(source);
+                    if (loader == null) {
+                        loaderMap.put(source, loader = new ClassDefiningJRubyClassLoader(runtime.getJRubyClassLoader()));
+                    }
+                }
+            }
+            return loader;
+        }
+        return new OneShotClassLoader(runtime.getJRubyClassLoader());
+    }
 
+    @Deprecated(since = "10.0.0.0")
+    static void log(Compilable<?> target, String name, String message, Object... reason) {
+        log(target.getImplementationClass().getRuntime().getCurrentContext(), target, name, message, reason);
+    }
+
+    static void log(ThreadContext context, Compilable<?> target, String name, String message, Object... reason) {
+        String className = target.getImplementationClass().getName(context);
         StringBuilder builder = new StringBuilder(32);
-        builder.append(message).append(": ").append(className)
-               .append(' ').append(name == null ? "" : name)
-               .append(" at ").append(file).append(':').append(line);
+        builder.append(message).append(": ").append(className);
+        if (name != null) builder.append(' ').append(name);
+        builder.append(" at ").append(target.getFile()).append(':').append(target.getLine());
 
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (String aReason : reason) builder.append(aReason);
+            for (Object aReason : reason) builder.append(aReason);
             builder.append('"');
         }
 
         LOG.info(builder.toString());
     }
+
+    static abstract class Task implements Runnable {
+
+        protected final JITCompiler jitCompiler;
+
+        public Task(JITCompiler jitCompiler) {
+            this.jitCompiler = jitCompiler;
+        }
+
+        public void run() {
+            // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
+            // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
+            // See #4739 for a reproduction script that produced various errors without this.
+            synchronized (jitCompiler) {
+                var context = jitCompiler.runtime.getCurrentContext();
+                try {
+                    exec(context);
+                } catch (Throwable ex) {
+                    jitFailed(context, ex);
+                }
+            }
+        }
+
+        protected abstract void exec(ThreadContext context) throws Exception ;
+
+        protected String getSourceFile() {
+            return null; // unknown by default
+        }
+
+        // shared helper methods :
+
+        protected void jitFailed(ThreadContext context, final Throwable ex) {
+            if (jitCompiler.config.isJitLogging()) {
+                logFailed(context, ex);
+                if (jitCompiler.config.isJitLoggingVerbose()) {
+                    ex.printStackTrace();
+                }
+            }
+
+            jitCompiler.counts.failCount.incrementAndGet();
+        }
+
+        protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
+                                       final IRScope scope, final InterpreterContext interpreterContext) {
+            var context = scope.getManager().getRuntime().getCurrentContext();
+            // FIXME: reinstate active bytecode size check
+            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+            // mechanism of getting all body sizes.
+            Class sourceClass = visitor.defineFromBytecode(scope, generator.bytecode(), getCodeLoader());
+
+            if (sourceClass == null) {
+                // class could not be found nor generated; give up on JIT and bail out
+                jitCompiler.counts.failCount.incrementAndGet();
+                return null;
+            }
+            generator.updateCounters(jitCompiler.counts, interpreterContext);
+
+            // successfully got back a jitted method/block
+            long methodCount = jitCompiler.counts.successCount.incrementAndGet();
+
+            if (jitCompiler.config.isJitLogging()) logJitted(context);
+
+            // logEvery n methods based on configuration
+            if (jitCompiler.config.getJitLogEvery() > 0) {
+                if (methodCount % jitCompiler.config.getJitLogEvery() == 0) {
+                    logImpl(context, "live compiled count: " + methodCount);
+                }
+            }
+
+            return sourceClass;
+        }
+
+        ClassDefiningClassLoader getCodeLoader() {
+            return jitCompiler.getLoaderFor(getSourceFile());
+        }
+
+        protected void logJitted(ThreadContext context) {
+            logImpl(context, "done jitting");
+        }
+
+        protected void logFailed(ThreadContext context, Throwable ex) {
+            logImpl(context, "could not compile", ex);
+        }
+
+        protected abstract void logImpl(ThreadContext context, String msg, Object... cause) ;
+
+    }
+
+    // a fake (read-only) map which returns same value for whatever key
+    private static class SharedClassLoaderMap extends AbstractMap<String, ClassDefiningClassLoader> {
+
+        final ClassDefiningClassLoader value; // keeping a hard reference for the shared class-loader
+
+        SharedClassLoaderMap(ClassDefiningClassLoader value) {
+            this.value = value;
+        }
+
+        @Override
+        public ClassDefiningClassLoader get(final Object key) {
+            return value;
+        }
+
+        @Override
+        public ClassDefiningClassLoader put(String key, ClassDefiningClassLoader value) {
+            return this.value;
+        }
+
+        @Override
+        public int size() {
+            return -1; // unknown
+        }
+
+        @Override
+        public void clear() {
+            /* no-op */
+        }
+
+        @Override
+        public Set<Entry<String, ClassDefiningClassLoader>> entrySet() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
 }

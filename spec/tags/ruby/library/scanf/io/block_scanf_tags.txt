@@ -1,2 +1,0 @@
-windows(hangs):IO#block_scanf passes each match to the block as an array
-windows:IO#block_scanf keeps scanning the input and cycling back to the beginning of the input string

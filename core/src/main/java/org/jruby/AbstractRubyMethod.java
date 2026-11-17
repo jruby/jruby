@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -32,22 +33,34 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+
 /**
+ * Base type for the two Ruby Method types.
+ *
  * @see RubyMethod
  * @see RubyUnboundMethod
  */
+@JRubyClass(name = {"Method", "UnboundMethod"}, overrides = {RubyMethod.class, RubyUnboundMethod.class})
 public abstract class AbstractRubyMethod extends RubyObject implements DataType {
     protected RubyModule implementationModule;
     protected String methodName;
@@ -70,25 +83,24 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      * @return the number of arguments of a method.
      */
     @JRubyMethod(name = "arity")
-    public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
-
-        return getRuntime().newFixnum(value);
+    @CRuby(value = "method_arity_m", file = "proc.c")
+    public RubyFixnum arity(ThreadContext context) {
+        return asFixnum(context, method.getAritySignature().arityValue());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
+    public RubyFixnum arity() {
+        return arity(getCurrentContext());
+    }
+
+    @Deprecated(since = "9.4-") // since 2017
     public final IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
         return op_eql(context, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
@@ -100,7 +112,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
+        return asSymbol(context, methodName);
     }
 
     public String getMethodName() {
@@ -109,64 +121,222 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
+        // If original method has changed visibility in a higher module/class then we return that location
+        // and not where it was originally defined.
+        if (method instanceof PartialDelegatingMethod) {
+            return method.getImplementationClass();
+        } else {
+            return implementationModule.getOrigin();
+        }
     }
 
     @JRubyMethod(name = "source_location")
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         String filename = getFilename();
-        if (filename != null) {
-            return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
-        }
 
-        return context.nil;
+        return filename != null ?
+                newArray(context, newString(context, filename), asFixnum(context, getLine())) :
+                context.nil;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPublic());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public RubyBoolean protected_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isProtected());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public RubyBoolean private_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPrivate());
     }
 
     public String getFilename() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getFile();
-        }
-        return null;
+        return method.getSourceFile();
     }
 
     public int getLine() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine() + 1;
-        }
-        return -1;
+        return method.getSourceLine();
     }
 
     @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
         if (superClass == null) return context.nil;
 
-        CacheEntry entry = superClass.searchWithCache(methodName);
-        if (entry.method == UndefinedMethod.INSTANCE) return context.nil;
+        String searchName = method.getRealMethod().getName();
+        CacheEntry entry = superClass.searchWithCache(searchName);
+        if (entry.method == UndefinedMethod.INSTANCE ||
+                entry.method.getDefinedClass().getMethods().get(entry.method.getName()) == UndefinedMethod.INSTANCE) {
+            return context.nil;
+        }
 
         if (receiver == null) {
-            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, entry);
+            return RubyUnboundMethod.newUnboundMethod(entry.sourceModule, methodName, superClass, originName, entry);
         } else {
-            return RubyMethod.newMethod(superClass, methodName, superClass, originName, entry, receiver);
+            return RubyMethod.newMethod(entry.sourceModule, methodName, superClass, originName, entry, receiver);
         }
     }
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        if (method instanceof AliasMethod) {
-            return context.runtime.newSymbol(((AliasMethod) method).getOldName());
+        return asSymbol(context, method.getOldName());
+    }
+
+    public IRubyObject inspect(IRubyObject receiver) {
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        RubyString str = newString(context, "#<");
+        String sharp = "#";
+
+        str.catString(getType().getName(context)).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = originModule;
+
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
+        } else {
+            definedClass = method.getDefinedClass();
         }
 
-        return context.runtime.newSymbol(method.getName());
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
+
+        if (receiver == null) {
+            str.catWithCodeRange(inspect(context, definedClass).convertToString());
+        } else if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
+            if (receiver == null) {
+                str.catWithCodeRange(inspect(context, mklass).convertToString());
+            } else if (receiver == attached) {
+                str.catWithCodeRange(inspect(context, attached).convertToString());
+                sharp = ".";
+            } else {
+                str.catWithCodeRange(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.catWithCodeRange(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
+            }
+        } else {
+            if (receiver instanceof RubyClass) {
+                str.catString("#<");
+                str.cat(mklass.rubyName(context));
+                str.catString(":");
+                str.cat(((RubyClass) receiver).rubyName(context));
+                str.catString(">");
+            } else {
+                str.cat(mklass.rubyName(context));
+            }
+            if (definedClass != mklass) {
+                str.catString("(");
+                str.cat(definedClass.rubyName(context));
+                str.catString(")");
+            }
+        }
+        str.catString(sharp);
+        str.cat(asSymbol(context, methodName).asString());
+        String displayOldName = method.getOldName();
+        if (!methodName.equals(displayOldName)) {
+            str.catString("(").cat(asSymbol(context, displayOldName).asString()).catString(")");
+        }
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+
+        str.catString("(");
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(context, method);
+        appendParameters(context, str, Helpers.argumentDescriptorsToParameters(context, descriptors, true));
+        str.catString(")");
+        String fileName = getFilename();
+        if (fileName != null) { // Only Ruby Methods will have this info.
+            str.catString(" ");
+            str.catString(fileName).cat(':').catString("" + getLine());
+        }
+        str.catString(">");
+
+        return str;
+    }
+
+    /**
+     * Describe the parameters, as Method#parameters lists them, the way CRuby's Method#inspect
+     * does. Anonymous *, ** and & show as just their sigils, except that **, & and the *, ** and &
+     * of ... are left out where CRuby leaves them out, and ... shows as "...".
+     */
+    @CRuby(value = "method_inspect", file = "proc.c")
+    private static void appendParameters(ThreadContext context, RubyString str, RubyArray<?> params) {
+        int length = params.size();
+        boolean forwarding = length == 3 &&
+                isParameter(params.eltInternal(0), "rest", "*") &&
+                isParameter(params.eltInternal(1), "keyrest", "**") &&
+                isParameter(params.eltInternal(2), "block", "&");
+
+        for (int i = 0; i < length; i++) {
+            RubyArray<?> pair = (RubyArray<?>) params.eltInternal(i);
+            String kind = ((RubySymbol) pair.eltInternal(0)).idString();
+            IRubyObject name = pair.size() > 1 ? pair.eltInternal(1) : context.nil;
+
+            switch (kind) {
+                case "req" -> appendParameterName(str, name, "_");
+                case "opt" -> appendParameterName(str, name, "_").catString("=...");
+                case "keyreq" -> appendParameterName(str, name, null).catString(":");
+                case "key" -> appendParameterName(str, name, null).catString(": ...");
+                case "rest" -> {
+                    str.catString(forwarding ? "..." : "*");
+                    if (!isName(name, "*")) appendParameterName(str, name, null);
+                }
+                case "keyrest" -> {
+                    if (!isName(name, "**")) {
+                        appendParameterName(str.catString("**"), name, null);
+                    } else if (i > 0) {
+                        str.getByteList().setRealSize(str.getByteList().getRealSize() - 2);
+                    } else {
+                        str.catString("**");
+                    }
+                }
+                case "block" -> {
+                    if (isName(name, "&")) {
+                        if (forwarding) {
+                            str.getByteList().setRealSize(str.getByteList().getRealSize() - 2);
+                        } else {
+                            str.catString("...");
+                        }
+                    } else {
+                        appendParameterName(str.catString("&"), name, null);
+                    }
+                }
+                case "nokey" -> str.catString("**nil");
+                case "noblock" -> str.catString("&nil");
+            }
+
+            if (i < length - 1) str.catString(", ");
+        }
+    }
+
+    private static boolean isParameter(IRubyObject param, String kind, String name) {
+        RubyArray<?> pair = (RubyArray<?>) param;
+        return ((RubySymbol) pair.eltInternal(0)).idString().equals(kind) && pair.size() > 1 && isName(pair.eltInternal(1), name);
+    }
+
+    private static boolean isName(IRubyObject name, String expected) {
+        return name instanceof RubySymbol symbol && symbol.idString().equals(expected);
+    }
+
+    private static RubyString appendParameterName(RubyString str, IRubyObject name, String fallback) {
+        if (name.isNil()) {
+            if (fallback != null) str.catString(fallback);
+        } else {
+            str.cat(((RubySymbol) name).asString());
+        }
+        return str;
     }
 }
 

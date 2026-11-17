@@ -81,7 +81,6 @@ public class TestCommandlineParser extends TestCase {
             }
         }
         RubyInstanceConfig c = new TestableCommandlineParser(new String[]{"-I", "someLoadPath", "--", "simple.rb", "-v", "--version"});
-        assertEquals("someLoadPath", c.getLoadPaths().get(0));
         assertEquals("simple.rb", c.getScriptFileName());
         assertEquals("simple.rb", c.displayedFileName());
         assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());

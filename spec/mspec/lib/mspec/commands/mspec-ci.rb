@@ -1,14 +1,10 @@
-#!/usr/bin/env ruby
-
-$:.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
-
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/script'
 
 
 class MSpecCI < MSpecScript
-  def options(argv=ARGV)
+  def options(argv = ARGV)
     options = MSpecOptions.new "mspec ci [options] (FILE|DIRECTORY|GLOB)+", 30, config
 
     options.doc " Ask yourself:"
@@ -22,8 +18,10 @@ class MSpecCI < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
+    options.repeat
     options.pretend
     options.interrupt
+    options.timeout
 
     options.doc "\n How to modify the guard behavior"
     options.unguarded

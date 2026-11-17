@@ -45,6 +45,7 @@ import java.util.List;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static com.headius.backport9.buffer.Buffers.rewindBuffer;
 
 /**
  * A ReaderInputStream converts java.io.Reader to java.io.InputStream. The
@@ -52,7 +53,7 @@ import static com.headius.backport9.buffer.Buffers.limitBuffer;
  * so that users of this class can access the file that Reader read by using methods
  * defined in java.io.InputStream.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ReaderInputStream extends InputStream {
 
@@ -115,7 +116,7 @@ public class ReaderInputStream extends InputStream {
                 break;
             }
             limitBuffer(cbuf, cbuf.position());
-            cbuf.rewind();
+            rewindBuffer(cbuf);
             boolean eof = false;
             while (!eof) {
                 CoderResult cr = encoder.encode(cbuf, bbuf, eof);

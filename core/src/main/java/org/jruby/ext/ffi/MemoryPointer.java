@@ -12,37 +12,28 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
 public class MemoryPointer extends Pointer {
     
-    public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
-                module.getClass("Pointer"),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
-        memptrClass.defineAnnotatedMethods(MemoryPointer.class);
-        memptrClass.defineAnnotatedConstants(MemoryPointer.class);
-        memptrClass.setReifiedClass(MemoryPointer.class);
-        memptrClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof MemoryPointer && super.isKindOf(obj, type);
-            }
-        };
-
-        return memptrClass;
+    public static RubyClass createMemoryPointerClass(ThreadContext context, RubyModule FFI, RubyClass Pointer) {
+        ObjectAllocator allocator = Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointer::new;
+        return FFI.defineClassUnder(context, "MemoryPointer", Pointer, allocator).
+                reifiedClass(MemoryPointer.class).
+                kindOf(new RubyModule.KindOf() {
+                    @Override
+                    public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                        return obj instanceof MemoryPointer && super.isKindOf(obj, type);
+                    }
+                }).
+                defineMethods(context, MemoryPointer.class).
+                defineConstants(context, MemoryPointer.class);
     }
-
-    private static final class MemoryPointerAllocator implements ObjectAllocator {
-        static final ObjectAllocator INSTANCE = new MemoryPointerAllocator();
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new MemoryPointer(runtime, klazz);
-        }
-    }
-
-
 
     public MemoryPointer(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -55,26 +46,22 @@ public class MemoryPointer extends Pointer {
     private final IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int align, boolean clear, Block block) {
         typeSize = calculateTypeSize(context, rbTypeSize);
         size = typeSize * count;
-        if (size < 0) {
-            throw context.runtime.newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
-        }
+        if (size < 0) throw argumentError(context, String.format("Negative size (%d objects of %d size)", count, typeSize));
+
         setMemoryIO(Factory.getInstance().allocateDirectMemory(context.runtime,
                 size > 0 ? (int) size : 1, align, clear));
         if (getMemoryIO() == null) {
-            Ruby runtime = context.runtime;
-            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
+            throw RaiseException.from(context.runtime, context.runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count));
         }
         
-        if (block.isGiven()) {
-            try {
-                return block.yield(context, this);
-            } finally {
-                ((AllocatedDirectMemoryIO) getMemoryIO()).free();
-                setMemoryIO(new FreedMemoryIO(context.runtime));
-            }
-        } else {
-            return this;
+        if (!block.isGiven()) return this;
+
+        try {
+            return block.yield(context, this);
+        } finally {
+            ((AllocatedDirectMemoryIO) getMemoryIO()).free();
+            setMemoryIO(new FreedMemoryIO(context.runtime));
         }
     }
 
@@ -92,7 +79,7 @@ public class MemoryPointer extends Pointer {
     @JRubyMethod(name = "from_string", meta = true)
     public static IRubyObject from_string(ThreadContext context, IRubyObject klass, IRubyObject s) {
         org.jruby.util.ByteList bl = s.convertToString().getByteList();
-        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, context.runtime.newFixnum(bl.length() + 1), Block.NULL_BLOCK);
+        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, asFixnum(context, bl.length() + 1), Block.NULL_BLOCK);
         ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
 
         return ptr;
@@ -100,21 +87,20 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
-        return sizeArg instanceof RubyFixnum
-                ? init(context, RubyFixnum.one(context.runtime),
-                    RubyFixnum.fix2int(sizeArg), 1, true, block)
-                : init(context, sizeArg, 1, 1, true, block);
+        return sizeArg instanceof RubyFixnum fixnum ?
+                init(context, RubyFixnum.one(context.runtime), toInt(context, fixnum), 1, true, block) :
+                init(context, sizeArg, 1, 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject count, Block block) {
-        return init(context, sizeArg, RubyNumeric.fix2int(count), 1, true, block);
+        return init(context, sizeArg, toInt(context, count), 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context,
             IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
-        return init(context, sizeArg, RubyNumeric.fix2int(count), 1, clear.isTrue(), block);
+        return init(context, sizeArg, toInt(context, count), 1, clear.isTrue(), block);
     }
     
     @Override
@@ -122,13 +108,12 @@ public class MemoryPointer extends Pointer {
         return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(this == obj
+        return asBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
-                || (obj instanceof MemoryPointer
-                && ((MemoryPointer) obj).getAddress() == getAddress())
-                && ((MemoryPointer) obj).getSize() == getSize());
+                || (obj instanceof MemoryPointer mem && mem.getAddress() == getAddress())
+                && mem.getSize() == getSize());
     }
     
     @JRubyMethod(name = "free")
@@ -139,7 +124,7 @@ public class MemoryPointer extends Pointer {
         return context.nil;
     }
 
-    @JRubyMethod(name = "autorelease=", required = 1)
+    @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return context.nil;
@@ -147,6 +132,6 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "autorelease?")
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
+        return asBoolean(context, ((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
     }
 }

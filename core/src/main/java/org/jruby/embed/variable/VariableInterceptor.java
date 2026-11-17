@@ -30,43 +30,29 @@
 package org.jruby.embed.variable;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  * This class is responsible to local variable behavior dependent processing.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class VariableInterceptor {
-    //private LocalVariableBehavior behavior;
-
-    /**
-     * Constructs an instance with a given local variable behavior.
-     *
-     * @param behavior local variable behavior
-     */
-    //public VariableInterceptor(LocalVariableBehavior behavior) {
-    //    this.behavior = behavior;
-    //}
-
-    //public LocalVariableBehavior getLocalVariableBehavior() {
-    //    return behavior;
-    //}
 
     /**
      * Returns an appropriate type of a variable instance to the specified local
      * variable behavior.
      *
-     * @param runtime Ruby runtime
+     * @param behavior
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name variable name
      * @param value variable value
      * @return an appropriate type of the variable instance.
@@ -122,19 +108,16 @@ public class VariableInterceptor {
      * method invocation.
      *
      * @param map a variable map that has name-value pairs to be injected
-     * @param runtime Ruby runtime
      * @param scope scope to inject local variable values
-     * @param depth depth of a frame to inject local variable values
-     * @param receiver a receiver when the script has been evaluated once
      */
-    public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
+    public static void inject(BiVariableMap map, DynamicScope scope) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
-        if (scope != null && scope.getValues().length > 0) {
+        if (scope.getStaticScope().getNumberOfVariables() > 0) {
             IRubyObject[] values4Injection = map.getLocalVarValues();
             if (values4Injection != null && values4Injection.length > 0) {
                 for (int i = 0; i < values4Injection.length; i++) {
-                    scope.setValue(i, values4Injection[i], depth);
+                    scope.setValue(i, values4Injection[i], 0);
                 }
             }
         }
@@ -147,7 +130,6 @@ public class VariableInterceptor {
      * invocation.
      *
      * @param map variable map that holds retrieved name-value pairs.
-     * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      */
     public static void retrieve(LocalVariableBehavior behavior, BiVariableMap map, RubyObject receiver) {
@@ -175,9 +157,7 @@ public class VariableInterceptor {
      * or method invocation only when it is requested.
      *
      * @param map variable map that holds retrieved name-value pairs.
-     * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
-     * @
      */
     public static void tryLazyRetrieval(LocalVariableBehavior behavior, BiVariableMap map, IRubyObject receiver, Object key) {
         if (Argv.isValidName(key)) {
@@ -220,7 +200,7 @@ public class VariableInterceptor {
                 if (BiVariable.Type.LocalGlobalVariable == var.getType()) {
                     String name = var.getName();
                     name = name.startsWith("$") ? name : "$" + name;
-                    runtime.getGlobalVariables().set(name, runtime.getNil());
+                    runtime.getGlobalVariables().clear(name);
                 }
             }
         }
@@ -236,7 +216,8 @@ public class VariableInterceptor {
     public static void terminateLocalVariables(LocalVariableBehavior behavior, List<String> varNames, List<BiVariable> variables) {
         if (variables == null) return;
         if (LocalVariableBehavior.TRANSIENT == behavior) {
-            for (int i = 0; i < variables.size(); i++) {
+            // count down since we delete as we go
+            for (int i = variables.size() - 1; i >= 0 ; i--) {
                 if (BiVariable.Type.LocalVariable == variables.get(i).getType()) {
                     varNames.remove(i);
                     variables.remove(i);

@@ -27,8 +27,15 @@
 
 package org.jruby.runtime.ivars;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * Abstraction of an accessor for instance or internal variables on Ruby
@@ -44,6 +51,26 @@ public abstract class VariableAccessor {
     protected final int classId;
     /** the "real" class associated with this variable */
     protected final RubyClass realClass;
+
+    static final VarHandle VAR_TABLE_HANDLE;
+    static final VarHandle STAMP_HANDLE;
+    static {
+        VarHandle vth;
+        try {
+            vth = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTable", Object[].class);
+        } catch (Throwable throwable) {
+            throw new ExceptionInInitializerError(throwable);
+        }
+        VAR_TABLE_HANDLE = vth;
+
+        VarHandle sh;
+        try {
+            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", byte.class);
+        } catch (Throwable throwable) {
+            throw new ExceptionInInitializerError(throwable);
+        }
+        STAMP_HANDLE = sh;
+    }
 
     /**
      * Construct a new VariableAccessor for the given "real" class, name,
@@ -99,8 +126,27 @@ public abstract class VariableAccessor {
     }
 
     /**
+     * Retrieve object or IR %undefined
+     */
+    public Object getOrUndefined(Object object) {
+        Object value = get(object);
+        return value == null ? UndefinedValue.UNDEFINED : value;
+    }
+
+    /**
+     * Retrieve the variable's value from the given object.
+     *
+     * @param object the object from which to retrieve this variable
+     * @return the variable's value
+     */
+    public IRubyObject getOrNil(Object object, ThreadContext context) {
+        Object value = getVariable((RubyBasicObject) object, index);
+        return value == null ? context.nil : (IRubyObject) value;
+    }
+
+    /**
      * Retrieve the variable's value from the given object. This version is
-     * static, allowing it to be more direct, and accepts nnly with
+     * static, allowing it to be more direct, and accepts only
      * RubyBasicObject and subclasses along with the direct index of the
      * variable.
      * 
@@ -144,6 +190,10 @@ public abstract class VariableAccessor {
     @Override
     public String toString() {
         return "ivar:" + getName() + ":" + index;
+    }
+
+    public VariableAccessor cloneFor(RubyClass newRealClass) {
+        throw new UnsupportedOperationException();
     }
 
     /** a dummy accessor that will always return null */

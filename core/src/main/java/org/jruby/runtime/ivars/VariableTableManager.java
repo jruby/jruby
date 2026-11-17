@@ -31,32 +31,41 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.java.codegen.Reified;
+import org.jruby.javasupport.util.JavaClassConfiguration;
+import org.jruby.javasupport.util.JavaClassConfiguration.DirectFieldConfiguration;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.cli.Options;
-import org.jruby.util.unsafe.UnsafeHolder;
+
+import static org.jruby.api.Error.nameError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
- * This class encapculates all logic relating to the management of instance
+ * This class encapsulates all logic relating to the management of instance
  * variable tables in RubyBasicObject instances.
  *
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly
  * coupled to each and difficult to follow as it bounced back and forth. We
  * moved the logic here for a couple reasons:
- *
+ * <ul>
  * <li>To have a single place from which we could follow ivar logic.</li>
  * <li>To make it easier to swap in new implementations of instance variable
  * logic as we work toward reifying ivars into fields.</li>
  * <li>To remove rather noisy logic from RubyBasicObject and RubyClass.</li>
+ * </ul>
  */
 public class VariableTableManager {
     /** the "real" class associated with this table */
@@ -98,6 +107,28 @@ public class VariableTableManager {
     }
 
     /**
+     * Copy constructor with deep cloning for subclasses of Data types. The new realClass will be the
+     * subclass rather than the original Data type.
+     *
+     * @param original VariableTableManager to copy
+     */
+    VariableTableManager(VariableTableManager original, RubyClass realClass) {
+        synchronized (original) {
+            this.realClass = realClass;
+            this.variableAccessors = copyVariableAccessors(realClass, original.variableAccessors);
+            this.variableNames = original.variableNames.clone();
+            this.hasObjectID = original.hasObjectID;
+            this.hasFFI = original.hasFFI;
+            this.hasObjectspaceGroup = original.hasObjectspaceGroup;
+            this.fieldVariables = original.fieldVariables;
+        }
+    }
+
+    public RubyClass getRealClass() {
+        return realClass;
+    }
+
+    /**
      * Get the map of all current variable accessors with intent to read from it.
      *
      * @return a map of current variable accessors
@@ -124,13 +155,13 @@ public class VariableTableManager {
      */
     public long getObjectId(RubyBasicObject self) {
         VariableAccessor objectIdAccessor = getObjectIdAccessorForRead();
-        Long id = (Long)objectIdAccessor.get(self);
-        if (id != null) return id;
+        Number id = (Number)objectIdAccessor.get(self);
+        if (id != null) return id.longValue();
 
         synchronized (self) {
             objectIdAccessor = getObjectIdAccessorForRead();
-            id = (Long)objectIdAccessor.get(self);
-            if (id != null) return id;
+            id = (Number)objectIdAccessor.get(self);
+            if (id != null) return id.longValue();
 
             objectIdAccessor = getObjectIdAccessorForWrite();
             return initObjectId(self, objectIdAccessor);
@@ -145,11 +176,7 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
     }
 
     /**
@@ -161,10 +188,53 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
+    }
+
+    /**
+     * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
+     * Request that the listed ivars (no @ in name) have field storage when we are reified
+     */
+    public synchronized void requestFieldStorage(String name, Class<?> fieldType,  Boolean unwrap, Class<?> toType) {
+        DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, fieldType, unwrap, toType);
+        if (realClass.reifiedClass() != null)
+            requestFieldStorage(config);
+        else {
+            if (realClass.getClassConfig().requestedStorageVariables == null)
+                realClass.getClassConfig().requestedStorageVariables = new ArrayList<>();
+            realClass.getClassConfig().requestedStorageVariables.add(config);
+        }
+    }
+
+    /**
+     * Actually requests field storage for the ivar once we are reified
+     * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
+     */
+    public void requestFieldStorage(DirectFieldConfiguration config) {
+        try {
+            Class<? extends Reified> reifiedClass = realClass.reifiedClass();
+            Class<?> fieldType = reifiedClass.getField(config.name).getType();
+            if (fieldType != config.fieldType) {
+                throw typeError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " has incorrectly specified types for @ivar mapping");
+            }
+            
+            // by default, unwrap if it's not assignable to IRO
+            boolean unwrap = config.unwrap == null ? !fieldType.isAssignableFrom(IRubyObject.class) : config.unwrap.booleanValue();
+            Class<?> unwrapType = config.unwrapType == null ? fieldType : config.unwrapType;
+            if (unwrap && !fieldType.isAssignableFrom(unwrapType)) {
+                throw typeError(realClass.getClassRuntime().getCurrentContext(), config.name + " has incorrectly specified unwrap type for @ivar mapping: type is incompatible");
+            }
+            
+            getVariableAccessorForJavaMappedVar("@" + config.name,
+                    unwrap,
+                    fieldType,
+                    unwrapType,
+                    RubyObjectSpecializer.LOOKUP.findGetter(reifiedClass, config.name, fieldType),
+                    RubyObjectSpecializer.LOOKUP.findSetter(reifiedClass, config.name, fieldType));
+        } catch (NoSuchFieldException e) {
+            throw nameError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
+        } catch (IllegalAccessException e) {
+            throw realClass.getClassRuntime().newSecurityError("Error in accessing java_field " +config.name+ ": " + e.getMessage());
         }
     }
 
@@ -176,6 +246,26 @@ public class VariableTableManager {
      * @return an accessor appropriate for writing
      */
     public VariableAccessor getVariableAccessorForWrite(String name) {
+        return getVariableAccessorWithBuilder(name, makeTableVariableAccessorBuilder(name));
+    }
+
+    public VariableAccessor getVariableAccessorForRubyVar(String name, MethodHandle getter, MethodHandle setter) {
+        return getVariableAccessorWithBuilder(name, makeRubyFieldAccessorBuilder(name, getter, setter));
+    }
+    
+    public VariableAccessor getVariableAccessorForJavaMappedVar(String name, boolean unwrap, Class<?> unwrapType, Class<?> fieldType, MethodHandle getter, MethodHandle setter) {
+        return getVariableAccessorWithBuilder(name, makeRawFieldAccessorBuilder(name, unwrap, unwrapType, fieldType, getter, setter));
+    }
+    
+    /**
+     * Get the variable accessor for the given name, or if it doesn't exist, create it 
+     * with the provided builder.
+     *
+     * @param name the name of the variable
+     * @param defaultAccessorBuilder a builder to use if the accessor doesn't exist yet
+     * @return an accessor
+     */
+    VariableAccessor getVariableAccessorWithBuilder(String name, Function<Integer, VariableAccessor> defaultAccessorBuilder) {
         VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
 
@@ -185,40 +275,25 @@ public class VariableTableManager {
 
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessor(name);
-                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
-
-                    newVariableAccessors.putAll(myVariableAccessors);
-                    newVariableAccessors.put(name, ivarAccessor);
-
-                    variableAccessors = newVariableAccessors;
+                    ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
+                    variableAccessors = copyVariableAccessors(myVariableAccessors, name, ivarAccessor);
                 }
             }
         }
         return ivarAccessor;
     }
 
-    public VariableAccessor getVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
-        VariableAccessor ivarAccessor = variableAccessors.get(name);
-        if (ivarAccessor == null) {
+    private static Map<String, VariableAccessor> copyVariableAccessors(RubyClass realClass, Map<String, VariableAccessor> otherVariableAccessors) {
+        var myVariableAccessors = new LinkedHashMap<String, VariableAccessor>(otherVariableAccessors.size());
+        otherVariableAccessors.forEach((name, accessor) -> myVariableAccessors.put(name, accessor.cloneFor(realClass)));
+        return myVariableAccessors;
+    }
 
-            synchronized (realClass) {
-                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
-                ivarAccessor = myVariableAccessors.get(name);
-
-                if (ivarAccessor == null) {
-                    // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessorForVar(name, getter, setter);
-                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
-
-                    newVariableAccessors.putAll(myVariableAccessors);
-                    newVariableAccessors.put(name, ivarAccessor);
-
-                    variableAccessors = newVariableAccessors;
-                }
-            }
-        }
-        return ivarAccessor;
+    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors, String name, VariableAccessor ivarAccessor) {
+        LinkedHashMap<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
+        newVariableAccessors.putAll(myVariableAccessors);
+        newVariableAccessors.put(name, ivarAccessor);
+        return newVariableAccessors;
     }
 
     /**
@@ -250,7 +325,9 @@ public class VariableTableManager {
      * @return the write accessor for object_id
      */
     public VariableAccessor getObjectIdAccessorForWrite() {
+        // set-only so no synchronization required
         if (hasObjectID == 0) hasObjectID = 1;
+
         return objectIdVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
@@ -341,7 +418,7 @@ public class VariableTableManager {
      * @return a map of names to accessors for all variables
      */
     public Map<String, VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+        return new LinkedHashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
     /**
@@ -367,36 +444,27 @@ public class VariableTableManager {
         boolean sameTable = otherRealClass == realClass;
 
         if (sameTable && fieldVariables == 0) {
-            int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
+            int idIndex = otherRealClass.getVariableTableManager().getObjectIdAccessorForRead().getIndex();
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
-            if(UnsafeHolder.U == null)
-            {
-                synchronized (self) {
-                    self.varTable = makeSyncedTable(self.varTable, otherVars, idIndex);
-                }
-            } else {
-                for(;;) {
-                    int oldStamp = self.varTableStamp;
-                    // wait for read mode
-                    if((oldStamp & 0x01) == 1)
-                        continue;
-                    // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
-                        continue;
+            for(;;) {
+                byte oldStamp = self.varTableStamp;
+                // wait for read mode
+                if((oldStamp & 0x01) == 1)
+                    continue;
+                // acquire exclusive write mode
+                if(!VariableAccessor.STAMP_HANDLE.compareAndSet(self, oldStamp, ++oldStamp))
+                    continue;
 
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
-                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
+                Object[] currentTable = (Object[]) VariableAccessor.VAR_TABLE_HANDLE.getVolatile(self);
+                Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
 
-                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
+                VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
-                    // release write mode
-                    self.varTableStamp = oldStamp+1;
-                    break;
-                }
-
-
+                // release write mode
+                self.varTableStamp = (byte) (oldStamp+1);
+                break;
             }
 
         } else {
@@ -432,6 +500,27 @@ public class VariableTableManager {
                 (myVarTable = object.varTable) != null && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup;
     }
 
+    public boolean hasInstanceVariables(RubyBasicObject object) {
+        // we check both to exclude object_id
+        Object[] myVarTable;
+        if (fieldVariables > 0) return true;
+        if ((myVarTable = object.varTable) != null
+                && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup) {
+
+            // skip the slots of the hidden variables (index -1 when not allocated)
+            int objectIdIndex = objectIdVariableAccessorField.getVariableAccessorForRead().getIndex();
+            int ffiIndex = ffiHandleVariableAccessorField.getVariableAccessorForRead().getIndex();
+            int objectGroupIndex = objectGroupVariableAccessorField.getVariableAccessorForRead().getIndex();
+
+            for (int i = 0; i < myVarTable.length; i++) {
+                if (i == objectIdIndex || i == ffiIndex || i == objectGroupIndex) continue;
+                if (myVarTable[i] != null) return true;
+            }
+        }
+
+        return false;
+    }
+
     public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
         if (object.varTable != null) {
             Map<String, VariableAccessor> accessors = getVariableAccessorsForRead();
@@ -461,6 +550,10 @@ public class VariableTableManager {
 
             return value;
         }
+    }
+
+    public VariableTableManager duplicateForData(RubyClass newRealClass) {
+        return new VariableTableManager(this, newRealClass);
     }
 
     /**
@@ -511,7 +604,25 @@ public class VariableTableManager {
      */
     private static void setObjectId(RubyClass realClass, RubyBasicObject self, int index, long value) {
         if (index < 0) return;
-        setVariableInternal(realClass, self, index, value);
+        setVariableInternal(realClass, self, index, smallestBox(value));
+    }
+
+    /**
+     * Return the smallest boxed Number that can hold the given value.
+     *
+     * @param value the value to box
+     * @return the smallest Number box for that value
+     */
+    private static Number smallestBox(long value) {
+        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+            return Byte.valueOf((byte) value);
+        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+            return Short.valueOf((short) value);
+        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            return Integer.valueOf((int) value);
+        } else {
+            return Long.valueOf(value);
+        }
     }
 
     /**
@@ -544,45 +655,48 @@ public class VariableTableManager {
      * @param name the name of the variable
      * @return the new VariableAccessor
      */
-    synchronized final VariableAccessor allocateVariableAccessor(String name) {
-        int id = realClass.id;
-
-        final String[] myVariableNames = variableNames;
-        final int newIndex = myVariableNames.length;
-
-        VariableAccessor newVariableAccessor;
-        if (Options.VOLATILE_VARIABLES.load()) {
-            if (UnsafeHolder.U == null) {
-                newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
-            } else {
-                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
-            }
-        } else {
-            if (UnsafeHolder.U == null) {
-                newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
-            } else {
-                // We still need safe updating of the vartable, so we fall back on sync here too.
-                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
-            }
-        }
-
-        final String[] newVariableNames = new String[newIndex + 1];
-        ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
-        newVariableNames[newIndex] = name;
-        variableNames = newVariableNames;
-
-        return newVariableAccessor;
+    final VariableAccessor allocateVariableAccessor(String name) {
+        return allocateVariableAccessors(name, makeTableVariableAccessorBuilder(name));
+    }
+    
+    /**
+     * Makes a standard table accessor builder. Pass this into getVariableAccessorWithBuilder
+     */
+    final Function<Integer, VariableAccessor> makeTableVariableAccessorBuilder(String name) {
+        return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
     }
 
-    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
-        int id = realClass.id;
+    /**
+     * Makes a raw field accessor builder for reified classes with java_field. Pass this into getVariableAccessorWithBuilder
+     */
+    final Function<Integer, VariableAccessor> makeRawFieldAccessorBuilder(String name, boolean unwrap,Class<?> unwrapType, Class<?> fieldType, MethodHandle getter, MethodHandle setter)
+    {
+        return (newIndex) -> {
+            fieldVariables += 1;
+            return new RawFieldVariableAccessor(realClass, unwrap, unwrapType, fieldType, name, newIndex, realClass.id, getter, setter);
+        };
+    }
+
+    /**
+     * Makes an IRubyObject field accessor builder for reified classes. Pass this into getVariableAccessorWithBuilder
+     */
+    final Function<Integer, VariableAccessor> makeRubyFieldAccessorBuilder(String name, MethodHandle getter, MethodHandle setter)
+    {
+        return (newIndex) -> {
+            fieldVariables += 1;
+            return new FieldVariableAccessor(realClass, name, newIndex, realClass.id, getter, setter);
+        };
+    }
+
+    /**
+     * Allocation helper to map variables to names
+     */
+    synchronized final VariableAccessor allocateVariableAccessors(String name, Function<Integer, VariableAccessor> builder) {
 
         final String[] myVariableNames = variableNames;
         final int newIndex = myVariableNames.length;
 
-        fieldVariables += 1;
-
-        VariableAccessor newVariableAccessor = new FieldVariableAccessor(realClass, name, newIndex, id, getter, setter);
+        VariableAccessor newVariableAccessor = builder.apply(newIndex);
 
         final String[] newVariableNames = new String[newIndex + 1];
         ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
@@ -598,6 +712,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object_id
      * @deprecated Use {@link #getObjectIdAccessorForRead()} or {@link #getObjectIdAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectIdAccessorField() {
         return objectIdVariableAccessorField;
     }
@@ -608,6 +723,7 @@ public class VariableTableManager {
      * @return the lazy accessor for FFI handle
      * @deprecated Use {@link #getFFIHandleAccessorForRead()} or {@link #getFFIHandleAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getFFIHandleAccessorField() {
         return ffiHandleVariableAccessorField;
     }
@@ -618,6 +734,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object group
      * @deprecated Use {@link #getObjectGroupAccessorForRead()} or {@link #getObjectGroupAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectGroupAccessorField() {
         return objectGroupVariableAccessorField;
     }

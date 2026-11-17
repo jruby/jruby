@@ -27,11 +27,11 @@ describe "Dir#fileno" do
 
   if has_dir_fileno
     it "returns the file descriptor of the dir" do
-      @dir.fileno.should be_kind_of(Fixnum)
+      @dir.fileno.should.is_a?(Integer)
     end
   else
     it "raises an error when not implemented on the platform" do
-      lambda { @dir.fileno }.should raise_error(NotImplementedError)
+      -> { @dir.fileno }.should.raise(NotImplementedError)
     end
   end
 end

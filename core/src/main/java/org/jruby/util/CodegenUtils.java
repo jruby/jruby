@@ -13,14 +13,11 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
 import javax.lang.model.element.Name;
+import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author headius
- */
 public class CodegenUtils {
     /**
      * Creates a dotted class name from a path/package name
@@ -122,14 +119,8 @@ public class CodegenUtils {
         return sigParams(new StringBuilder(), descriptor, params).append( ci(retval) ).toString();
     }
 
-    @Deprecated // not used
-    public static String sigParams(Class... params) {
-        return sigParams(new StringBuilder(), null, params).toString();
-    }
-
-    @Deprecated // not used
-    public static String sigParams(String descriptor, Class... params) {
-        return sigParams(new StringBuilder(), descriptor, params).toString();
+    public static String sig(MethodType type) {
+        return sig(type.returnType(), type.parameterArray());
     }
 
     private static StringBuilder sigParams(final StringBuilder str,
@@ -220,6 +211,13 @@ public class CodegenUtils {
         classes[1] = cls2;
         classes[2] = cls3;
         classes[3] = cls4;
+        return classes;
+    }
+
+    public static Class[] params(Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 1];
+        Arrays.fill(classes, 0, times, clsFill);
+        classes[times] = clsTail;
         return classes;
     }
 

@@ -109,18 +109,7 @@ public class OptoFactory {
     }
 
     /**
-     * A dummy factory, for when we are not running with invokedynamic.
-     */
-    private static class DummyConstantFactory implements ConstantFactory {
-        public Object create(Class type, Object object) {
-            return null;
-        }
-    }
-
-    /**
      * The constant factory we'll be using for this run.
      */
-    private static final ConstantFactory CONSTANT_FACTORY = Options.COMPILE_INVOKEDYNAMIC.load() ?
-            new MethodHandleConstantFactory() :
-            new DummyConstantFactory();
+    private static final ConstantFactory CONSTANT_FACTORY = new MethodHandleConstantFactory();
 }

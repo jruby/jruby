@@ -31,22 +31,16 @@ package org.jruby.ext.ffi;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
-import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
-import org.jruby.javasupport.JavaObject;
+
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
 
-/**
- *
- */
 public final class Util {
     private Util() {}
     public static final byte int8Value(IRubyObject parameter) {
@@ -80,16 +74,26 @@ public final class Util {
     public static final long uint64Value(IRubyObject parameter) {
         final long value = parameter instanceof RubyBignum
                 ? ((RubyBignum) parameter).getValue().longValue()
-                :longValue(parameter);
+                :ulongValue(parameter);
         return value;
     }
 
+    @Deprecated(since = "10.0.0.0")
     public static final float floatValue(IRubyObject parameter) {
-        return (float) RubyNumeric.num2dbl(parameter);
+        return floatValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
     }
 
+    public static final float floatValue(ThreadContext context, IRubyObject parameter) {
+        return (float) toDouble(context, parameter);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static final double doubleValue(IRubyObject parameter) {
-        return RubyNumeric.num2dbl(parameter);
+        return doubleValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
+    }
+
+    public static final double doubleValue(ThreadContext context, IRubyObject parameter) {
+        return toDouble(context, parameter);
     }
 
     /**
@@ -102,61 +106,57 @@ public final class Util {
         return RubyNumeric.num2long(parameter);
     }
 
+    @Deprecated(since = "10.0.0.0")
     public static int intValue(IRubyObject obj, RubyHash enums) {
-        if (obj instanceof RubyInteger) {
-                return (int) ((RubyInteger) obj).getLongValue();
-
-        } else if (obj instanceof RubySymbol) {
+        var context = ((RubyBasicObject) obj).getCurrentContext();
+        if (obj instanceof RubyInteger obji) return obji.asInt(context);
+        if (obj instanceof RubySymbol) {
             IRubyObject value = enums.fastARef(obj);
-            if (value.isNil()) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
-            }
+            if (value.isNil()) throw argumentError(context, "invalid enum value, " + obj.inspect(context));
+
             return (int) longValue(value);
         } else {
             return (int) longValue(obj);
         }
     }
 
+    public static final long ulongValue(IRubyObject parameter) {
+        return RubyNumeric.num2ulong(parameter);
+    }
+
     public static final IRubyObject newSigned8(Ruby runtime, byte value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned8(Ruby runtime, byte value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
     }
 
     public static final IRubyObject newSigned16(Ruby runtime, short value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned16(Ruby runtime, short value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
     }
 
     public static final IRubyObject newSigned32(Ruby runtime, int value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned32(Ruby runtime, int value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
     }
 
     public static final IRubyObject newSigned64(Ruby runtime, long value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
     public static final IRubyObject newUnsigned64(Ruby runtime, long value) {
         return value < 0
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
-                    : runtime.newFixnum(value);
-    }
-
-    @Deprecated
-    public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
-        return paramClass.cast(parameter instanceof JavaObject
-            ? ((JavaObject) parameter).getValue()
-            : parameter.toJava(paramClass));
+                    : RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {
@@ -181,32 +181,19 @@ public final class Util {
     }
 
     public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
-        if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
-            String orderName = byte_order.asJavaString();
-            if ("network".equals(orderName) || "big".equals(orderName)) {
-                return ByteOrder.BIG_ENDIAN;
+        if (!(byte_order instanceof RubySymbol) && !(byte_order instanceof RubyString)) {
+            throw typeError(runtime.getCurrentContext(), byte_order , "Symbol or String");
+        }
 
-            } else if ("little".equals(orderName)) {
-                return ByteOrder.LITTLE_ENDIAN;
-            
-            } else {
-                return ByteOrder.nativeOrder();
-            }
-
-        } else {
-            throw runtime.newTypeError(byte_order, runtime.getSymbol());
+        switch (byte_order.asJavaString()) {
+            case "network": case "big": return ByteOrder.BIG_ENDIAN;
+            case "little": return ByteOrder.LITTLE_ENDIAN;
+            default: throw argumentError(runtime.getCurrentContext(), "unknown byte order");
         }
     }
 
     public static int roundUpToPowerOfTwo(int v) {
-        if (v < 1) return 1;
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-
-        return v + 1;
+        if (v <= 1) return 1;
+        return Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(v - 1) << 1;
     }
 }

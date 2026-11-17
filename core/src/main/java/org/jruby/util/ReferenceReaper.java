@@ -5,7 +5,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 
 /**
- * A general purpose reference tracker & reaper utility class.
+ * A general purpose reference tracker &amp; reaper utility class.
  */
 public final class ReferenceReaper {
     public final ReferenceQueue referenceQueue = new ReferenceQueue();

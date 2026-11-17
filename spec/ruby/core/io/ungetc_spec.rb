@@ -74,10 +74,10 @@ describe "IO#ungetc" do
     touch(@empty)
 
     File.open(@empty) { |empty|
-      empty.eof?.should == true
+      empty.should.eof?
       empty.getc.should == nil
       empty.ungetc(100)
-      empty.eof?.should == false
+      empty.should_not.eof?
     }
   end
 
@@ -97,39 +97,42 @@ describe "IO#ungetc" do
     @io.pos.should == pos - 1
   end
 
-  it "makes subsequent unbuffered operations to raise IOError" do
-    @io.getc
-    @io.ungetc(100)
-    lambda { @io.sysread(1) }.should raise_error(IOError)
-  end
-
-  it "does not affect the stream and returns nil when passed nil" do
+  it "raises TypeError if passed nil" do
     @io.getc.should == ?V
-    @io.ungetc(nil)
-    @io.getc.should == ?o
+    proc{@io.ungetc(nil)}.should raise_consistent_error(TypeError, /no implicit conversion of nil into String/)
   end
 
   it "puts one or more characters back in the stream" do
     @io.gets
-    @io.ungetc("Aquí ").should be_nil
+    @io.ungetc("Aquí ").should == nil
     @io.gets.chomp.should == "Aquí Qui è la linea due."
+  end
+
+  it "puts correctly back a string longer than the amount of data previously read" do
+    @io.read(5).should == "Voici"
+    @io.ungetc("1234567890").should == nil
+    @io.gets.chomp.should == "1234567890 la ligne une."
   end
 
   it "calls #to_str to convert the argument if it is not an Integer" do
     chars = mock("io ungetc")
     chars.should_receive(:to_str).and_return("Aquí ")
 
-    @io.ungetc(chars).should be_nil
+    @io.ungetc(chars).should == nil
     @io.gets.chomp.should == "Aquí Voici la ligne une."
   end
 
   it "returns nil when invoked on stream that was not yet read" do
-    @io.ungetc(100).should be_nil
+    @io.ungetc(100).should == nil
+  end
+
+  it "raises IOError on stream not opened for reading" do
+    -> { STDOUT.ungetc(100) }.should.raise(IOError, "not opened for reading")
   end
 
   it "raises IOError on closed stream" do
     @io.getc
     @io.close
-    lambda { @io.ungetc(100) }.should raise_error(IOError)
+    -> { @io.ungetc(100) }.should.raise(IOError)
   end
 end

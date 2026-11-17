@@ -31,6 +31,7 @@ package org.jruby.embed;
 
 import org.jruby.ast.Node;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
@@ -38,7 +39,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * This interface defines an evaluation unit for a parsed or compiled script,
  * which are executable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface EmbedEvalUnit extends JavaEmbedUtils.EvalUnit {
     /**
@@ -54,5 +55,5 @@ public interface EmbedEvalUnit extends JavaEmbedUtils.EvalUnit {
      *
      * @return scope to refer local variables.
      */
-    public ManyVarsDynamicScope getScope();
+    DynamicScope getLocalVarScope();
 }

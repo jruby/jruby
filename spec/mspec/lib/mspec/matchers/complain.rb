@@ -17,15 +17,15 @@ class ComplainMatcher
   def matches?(proc)
     @saved_err = $stderr
     @verbose = $VERBOSE
+    err = IOStub.new
+
+    $stderr = err
+    $VERBOSE = @options.key?(:verbose) ? @options[:verbose] : false
     begin
-      err = $stderr = IOStub.new
-      $VERBOSE = @options.key?(:verbose) ? @options[:verbose] : false
-      Thread.current[:in_mspec_complain_matcher] = true
       proc.call
     ensure
       $VERBOSE = @verbose
       $stderr = @saved_err
-      Thread.current[:in_mspec_complain_matcher] = false
     end
 
     @warning = err.to_s

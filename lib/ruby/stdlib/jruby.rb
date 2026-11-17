@@ -1,1 +1,1 @@
-# this file is provided for backward-compatibility with code that does `require "jruby"`
+JRuby::Util.load_ext('org.jruby.ext.jruby.JRubyLibrary')

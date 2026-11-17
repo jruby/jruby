@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'etc'
 
 platform_is_not :windows do
@@ -14,7 +14,7 @@ platform_is_not :windows do
         if value.nil?
           value.should == nil
         else
-          value.should be_kind_of(Integer)
+          value.should.is_a?(Integer)
         end
       end
     end

@@ -7,12 +7,16 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.api.Access;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.getModule;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
@@ -21,107 +25,90 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     private AbstractMemory memory;
     private volatile Object[] referenceCache;
     private volatile IRubyObject[] valueCache;
-    
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Struct(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
 
     /**
      * Registers the StructLayout class in the JRuby runtime.
-     * @param runtime The JRuby runtime to register the new class in.
+     * @param context the current thread context
+     * @param FFI reference to FFI module
      * @return The new class
      */
-    public static RubyClass createStructClass(Ruby runtime, RubyModule module) {
-        
-        RubyClass structClass = runtime.defineClassUnder("Struct", runtime.getObject(),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Allocator.INSTANCE, module);
-        structClass.defineAnnotatedMethods(Struct.class);
-        structClass.defineAnnotatedConstants(Struct.class);
-        structClass.setReifiedClass(Struct.class);
-        structClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof Struct && super.isKindOf(obj, type);
-            }
-        };
-        
-        return structClass;
+    public static RubyClass createStructClass(ThreadContext context, RubyModule FFI) {
+        ObjectAllocator allocator = Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Struct::new;
+        return FFI.defineClassUnder(context, "Struct", objectClass(context), allocator).
+                reifiedClass(Struct.class).
+                kindOf(new RubyModule.KindOf() {
+                    @Override
+                    public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                        return obj instanceof Struct && super.isKindOf(obj, type);
+                    }
+                }).
+                defineMethods(context, Struct.class).
+                defineConstants(context, Struct.class);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance using defaults.
+     * Creates a new <code>StructLayout</code> instance using defaults.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
      */
     Struct(Ruby runtime) {
         this(runtime, runtime.getFFI().structClass);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     public Struct(Ruby runtime, RubyClass klass) {
-        this(runtime, klass, getStructLayout(runtime, klass), null);
+        this(runtime, klass, getStructLayout(runtime.getCurrentContext(), klass), null);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     Struct(Ruby runtime, RubyClass klass, StructLayout layout, IRubyObject memory) {
         super(runtime, klass);
         this.layout = layout;
 
         if (!(memory == null || memory instanceof AbstractMemory)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + memory.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            throw typeError(runtime.getCurrentContext(), memory, "Pointer or Buffer");
         }
 
         this.memory = (AbstractMemory) memory;
     }
 
-    static final boolean isStruct(Ruby runtime, RubyClass klass) {
-        return klass.isKindOfModule(runtime.getFFI().structClass);
+    static final boolean isStruct(ThreadContext context, RubyClass klass) {
+        return klass.isKindOfModule(context.runtime.getFFI().structClass);
     }
 
-    static final int getStructSize(Ruby runtime, IRubyObject structClass) {
-        return getStructLayout(runtime, structClass).getSize();
+    static final int getStructSize(ThreadContext context, IRubyObject structClass) {
+        return getStructLayout(context, structClass).getSize();
     }
     
-    static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
+    static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         try {
-            Object layout = ((RubyClass) structClass).getFFIHandle();
-            if (layout instanceof StructLayout) {
-                return (StructLayout) layout;
-            }
-
             RubyClass klass = (RubyClass) structClass;
-            while (klass != runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
+            Object layout = klass.getFFIHandle();
+            if (layout instanceof StructLayout sl) return sl;
+
+            while (klass != objectClass(context) && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
                 klass = klass.getSuperClass();
             }
 
-            if (!(layout instanceof StructLayout)) {
-                throw runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
+            if (layout instanceof StructLayout sl) {
+                klass.setFFIHandle(layout); // Cache the layout for faster retrieval next time
+                return sl;
             }
-
-            // Cache the layout on the Struct metaclass for faster retrieval next time
-            ((RubyClass) structClass).setFFIHandle(layout);
-            return (StructLayout) layout;
-
+            throw runtimeError(context, "no valid struct layout for " + klass.getName(context));
         } catch (ClassCastException ex) {
-            if (!(structClass instanceof RubyClass)) {
-                throw runtime.newTypeError("wrong argument type "
-                        + structClass.getMetaClass().getName() + " (expected subclass of Struct)");
-            }
-            throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
+            if (!(structClass instanceof RubyClass sc)) throw typeError(context, structClass, "subclass of Struct");
+
+            throw runtimeError(context, "invalid layout set for struct " + sc.getName(context));
         }
     }
 
@@ -136,17 +123,13 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
         
         if (!(ptr instanceof AbstractMemory)) {
-            if (ptr.isNil()) {
-                return initialize(context);
-            }
+            if (ptr.isNil()) return initialize(context);
 
-            throw context.runtime.newTypeError("wrong argument type "
-                    + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            throw typeError(context, ptr, "Pointer or Buffer");
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
-            throw context.runtime.newArgumentError("memory object has insufficient space for "
-                    + getMetaClass().getName());
+            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName(context));
         }
 
         memory = (AbstractMemory) ptr;
@@ -162,10 +145,11 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
                 IRubyObject result = getMetaClass().callMethod(context, "layout", args[1] instanceof RubyArray
                         ? ((RubyArray) args[1]).toJavaArrayUnsafe()
                         : java.util.Arrays.copyOfRange(args, 1, args.length));
-                if (!(result instanceof StructLayout)) {
-                    throw context.runtime.newTypeError("Struct.layout did not return a FFI::StructLayout instance");
+                if (result instanceof StructLayout struct) {
+                    layout = struct;
+                } else {
+                    throw typeError(context, "Struct.layout did not return a FFI::StructLayout instance");
                 }
-                layout = (StructLayout) result;
             case 1: return initialize(context, args[0]);
             case 0: return initialize(context);
         }
@@ -173,13 +157,9 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        if (other == this) {
-            return this;
-        }
-        if (!(other instanceof Struct)) {
-            throw context.runtime.newTypeError("not an instance of Struct");
-        }
-        Struct orig = (Struct) other;
+        if (other == this) return this;
+        if (!(other instanceof Struct orig)) throw typeError(context, "not an instance of Struct");
+
         memory = (AbstractMemory) orig.getMemory().slice(context.runtime, 0, layout.getSize()).dup();
         if (orig.referenceCache != null) {
             referenceCache = new Object[layout.getReferenceFieldCount()];
@@ -192,9 +172,8 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
 
     private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
-        Ruby runtime = context.runtime;
-        StructLayout layout = getStructLayout(runtime, klass);
-        return new Struct(runtime, (RubyClass) klass, layout, new Buffer(runtime, layout.getSize(), flags));
+        StructLayout layout = getStructLayout(context, klass);
+        return new Struct(context.runtime, (RubyClass) klass, layout, new Buffer(context.runtime, layout.getSize(), flags));
     }
 
     @JRubyMethod(name = { "new_in", "alloc_in" }, meta = true)
@@ -224,10 +203,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "size" }, meta = true)
     public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
-        RubyClass klass = (RubyClass) structClass;
+        RubyClass klass = castAsClass(context, structClass);
 
         Object obj = klass.getFFIHandle();
         if (obj instanceof StructLayout) {
@@ -244,23 +220,19 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         return obj instanceof RubyFixnum ? (RubyFixnum) obj : RubyFixnum.zero(context.runtime);
     }
 
-    @JRubyMethod(name = { "alignment", "align" }, meta = true)
+    @JRubyMethod(name = "alignment", meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).alignment(context);
+        return getStructLayout(context, structClass).alignment(context);
     }
 
     @JRubyMethod(name = { "layout=" }, meta = true)
     public static IRubyObject set_layout(ThreadContext context, IRubyObject structClass, IRubyObject layout) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
+        RubyClass klass = castAsClass(context, structClass);
 
         if (!(layout instanceof StructLayout)) {
-            throw context.runtime.newTypeError(layout,
-                    context.runtime.getModule("FFI").getClass("StructLayout"));
+            throw typeError(context, layout, Access.getClass(context, "FFI", "StructLayout"));
         }
 
-        RubyClass klass = (RubyClass) structClass;
         klass.setFFIHandle(layout);
         klass.setInstanceVariable("@layout", layout);
 
@@ -269,17 +241,17 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "members", meta = true)
     public static IRubyObject members(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).members(context);
+        return getStructLayout(context, structClass).members(context);
     }
 
     @JRubyMethod(name = "offsets", meta = true)
     public static IRubyObject offsets(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).offsets(context);
+        return getStructLayout(context, structClass).offsets(context);
     }
 
     @JRubyMethod(name = "offset_of", meta = true)
     public static IRubyObject offset_of(ThreadContext context, IRubyObject structClass, IRubyObject fieldName) {
-        return getStructLayout(context.runtime, structClass).offset_of(context, fieldName);
+        return getStructLayout(context, structClass).offset_of(context, fieldName);
     }
 
 
@@ -287,12 +259,12 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.getMember(context.runtime, fieldName).get(context, this, getMemory());
+        return layout.getMember(context, fieldName).get(context, this, getMemory());
     }
 
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
-        layout.getMember(context.runtime, fieldName).put(context, this, getMemory(), fieldValue);
+        layout.getMember(context, fieldName).put(context, this, getMemory(), fieldValue);
 
         return fieldValue;
     }
@@ -348,19 +320,18 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name="null?")
     public IRubyObject null_p(ThreadContext context) {
-        return context.runtime.newBoolean(getMemory().getMemoryIO().isNull());
+        return asBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
-    @JRubyMethod(name = "order", required = 0)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context) {
-        return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+        return asSymbol(context, getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
-    @JRubyMethod(name = "order", required = 1)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder order = Util.parseByteOrder(context.runtime, byte_order);
-        return new Struct(context.runtime, getMetaClass(), layout,
-                getMemory().order(context.runtime, order));
+        return new Struct(context.runtime, getMetaClass(), layout, getMemory().order(context.runtime, order));
     }
 
     @JRubyMethod(name = "clear")

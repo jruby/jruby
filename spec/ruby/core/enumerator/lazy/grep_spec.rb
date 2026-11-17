@@ -20,17 +20,50 @@ describe "Enumerator::Lazy#grep" do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.grep(Object) {}
-    ret.should be_an_instance_of(Enumerator::Lazy)
-    ret.should_not equal(@yieldsmixed)
+    ret.should.instance_of?(Enumerator::Lazy)
+    ret.should_not.equal?(@yieldsmixed)
 
     ret = @yieldsmixed.grep(Object)
-    ret.should be_an_instance_of(Enumerator::Lazy)
-    ret.should_not equal(@yieldsmixed)
+    ret.should.instance_of?(Enumerator::Lazy)
+    ret.should_not.equal?(@yieldsmixed)
   end
 
   it "sets #size to nil" do
     Enumerator::Lazy.new(Object.new, 100) {}.grep(Object) {}.size.should == nil
     Enumerator::Lazy.new(Object.new, 100) {}.grep(Object).size.should == nil
+  end
+
+  it "sets $~ in the block" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep(/b/) { |e|
+      e.should == "abc"
+      $&.should == "b"
+    }.force
+
+    # Set by the failed match of "def"
+    $~.should == nil
+  end
+
+  it "sets $~ in the next block with each" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep(/b/).each { |e|
+      e.should == "abc"
+      $&.should == "b"
+    }
+
+    # Set by the failed match of "def"
+    $~.should == nil
+  end
+
+  it "sets $~ in the next block with map" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep(/b/).map { |e|
+      e.should == "abc"
+      $&.should == "b"
+    }.force
+
+    # Set by the failed match of "def"
+    $~.should == nil
   end
 
   describe "when the returned lazy enumerator is evaluated by Enumerable#first" do

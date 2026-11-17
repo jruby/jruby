@@ -11,15 +11,12 @@ class TestBacktraces < Test::Unit::TestCase
     @offset = __LINE__
     raise RuntimeError.new("Test")
   rescue Exception => ex
-    expectation = "+1:in `test_simple_exception'"
+    expectation = "+1:in 'test_simple_exception'"
     assert_exception_backtrace(expectation, ex)
   end
 
-  import org.jruby.test.TestHelper
-
   def test_native_java_backtrace
-    # TestHelperException extends RuntimeException
-    TestHelper.throwTestHelperException
+    org.jruby.test.TestHelper.throwTestHelperException
     fail 'did no raise exception'
   rescue NativeException => ex
     assert_equal '#<NativeException: org.jruby.test.TestHelper$TestHelperException: null>', ex.inspect
@@ -27,17 +24,15 @@ class TestBacktraces < Test::Unit::TestCase
     assert_not_nil ex.cause
     assert_instance_of org.jruby.test.TestHelper::TestHelperException, ex.cause
 
-    # ex.backtrace.each { |b| puts b.inspect }
-
     # starts with Java stack trace part :
-    _throwTestHelperException = /org.jruby.test.TestHelper\.java:\d+:in `throwTestHelperException'/
+    _throwTestHelperException = /org.jruby.test.TestHelper\.java:\d+:in 'throwTestHelperException'/
     assert_match _throwTestHelperException, ex.backtrace[0]
     java_trace = ex.backtrace.find_all do |trace|
       trace =~ _throwTestHelperException
     end
     assert_equal 1, java_trace.length # only once!
 
-    _test_native_java_backtrace = /test\/jruby\/test_backtraces.rb:\d+:in `test_native_java_backtrace'/
+    _test_native_java_backtrace = /test\/jruby\/test_backtraces.rb:\d+:in 'test_native_java_backtrace'/
 
     ruby_trace = ex.backtrace.find_all do |trace|
       trace =~ _test_native_java_backtrace
@@ -51,17 +46,16 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_native_java_backtrace2
-    # TestHelperException extends RuntimeException
-    sample_class = Java::JavaClass.for_name('org.jruby.javasupport.test.name.Sample')
+    sample_class = java.lang.Class.for_name('org.jruby.javasupport.test.name.Sample')
     constructor = sample_class.constructor(Java::int)
     constructor.new_instance 0
     begin
       constructor.new_instance(-1)
       fail 'did no raise exception'
     rescue NativeException => ex
-      assert_equal 'java.lang.IllegalStateException: param == -1', ex.message
-      assert_equal '#<NativeException: java.lang.IllegalStateException: param == -1>', ex.inspect
-      assert_instance_of java.lang.IllegalStateException, ex.cause
+      assert_equal 'java.lang.reflect.InvocationTargetException: param == -1', ex.message
+      assert_equal '#<NativeException: java.lang.reflect.InvocationTargetException: param == -1>', ex.inspect
+      assert_instance_of java.lang.reflect.InvocationTargetException, ex.cause
       # NOTE: backtrace will be messed in this case as long as there's filtering
       # clases org.jruby.javasupport.test.name.Sample "org.jruby.javasupport" prefix is considered internal
       # ex.backtrace.each { |b| puts "  #{b.inspect}" }
@@ -69,13 +63,11 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_java_backtrace
-    # TestHelperException extends RuntimeException
-    TestHelper.throwTestHelperException
+    org.jruby.test.TestHelper.throwTestHelperException
     fail 'did no raise exception'
   rescue java.lang.Exception => ex
+    # TestHelperException extends RuntimeException
     # assert_nil ex.message
-
-    # ex.backtrace.each { |b| puts b.inspect }
 
     _throwTestHelperException = /org.jruby.test.TestHelper.throwTestHelperException/
     assert_match _throwTestHelperException, ex.backtrace[0]
@@ -90,6 +82,22 @@ class TestBacktraces < Test::Unit::TestCase
     assert_equal 1, ruby_trace.length # only once!
   end
 
+  def test_java_backtrace_locations
+    org.jruby.test.TestHelper.throwTestHelperException
+    raise 'did no raise exception'
+  rescue java.lang.Exception => e
+    locations = e.backtrace_locations
+    assert_kind_of Array, locations
+    assert_kind_of Thread::Backtrace::Location, locations[0]
+
+    location = locations[0]
+    assert_equal 'org/jruby/test/TestHelper.java', location.path
+
+    assert_operator location.lineno, :>, 1
+    assert_equal 'throwTestHelperException', location.label
+    assert_match /TestHelper\.java:\d+:in .throwTestHelperException/, location.to_s
+  end
+
   def test_simple_exception_recursive
     @offset = __LINE__
     def meth(n)
@@ -100,9 +108,9 @@ class TestBacktraces < Test::Unit::TestCase
     meth(0)
   rescue Exception => ex
     expectation = %q{
-      +2:in `meth'
-      +4:in `meth'
-      +6:in `test_simple_exception_recursive'
+      +2:in 'meth'
+      +4:in 'meth'
+      +6:in 'test_simple_exception_recursive'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -117,10 +125,10 @@ class TestBacktraces < Test::Unit::TestCase
     meth(0)
   rescue Exception => ex
     expectation = %q{
-      +2:in `sub'
-      +2:in `meth'
-      +4:in `meth'
-      +6:in `test_native_exception_recursive'
+      +2:in 'sub'
+      +2:in 'meth'
+      +4:in 'meth'
+      +6:in 'test_native_exception_recursive'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -136,11 +144,11 @@ class TestBacktraces < Test::Unit::TestCase
     foo { bar { raise TypeError.new("HEH") } }
   rescue Exception => ex
     expectation = %q{
-      +7:in `test_exception_from_block'
-      +5:in `bar'
-      +7:in `test_exception_from_block'
-      +2:in `foo'
-      +7:in `test_exception_from_block'
+      +7:in 'test_exception_from_block'
+      +5:in 'bar'
+      +7:in 'test_exception_from_block'
+      +2:in 'foo'
+      +7:in 'test_exception_from_block'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -153,9 +161,9 @@ class TestBacktraces < Test::Unit::TestCase
     end
   rescue Exception => ex
     expectation = %q{
-      +2:in `test_exception_from_for'
-      +1:in `each'
-      +1:in `test_exception_from_for'
+      +2:in 'test_exception_from_for'
+      +1:in 'each'
+      +1:in 'test_exception_from_for'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -168,9 +176,9 @@ class TestBacktraces < Test::Unit::TestCase
     p.call
   rescue Exception => ex
     expectation = %q{
-      +1:in `test_exception_from_proc'
-      +3:in `call'
-      +3:in `test_exception_from_proc'
+      +1:in 'test_exception_from_proc'
+      +3:in 'call'
+      +3:in 'test_exception_from_proc'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -183,9 +191,9 @@ class TestBacktraces < Test::Unit::TestCase
     l.call
   rescue Exception => ex
     expectation = %q{
-      +1:in `test_exception_from_lambda'
-      +3:in `call'
-      +3:in `test_exception_from_lambda'
+      +1:in 'test_exception_from_lambda'
+      +3:in 'call'
+      +3:in 'test_exception_from_lambda'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -195,8 +203,8 @@ class TestBacktraces < Test::Unit::TestCase
     [1,2,3] + 5
   rescue Exception => ex
     expectation = %q{
-      +1:in `+'
-      +1:in `test_exception_from_array_plus'
+      +1:in '+'
+      +1:in 'test_exception_from_array_plus'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -207,8 +215,8 @@ class TestBacktraces < Test::Unit::TestCase
     "hello" + nil
   rescue Exception => ex
     expectation = %q{
-      +1:in `+'
-      +1:in `test_exception_from_string_plus'
+      +1:in '+'
+      +1:in 'test_exception_from_string_plus'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -218,8 +226,8 @@ class TestBacktraces < Test::Unit::TestCase
     "hello".sub(/l/, 5)
   rescue Exception => ex
     expectation = %q{
-      +1:in `sub'
-      +1:in `test_exception_from_string_sub'
+      +1:in 'sub'
+      +1:in 'test_exception_from_string_sub'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -229,8 +237,8 @@ class TestBacktraces < Test::Unit::TestCase
     1/0
   rescue Exception => ex
     expectation = %q{
-      +1:in `/'
-      +1:in `test_zero_devision_exception'
+      +1:in '/'
+      +1:in 'test_zero_devision_exception'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -240,9 +248,9 @@ class TestBacktraces < Test::Unit::TestCase
     "hello".__send__(:sub, /l/, 5)
   rescue Exception => ex
     expectation = %q{
-      +1:in `sub'
-      +1:in `__send__'
-      +1:in `test_exeption_from_object_send'
+      +1:in 'sub'
+      +1:in '__send__'
+      +1:in 'test_exeption_from_object_send'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -251,7 +259,7 @@ class TestBacktraces < Test::Unit::TestCase
     @offset = __LINE__
     "hello".sub
   rescue Exception => ex
-    expectation = "+1:in `sub'"
+    expectation = "+1:in 'sub'"
     assert_exception_backtrace(expectation, ex)
   end
 
@@ -261,10 +269,10 @@ class TestBacktraces < Test::Unit::TestCase
       eval("raise RuntimeError.new")
     }
     expectation = %Q{
-      +1:in `test_exception_from_eval'
-      #{__FILE__}:#{@get_exception_yield_line}:in `eval'
-      +1:in `test_exception_from_eval'
-      #{__FILE__}:#{@get_exception_yield_line}:in `get_exception'
+      +1:in 'test_exception_from_eval'
+      #{__FILE__}:#{@get_exception_yield_line}:in 'eval'
+      +1:in 'test_exception_from_eval'
+      #{__FILE__}:#{@get_exception_yield_line}:in 'get_exception'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -275,12 +283,12 @@ class TestBacktraces < Test::Unit::TestCase
       eval("def foo; yield; end; foo { raise RuntimeError.new }")
     }
     expectation = %Q{
-      +1:in `test_exception_from_block_inside_eval'
-      (eval):1:in `foo'
-      (eval):1:in `test_exception_from_block_inside_eval'
-      #{__FILE__}:#{@get_exception_yield_line}:in `eval'
-      +1:in `test_exception_from_block_inside_eval'
-      #{__FILE__}:#{@get_exception_yield_line}:in `get_exception'
+      +1:in 'test_exception_from_block_inside_eval'
+      (eval):1:in 'foo'
+      (eval):1:in 'test_exception_from_block_inside_eval'
+      #{__FILE__}:#{@get_exception_yield_line}:in 'eval'
+      +1:in 'test_exception_from_block_inside_eval'
+      #{__FILE__}:#{@get_exception_yield_line}:in 'get_exception'
     }
     assert_exception_backtrace(expectation, ex)
   end
@@ -305,7 +313,7 @@ class TestBacktraces < Test::Unit::TestCase
     # This check is not fully MRI-compatible (MRI reports more frames),
     # but at list this is something.
     expectation = %Q{
-      +2:in `test_exception_from_thread_with_abort_on_exception_true'
+      +2:in 'test_exception_from_thread_with_abort_on_exception_true'
     }
     assert_exception_backtrace(expectation, ex)
   ensure

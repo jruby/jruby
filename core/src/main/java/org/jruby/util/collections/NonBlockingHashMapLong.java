@@ -4,14 +4,12 @@
  */
 package org.jruby.util.collections;
 
-import sun.misc.Unsafe;
-
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A lock-free alternate implementation of {@link java.util.concurrent.ConcurrentHashMap}
@@ -27,26 +25,26 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * Linear scaling up to all cpus has been observed on a 32-way Sun US2 box,
  * 32-way Sun Niagra box, 8-way Intel box and a 4-way Power box.
  *
- * <p><strong>The main benefit of this class</strong> over using plain {@link
- * org.cliffc.high_scale_lib.NonBlockingHashMap} with {@link Long} keys is
+ * <p><strong>The main benefit of this class</strong> over using plain
+ * NonBlockingHashMap with Long keys is
  * that it avoids the auto-boxing and unboxing costs.  Since auto-boxing is
  * <em>automatic</em>, it is easy to accidentally cause auto-boxing and negate
  * the space and speed benefits.
  *
  * <p>This class obeys the same functional specification as {@link
  * java.util.Hashtable}, and includes versions of methods corresponding to
- * each method of <tt>Hashtable</tt>.  However, even though all operations are
+ * each method of <code>Hashtable</code>.  However, even though all operations are
  * thread-safe, operations do <em>not</em> entail locking and there is
  * <em>not</em> any support for locking the entire table in a way that
  * prevents all access.  This class is fully interoperable with
- * <tt>Hashtable</tt> in programs that rely on its thread safety but not on
+ * <code>Hashtable</code> in programs that rely on its thread safety but not on
  * its synchronization details.
  *
- * <p> Operations (including <tt>put</tt>) generally do not block, so may
- * overlap with other update operations (including other <tt>puts</tt> and
- * <tt>removes</tt>).  Retrievals reflect the results of the most recently
+ * <p> Operations (including <code>put</code>) generally do not block, so may
+ * overlap with other update operations (including other <code>puts</code> and
+ * <code>removes</code>).  Retrievals reflect the results of the most recently
  * <em>completed</em> update operations holding upon their onset.  For
- * aggregate operations such as <tt>putAll</tt>, concurrent retrievals may
+ * aggregate operations such as <code>putAll</code>, concurrent retrievals may
  * reflect insertion or removal of only some entries.  Similarly, Iterators
  * and Enumerations return elements reflecting the state of the hash table at
  * some point at or since the creation of the iterator/enumeration.  They do
@@ -67,10 +65,11 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * interfaces.
  *
  * <p> Like {@link Hashtable} but unlike {@link HashMap}, this class
- * does <em>not</em> allow <tt>null</tt> to be used as a value.
+ * does <em>not</em> allow <code>null</code> to be used as a value.
  *
  *
  * @author Cliff Click
+ * @see <a href="https://github.com/boundary/high-scale-lib/blob/master/src/main/java/org/cliffc/high_scale_lib/NonBlockingHashMap.java">NonBlockingHashMap</a>
  * @param <TypeV> the type of mapped values
  */
 public class NonBlockingHashMapLong<TypeV>
@@ -81,67 +80,27 @@ public class NonBlockingHashMapLong<TypeV>
 
   private static final int REPROBE_LIMIT = 10; // Too many reprobes then force a table-resize
 
-  private static final Unsafe _unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
   // --- Bits to allow Unsafe access to arrays
-  private static final int _Obase;
-  private static final int _Oscale;
-  private static final int _Lbase;
-  private static final int _Lscale;
-  // --- Bits to allow Unsafe CAS'ing of the CHM field
-  //private static final long _chm_offset;
-  //private static final long _val_1_offset;
+  private static final VarHandle objectArrayHandle = MethodHandles.arrayElementVarHandle(Object[].class);
+  static final VarHandle longArrayHandle = MethodHandles.arrayElementVarHandle(long[].class);
+  private static final VarHandle chmHandle;
+  private static final VarHandle val1Handle;
 
   static {
-      if ( _unsafe != null ) {
-        _Obase  = _unsafe.arrayBaseOffset(Object[].class);
-        _Oscale = _unsafe.arrayIndexScale(Object[].class);
-        _Lbase  = _unsafe.arrayBaseOffset(long[].class);
-        _Lscale = _unsafe.arrayIndexScale(long[].class);
-
-        //Field f; long offset;
-        //try {
-        //    f = NonBlockingHashMapLong.class.getDeclaredField("_chm");
-        //    offset = _unsafe.objectFieldOffset(f);
-        //}
-        //catch ( java.lang.NoSuchFieldException e ) { offset = 0; }
-        //_chm_offset = offset;
-        //try {
-        //    f = NonBlockingHashMapLong.class.getDeclaredField("_val_1");
-        //    offset = _unsafe.objectFieldOffset(f);
-        //}
-        //catch( java.lang.NoSuchFieldException e ) { offset = 0; }
-        //_val_1_offset = offset;
-      }
-      else {
-        _Obase = _Oscale = _Lbase = _Lscale = 0;
-        //_chm_offset = _val_1_offset = 0;
-      }
+    try {
+      chmHandle = MethodHandles.lookup().findVarHandle(NonBlockingHashMapLong.class, "_chm", CHM.class);
+      val1Handle = MethodHandles.lookup().findVarHandle(NonBlockingHashMapLong.class, "_val_1", Object.class);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  //private final boolean CAS( final long offset, final Object old, final Object nnn ) {
-  //  return _unsafe.compareAndSwapObject(this, offset, old, nnn );
-  //}
-
-  private static final AtomicReferenceFieldUpdater<NonBlockingHashMapLong, CHM> _chmUpdater =
-      AtomicReferenceFieldUpdater.newUpdater(NonBlockingHashMapLong.class, CHM.class, "_chm");
-
-  private final boolean CAS_chm( final CHM old, final CHM nnn ) {
-      return _chmUpdater.compareAndSet(this, old, nnn);
-      //final long offset = _chm_offset;
-      //return offset != 0 ?
-          //_unsafe.compareAndSwapObject(this, offset, old, nnn ) :
-            //CAS_chmFallback(old, nnn);
+  private boolean CAS_chm( final CHM old, final CHM nnn ) {
+    return chmHandle.compareAndSet(this, old, nnn);
   }
 
-  private static final AtomicReferenceFieldUpdater<NonBlockingHashMapLong, Object> _val_1Updater =
-      AtomicReferenceFieldUpdater.newUpdater(NonBlockingHashMapLong.class, Object.class, "_val_1");
-
-  private final boolean CAS_val_1( final Object old, final Object nnn ) {
-      return _val_1Updater.compareAndSet(this, old, nnn);
-      //final long offset = _val_1_offset;
-      //return offset != 0 ?
-          //_unsafe.compareAndSwapObject(this, offset, old, nnn ) :
-            //CAS_val_1Fallback(old, nnn);
+  private boolean CAS_val_1( final Object old, final Object nnn ) {
+    return val1Handle.compareAndSet(this, old, nnn);
   }
 
   // --- Adding a 'prime' bit onto Values via wrapping with a junk wrapper class
@@ -267,7 +226,7 @@ public class NonBlockingHashMapLong<TypeV>
    *  @return the number of key-value mappings in this map */
   public int     size       ( )                     { return (_val_1==TOMBSTONE?0:1) + (int)_chm.size(); }
   /** Tests if the key in the table.
-   * @return <tt>true</tt> if the key is in the table */
+   * @return <code>true</code> if the key is in the table */
   public boolean containsKey( long key )            { return get(key) != null; }
 
   /** Legacy method testing if some key maps into the specified value in this
@@ -276,7 +235,7 @@ public class NonBlockingHashMapLong<TypeV>
    *  class {@link java.util.Hashtable}, which supported this method prior to
    *  introduction of the Java Collections framework.
    *  @param  val a value to search for
-   *  @return <tt>true</tt> if this map maps one or more keys to the specified value
+   *  @return <code>true</code> if this map maps one or more keys to the specified value
    *  @throws NullPointerException if the specified value is null */
   public boolean contains   ( Object val )          { return containsValue(val); }
 
@@ -285,8 +244,8 @@ public class NonBlockingHashMapLong<TypeV>
    *  with a key that is equal to the original key.
    *  @param key key with which the specified value is to be associated
    *  @param val value to be associated with the specified key
-   *  @return the previous value associated with <tt>key</tt>, or
-   *          <tt>null</tt> if there was no mapping for <tt>key</tt>
+   *  @return the previous value associated with <code>key</code>, or
+   *          <code>null</code> if there was no mapping for <code>key</code>
    *  @throws NullPointerException if the specified value is null  */
   public TypeV   put        ( long key, TypeV val ) { return putIfMatch( key,      val,NO_MATCH_OLD);}
 
@@ -294,14 +253,14 @@ public class NonBlockingHashMapLong<TypeV>
    *  Useful to ensure that only a single mapping for the key exists, even if
    *  many threads are trying to create the mapping in parallel.
    *  @return the previous value associated with the specified key,
-   *         or <tt>null</tt> if there was no mapping for the key
+   *         or <code>null</code> if there was no mapping for the key
    *  @throws NullPointerException if the specified is value is null  */
   public TypeV   putIfAbsent( long key, TypeV val ) { return putIfMatch( key,      val,TOMBSTONE   );}
 
   /** Removes the key (and its corresponding value) from this map.
     * This method does nothing if the key is not in the map.
-    * @return the previous value associated with <tt>key</tt>, or
-    *         <tt>null</tt> if there was no mapping for <tt>key</tt>*/
+    * @return the previous value associated with <code>key</code>, or
+    *         <code>null</code> if there was no mapping for <code>key</code>*/
   public TypeV   remove     ( long key )            { return putIfMatch( key,TOMBSTONE,NO_MATCH_OLD);}
 
   /** Atomically do a {@link #remove(long)} if-and-only-if the key is mapped
@@ -345,11 +304,11 @@ public class NonBlockingHashMapLong<TypeV>
     CAS_val_1(_val_1, TOMBSTONE);
   }
 
-  /** Returns <tt>true</tt> if this Map maps one or more keys to the specified
+  /** Returns <code>true</code> if this Map maps one or more keys to the specified
    *  value.  <em>Note</em>: This method requires a full internal traversal of the
    *  hash table and is much slower than {@link #containsKey}.
    *  @param val value whose presence in this map is to be tested
-   *  @return <tt>true</tt> if this Map maps one or more keys to the specified value
+   *  @return <code>true</code> if this Map maps one or more keys to the specified value
    *  @throws NullPointerException if the specified value is null */
   public boolean containsValue( Object val ) {
     if( val == null ) return false;
@@ -445,12 +404,11 @@ public class NonBlockingHashMapLong<TypeV>
     // the required memory orderings.  It monotonically transits from null to
     // set (once).
     volatile CHM _newchm;
-    private static final AtomicReferenceFieldUpdater<CHM,CHM> _newchmUpdater =
-      AtomicReferenceFieldUpdater.newUpdater(CHM.class,CHM.class, "_newchm");
-    // Set the _newchm field if we can.  AtomicUpdaters do not fail spuriously.
-    final boolean CAS_newchm( CHM newchm ) {
-      return _newchmUpdater.compareAndSet(this,null,newchm);
+    private static final VarHandle newchmHandle;
+    final boolean CAS_newchm(CHM newchm) {
+      return newchmHandle.compareAndSet(this, null, newchm);
     }
+
     // Sometimes many threads race to create a new very large table.  Only 1
     // wins the race, but the losers all allocate a junk large table with
     // hefty allocation costs.  Attempt to control the overkill here by
@@ -464,42 +422,28 @@ public class NonBlockingHashMapLong<TypeV>
     // could in parallel initialize the array.  Java does not allow
     // un-initialized array creation (especially of ref arrays!).
     volatile long _resizers;    // count of threads attempting an initial resize
-    private static final AtomicLongFieldUpdater<CHM> _resizerUpdater =
-      AtomicLongFieldUpdater.newUpdater(CHM.class, "_resizers");
+    private static final VarHandle resizerHandle;
 
-    // --- key,val -------------------------------------------------------------
+    static {
+      try {
+        newchmHandle = MethodHandles.lookup().findVarHandle(CHM.class, "_newchm", CHM.class);
+        resizerHandle = MethodHandles.lookup().findVarHandle(CHM.class, "_resizers", long.class);
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+      // --- key,val -------------------------------------------------------------
     // Access K,V for a given idx
     private final boolean CAS_key( int idx, long old, long key ) {
         assert idx >= 0 && idx < _keys.length;
-        if ( _unsafe != null ) {
-            final int rawIndex = _Lbase + idx * _Lscale;
-            return _unsafe.compareAndSwapLong( _keys, rawIndex, old, key );
-        }
-        return CAS_keyFallback( idx, old, key );
-    }
-    private final boolean CAS_keyFallback( int idx, long old, long key ) {
-        final long[] keys = this._keys;
-        synchronized ( keys ) { // TODO: not really same atomic semantics!
-            if ( keys[idx] != old ) return false;
-            keys[idx] = key;
-        }
-        return true;
+        return longArrayHandle.compareAndSet(_keys, idx, old, key);
     }
     private final boolean CAS_val( int idx, Object old, Object val ) {
         assert idx >= 0 && idx < _vals.length;
-        if ( _unsafe != null ) {
-            final int rawIndex = _Obase + idx * _Oscale;
-            return _unsafe.compareAndSwapObject( _vals, rawIndex, old, val );
-        }
-        return CAS_valFallback( idx, old, val );
-    }
-    private final boolean CAS_valFallback( int idx, Object old, Object val ) {
-        final Object[] vals = this._vals;
-        synchronized ( vals ) { // TODO: not really same atomic semantics!
-            if ( vals[idx] != old ) return false;
-            vals[idx] = val;
-        }
-        return true;
+        return objectArrayHandle.compareAndSet(_vals, idx, old, val);
     }
 
     final long   [] _keys;
@@ -761,7 +705,7 @@ public class NonBlockingHashMapLong<TypeV>
       // handful - lest we have 750 threads all trying to allocate a giant
       // resized array.
       long r = _resizers;
-      while( !_resizerUpdater.compareAndSet(this,r,r+1) )
+      while( !resizerHandle.compareAndSet(this,r,r+1) )
         r = _resizers;
       // Size calculation: 2 words (K+V) per table entry, plus a handful.  We
       // guess at 32-bit pointers; 64-bit pointers screws up the size calc by
@@ -811,15 +755,21 @@ public class NonBlockingHashMapLong<TypeV>
     // the counter simply wraps and work is copied duplicately until somebody
     // somewhere completes the count.
     volatile long _copyIdx = 0;
-    static private final AtomicLongFieldUpdater<CHM> _copyIdxUpdater =
-      AtomicLongFieldUpdater.newUpdater(CHM.class, "_copyIdx");
-
+    static private final VarHandle copyIdxHandle;
     // Work-done reporting.  Used to efficiently signal when we can move to
     // the new table.  From 0 to len(oldkvs) refers to copying from the old
     // table to the new.
     volatile long _copyDone= 0;
-    static private final AtomicLongFieldUpdater<CHM> _copyDoneUpdater =
-      AtomicLongFieldUpdater.newUpdater(CHM.class, "_copyDone");
+    static private final VarHandle copyDoneHandle;
+
+    static {
+      try {
+        copyIdxHandle = MethodHandles.lookup().findVarHandle(CHM.class, "_copyIdx", long.class);
+        copyDoneHandle = MethodHandles.lookup().findVarHandle(CHM.class, "_copyDone", long.class);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     // --- help_copy_impl ----------------------------------------------------
     // Help along an existing resize operation.  We hope its the top-level
@@ -848,7 +798,7 @@ public class NonBlockingHashMapLong<TypeV>
         if( panic_start == -1 ) { // No panic?
           copyidx = (int)_copyIdx;
           while( copyidx < (oldlen<<1) && // 'panic' check
-                 !_copyIdxUpdater.compareAndSet(this,copyidx,copyidx+MIN_COPY_WORK) )
+                 !copyIdxHandle.compareAndSet(this,copyidx,copyidx+MIN_COPY_WORK) )
             copyidx = (int)_copyIdx;     // Re-read
           if( !(copyidx < (oldlen<<1)) ) // Panic!
             panic_start = copyidx;       // Record where we started to panic-copy
@@ -907,7 +857,7 @@ public class NonBlockingHashMapLong<TypeV>
       long nowDone = copyDone+workdone;
       assert nowDone <= oldlen;
       if( workdone > 0 ) {
-        while( !_copyDoneUpdater.compareAndSet(this,copyDone,nowDone) ) {
+        while( !copyDoneHandle.compareAndSet(this,copyDone,nowDone) ) {
           copyDone = _copyDone;   // Reload, retry
           nowDone = copyDone+workdone;
           assert nowDone <= oldlen;
@@ -1069,11 +1019,11 @@ public class NonBlockingHashMapLong<TypeV>
    *  The collection is backed by the map, so changes to the map are reflected
    *  in the collection, and vice-versa.  The collection supports element
    *  removal, which removes the corresponding mapping from this map, via the
-   *  <tt>Iterator.remove</tt>, <tt>Collection.remove</tt>,
-   *  <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt> operations.
-   *  It does not support the <tt>add</tt> or <tt>addAll</tt> operations.
+   *  <code>Iterator.remove</code>, <code>Collection.remove</code>,
+   *  <code>removeAll</code>, <code>retainAll</code>, and <code>clear</code> operations.
+   *  It does not support the <code>add</code> or <code>addAll</code> operations.
    *
-   *  <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
+   *  <p>The view's <code>iterator</code> is a "weakly consistent" iterator that
    *  will never throw {@link ConcurrentModificationException}, and guarantees
    *  to traverse elements as they existed upon construction of the iterator,
    *  and may (but is not guaranteed to) reflect any modifications subsequent
@@ -1119,11 +1069,11 @@ public class NonBlockingHashMapLong<TypeV>
    *  set is backed by the map, so changes to the map are reflected in the
    *  set, and vice-versa.  The set supports element removal, which removes
    *  the corresponding mapping from this map, via the
-   *  <tt>Iterator.remove</tt>, <tt>Set.remove</tt>, <tt>removeAll</tt>,
-   *  <tt>retainAll</tt>, and <tt>clear</tt> operations.  It does not support
-   *  the <tt>add</tt> or <tt>addAll</tt> operations.
+   *  <code>Iterator.remove</code>, <code>Set.remove</code>, <code>removeAll</code>,
+   *  <code>retainAll</code>, and <code>clear</code> operations.  It does not support
+   *  the <code>add</code> or <code>addAll</code> operations.
    *
-   *  <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
+   *  <p>The view's <code>iterator</code> is a "weakly consistent" iterator that
    *  will never throw {@link ConcurrentModificationException}, and guarantees
    *  to traverse elements as they existed upon construction of the iterator,
    *  and may (but is not guaranteed to) reflect any modifications subsequent
@@ -1162,11 +1112,11 @@ public class NonBlockingHashMapLong<TypeV>
    *  set is backed by the map, so changes to the map are reflected in the
    *  set, and vice-versa.  The set supports element removal, which removes
    *  the corresponding mapping from the map, via the
-   *  <tt>Iterator.remove</tt>, <tt>Set.remove</tt>, <tt>removeAll</tt>,
-   *  <tt>retainAll</tt>, and <tt>clear</tt> operations.  It does not support
-   *  the <tt>add</tt> or <tt>addAll</tt> operations.
+   *  <code>Iterator.remove</code>, <code>Set.remove</code>, <code>removeAll</code>,
+   *  <code>retainAll</code>, and <code>clear</code> operations.  It does not support
+   *  the <code>add</code> or <code>addAll</code> operations.
    *
-   *  <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator
+   *  <p>The view's <code>iterator</code> is a "weakly consistent" iterator
    *  that will never throw {@link ConcurrentModificationException},
    *  and guarantees to traverse elements as they existed upon
    *  construction of the iterator, and may (but is not guaranteed to)
@@ -1174,11 +1124,13 @@ public class NonBlockingHashMapLong<TypeV>
    *
    *  <p><strong>Warning:</strong> the iterator associated with this Set
    *  requires the creation of {@link java.util.Map.Entry} objects with each
-   *  iteration.  The {@link org.cliffc.high_scale_lib.NonBlockingHashMap}
+   *  iteration.  The NonBlockingHashMap
    *  does not normally create or using {@link java.util.Map.Entry} objects so
    *  they will be created solely to support this iteration.  Iterating using
    *  {@link #keySet} or {@link #values} will be more efficient.  In addition,
    *  this version requires <strong>auto-boxing</strong> the keys.
+   *
+   * @see <a href="https://github.com/boundary/high-scale-lib/blob/master/src/main/java/org/cliffc/high_scale_lib/NonBlockingHashMap.java">NonBlockingHashMap</a>
    */
   public Set<Map.Entry<Long,TypeV>> entrySet() {
     return new AbstractSet<Map.Entry<Long,TypeV>>() {
@@ -1356,9 +1308,17 @@ class ConcurrentAutoTable implements Serializable {
 
   // The underlying array of concurrently updated long counters
   private volatile CAT _cat = new CAT(null,4/*Start Small, Think Big!*/,0L);
-  private static final AtomicReferenceFieldUpdater<ConcurrentAutoTable,CAT> _catUpdater =
-    AtomicReferenceFieldUpdater.newUpdater(ConcurrentAutoTable.class,CAT.class, "_cat");
-  private boolean CAS_cat( CAT oldcat, CAT newcat ) { return _catUpdater.compareAndSet(this,oldcat,newcat); }
+  private static final VarHandle catHandle;
+
+    static {
+        try {
+            catHandle = MethodHandles.lookup().findVarHandle(ConcurrentAutoTable.class, "_cat", CAT.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean CAS_cat( CAT oldcat, CAT newcat ) { return catHandle.compareAndSet(this,oldcat,newcat); }
 
   // Hash spreader
   private static final int hash() {
@@ -1374,28 +1334,9 @@ class ConcurrentAutoTable implements Serializable {
   // --- CAT -----------------------------------------------------------------
   private static class CAT implements Serializable {
 
-    // Unsafe crud: get a function which will CAS arrays
-    private static final Unsafe _unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
-
-    private static final int _Lbase;
-    private static final int _Lscale;
-    static {
-        if ( _unsafe != null ) {
-            _Lbase  = _unsafe.arrayBaseOffset(long[].class);
-            _Lscale = _unsafe.arrayIndexScale(long[].class);
-        }
-        else {
-            _Lbase = _Lscale = 0;
-        }
-    }
-
     private final static boolean CAS( long[] A, int idx, long old, long nnn ) {
         assert idx >= 0 && idx < A.length;
-        if ( _unsafe != null ) {
-            final int rawIndex = _Lbase + idx * _Lscale;
-            return _unsafe.compareAndSwapLong( A, rawIndex, old, nnn );
-        }
-        return CASnoUnsafe(A, idx, old, nnn);
+        return NonBlockingHashMapLong.longArrayHandle.compareAndSet(A, idx, old, nnn );
     }
 
     private final static boolean CASnoUnsafe( long[] A, int idx, long old, long nnn ) {
@@ -1407,8 +1348,15 @@ class ConcurrentAutoTable implements Serializable {
     }
 
     volatile long _resizers;    // count of threads attempting a resize
-    static private final AtomicLongFieldUpdater<CAT> _resizerUpdater =
-      AtomicLongFieldUpdater.newUpdater(CAT.class, "_resizers");
+    static private final VarHandle resizerHandle;
+
+    static {
+      try {
+        resizerHandle = MethodHandles.lookup().findVarHandle(CAT.class, "_resizers", long.class);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     private final CAT _next;
     private volatile long _sum_cache;
@@ -1452,7 +1400,7 @@ class ConcurrentAutoTable implements Serializable {
       // Too much contention; double array size in an effort to reduce contention
       long r = _resizers;
       int newbytes = (t.length<<1)<<3/*word to bytes*/;
-      while( !_resizerUpdater.compareAndSet(this,r,r+newbytes) )
+      while( !resizerHandle.compareAndSet(this,r,r+newbytes) )
         r = _resizers;
       r += newbytes;
       if( master._cat != this ) return old; // Already doubled, don't bother
@@ -1558,12 +1506,13 @@ class ConcurrentAutoTable implements Serializable {
 }
 
 /**
- * A simple high-performance counter.  Merely renames the extended {@link
- * org.cliffc.high_scale_lib.ConcurrentAutoTable} class to be more obvious.
- * {@link org.cliffc.high_scale_lib.ConcurrentAutoTable} already has a decent
+ * A simple high-performance counter.  Merely renames the extended
+ * ConcurrentAutoTable class to be more obvious.
+ * ConcurrentAutoTable already has a decent
  * counting API.
  *
- * @since 1.5
  * @author Cliff Click
+ * @see <a href="https://github.com/boundary/high-scale-lib/blob/master/src/main/java/org/cliffc/high_scale_lib/ConcurrentAutoTable.java">ConcurrentAutoTable</a>
+ * @since 1.5
  */
 final class Counter extends ConcurrentAutoTable { }

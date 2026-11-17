@@ -3,7 +3,7 @@ require_relative 'fixtures/classes'
 
 describe "Math.tan" do
   it "returns a float" do
-    Math.tan(1.35).should be_kind_of(Float)
+    Math.tan(1.35).should.is_a?(Float)
   end
 
   it "returns the tangent of the argument" do
@@ -14,20 +14,20 @@ describe "Math.tan" do
   end
 
   it "returns NaN if called with +-Infinity" do
-    Math.tan(infinity_value).nan?.should == true
-    Math.tan(-infinity_value).nan?.should == true
+    Math.tan(infinity_value).should.nan?
+    Math.tan(-infinity_value).should.nan?
   end
 
   it "raises a TypeError if the argument cannot be coerced with Float()" do
-    lambda { Math.tan("test") }.should raise_error(TypeError)
+    -> { Math.tan("test") }.should.raise(TypeError)
   end
 
   it "returns NaN given NaN" do
-    Math.tan(nan_value).nan?.should be_true
+    Math.tan(nan_value).nan?.should == true
   end
 
   it "raises a TypeError if the argument is nil" do
-    lambda { Math.tan(nil) }.should raise_error(TypeError)
+    -> { Math.tan(nil) }.should.raise(TypeError)
   end
 
   it "accepts any argument that can be coerced with Float()" do

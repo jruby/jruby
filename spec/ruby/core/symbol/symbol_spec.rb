@@ -6,14 +6,14 @@ describe "Symbol" do
   end
 
   it ".allocate raises a TypeError" do
-    lambda do
+    -> do
       Symbol.allocate
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it ".new is undefined" do
-    lambda do
+    -> do
       Symbol.new
-    end.should raise_error(NoMethodError)
+    end.should.raise(NoMethodError)
   end
 end

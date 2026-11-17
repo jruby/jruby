@@ -1,3 +1,2 @@
-fails:ENV.[]= returns the value
-fails:ENV.[]= raises Errno::EINVAL when the key contains the '=' character
-fails:ENV.[]= raises Errno::EINVAL when the key is an empty string
+fails:ENV.[]= supports concurrent access from multiple threads
+fails:ENV.[]= accepts a BINARY variable name containing non-ASCII bytes

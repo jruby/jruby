@@ -4,7 +4,7 @@ module JRuby
       env, prog, opts = nil
 
       if args.size < 1
-        raise ArgumentError, 'wrong number of arguments'
+        raise ArgumentError, 'wrong number of arguments (given 0, expected 1+)'
       end
 
       # peel off options

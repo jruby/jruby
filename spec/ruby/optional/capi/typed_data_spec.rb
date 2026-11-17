@@ -30,7 +30,7 @@ describe "CApiWrappedTypedStruct" do
 
   it "throws an exception for a wrong type" do
     a = @s.typed_wrap_struct(1024)
-    lambda { @s.typed_get_struct_other(a) }.should raise_error(TypeError)
+    -> { @s.typed_get_struct_other(a) }.should.raise(TypeError)
   end
 
   it "unwraps data for a parent type" do
@@ -55,6 +55,48 @@ describe "CApiWrappedTypedStruct" do
     it "returns the struct data" do
       a = @s.typed_wrap_struct(1024)
       @s.typed_get_struct_data_ptr(a).should == 1024
+    end
+  end
+
+  describe "rb_check_type" do
+    it "raises an exception when checking typed data objects" do
+      -> {
+        a = @s.typed_wrap_struct(1024)
+        @s.rb_check_type(a, a)
+      }.should.raise(TypeError) { |e|
+        e.message.should == 'wrong argument type Object (expected Data)'
+      }
+    end
+  end
+
+  describe "rb_check_typeddata" do
+    it "returns data pointer when the struct has the given type" do
+      a = @s.typed_wrap_struct(1024)
+      @s.rb_check_typeddata_same_type(a).should == true
+    end
+
+    it "returns data pointer when the parent struct has the given type" do
+      a = @s.typed_wrap_struct(1024)
+      @s.rb_check_typeddata_same_type_parent(a).should == true
+    end
+
+    it "raises an error for different types" do
+      a = @s.typed_wrap_struct(1024)
+      -> { @s.rb_check_typeddata_different_type(a) }.should.raise(TypeError)
+    end
+  end
+
+  ruby_version_is ""..."4.1" do
+    describe "RTYPEDDATA_P" do
+      it "returns true for a typed data" do
+        a = @s.typed_wrap_struct(1024)
+        @s.RTYPEDDATA_P(a).should == true
+      end
+
+      it "returns false for an untyped data object" do
+        a = @s.untyped_wrap_struct(1024)
+        @s.RTYPEDDATA_P(a).should == false
+      end
     end
   end
 end

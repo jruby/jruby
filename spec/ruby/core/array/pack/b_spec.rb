@@ -1,21 +1,24 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
 require_relative 'shared/basic'
 require_relative 'shared/encodings'
-require_relative 'shared/taint'
 
 describe "Array#pack with format 'B'" do
   it_behaves_like :array_pack_basic, 'B'
   it_behaves_like :array_pack_basic_non_float, 'B'
   it_behaves_like :array_pack_arguments, 'B'
   it_behaves_like :array_pack_hex, 'B'
-  it_behaves_like :array_pack_taint, 'B'
 
   it "calls #to_str to convert an Object to a String" do
-    obj = mock("pack H string")
+    obj = mock("pack B string")
     obj.should_receive(:to_str).and_return("``abcdef")
     [obj].pack("B*").should == "\x2a"
+  end
+
+  it "will not implicitly convert a number to a string" do
+    -> { [0].pack('B') }.should.raise(TypeError)
+    -> { [0].pack('b') }.should.raise(TypeError)
   end
 
   it "encodes one bit for each character starting with the most significant bit" do
@@ -47,8 +50,8 @@ describe "Array#pack with format 'B'" do
     ].should be_computed_by(:pack, "B*")
   end
 
-  it "returns an ASCII-8BIT string" do
-    ["1"].pack("B").encoding.should == Encoding::ASCII_8BIT
+  it "returns a binary string" do
+    ["1"].pack("B").encoding.should == Encoding::BINARY
   end
 
   it "encodes the string as a sequence of bytes" do
@@ -61,7 +64,6 @@ describe "Array#pack with format 'b'" do
   it_behaves_like :array_pack_basic_non_float, 'b'
   it_behaves_like :array_pack_arguments, 'b'
   it_behaves_like :array_pack_hex, 'b'
-  it_behaves_like :array_pack_taint, 'b'
 
   it "calls #to_str to convert an Object to a String" do
     obj = mock("pack H string")
@@ -98,8 +100,8 @@ describe "Array#pack with format 'b'" do
     ].should be_computed_by(:pack, "b*")
   end
 
-  it "returns an ASCII-8BIT string" do
-    ["1"].pack("b").encoding.should == Encoding::ASCII_8BIT
+  it "returns a binary string" do
+    ["1"].pack("b").encoding.should == Encoding::BINARY
   end
 
   it "encodes the string as a sequence of bytes" do

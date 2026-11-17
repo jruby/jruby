@@ -1,13 +1,18 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ir.runtime.IRReturnJump;
-import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
-import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.Integer;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Stringable;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -18,21 +23,27 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
+import static org.jruby.ir.IRFlags.REQUIRES_BACKREF;
 import static org.jruby.ir.IRFlags.REQUIRES_CLASS;
 
 public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public enum Methods {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
-        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
+        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH,
+        TRACE_RESCUE, RESET_GVAR_UNDERSCORE, CAPTURE_CALL_INFO, RESTORE_CALL_INFO;
 
-        public static Methods fromOrdinal(int value) {
-            return value < 0 || value >= values().length ? null : values()[value];
+        private static final Methods[] VALUES = values();
+
+        static Methods fromOrdinal(int value) {
+            return value < 0 || value >= VALUES.length ? null : VALUES[value];
         }
     }
 
-    Methods    helperMethod;
+    final Methods    helperMethod;
 
     public RuntimeHelperCall(Variable result, Methods helperMethod, Operand[] args) {
         super(Operation.RUNTIME_HELPER, result, args);
@@ -47,20 +58,59 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return helperMethod;
     }
 
+    public boolean hasSideEffects() {
+        return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
+            case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
+            default -> super.hasSideEffects();
+        };
+    }
+
+    public boolean canRaiseException() {
+        return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
+            case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
+            default -> super.canRaiseException();
+        };
+    }
+
+    public boolean transfersControl() {
+        return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
+            case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
+            default -> super.transfersControl();
+        };
+    }
+
     /**
      * Does this instruction do anything the scope is interested in?
      *
-     * @param scope to be updated
+     * @param flags to be updated
      * @return true if it modified the scope.
      */
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         boolean modifiedScope = false;
 
         // FIXME: Impl of this helper uses frame class.  Determine if we can do this another way.
         if (helperMethod == Methods.IS_DEFINED_SUPER) {
             modifiedScope = true;
-            scope.getFlags().add(REQUIRES_CLASS);
+            flags.add(REQUIRES_CLASS);
+        } else if (helperMethod == Methods.IS_DEFINED_BACKREF || helperMethod == Methods.IS_DEFINED_NTH_REF) {
+            modifiedScope = true;
+            flags.add(REQUIRES_BACKREF);
         }
 
         return modifiedScope;
@@ -88,16 +138,20 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return new String[] { "method: " + helperMethod};
     }
 
-    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self,
+                             Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
-        if (helperMethod == Methods.IS_DEFINED_BACKREF) {
-            return IRRuntimeHelpers.isDefinedBackref(
-                    context,
-                    (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
-        }
-
+        // These have special operands[0] that we may not want to execute
         switch (helperMethod) {
+            case CAPTURE_CALL_INFO:
+                return IRRuntimeHelpers.captureCallInfo(context);
+            case RESET_GVAR_UNDERSCORE:
+                return context.setErrorInfo((IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
+            case IS_DEFINED_BACKREF:
+                return IRRuntimeHelpers.isDefinedBackref(
+                        context,
+                        (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_NTH_REF:
                 return IRRuntimeHelpers.isDefinedNthRef(
                         context,
@@ -108,6 +162,11 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         context,
                         ((Stringable) operands[0]).getString(),
                         (IRubyObject) operands[1].retrieve(context, self, currScope, currDynScope, temp));
+            case TRACE_RESCUE:
+                IRRuntimeHelpers.traceRescue(context, ((Stringable) operands[0]).getString(), (int) ((Integer) operands[1]).getValue());
+                return context.nil;
+            case RESTORE_CALL_INFO:
+                return IRRuntimeHelpers.restoreCallInfo(context, (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);
@@ -130,15 +189,9 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(
                         context,
                         (IRubyObject) arg1,
-                        ((FrozenString) operands[1]).getString(),
+                        ((FrozenString) operands[1]).retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
-            case IS_DEFINED_INSTANCE_VAR:
-                return IRRuntimeHelpers.isDefinedInstanceVar(
-                        context,
-                        (IRubyObject) arg1,
-                        ((Stringable) operands[1]).getString(),
-                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_CLASS_VAR:
                 return IRRuntimeHelpers.isDefinedClassVar(
                         context,
@@ -157,7 +210,14 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
-                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
+                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp),
+                        getArgs()[2] == context.runtime.getIRManager().getTrue());
+            case IS_HASH_EMPTY:
+                return IRRuntimeHelpers.isHashEmpty(context, (IRubyObject) arg1);
+            case HASH_CHECK:
+                return IRRuntimeHelpers.hashCheck(context, (IRubyObject) arg1);
+            case ARRAY_LENGTH:
+                return IRRuntimeHelpers.arrayLength((RubyArray) arg1);
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

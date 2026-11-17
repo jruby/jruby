@@ -35,27 +35,28 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ThreadContext;
 
 /**
  * @author jpetersen
  */
 public class TestJavaUtil extends TestCase {
-    private Ruby runtime;
+    private ThreadContext context;
 
     public TestJavaUtil(String name) {
         super(name);
     }
 
     public void setUp() {
-        runtime = Ruby.newInstance();
+        context = Ruby.newInstance().getCurrentContext();
     }
 
     public void testConvertJavaToRuby() {
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, null).getType().name().toString(), "NilClass");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Integer");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Double(1.0)).getType().name().toString(), "Float");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.TRUE).getType().name().toString(), "TrueClass");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.FALSE).getType().name().toString(), "FalseClass");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, "AString").getType().name().toString(), "String");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, null).getType().name(context).toString(), "NilClass");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, new Integer(1000)).getType().name(context).toString(), "Integer");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, new Double(1.0)).getType().name(context).toString(), "Float");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, Boolean.TRUE).getType().name(context).toString(), "TrueClass");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, Boolean.FALSE).getType().name(context).toString(), "FalseClass");
+        assertEquals(JavaUtil.convertJavaToRuby(context.runtime, "AString").getType().name(context).toString(), "String");
     }
 }

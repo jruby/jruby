@@ -19,7 +19,7 @@ import java.math.BigInteger;
  * <pre>
  *   n = 0
  *   olda = nil
- *   while (n < 3)
+ *   while (n &lt; 3)
  *     a = 81402749386839761113321
  *     p a.equal?(olda)
  *     olda = a
@@ -64,5 +64,10 @@ public class Bignum extends ImmutableLiteral {
     @Override
     public String toString() {
         return "Bignum:" + value;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
     }
 }

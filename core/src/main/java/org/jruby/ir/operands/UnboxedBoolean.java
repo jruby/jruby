@@ -5,6 +5,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Convert.asBoolean;
+
 public class UnboxedBoolean extends ImmutableLiteral {
     private final boolean truthy;
 
@@ -24,7 +26,7 @@ public class UnboxedBoolean extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newBoolean(isTrue());
+        return asBoolean(context, isTrue());
     }
 
     public boolean isTrue()  {
@@ -63,5 +65,10 @@ public class UnboxedBoolean extends ImmutableLiteral {
     @Override
     public String toString() {
         return isTrue() ? "true" : "false";
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return truthy;
     }
 }

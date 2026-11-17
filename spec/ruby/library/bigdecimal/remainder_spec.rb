@@ -37,9 +37,11 @@ describe "BigDecimal#remainder" do
     @neg_int.remainder(@pos_frac).should == @neg_int - @pos_frac * (@neg_int / @pos_frac).truncate
   end
 
-  it "returns NaN used with zero" do
-    @mixed.remainder(@zero).nan?.should == true
-    @zero.remainder(@zero).nan?.should == true
+  version_is BigDecimal::VERSION, "3.3.0" do
+    it "raises ZeroDivisionError used with zero" do
+      -> { @mixed.remainder(@zero) }.should.raise(ZeroDivisionError)
+      -> { @zero.remainder(@zero) }.should.raise(ZeroDivisionError)
+    end
   end
 
   it "returns zero if used on zero" do
@@ -47,28 +49,11 @@ describe "BigDecimal#remainder" do
   end
 
   it "returns NaN if NaN is involved" do
-    @nan.remainder(@nan).nan?.should == true
-    @nan.remainder(@one).nan?.should == true
-    @one.remainder(@nan).nan?.should == true
-    @infinity.remainder(@nan).nan?.should == true
-    @nan.remainder(@infinity).nan?.should == true
-  end
-
-  it "returns NaN if Infinity is involved" do
-    @infinity.remainder(@infinity).nan?.should == true
-    @infinity.remainder(@one).nan?.should == true
-    @infinity.remainder(@mixed).nan?.should == true
-    @infinity.remainder(@one_minus).nan?.should == true
-    @infinity.remainder(@frac_1).nan?.should == true
-    @one.remainder(@infinity).nan?.should == true
-
-    @infinity_minus.remainder(@infinity_minus).nan?.should == true
-    @infinity_minus.remainder(@one).nan?.should == true
-    @one.remainder(@infinity_minus).nan?.should == true
-    @frac_2.remainder(@infinity_minus).nan?.should == true
-
-    @infinity.remainder(@infinity_minus).nan?.should == true
-    @infinity_minus.remainder(@infinity).nan?.should == true
+    @nan.remainder(@nan).should.nan?
+    @nan.remainder(@one).should.nan?
+    @one.remainder(@nan).should.nan?
+    @infinity.remainder(@nan).should.nan?
+    @nan.remainder(@infinity).should.nan?
   end
 
   it "coerces arguments to BigDecimal if possible" do
@@ -84,9 +69,9 @@ describe "BigDecimal#remainder" do
   end
 
   it "raises TypeError if the argument cannot be coerced to BigDecimal" do
-    lambda {
+    -> {
       @one.remainder('2')
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
 end

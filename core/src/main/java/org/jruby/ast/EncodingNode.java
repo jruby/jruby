@@ -32,7 +32,6 @@ package org.jruby.ast;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents __ENCODING__.
@@ -40,8 +39,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class EncodingNode extends Node {
     private final Encoding encoding;
 
-    public EncodingNode(ISourcePosition position, Encoding encoding) {
-        super(position, false);
+    public EncodingNode(int line, Encoding encoding) {
+        super(line, false);
 
         this.encoding = encoding;
     }

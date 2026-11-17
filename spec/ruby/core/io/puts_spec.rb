@@ -6,7 +6,7 @@ describe "IO#puts" do
     @before_separator = $/
     @name = tmp("io_puts.txt")
     @io = new_io @name
-    ScratchPad.record ""
+    ScratchPad.record(+"")
     def @io.write(str)
       ScratchPad << str
     end
@@ -16,7 +16,7 @@ describe "IO#puts" do
     ScratchPad.clear
     @io.close if @io
     rm_r @name
-    $/ = @before_separator
+    suppress_warning {$/ = @before_separator}
   end
 
   it "writes just a newline when given no args" do
@@ -25,7 +25,7 @@ describe "IO#puts" do
   end
 
   it "writes just a newline when given just a newline" do
-    lambda { $stdout.puts "\n" }.should output_to_fd("\n", STDOUT)
+    -> { $stdout.puts "\n" }.should output_to_fd("\n", $stdout)
   end
 
   it "writes empty string with a newline when given nil as an arg" do
@@ -33,7 +33,7 @@ describe "IO#puts" do
     ScratchPad.recorded.should == "\n"
   end
 
-  it "writes empty string with a newline when when given nil as multiple args" do
+  it "writes empty string with a newline when given nil as multiple args" do
     @io.puts(nil, nil).should == nil
     ScratchPad.recorded.should == "\n\n"
   end
@@ -105,13 +105,13 @@ describe "IO#puts" do
   end
 
   it "ignores the $/ separator global" do
-    $/ = ":"
+    suppress_warning {$/ = ":"}
     @io.puts(5).should == nil
     ScratchPad.recorded.should == "5\n"
   end
 
   it "raises IOError on closed stream" do
-    lambda { IOSpecs.closed_io.puts("stuff") }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.puts("stuff") }.should.raise(IOError)
   end
 
   it "writes crlf when IO is opened with newline: :crlf" do

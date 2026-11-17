@@ -28,7 +28,7 @@
 
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -40,17 +40,16 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-/**
- * @author Bill Dortch
- *
- */
+import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.typeError;
+
 @JRubyModule(name="JavaArrayUtilities")
 public class JavaArrayUtilities {
 
-    public static RubyModule createJavaArrayUtilitiesModule(Ruby runtime) {
-        RubyModule javaArrayUtils = runtime.defineModule("JavaArrayUtilities");
-        javaArrayUtils.defineAnnotatedMethods(JavaArrayUtilities.class);
-        return javaArrayUtils;
+    public static RubyModule createJavaArrayUtilitiesModule(ThreadContext context) {
+        return defineModule(context, "JavaArrayUtilities").defineMethods(context, JavaArrayUtilities.class);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
@@ -62,44 +61,34 @@ public class JavaArrayUtilities {
     public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject, IRubyObject encoding) {
         byte[] bytes = null;
 
-        if (wrappedObject instanceof JavaProxy) {
-            Object wrapped = ((JavaProxy) wrappedObject).getObject();
-            if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
-        } else {
-            IRubyObject byteArray = (IRubyObject) wrappedObject.dataGetStruct();
-            if (byteArray instanceof JavaArray) {
-                final Object wrapped = ((JavaArray) byteArray).getValue();
-                if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
-            }
+        if (wrappedObject instanceof JavaProxy proxy) {
+            Object wrapped = proxy.getObject();
+            if (wrapped instanceof byte[]) bytes = (byte[]) wrapped;
         }
 
-        if (bytes == null) {
-            throw context.runtime.newTypeError("wrong argument type " +
-                wrappedObject.getMetaClass() + " (expected byte[])"
-            );
-        }
+        if (bytes == null) throw typeError(context, wrappedObject, "byte[]");
 
-        RubyString string = context.runtime.newString(new ByteList(bytes, true));
+        RubyString string = newString(context, new ByteList(bytes, true));
 
-        if ( ! encoding.isNil() ) string.force_encoding(context, encoding);
+        if (!encoding.isNil()) string.force_encoding(context, encoding);
 
         return string;
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
-        Ruby runtime = recv.getRuntime();
-        if (!(string instanceof RubyString)) {
-            throw runtime.newTypeError(string, runtime.getString());
-        }
-        return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
+        return ruby_string_to_bytes(((RubyBasicObject) recv).getCurrentContext(), recv, string);
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject ruby_string_to_bytes(ThreadContext context, IRubyObject recv, IRubyObject string) {
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, castAsString(context, string).getBytes());
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject java_to_ruby(ThreadContext context, IRubyObject recv, IRubyObject ary) {
-        if (!(ary instanceof ArrayJavaProxy)) {
-            throw context.runtime.newTypeError(ary, context.runtime.getJavaSupport().getArrayProxyClass());
-        }
+        if (!(ary instanceof ArrayJavaProxy)) throw typeError(context, ary, context.runtime.getJavaSupport().getArrayProxyClass());
+
         return ((ArrayJavaProxy)ary).to_a(context);
     }
 

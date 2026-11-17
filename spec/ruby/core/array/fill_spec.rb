@@ -3,14 +3,14 @@ require_relative 'fixtures/classes'
 
 describe "Array#fill" do
   before :all do
-    @never_passed = lambda do |i|
+    @never_passed = -> i do
       raise ExpectationNotMetError, "the control path should not pass here"
     end
   end
 
   it "returns self" do
     ary = [1, 2, 3]
-    ary.fill(:a).should equal(ary)
+    ary.fill(:a).should.equal?(ary)
   end
 
   it "is destructive" do
@@ -21,14 +21,14 @@ describe "Array#fill" do
 
   it "does not replicate the filler" do
     ary = [1, 2, 3, 4]
-    str = "x"
+    str = +"x"
     ary.fill(str).should == [str, str, str, str]
     str << "y"
     ary.should == [str, str, str, str]
-    ary[0].should equal(str)
-    ary[1].should equal(str)
-    ary[2].should equal(str)
-    ary[3].should equal(str)
+    ary[0].should.equal?(str)
+    ary[1].should.equal?(str)
+    ary[2].should.equal?(str)
+    ary[3].should.equal?(str)
   end
 
   it "replaces all elements in the array with the filler if not given a index nor a length" do
@@ -43,34 +43,72 @@ describe "Array#fill" do
     [nil, nil, nil, nil].fill { |i| i * 2 }.should == [0, 2, 4, 6]
   end
 
-  it "raises a #{frozen_error_class} on a frozen array" do
-    lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.fill('x') }.should.raise(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on an empty frozen array" do
+    -> { ArraySpecs.empty_frozen_array.fill('x') }.should.raise(FrozenError)
   end
 
   it "raises an ArgumentError if 4 or more arguments are passed when no block given" do
-    lambda { [].fill('a') }.should_not raise_error(ArgumentError)
-
-    lambda { [].fill('a', 1) }.should_not raise_error(ArgumentError)
-
-    lambda { [].fill('a', 1, 2) }.should_not raise_error(ArgumentError)
-    lambda { [].fill('a', 1, 2, true) }.should raise_error(ArgumentError)
+    [].fill('a').should == []
+    [].fill('a', 1).should == []
+    [].fill('a', 1, 2).should == [nil, 'a', 'a']
+    -> { [].fill('a', 1, 2, true) }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError if no argument passed and no block given" do
-    lambda { [].fill }.should raise_error(ArgumentError)
+    -> { [].fill }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError if 3 or more arguments are passed when a block given" do
-    lambda { [].fill() {|i|} }.should_not raise_error(ArgumentError)
+    [].fill() {|i|}.should == []
+    [].fill(1) {|i|}.should == []
+    [].fill(1, 2) {|i|}.should == [nil, nil, nil]
+    -> { [].fill(1, 2, true) {|i|} }.should.raise(ArgumentError)
+  end
 
-    lambda { [].fill(1) {|i|} }.should_not raise_error(ArgumentError)
+  it "does not truncate the array is the block raises an exception" do
+    a = [1, 2, 3]
+    begin
+      a.fill { raise StandardError, 'Oops' }
+    rescue
+    end
 
-    lambda { [].fill(1, 2) {|i|} }.should_not raise_error(ArgumentError)
-    lambda { [].fill(1, 2, true) {|i|} }.should raise_error(ArgumentError)
+    a.should == [1, 2, 3]
+  end
+
+  it "only changes elements before error is raised, keeping the element which raised an error." do
+    a = [1, 2, 3, 4]
+    begin
+      a.fill do |i|
+        case i
+        when 0 then -1
+        when 1 then -2
+        when 2 then raise StandardError, 'Oops'
+        else 0
+        end
+      end
+    rescue StandardError
+    end
+
+    a.should == [-1, -2, 3, 4]
+  end
+
+  it "tolerates increasing an array size during iteration" do
+    array = [:a, :b, :c]
+    ScratchPad.record []
+    i = 0
+
+    array.fill do |index|
+      ScratchPad << index
+      array << i if i < 100
+      i++
+      index
+    end
+
+    ScratchPad.recorded.should == [0, 1, 2]
   end
 end
 
@@ -169,25 +207,25 @@ describe "Array#fill with (filler, index, length)" do
     [1, 2, 3, 4, 5].fill(-2, -2, &@never_passed).should == [1, 2, 3, 4, 5]
   end
 
-  # See: http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17481
+  # See: https://blade.ruby-lang.org/ruby-core/17481
   it "does not raise an exception if the given length is negative and its absolute value does not exceed the index" do
-    lambda { [1, 2, 3, 4].fill('a', 3, -1)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill('a', 3, -2)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill('a', 3, -3)}.should_not raise_error(ArgumentError)
+    [1, 2, 3, 4].fill('a', 3, -1).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill('a', 3, -2).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill('a', 3, -3).should == [1, 2, 3, 4]
 
-    lambda { [1, 2, 3, 4].fill(3, -1, &@never_passed)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill(3, -2, &@never_passed)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill(3, -3, &@never_passed)}.should_not raise_error(ArgumentError)
+    [1, 2, 3, 4].fill(3, -1, &@never_passed).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill(3, -2, &@never_passed).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill(3, -3, &@never_passed).should == [1, 2, 3, 4]
   end
 
   it "does not raise an exception even if the given length is negative and its absolute value exceeds the index" do
-    lambda { [1, 2, 3, 4].fill('a', 3, -4)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill('a', 3, -5)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill('a', 3, -10000)}.should_not raise_error(ArgumentError)
+    [1, 2, 3, 4].fill('a', 3, -4).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill('a', 3, -5).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill('a', 3, -10000).should == [1, 2, 3, 4]
 
-    lambda { [1, 2, 3, 4].fill(3, -4, &@never_passed)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill(3, -5, &@never_passed)}.should_not raise_error(ArgumentError)
-    lambda { [1, 2, 3, 4].fill(3, -10000, &@never_passed)}.should_not raise_error(ArgumentError)
+    [1, 2, 3, 4].fill(3, -4, &@never_passed).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill(3, -5, &@never_passed).should == [1, 2, 3, 4]
+    [1, 2, 3, 4].fill(3, -10000, &@never_passed).should == [1, 2, 3, 4]
   end
 
   it "tries to convert the second and third arguments to Integers using #to_int" do
@@ -199,17 +237,24 @@ describe "Array#fill with (filler, index, length)" do
   end
 
   it "raises a TypeError if the index is not numeric" do
-    lambda { [].fill 'a', true }.should raise_error(TypeError)
+    -> { [].fill 'a', true }.should.raise(TypeError)
 
     obj = mock('nonnumeric')
-    lambda { [].fill('a', obj) }.should raise_error(TypeError)
+    -> { [].fill('a', obj) }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError when the length is not numeric" do
+    -> { [1, 2, 3].fill("x", 1, "foo") }.should.raise(TypeError, /no implicit conversion of String into Integer/)
+    -> { [1, 2, 3].fill("x", 1, :"foo") }.should.raise(TypeError, /no implicit conversion of Symbol into Integer/)
+    -> { [1, 2, 3].fill("x", 1, Object.new) }.should.raise(TypeError, /no implicit conversion of Object into Integer/)
   end
 
   not_supported_on :opal do
     it "raises an ArgumentError or RangeError for too-large sizes" do
+      error_types = [RangeError, ArgumentError]
       arr = [1, 2, 3]
-      lambda { arr.fill(10, 1, fixnum_max) }.should raise_error(ArgumentError)
-      lambda { arr.fill(10, 1, bignum_value) }.should raise_error(RangeError)
+      -> { arr.fill(10, 1, max_length) }.should.raise { |err| error_types.should.include?(err.class) }
+      -> { arr.fill(10, 1, bignum_value) }.should.raise(RangeError)
     end
   end
 end
@@ -239,7 +284,7 @@ describe "Array#fill with (filler, range)" do
   end
 
   it "raises a TypeError with range and length argument" do
-    lambda { [].fill('x', 0 .. 2, 5) }.should raise_error(TypeError)
+    -> { [].fill('x', 0 .. 2, 5) }.should.raise(TypeError)
   end
 
   it "replaces elements between the (-m)th to the last and the (n+1)th from the first if given an range m..n where m < 0 and n >= 0" do
@@ -291,13 +336,13 @@ describe "Array#fill with (filler, range)" do
   end
 
   it "raises an exception if some of the given range lies before the first of the array" do
-    lambda { [1, 2, 3].fill('x', -5..-3) }.should raise_error(RangeError)
-    lambda { [1, 2, 3].fill('x', -5...-3) }.should raise_error(RangeError)
-    lambda { [1, 2, 3].fill('x', -5..-4) }.should raise_error(RangeError)
+    -> { [1, 2, 3].fill('x', -5..-3) }.should.raise(RangeError)
+    -> { [1, 2, 3].fill('x', -5...-3) }.should.raise(RangeError)
+    -> { [1, 2, 3].fill('x', -5..-4) }.should.raise(RangeError)
 
-    lambda { [1, 2, 3].fill(-5..-3, &@never_passed) }.should raise_error(RangeError)
-    lambda { [1, 2, 3].fill(-5...-3, &@never_passed) }.should raise_error(RangeError)
-    lambda { [1, 2, 3].fill(-5..-4, &@never_passed) }.should raise_error(RangeError)
+    -> { [1, 2, 3].fill(-5..-3, &@never_passed) }.should.raise(RangeError)
+    -> { [1, 2, 3].fill(-5...-3, &@never_passed) }.should.raise(RangeError)
+    -> { [1, 2, 3].fill(-5..-4, &@never_passed) }.should.raise(RangeError)
   end
 
   it "tries to convert the start and end of the passed range to Integers using #to_int" do
@@ -312,6 +357,18 @@ describe "Array#fill with (filler, range)" do
   it "raises a TypeError if the start or end of the passed range is not numeric" do
     obj = mock('nonnumeric')
     def obj.<=>(rhs); rhs == self ? 0 : nil end
-    lambda { [].fill('a', obj..obj) }.should raise_error(TypeError)
+    -> { [].fill('a', obj..obj) }.should.raise(TypeError)
+  end
+
+  it "works with endless ranges" do
+    [1, 2, 3, 4].fill('x', eval("(1..)")).should == [1, 'x', 'x', 'x']
+    [1, 2, 3, 4].fill('x', eval("(3...)")).should == [1, 2, 3, 'x']
+    [1, 2, 3, 4].fill(eval("(1..)")) { |x| x + 2 }.should == [1, 3, 4, 5]
+    [1, 2, 3, 4].fill(eval("(3...)")) { |x| x + 2 }.should == [1, 2, 3, 5]
+  end
+
+  it "works with beginless ranges" do
+    [1, 2, 3, 4].fill('x', (..2)).should == ["x", "x", "x", 4]
+    [1, 2, 3, 4].fill((...2)) { |x| x + 2 }.should == [2, 3, 3, 4]
   end
 end

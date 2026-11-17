@@ -1,5 +1,6 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
+require_relative 'shared/attr_added'
 
 describe "Module#attr_writer" do
   it "creates a setter for each given attribute name" do
@@ -29,10 +30,20 @@ describe "Module#attr_writer" do
       attr_writer :spec_attr_writer
     end
 
-    lambda { true.spec_attr_writer = "a" }.should raise_error(RuntimeError)
+    -> { true.spec_attr_writer = "a" }.should.raise(FrozenError)
   end
 
-  it "converts non string/symbol/fixnum names to strings using to_str" do
+  it "raises FrozenError if the receiver if frozen" do
+    c = Class.new do
+      attr_writer :foo
+    end
+    obj = c.new
+    obj.freeze
+
+    -> { obj.foo = 42 }.should.raise(FrozenError)
+  end
+
+  it "converts non string/symbol names to strings using to_str" do
     (o = mock('test')).should_receive(:to_str).any_number_of_times.and_return("test")
     c = Class.new do
       attr_writer o
@@ -44,9 +55,9 @@ describe "Module#attr_writer" do
 
   it "raises a TypeError when the given names can't be converted to strings using to_str" do
     o = mock('test1')
-    lambda { Class.new { attr_writer o } }.should raise_error(TypeError)
+    -> { Class.new { attr_writer o } }.should.raise(TypeError)
     (o = mock('123')).should_receive(:to_str).and_return(123)
-    lambda { Class.new { attr_writer o } }.should raise_error(TypeError)
+    -> { Class.new { attr_writer o } }.should.raise(TypeError)
   end
 
   it "applies current visibility to methods created" do
@@ -55,17 +66,18 @@ describe "Module#attr_writer" do
       attr_writer :foo
     end
 
-    lambda { c.new.foo=1 }.should raise_error(NoMethodError)
+    -> { c.new.foo=1 }.should.raise(NoMethodError)
   end
 
-  ruby_version_is ''...'2.5' do
-    it "is a private method" do
-      Module.should have_private_instance_method(:attr_writer, false)
+  it "is a public method" do
+    Module.public_instance_methods(false).should.include?(:attr_writer)
+  end
+
+  it "returns an array of defined method names as symbols" do
+    Class.new do
+      (attr_writer :foo, 'bar').should == [:foo=, :bar=]
     end
   end
-  ruby_version_is '2.5' do
-    it "is a public method" do
-      Module.should have_public_instance_method(:attr_writer, false)
-    end
-  end
+
+  it_behaves_like :module_attr_added, :attr_writer
 end

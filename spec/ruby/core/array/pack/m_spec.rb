@@ -1,14 +1,12 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
 require_relative 'shared/basic'
-require_relative 'shared/taint'
 
 describe "Array#pack with format 'M'" do
   it_behaves_like :array_pack_basic, 'M'
   it_behaves_like :array_pack_basic_non_float, 'M'
   it_behaves_like :array_pack_arguments, 'M'
-  it_behaves_like :array_pack_taint, 'M'
 
   it "encodes an empty string as an empty string" do
     [""].pack("M").should == ""
@@ -80,8 +78,16 @@ describe "Array#pack with format 'M'" do
     ].should be_computed_by(:pack, "M")
   end
 
-  it "encodes a tab followed by a newline with an encoded newline" do
+  it "encodes a tab at the end of a line with an encoded newline" do
+    ["\t"].pack("M").should == "\t=\n"
     ["\t\n"].pack("M").should == "\t=\n\n"
+    ["abc\t\nxyz"].pack("M").should == "abc\t=\n\nxyz=\n"
+  end
+
+  it "encodes a space at the end of a line with an encoded newline" do
+    [" "].pack("M").should == " =\n"
+    [" \n"].pack("M").should == " =\n\n"
+    ["abc \nxyz"].pack("M").should == "abc =\n\nxyz=\n"
   end
 
   it "encodes 127..255 in hex format" do
@@ -147,7 +153,7 @@ describe "Array#pack with format 'M'" do
 
   it "encodes a recursive array" do
     empty = ArraySpecs.empty_recursive_array
-    empty.pack('M').should be_an_instance_of(String)
+    empty.pack('M').should.instance_of?(String)
 
     array = ArraySpecs.recursive_array
     array.pack('M').should == "1=\n"
@@ -164,7 +170,7 @@ describe "Array#pack with format 'M'" do
     obj = mock("pack M non-string")
     obj.should_receive(:to_s).and_return(2)
 
-    [obj].pack("M").should be_an_instance_of(String)
+    [obj].pack("M").should.instance_of?(String)
   end
 
   it "encodes a Symbol as a String" do
@@ -194,7 +200,6 @@ describe "Array#pack with format 'm'" do
   it_behaves_like :array_pack_basic, 'm'
   it_behaves_like :array_pack_basic_non_float, 'm'
   it_behaves_like :array_pack_arguments, 'm'
-  it_behaves_like :array_pack_taint, 'm'
 
   it "encodes an empty string as an empty string" do
     [""].pack("m").should == ""
@@ -285,16 +290,16 @@ describe "Array#pack with format 'm'" do
 
   it "raises a TypeError if #to_str does not return a String" do
     obj = mock("pack m non-string")
-    lambda { [obj].pack("m") }.should raise_error(TypeError)
+    -> { [obj].pack("m") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed nil" do
-    lambda { [nil].pack("m") }.should raise_error(TypeError)
+    -> { [nil].pack("m") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed an Integer" do
-    lambda { [0].pack("m") }.should raise_error(TypeError)
-    lambda { [bignum_value].pack("m") }.should raise_error(TypeError)
+    -> { [0].pack("m") }.should.raise(TypeError)
+    -> { [bignum_value].pack("m") }.should.raise(TypeError)
   end
 
   it "does not emit a newline if passed zero as the count modifier" do

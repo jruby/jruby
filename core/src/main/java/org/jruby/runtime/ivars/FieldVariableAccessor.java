@@ -30,7 +30,10 @@ package org.jruby.runtime.ivars;
 import com.headius.invokebinder.Binder;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.specialized.RubyObjectSpecializer;
 
 import java.lang.invoke.MethodHandle;
@@ -40,8 +43,8 @@ import java.lang.invoke.MethodHandles;
  * A variable accessor that accesses a field directly;
  */
 public class FieldVariableAccessor extends VariableAccessor {
-    private final MethodHandle getter;
-    private final MethodHandle setter;
+    protected final MethodHandle getter;
+    protected final MethodHandle setter;
     
     /**
      * Construct a new FieldVariableAccessor for the given "real" class,
@@ -58,11 +61,16 @@ public class FieldVariableAccessor extends VariableAccessor {
         super(realClass, name, index, classId);
 
         this.getter = getter;
+        this.setter = wrapSetter(setter);
+    }
 
+    public FieldVariableAccessor cloneFor(RubyClass newRealClass) {
+        return new FieldVariableAccessor(newRealClass, name, index, classId, getter, setter);
+    }
+
+    protected MethodHandle wrapSetter(MethodHandle setter) {
         // mix frozen check into setter
-        setter = MethodHandles.foldArguments(setter, ENSURE_SETTABLE.asType(setter.type()));
-        
-        this.setter = setter;
+        return MethodHandles.foldArguments(setter, ENSURE_SETTABLE.asType(setter.type()));
     }
 
     public MethodHandle getGetter() {
@@ -82,6 +90,22 @@ public class FieldVariableAccessor extends VariableAccessor {
     public Object get(Object object) {
         try {
             return getter.invoke(object);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve the variable's value from the given object.
+     *
+     * @param object the object from which to retrieve this variable
+     * @return the variable's value
+     */
+    public IRubyObject getOrNil(Object object, ThreadContext context) {
+        try {
+            Object value =  getter.invoke(object);
+            return value == null ? context.nil : (IRubyObject) value;
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;

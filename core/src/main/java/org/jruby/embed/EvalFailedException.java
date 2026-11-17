@@ -32,7 +32,7 @@ package org.jruby.embed;
 /**
  * This class is a generic unchecked exception raised during evaluating.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EvalFailedException extends RuntimeException {
 

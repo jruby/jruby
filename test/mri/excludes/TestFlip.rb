@@ -1,5 +1,2 @@
-exclude :test_flip_flop, "flip/flop syntax unimplemented in JRuby"
-exclude :test_hidden_key, "flip/flop syntax unimplemented in JRuby"
-exclude :test_input_line_number_range, "flip/flop syntax unimplemented in JRuby"
-exclude :test_shared_thread, "flip/flop syntax unimplemented in JRuby"
-exclude :test_shared_eval, "flip/flop syntax unimplemented in JRuby"
+exclude :test_input_line_number_range, "needs investigation"
+exclude :test_shared_thread, "need to isolate flip-flop state variable across threads"

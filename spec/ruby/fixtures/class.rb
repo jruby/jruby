@@ -112,7 +112,7 @@ module ClassSpecs
   class M < L; end
 
   # Can't use a method here because of class definition in method body error
-  ANON_CLASS_FOR_NEW = lambda do
+  ANON_CLASS_FOR_NEW = -> do
     Class.new do
       class NamedInModule
       end
@@ -121,6 +121,10 @@ module ClassSpecs
         NamedInModule.name
       end
     end
+  end
+
+  DEFINE_CLASS = -> do
+    class ::A; end
   end
 end
 

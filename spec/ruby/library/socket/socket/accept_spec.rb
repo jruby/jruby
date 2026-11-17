@@ -15,7 +15,7 @@ describe 'Socket#accept' do
     platform_is :linux do # hangs on other platforms
       describe 'using an unbound socket'  do
         it 'raises Errno::EINVAL' do
-          lambda { @server.accept }.should raise_error(Errno::EINVAL)
+          -> { @server.accept }.should.raise(Errno::EINVAL)
         end
       end
 
@@ -25,7 +25,7 @@ describe 'Socket#accept' do
         end
 
         it 'raises Errno::EINVAL' do
-          lambda { @server.accept }.should raise_error(Errno::EINVAL)
+          -> { @server.accept }.should.raise(Errno::EINVAL)
         end
       end
     end
@@ -34,7 +34,7 @@ describe 'Socket#accept' do
       it 'raises IOError' do
         @server.close
 
-        lambda { @server.accept }.should raise_error(IOError)
+        -> { @server.accept }.should.raise(IOError)
       end
     end
 
@@ -56,10 +56,9 @@ describe 'Socket#accept' do
 
           client.connect(@server_addr)
 
-          thread.join(5)
           value = thread.value
           begin
-            value.should be_an_instance_of(Array)
+            value.should.instance_of?(Array)
           ensure
             client.close
             value[0].close
@@ -83,8 +82,8 @@ describe 'Socket#accept' do
         it 'returns an Array containing a Socket and an Addrinfo' do
           @socket, addrinfo = @server.accept
 
-          @socket.should be_an_instance_of(Socket)
-          addrinfo.should be_an_instance_of(Addrinfo)
+          @socket.should.instance_of?(Socket)
+          addrinfo.should.instance_of?(Addrinfo)
         end
 
         describe 'the returned Addrinfo' do

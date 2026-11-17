@@ -1,3 +1,32 @@
+/*
+ **** BEGIN LICENSE BLOCK *****
+ * BSD 2-Clause License
+ *
+ * Copyright (c) 2016, Charles Oliver Nutter <headius@headius.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.cgi.escape;
 
 import org.jcodings.Encoding;
@@ -9,6 +38,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Define;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -18,9 +48,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
-/**
- * Created by headius on 12/8/16.
- */
 public class CGIEscape implements Library {
     public static final String ACCEPT_CHARSET = "@@accept_charset";
     public static final byte[] NO39 = "&#39;".getBytes(RubyEncoding.UTF8);
@@ -56,8 +83,6 @@ public class CGIEscape implements Library {
 
     static void preserve_original_state(RubyString orig, RubyString dest) {
         dest.setEncoding(orig.getEncoding());
-
-        dest.infectBy(orig);
     }
 
     static IRubyObject
@@ -114,7 +139,7 @@ public class CGIEscape implements Library {
         int charlimit = (enc instanceof UTF8Encoding) ? UNICODE_MAX :
                 (enc instanceof ISO8859_1Encoding) ? 256 :
                         128;
-        int i, len, beg = 0;
+        int i, j, len, beg = 0;
         int clen = 0, plen;
         boolean overflow = false;
         byte[] cstrBytes;
@@ -134,6 +159,7 @@ public class CGIEscape implements Library {
             plen = i - beg;
             if (++i >= len) break;
             c = cstrBytes[cstr + i] & 0xFF;
+            j = i;
             switch (c) {
                 case 'a':
                     ++i;
@@ -143,28 +169,40 @@ public class CGIEscape implements Library {
                     } else if (MATCH(MPSEMI, len, i, cstrBytes, cstr)) {
                         i += MPSEMI.length - 1;
                         c = '&';
-                    } else continue;
+                    } else {
+                        i = j;
+                        continue;
+                    }
                     break;
                 case 'q':
                     ++i;
                     if (MATCH(UOTSEMI, len, i, cstrBytes, cstr)) {
                         i += UOTSEMI.length - 1;
                         c = '"';
-                    } else continue;
+                    } else {
+                        i = j;
+                        continue;
+                    }
                     break;
                 case 'g':
                     ++i;
                     if (MATCH(TSEMI, len, i, cstrBytes, cstr)) {
                         i += TSEMI.length - 1;
                         c = '>';
-                    } else continue;
+                    } else {
+                        i = j;
+                        continue;
+                    }
                     break;
                 case 'l':
                     ++i;
                     if (MATCH(TSEMI, len, i, cstrBytes, cstr)) {
                         i += TSEMI.length - 1;
                         c = '<';
-                    } else continue;
+                    } else {
+                        i = j;
+                        continue;
+                    }
                     break;
                 case '#':
                     if (len - ++i >= 2 && Character.isDigit(cstrBytes[cstr + i])) {
@@ -177,9 +215,15 @@ public class CGIEscape implements Library {
                         cc = ruby_scan_digits(cstrBytes, cstr + i, len - i, 16, clenOverflow);
                         clen = clenOverflow[0];
                         overflow = clenOverflow[1] == 1;
-                    } else continue;
+                    } else {
+                        i = j;
+                        continue;
+                    }
                     i += clen;
-                    if (overflow || cc >= charlimit || i >= len || cstrBytes[cstr + i] != ';') continue;
+                    if (overflow || cc >= charlimit || i >= len || cstrBytes[cstr + i] != ';') {
+                        i = j;
+                        continue;
+                    }
                     if (dest == null) {
                         dest = RubyString.newStringLight(runtime, len);
                     }
@@ -237,7 +281,7 @@ public class CGIEscape implements Library {
 
     static final byte[] upper_hexdigits = "0123456789ABCDEF".getBytes(RubyEncoding.UTF8);
 
-    static IRubyObject optimized_escape(Ruby runtime, RubyString str) {
+    static IRubyObject optimized_escape(Ruby runtime, RubyString str, boolean escapePlus) {
         int i, len, beg = 0;
         RubyString dest = null;
         byte[] cstrBytes;
@@ -259,7 +303,7 @@ public class CGIEscape implements Library {
                 dest.cat(cstrBytes, cstr + beg, i - beg);
                 beg = i + 1;
 
-                if (c == ' ') {
+                if (escapePlus && c == ' ') {
                     dest.cat('+');
                 } else {
                     buf[1] = upper_hexdigits[(c >> 4) & 0xf];
@@ -279,7 +323,7 @@ public class CGIEscape implements Library {
     }
 
     static IRubyObject
-    optimized_unescape(ThreadContext context, RubyString str, IRubyObject encoding) {
+    optimized_unescape(ThreadContext context, RubyString str, IRubyObject encoding, boolean unescapePlus) {
         int i, len, beg = 0;
         RubyString dest = null;
         byte[] cstrBytes;
@@ -294,7 +338,7 @@ public class CGIEscape implements Library {
 
         int buf = 0;
         Ruby runtime = context.runtime;
-        
+
         for (i = 0; i < len; ++i) {
             int c = cstrBytes[cstr + i] & 0xFF;
             int clen = 0;
@@ -305,7 +349,7 @@ public class CGIEscape implements Library {
                 buf = ((char_to_number(cstrBytes[cstr + i + 1]) << 4)
                         | char_to_number(cstrBytes[cstr + i + 2]));
                 clen = 2;
-            } else if (c == '+') {
+            } else if (unescapePlus && c == '+') {
                 buf = ' ';
             } else {
                 continue;
@@ -333,8 +377,8 @@ public class CGIEscape implements Library {
         origenc = str.getEncoding();
         if (origenc != encidx) {
             dest.setEncoding(encidx);
-            if (StringSupport.encCoderangeClean(dest.getCodeRange()) == 0) {
-                dest.setEncoding(origenc);
+            if (StringSupport.encCoderangeClean(dest.scanForCodeRange()) == 0) {
+                EncodingUtils.encAssociateIndex(dest, origenc);
                 if (cr != StringSupport.CR_UNKNOWN)
                     dest.setCodeRange(cr);
             }
@@ -390,7 +434,25 @@ public class CGIEscape implements Library {
         RubyString str = _str.convertToString();
 
         if (str.getEncoding().isAsciiCompatible()) {
-            return optimized_escape(context.runtime, str);
+            return optimized_escape(context.runtime, str, true);
+        } else {
+            return Helpers.invokeSuper(context, self, _str, Block.NULL_BLOCK);
+        }
+    }
+
+    /*
+     *  call-seq:
+     *     CGI.escapeURIComponent(string) -> string
+     *
+     *  Returns URL-escaped string following RFC 3986.
+     *
+     */
+    @JRubyMethod(name = "escapeURIComponent", alias = { "escape_uri_component" }, module = true, frame = true)
+    public static IRubyObject cgiesc_escape_uri_component(ThreadContext context, IRubyObject self, IRubyObject _str) {
+        RubyString str = _str.convertToString();
+
+        if (str.getEncoding().isAsciiCompatible()) {
+            return optimized_escape(context.runtime, str, false);
         } else {
             return Helpers.invokeSuper(context, self, _str, Block.NULL_BLOCK);
         }
@@ -417,19 +479,44 @@ public class CGIEscape implements Library {
 
         if (str.getEncoding().isAsciiCompatible()) {
             IRubyObject enc = accept_charset(argv, argv.length - 1, 1, self);
-            return optimized_unescape(context, str, enc);
+            return optimized_unescape(context, str, enc, true);
+        } else {
+            return Helpers.invokeSuper(context, self, argv, Block.NULL_BLOCK);
+        }
+    }
+
+    /*
+     *  call-seq:
+     *     CGI.unescapeURIComponent(string, encoding=@@accept_charset) -> string
+     *
+     *  Returns URL-unescaped string following RFC 3986.
+     *
+     */
+    @JRubyMethod(name = "unescapeURIComponent", alias = { "unescape_uri_component" }, required = 1, optional = 1, module = true, frame = true)
+    public static IRubyObject cgiesc_unescape_uri_component(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
+        IRubyObject _str = argv[0];
+
+        RubyString str = _str.convertToString();
+
+        if (str.getEncoding().isAsciiCompatible()) {
+            IRubyObject enc = accept_charset(argv, argv.length - 1, 1, self);
+            return optimized_unescape(context, str, enc, false);
         } else {
             return Helpers.invokeSuper(context, self, argv, Block.NULL_BLOCK);
         }
     }
 
     public void load(Ruby runtime, boolean wrap) {
-        RubyClass rb_cCGI = runtime.defineClass("CGI", runtime.getObject(), runtime.getObject().getAllocator());
-        RubyModule rb_mEscape = rb_cCGI.defineModuleUnder("Escape");
-        rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
-        // We do this in cgi/util.rb to work around jruby/jruby#4531.
-//        rb_mUtil.prependModule(rb_mEscape);
-//        rb_mEscape.extend_object(rb_cCGI);
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyClass rb_cCGI = Define.defineClass(context, "CGI", runtime.getObject(), runtime.getObject().getAllocator());
+        RubyModule rb_mEscapeExt = Define.defineModuleUnder(context, rb_cCGI, "EscapeExt");
+        RubyModule rb_mEscape = Define.defineModuleUnder(context, rb_cCGI, "Escape");
+
+        rb_mEscapeExt.defineMethods(context, CGIEscape.class);
+
+        rb_mEscape.prependModule(context, rb_mEscapeExt);
+        rb_mEscapeExt.extendObject(context, rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI

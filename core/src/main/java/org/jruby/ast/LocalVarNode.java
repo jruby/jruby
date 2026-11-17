@@ -37,21 +37,22 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 /**
  * Access a local variable 
  */
 public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private RubySymbol name;
+    private final RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalVarNode(ISourcePosition position, int location, RubySymbol name) {
-        super(position, false);
+    public LocalVarNode(int line, int location, RubySymbol name) {
+        super(line, false);
         this.location = location;
         this.name = name;
     }
@@ -74,7 +75,7 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEf
      * @return 0 for current scope, 1 for one down, ...
      */
     public int getDepth() {
-        return location >> 16;
+        return unpackHighChar(location);
     }
     
     /**
@@ -84,7 +85,7 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEf
      * @return Returns an int offset into storage structure
      */
     public int getIndex() {
-        return location & 0xffff;
+        return unpackLowChar(location);
     }
 
     /**

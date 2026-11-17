@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem 'leafy-complete', '~> 0.6'
 
 group 'puma' do
-  gem 'puma', '~> 2.13'
+  gem 'puma', '~> 3.12.4'
 end
 group 'torquebox' do
   gem 'torquebox', '4.0.0.beta2'

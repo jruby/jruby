@@ -32,6 +32,8 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.junit.Assert.*;
 
 public class TestRubyFloat extends junit.framework.TestCase {
@@ -40,28 +42,30 @@ public class TestRubyFloat extends junit.framework.TestCase {
 
     @Test
     public void testConvertToInteger() {
-        RubyFloat r = RubyFloat.newFloat(runtime, 0);
-        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 0));
-        r = RubyFloat.newFloat(runtime, 12.81);
-        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 12));
-        r = RubyFloat.newFloat(runtime, -100.9);
-        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, -100));
-        r = RubyFloat.newFloat(runtime, 1000000000000000.5d);
-        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 1000000000000000l));
-        r = RubyFloat.newFloat(runtime, 10000000000000000000.9d);
+        var context = runtime.getCurrentContext();
+        RubyFloat r = asFloat(context, 0);
+        assertEquals(r.convertToInteger(), asFixnum(context, 0));
+        r = asFloat(context, 12.81);
+        assertEquals(r.convertToInteger(), asFixnum(context, 12));
+        r = asFloat(context, -100.9);
+        assertEquals(r.convertToInteger(), asFixnum(context, -100));
+        r = asFloat(context, 1000000000000000.5d);
+        assertEquals(r.convertToInteger(), asFixnum(context, 1000000000000000l));
+        r = asFloat(context, 10000000000000000000.9d);
         assertEquals(r.convertToInteger(), RubyBignum.newBignum(runtime, "10000000000000000000"));
     }
 
     @Test
     public void testToBigInteger() {
-        RubyFloat r = RubyFloat.newFloat(runtime, 0);
-        assertEquals(r.getBigIntegerValue(), BigInteger.ZERO);
-        r = RubyFloat.newFloat(runtime, 123456.789);
-        assertEquals(r.getBigIntegerValue(), BigInteger.valueOf(123456));
-        r = RubyFloat.newFloat(runtime, -10000000000000.99d);
-        assertEquals(r.getBigIntegerValue(), BigInteger.valueOf(-10000000000000l));
-        r = RubyFloat.newFloat(runtime, 10000000000000000000.9d);
-        assertEquals(r.getBigIntegerValue(), new BigInteger("10000000000000000000"));
+        var context = runtime.getCurrentContext();
+        RubyFloat r = asFloat(context, 0);
+        assertEquals(r.asBigInteger(context), BigInteger.ZERO);
+        r = asFloat(context, 123456.789);
+        assertEquals(r.asBigInteger(context), BigInteger.valueOf(123456));
+        r = asFloat(context, -10000000000000.99d);
+        assertEquals(r.asBigInteger(context), BigInteger.valueOf(-10000000000000l));
+        r = asFloat(context, 10000000000000000000.9d);
+        assertEquals(r.asBigInteger(context), new BigInteger("10000000000000000000"));
     }
 
 }

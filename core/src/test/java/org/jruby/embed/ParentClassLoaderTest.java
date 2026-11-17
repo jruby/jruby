@@ -45,6 +45,7 @@ public class ParentClassLoaderTest {
     public void test1ScriptingContainer() throws Exception {
         // we do have an instance of "jruby" loaded via some other classloader
         ScriptingContainer instance = new ScriptingContainer();
+        instance.runScriptlet("require 'jruby'");
         String result = instance.runScriptlet( "$LOAD_PATH" ).toString();
         assertNotNull(result);
 
@@ -62,6 +63,7 @@ public class ParentClassLoaderTest {
         String result = jruby.eval("$LOAD_PATH" ).toString();
         assertNotNull(result);
 
+        jruby.eval("require 'jruby'");
         assertEquals(jruby.eval("JRuby.runtime.jruby_class_loader.parent" ), cl );
     }
 
@@ -75,6 +77,7 @@ public class ParentClassLoaderTest {
         String result = jruby.eval("$LOAD_PATH" ).toString();
         assertNotNull(result);
 
+        jruby.eval("require 'jruby'");
         assertEquals(jruby.eval("JRuby.runtime.jruby_class_loader.parent" ), cl );
     }
 
@@ -87,6 +90,7 @@ public class ParentClassLoaderTest {
         String result = jruby.eval("$LOAD_PATH" ).toString();
         assertNotNull(result);
 
+        jruby.eval("require 'jruby'");
         assertEquals(jruby.eval("JRuby.runtime.jruby_class_loader.parent" ), cl );
     }
 }

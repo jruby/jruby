@@ -42,8 +42,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 
@@ -60,7 +62,7 @@ public class ObjectSpace {
     private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<>();
     private WeakReferenceListNode top;
 
-    private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
+    private final ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map<Long, IdReference> identities = new HashMap<>(64);
     private final Map<IRubyObject, Long> identitiesByObject = new WeakIdentityHashMap(64);
     private static final AtomicLong maxId = new AtomicLong(1000);
@@ -76,8 +78,8 @@ public class ObjectSpace {
     }
 
     public static long calculateObjectId(Object object) {
-        // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return maxId.getAndIncrement() * 2;
+        // Fixnums get all the 0b01 id's, flonums get the 0b10 id's, so we use next ID * 4
+        return maxId.getAndIncrement() * 4;
     }
 
     public long createAndRegisterObjectId(IRubyObject rubyObject) {
@@ -114,13 +116,13 @@ public class ObjectSpace {
         }
     }
 
-    @Deprecated
-    public long idOf(IRubyObject rubyObject) {
-        return createAndRegisterObjectId(rubyObject);
+    @Deprecated(since = "9.4.10.0")
+    public void addFinalizer(IRubyObject object, IRubyObject proc) {
+        addFinalizer(((RubyBasicObject) object).getCurrentContext(), object, proc);
     }
 
-    public void addFinalizer(IRubyObject object, IRubyObject proc) {
-        object.addFinalizer(proc);
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject object, IRubyObject proc) {
+        return object.addFinalizer(context, proc);
     }
 
     public void removeFinalizers(long id) {
@@ -131,6 +133,8 @@ public class ObjectSpace {
     }
 
     public void add(IRubyObject object) {
+        if (object instanceof JavaPackage)
+            return;
         if (true && object.getMetaClass() != null && !(object instanceof JavaProxy)) {
             // If the object is already frozen when we encounter it, it's pre-frozen.
             // Since this only (currently) applies to objects created outside the

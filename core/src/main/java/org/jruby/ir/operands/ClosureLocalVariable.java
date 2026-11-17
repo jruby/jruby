@@ -20,18 +20,10 @@ public class ClosureLocalVariable extends LocalVariable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof ClosureLocalVariable)) return false;
-
-        return hashCode() == obj.hashCode();
-    }
-
-    public int compareTo(Object arg0) {
-        // ENEBO: what should compareTo when it is not comparable?
-        if (!(arg0 instanceof ClosureLocalVariable)) return 0;
-
-        int a = hashCode();
-        int b = arg0.hashCode();
-        return a < b ? -1 : (a == b ? 0 : 1);
+        if (obj instanceof ClosureLocalVariable) {
+            return hcode == ((ClosureLocalVariable) obj).hcode;
+        }
+        return false;
     }
 
     @Override

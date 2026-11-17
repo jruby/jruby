@@ -1,9 +1,17 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 
 if defined?(OpenSSL)
 
 module OpenSSL::TestEOF
+  def test_getbyte_eof
+    open_file("") {|f| assert_nil f.getbyte }
+  end
+
+  def test_readbyte_eof
+    open_file("") {|f| assert_raise(EOFError) { f.readbyte } }
+  end
+
   def test_eof_0
     open_file("") {|f|
       assert_equal("", f.read(0))
@@ -18,12 +26,12 @@ module OpenSSL::TestEOF
       assert_nil(f.read(1))
     }
     open_file("") {|f|
-      s = "x"
+      s = +"x"
       assert_equal("", f.read(nil, s))
       assert_equal("", s)
     }
     open_file("") {|f|
-      s = "x"
+      s = +"x"
       assert_nil(f.read(10, s))
       assert_equal("", s)
     }
@@ -75,12 +83,12 @@ module OpenSSL::TestEOF
       assert_equal("", f.read(0))
     }
     open_file("a") {|f|
-      s = "x"
+      s = +"x"
       assert_equal("a", f.read(nil, s))
       assert_equal("a", s)
     }
     open_file("a") {|f|
-      s = "x"
+      s = +"x"
       assert_equal("a", f.read(10, s))
       assert_equal("a", s)
     }

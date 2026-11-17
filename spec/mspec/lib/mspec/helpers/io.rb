@@ -7,7 +7,7 @@ class IOStub
   end
 
   def write(*str)
-    self << str.join
+    self << str.join('')
   end
 
   def << str
@@ -16,7 +16,7 @@ class IOStub
   end
 
   def print(*str)
-    write(str.join + $\.to_s)
+    write(str.join('') + $\.to_s)
   end
 
   def method_missing(name, *args, &block)
@@ -64,7 +64,7 @@ end
 # Creates a "bare" file descriptor (i.e. one that is not associated
 # with any Ruby object). The file descriptor can safely be passed
 # to IO.new without creating a Ruby object alias to the fd.
-def new_fd(name, mode="w:utf-8")
+def new_fd(name, mode = "w:utf-8")
   if mode.kind_of? Hash
     if mode.key? :mode
       mode = mode[:mode]
@@ -78,10 +78,10 @@ end
 
 # Creates an IO instance for a temporary file name. The file
 # must be deleted.
-def new_io(name, mode="w:utf-8")
-  IO.new new_fd(name, mode), mode
-end
-
-def find_unused_fd
-  Dir.entries("/dev/fd").map(&:to_i).max + 1
+def new_io(name, mode = "w:utf-8")
+  if Hash === mode # Avoid kwargs warnings on Ruby 2.7+
+    File.new(name, **mode)
+  else
+    File.new(name, mode)
+  end
 end

@@ -28,22 +28,26 @@
 
 package org.jruby.ext.thread;
 
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Error.argumentError;
 
 /**
  * The "SizedQueue" class from the 'thread' library.
@@ -57,49 +61,43 @@ public class SizedQueue extends Queue {
     public SizedQueue(Ruby runtime, RubyClass type, int max) {
         super(runtime, type);
 
-        initialize(runtime.getCurrentContext(), runtime.newFixnum(max));
+        ThreadContext context = runtime.getCurrentContext();
+        initialize(context, asFixnum(context, max));
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cSizedQueue = runtime.getThread().defineClassUnder("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
-
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new SizedQueue(runtime, klass);
-            }
-        });
-        cSizedQueue.setReifiedClass(SizedQueue.class);
-        cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
-        runtime.getObject().setConstant("SizedQueue", cSizedQueue);
+    public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Queue, RubyClass Object) {
+        return (RubyClass) Object.setConstant(context, "SizedQueue",
+                Thread.defineClassUnder(context, "SizedQueue", Queue, SizedQueue::new).
+                        reifiedClass(SizedQueue.class).defineMethods(context, SizedQueue.class));
     }
 
     @JRubyMethod
     public RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, capacity);
+        return asFixnum(context, capacity);
     }
 
     @JRubyMethod(name = "max=")
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
-        initializedCheck();
-        Ruby runtime = context.runtime;
-        int max = RubyNumeric.num2int(arg), diff = 0;
+        initializedCheck(context);
 
-        if (max <= 0) {
-            throw runtime.newArgumentError("queue size must be positive");
-        }
+        int max = toInt(context, arg), diff = 0;
+        if (max <= 0) throw argumentError(context, "queue size must be positive");
 
         fullyLock();
         try {
-            if (count.get() >= capacity && max > capacity) {
-                diff = max - capacity;
-            }
+            if (count.get() >= capacity && max > capacity) diff = max - capacity;
+
             capacity = max;
             while (diff-- > 0) {
                 notFull.signal();
             }
-            return arg;
         } finally {
             fullyUnlock();
         }
+
+        unblockAllSchedulerWaiters(schedulerPutters);
+
+        return arg;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
@@ -111,7 +109,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod
     public RubyNumeric num_waiting(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         final ReentrantLock takeLock = this.takeLock;
         final ReentrantLock putLock = this.putLock;
         try {
@@ -119,7 +117,8 @@ public class SizedQueue extends Queue {
             try {
                 putLock.lockInterruptibly();
                 try {
-                    return context.runtime.newFixnum(takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull));
+                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull)
+                            + schedulerWaiting(schedulerTakers) + schedulerWaiting(schedulerPutters));
                 } finally {
                     putLock.unlock();
                 }
@@ -131,17 +130,101 @@ public class SizedQueue extends Queue {
         }
     }
 
-    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
-    public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
-        initializedCheck();
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0) {
+        initializedCheck(context);
 
-        boolean should_block = shouldBlock(context, argv);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerPush(context, scheduler, arg0, 0);
 
         try {
-            return context.getThread().executeTask(context, argv[0], should_block ? blockingPushTask : nonblockingPushTask);
+            return context.getThread().executeTaskBlocking(context, arg0, blockingPutTask);
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblockOrOpts) {
+        initializedCheck(context);
+
+        boolean nonblock = false;
+        long timeoutNS = 0;
+
+        RubyHash opts = ArgsUtil.extractKeywords(nonblockOrOpts);
+
+        if (opts != null) {
+            IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", opts);
+
+            if (!_timeout.isNil()) {
+                timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+                if (timeoutNS == 0 && count.get() == capacity) {
+                    return context.nil;
+                }
+            }
+        } else {
+            nonblock = nonblockOrOpts.isTrue();
+        }
+
+        return pushCommon(context, arg0, nonblock, timeoutNS);
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject _nonblock, IRubyObject _opts) {
+        initializedCheck(context);
+
+        boolean nonblock = _nonblock.isTrue();
+        long timeoutNS = 0;
+
+        IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", _opts);
+        if (!_timeout.isNil()) {
+            if (nonblock) throw argumentError(context, "can't set a timeout if non_block is enabled");
+
+            timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+            if (timeoutNS == 0 && count.get() == capacity) return context.nil;
+        }
+
+        return pushCommon(context, arg0, nonblock, timeoutNS);
+    }
+
+    private IRubyObject pushCommon(ThreadContext context, IRubyObject arg0, boolean nonblock, long timeoutNS) {
+        try {
+            RubyThread thread = context.getThread();
+            if (nonblock) {
+                if (!offerInternal(context, arg0)) throw context.runtime.newThreadError("queue full");
+
+                return this;
+            }
+
+            IRubyObject scheduler = FiberScheduler.current(context);
+            if (scheduler != null) return schedulerPush(context, scheduler, arg0, timeoutNS);
+
+            RubyThread.Task<IRubyObject, IRubyObject> task = timeoutNS != 0 ?
+                    new BlockingOfferTask(timeoutNS) : blockingPutTask;
+
+            return thread.executeTaskBlocking(context, arg0, task);
+        } catch (InterruptedException ie) {
+            throw createInterruptedError(context, "push");
+        }
+    }
+
+    // MRI: rb_szqueue_push, blocking through the fiber scheduler while the queue is full
+    private IRubyObject schedulerPush(ThreadContext context, IRubyObject scheduler, IRubyObject value, long timeoutNS) {
+        long deadline = timeoutNS == 0 ? 0 : System.nanoTime() + timeoutNS;
+
+        while (!offerInternal(context, value)) {
+            // On a full queue, offerInternal returns false without checking closed.
+            // A closed queue never makes room for us, so raise here instead of looping forever.
+            if (closed) raiseClosedError(context);
+
+            if (!schedulerBlock(context, scheduler, true, deadline)) {
+                return context.nil;
+            }
+        }
+
+        return this;
     }
 
     protected boolean offerInternal(ThreadContext context, IRubyObject e) {
@@ -149,48 +232,82 @@ public class SizedQueue extends Queue {
         final AtomicInteger count = this.count;
         if (count.get() == capacity)
             return false;
-        int c = -1;
-        Node node = new Node(e);
+        final int c;
+        final Node node = new Node(e);
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
+        try {
+            if (closed) raiseClosedError(context);
+            if (count.get() == capacity) return false;
+            enqueue(node);
+            c = count.getAndIncrement();
+            if (c + 1 < capacity) notFull.signal();
+        } finally {
+            putLock.unlock();
+        }
+        if (c == 0) signalNotEmpty();
+        unblockOneSchedulerWaiter(schedulerTakers);
+        return true;
+    }
+
+    public boolean offerInternal(ThreadContext context, IRubyObject e, long timeout, TimeUnit unit)
+            throws InterruptedException {
+
+        if (e == null) throw new NullPointerException();
+        long nanos = unit.toNanos(timeout);
+        final int c;
+        final ReentrantLock putLock = this.putLock;
+        final AtomicInteger count = this.count;
+        putLock.lockInterruptibly();
         try {
             if (closed) {
                 raiseClosedError(context);
             }
-            if (count.get() < capacity) {
-                enqueue(node);
-                c = count.getAndIncrement();
-                if (c + 1 < capacity)
-                    notFull.signal();
+            /*
+            Similar to differences in Queue from LinkedBlockingQueue, this checks for the closed flag,
+            propagating a ClosedError along the waiters if we find the queue has been closed while waiting.
+             */
+            boolean isClosed;
+            while (!(isClosed = closed) && count.get() == capacity) {
+                if (nanos <= 0L)
+                    return false;
+                nanos = notFull.awaitNanos(nanos);
             }
+            if (isClosed) {
+                // wake the next in line
+                notFull.signal();
+                // note that this is now a new early exit from the method,
+                // this doesn't matter because for the closed queues it is
+                // not a producer's responsibility to wake the blocked consumers
+                // (they wake each other, while the first in line gets notified
+                // by the close() caller)
+                raiseClosedError(context);
+            }
+            enqueue(new Node(e));
+            c = count.getAndIncrement();
+            if (c + 1 < capacity)
+                notFull.signal();
         } finally {
             putLock.unlock();
         }
-        if (c == 0)
-            signalNotEmpty();
-        return c >= 0;
+        if (c == 0) signalNotEmpty();
+        unblockOneSchedulerWaiter(schedulerTakers);
+        return true;
     }
 
-    private final RubyThread.Task<IRubyObject, IRubyObject> blockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+    private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            putInternal(context, value);
-            return SizedQueue.this;
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, IRubyObject value) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
-    private final RubyThread.Task<IRubyObject, IRubyObject> nonblockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
-        @Override
+        // MRI: rb_szqueue_push, untimed wait loop
         public IRubyObject run(ThreadContext context, IRubyObject value) {
-            if (!offerInternal(context, value)) {
-                throw context.runtime.newThreadError("queue full");
+            while (true) {
+                try {
+                    putInternal(context, value);
+                    return SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
             }
-            return SizedQueue.this;
         }
 
         @Override
@@ -199,12 +316,41 @@ public class SizedQueue extends Queue {
         }
     };
 
-    private static boolean shouldBlock(ThreadContext context, IRubyObject[] argv) {
-        boolean should_block = true;
-        Arity.checkArgumentCount(context, argv, 1, 2);
-        if (argv.length > 1) {
-            should_block = !argv[1].isTrue();
+    private final class BlockingOfferTask implements RubyThread.Task<IRubyObject, IRubyObject> {
+        private final long timeoutNS;
+
+        public BlockingOfferTask(long timeoutNS) {
+            this.timeoutNS = timeoutNS;
         }
-        return should_block;
+
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK, until the timeout.
+        @Override
+        // MRI: rb_szqueue_push, timed wait loop
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+                    return !result ? context.nil : SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, IRubyObject sizedQueue) {
+            thread.getNativeThread().interrupt();
+        }
+    }
+
+    @Deprecated(since = "9.4.6.0")
+    public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
+        return switch (argv.length) {
+            case 1 -> push(context, argv[0]);
+            case 2 -> push(context, argv[0], argv[1]);
+            default -> throw argumentError(context, argv.length, 1, 2);
+        };
     }
 }

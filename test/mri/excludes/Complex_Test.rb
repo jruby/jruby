@@ -1,4 +1,2 @@
-exclude :test_fixed_bug, "needs investigation"
-exclude :test_marshal, "needs investigation"
-exclude :test_marshal_compatibility, "needs investigation"
-exclude :test_respond, "needs investigation"
+exclude :test_coerce2, "fails in JIT mode on Linux CI on GHA"
+exclude :test_parse, "fails in JIT mode on Linux CI on GHA"

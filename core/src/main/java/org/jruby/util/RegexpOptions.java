@@ -11,6 +11,11 @@ import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.util.RubyStringBuilder.str;
 
 public class RegexpOptions implements Cloneable {
 
@@ -227,6 +232,37 @@ public class RegexpOptions implements Cloneable {
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
+        options.setEncodingNone((joniOptions & RubyRegexp.RE_NONE) != 0);
+
+        return options;
+    }
+
+    public static RegexpOptions fromByteList(Ruby runtime, ByteList string) {
+        return fromByteList(runtime.getCurrentContext(), string);
+    }
+
+    // This is the options Regexp#new supports.  It is not all valid suffixes.
+    public static RegexpOptions fromByteList(ThreadContext context, ByteList string) {
+        RegexpOptions options = new RegexpOptions();
+        byte[] bytes = string.unsafeBytes();
+        int length = string.realSize();
+
+        for (int i = string.begin(); i < length; i++) {
+            int c = bytes[i];
+            switch (c) {
+                case 'i':
+                    options.setIgnorecase(true);
+                    break;
+                case 'x':
+                    options.setExtended(true);
+                    break;
+                case 'm':
+                    options.setMultiline(true);
+                    break;
+                default:
+                    throw argumentError(context, str(context.runtime, "unknown regexp option: ", newString(context, string)));
+            }
+        }
 
         return options;
     }
@@ -296,6 +332,46 @@ public class RegexpOptions implements Cloneable {
                 (multiline == true ? ", multiline" : "") +
                 (once == true ? ", once" : "") +                
                 ")";
+    }
+
+    // Assumes options string has already been parsed so that we do not need to detect unknown options (Prism will do this).
+    public static RegexpOptions newRegexpOptions(String validOptions) {
+        RegexpOptions options = new RegexpOptions();
+        int length = validOptions.length();
+
+        for (int i = 0; i < length; i++) {
+            switch (validOptions.charAt(i)) {
+                case 'i':
+                    options.setIgnorecase(true);
+                    break;
+                case 'x':
+                    options.setExtended(true);
+                    break;
+                case 'm':
+                    options.setMultiline(true);
+                    break;
+                case 'o':
+                    options.setOnce(true);
+                    break;
+                case 'n':
+                    options.setExplicitKCode(KCode.NONE);
+                    break;
+                case 'e':
+                    options.setExplicitKCode(KCode.EUC);
+                    break;
+                case 's':
+                    options.setExplicitKCode(KCode.SJIS);
+                    break;
+                case 'u':
+                    options.setExplicitKCode(KCode.UTF8);
+                    break;
+                case 'j':
+                    options.setJava(true);
+                    break;
+            }
+        }
+
+        return options;
     }
     
     private KCode kcode;

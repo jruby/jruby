@@ -13,10 +13,10 @@ describe "Integer#to_s" do
       end
 
       it "raises an ArgumentError if the base is less than 2 or higher than 36" do
-        lambda { 123.to_s(-1) }.should raise_error(ArgumentError)
-        lambda { 123.to_s(0)  }.should raise_error(ArgumentError)
-        lambda { 123.to_s(1)  }.should raise_error(ArgumentError)
-        lambda { 123.to_s(37) }.should raise_error(ArgumentError)
+        -> { 123.to_s(-1) }.should.raise(ArgumentError)
+        -> { 123.to_s(0)  }.should.raise(ArgumentError)
+        -> { 123.to_s(1)  }.should.raise(ArgumentError)
+        -> { 123.to_s(37) }.should.raise(ArgumentError)
       end
     end
 
@@ -39,12 +39,12 @@ describe "Integer#to_s" do
 
     it "returns a String in US-ASCII encoding when Encoding.default_internal is nil" do
       Encoding.default_internal = nil
-      1.to_s.encoding.should equal(Encoding::US_ASCII)
+      1.to_s.encoding.should.equal?(Encoding::US_ASCII)
     end
 
     it "returns a String in US-ASCII encoding when Encoding.default_internal is not nil" do
       Encoding.default_internal = Encoding::IBM437
-      1.to_s.encoding.should equal(Encoding::US_ASCII)
+      1.to_s.encoding.should.equal?(Encoding::US_ASCII)
     end
   end
 
@@ -59,18 +59,18 @@ describe "Integer#to_s" do
       end
 
       it "raises an ArgumentError if the base is less than 2 or higher than 36" do
-        lambda { 123.to_s(-1) }.should raise_error(ArgumentError)
-        lambda { 123.to_s(0) }.should raise_error(ArgumentError)
-        lambda { 123.to_s(1) }.should raise_error(ArgumentError)
-        lambda { 123.to_s(37) }.should raise_error(ArgumentError)
+        -> { 123.to_s(-1) }.should.raise(ArgumentError)
+        -> { 123.to_s(0) }.should.raise(ArgumentError)
+        -> { 123.to_s(1) }.should.raise(ArgumentError)
+        -> { 123.to_s(37) }.should.raise(ArgumentError)
       end
     end
 
     describe "when given no base" do
       it "returns self converted to a String using base 10" do
-        bignum_value(9).to_s.should == "9223372036854775817"
-        bignum_value.to_s.should == "9223372036854775808"
-        (-bignum_value(675)).to_s.should == "-9223372036854776483"
+        bignum_value(9).to_s.should == "18446744073709551625"
+        bignum_value.to_s.should == "18446744073709551616"
+        (-bignum_value(675)).to_s.should == "-18446744073709552291"
       end
     end
 
@@ -84,12 +84,12 @@ describe "Integer#to_s" do
 
     it "returns a String in US-ASCII encoding when Encoding.default_internal is nil" do
       Encoding.default_internal = nil
-      bignum_value.to_s.encoding.should equal(Encoding::US_ASCII)
+      bignum_value.to_s.encoding.should.equal?(Encoding::US_ASCII)
     end
 
     it "returns a String in US-ASCII encoding when Encoding.default_internal is not nil" do
       Encoding.default_internal = Encoding::IBM437
-      bignum_value.to_s.encoding.should equal(Encoding::US_ASCII)
+      bignum_value.to_s.encoding.should.equal?(Encoding::US_ASCII)
     end
   end
 end

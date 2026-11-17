@@ -32,6 +32,8 @@ import org.jruby.ast.*;
 /**
  * An abstract implementation of {@link NodeVisitor} that has an abstract default visit method, and provides a utility
  * method to visit children.
+ *
+ * @param <T> return value for each visit
  */
 public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
@@ -91,6 +93,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitArrayNode(ArrayNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitArrayPatternNode(ArrayPatternNode node) {
         return defaultVisit(node);
     }
 
@@ -245,6 +252,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitErrorNode(ErrorNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitEvStrNode(EvStrNode node) {
         return defaultVisit(node);
     }
@@ -256,6 +268,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitFalseNode(FalseNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitFindPatternNode(FindPatternNode node) {
         return defaultVisit(node);
     }
 
@@ -291,6 +308,16 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitHashNode(HashNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitHashPatternNode(HashPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitInNode(InNode node) {
         return defaultVisit(node);
     }
 
@@ -375,7 +402,7 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
-    public T visitNewlineNode(NewlineNode node) {
+    public T visitNilRestArgNode(NilRestArgNode node) {
         return defaultVisit(node);
     }
 
@@ -391,6 +418,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitNthRefNode(NthRefNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitOperatorCallNode(OperatorCallNode node) {
         return defaultVisit(node);
     }
 
@@ -426,6 +458,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitOrNode(OrNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitPatternCaseNode(PatternCaseNode node) {
         return defaultVisit(node);
     }
 
@@ -586,12 +623,6 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitOther(Node node) {
-        return defaultVisit(node);
-    }
-
-    @Override
-    @Deprecated
-    public T visitClassVarDeclNode(ClassVarDeclNode node) {
         return defaultVisit(node);
     }
 

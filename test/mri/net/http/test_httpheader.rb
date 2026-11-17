@@ -28,7 +28,29 @@ class HTTPHeaderTest < Test::Unit::TestCase
     assert_raise(NoMethodError){ @c.initialize_http_header("foo"=>[]) }
     assert_raise(ArgumentError){ @c.initialize_http_header("foo"=>"a\nb") }
     assert_raise(ArgumentError){ @c.initialize_http_header("foo"=>"a\rb") }
-    assert_raise(ArgumentError){ @c.initialize_http_header("foo"=>"a\xff") }
+  end
+
+  def test_invalid_field_name
+    assert_raise(ArgumentError){ @c.initialize_http_header("foo\nbar"=>"abc") }
+    assert_raise(ArgumentError){ @c.initialize_http_header("foo\rbar"=>"abc") }
+    assert_raise(ArgumentError){ @c.initialize_http_header("foo:bar"=>"abc") }
+    assert_raise(ArgumentError){ @c.initialize_http_header("foo\x00bar"=>"abc") }
+    assert_raise(ArgumentError){ @c['foo'.b << 0x0a << 'bar'] = 'abc' }
+    assert_raise(ArgumentError){ @c["foo\rbar"] = 'abc' }
+    assert_raise(ArgumentError){ @c["foo:bar"] = 'abc' }
+    assert_raise(ArgumentError){ @c["foo\x7fbar"] = 'abc' }
+    assert_raise(ArgumentError){ @c.add_field "foo\nbar", 'abc' }
+    assert_raise(ArgumentError){ @c.add_field "foo\nbar", ['abc'] }
+  end
+
+  def test_initialize_with_broken_coderange
+    error = RUBY_VERSION >= "3.2" ? Encoding::CompatibilityError : ArgumentError
+    assert_raise(error){ @c.initialize_http_header("foo"=>"a\xff") }
+  end
+
+  def test_initialize_with_symbol
+    @c.initialize_http_header(foo: "abc")
+    assert_equal "abc", @c["foo"]
   end
 
   def test_size
@@ -65,6 +87,24 @@ class HTTPHeaderTest < Test::Unit::TestCase
 
     assert_raise(ArgumentError){ @c['foo'] = "a\nb" }
     assert_raise(ArgumentError){ @c['foo'] = ["a\nb"] }
+  end
+
+  def test_set_field_too_long_key
+    assert_raise(ArgumentError){ @c['x' * (Net::HTTPHeader::MAX_KEY_LENGTH + 1)] = 'a' }
+    assert_nothing_raised{ @c['x' * Net::HTTPHeader::MAX_KEY_LENGTH] = 'a' }
+  end
+
+  def test_set_field_too_long_value
+    long = 'a' * (Net::HTTPHeader::MAX_FIELD_LENGTH + 1)
+    assert_raise(ArgumentError){ @c['foo'] = long }
+    assert_raise(ArgumentError){ @c['foo'] = [long] }
+    assert_raise(ArgumentError){ @c.add_field 'foo', long }
+
+    # the error message names the key and the limit on every path
+    @c['foo'] = 'ok'
+    e = assert_raise(ArgumentError){ @c.add_field 'foo', long }
+    assert_match(/foo/, e.message)
+    assert_match(/#{Net::HTTPHeader::MAX_FIELD_LENGTH}/, e.message)
   end
 
   def test_AREF
@@ -114,7 +154,19 @@ class HTTPHeaderTest < Test::Unit::TestCase
   class D; include Net::HTTPHeader; end
 
   def test_nil_variable_header
-    assert_nothing_raised { D.new.initialize_http_header({Authorization: nil}) }
+    assert_nothing_raised do
+      assert_warning("#{__FILE__}:#{__LINE__+1}: warning: net/http: nil HTTP header: Authorization\n") do
+        D.new.initialize_http_header({Authorization: nil})
+      end
+    end
+  end
+
+  def test_duplicated_variable_header
+    assert_nothing_raised do
+      assert_warning("#{__FILE__}:#{__LINE__+1}: warning: net/http: duplicated HTTP header: Authorization\n") do
+        D.new.initialize_http_header({"AUTHORIZATION": "yes", "Authorization": "no"})
+      end
+    end
   end
 
   def test_delete
@@ -291,6 +343,18 @@ class HTTPHeaderTest < Test::Unit::TestCase
   end
 
   def test_content_range
+    @c['Content-Range'] = "bytes 0-499/1000"
+    assert_equal 0..499, @c.content_range
+    @c['Content-Range'] = "bytes 1-500/1000"
+    assert_equal 1..500, @c.content_range
+    @c['Content-Range'] = "bytes 1-1/1000"
+    assert_equal 1..1, @c.content_range
+    @c['Content-Range'] = "tokens 1-1/1000"
+    assert_equal nil, @c.content_range
+
+    try_invalid_content_range "invalid"
+    try_invalid_content_range "bytes 123-abc"
+    try_invalid_content_range "bytes abc-123"
   end
 
   def test_range_length
@@ -300,6 +364,15 @@ class HTTPHeaderTest < Test::Unit::TestCase
     assert_equal 500, @c.range_length
     @c['Content-Range'] = "bytes 1-1/1000"
     assert_equal 1, @c.range_length
+    @c['Content-Range'] = "tokens 1-1/1000"
+    assert_equal nil, @c.range_length
+
+    try_invalid_content_range "bytes 1-1/abc"
+  end
+
+  def try_invalid_content_range(s)
+    @c['Content-Range'] = "#{s}"
+    assert_raise(Net::HTTPHeaderSyntaxError, s){ @c.content_range }
   end
 
   def test_chunked?
@@ -309,6 +382,16 @@ class HTTPHeaderTest < Test::Unit::TestCase
 
     try_chunked false, 'not-chunked'
     try_chunked false, 'chunked-but-not-chunked'
+  end
+
+  def test_chunked_final_transfer_coding
+    try_chunked true, 'gzip, chunked'
+    try_chunked true, 'chunked,'
+    try_chunked true, 'gzip , chunked , '
+
+    try_chunked false, 'chunked, gzip'
+    try_chunked false, 'chunked, identity'
+    try_chunked false, 'gzip'
   end
 
   def try_chunked(bool, str)
@@ -323,17 +406,53 @@ class HTTPHeaderTest < Test::Unit::TestCase
     try_content_length 500, '500'
     try_content_length 10000_0000_0000, '1000000000000'
     try_content_length 123, '  123'
-    try_content_length 1,   '1 23'
-    try_content_length 500, '(OK)500'
-    assert_raise(Net::HTTPHeaderSyntaxError, 'here is no digit, but') {
-      @c['content-length'] = 'no digit'
-      @c.content_length
-    }
+
+    # Same values in one Content-Length field are accepted.
+    # See: https://www.rfc-editor.org/rfc/rfc9110.html#section-8.6-13
+    try_content_length 5, '5, 5'
+
+    # Same values in multiple Content-Length fields are accepted.
+    # See: https://www.rfc-editor.org/rfc/rfc9110.html#section-8.6-13
+    @c.delete('content-length')
+    @c.add_field('content-length', '7')
+    @c.add_field('content-length', '7')
+    assert_equal 7, @c.content_length
   end
 
   def try_content_length(len, str)
     @c['content-length'] = str
     assert_equal len, @c.content_length
+  end
+
+  def test_content_length_invalid
+    try_invalid_content_length ''
+    try_invalid_content_length '1 23'
+    try_invalid_content_length '(OK)500'
+    try_invalid_content_length 'no digit'
+    try_invalid_content_length 'abc5'
+    try_invalid_content_length '5abc'
+    try_invalid_content_length '5, 6'
+
+    @c.delete('content-length')
+    @c.add_field('content-length', '7')
+    @c.add_field('content-length', '8')
+    assert_raise(Net::HTTPHeaderSyntaxError) {
+      @c.content_length
+    }
+
+    @c.delete('content-length')
+    @c.add_field('content-length', '5')
+    @c.add_field('content-length', '')
+    assert_raise(Net::HTTPHeaderSyntaxError) {
+      @c.content_length
+    }
+  end
+
+  def try_invalid_content_length(str)
+    @c['content-length'] = str
+    assert_raise(Net::HTTPHeaderSyntaxError, str) {
+      @c.content_length
+    }
   end
 
   def test_content_length=
@@ -396,6 +515,11 @@ class HTTPHeaderTest < Test::Unit::TestCase
   end
 
   def test_set_content_type
+    @c.set_content_type 'text/html', {'charset' => 'utf-8'}
+    assert_equal 'text/html; charset=utf-8', @c['content-type']
+    assert_raise(ArgumentError){ @c.set_content_type "text/html\r\nFoo: bar" }
+    assert_raise(ArgumentError){ @c.set_content_type 'text/html', {'charset' => "x\r\nFoo: bar"} }
+    assert_raise(ArgumentError){ @c.set_content_type 'text/html', {"x\nFoo: bar" => 'utf-8'} }
   end
 
   def test_form_data=

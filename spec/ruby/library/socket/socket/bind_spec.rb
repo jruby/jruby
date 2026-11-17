@@ -8,12 +8,12 @@ describe "Socket#bind on SOCK_DGRAM socket" do
   end
 
   after :each do
-    @sock.closed?.should be_false
+    @sock.closed?.should == false
     @sock.close
   end
 
   it "binds to a port" do
-    lambda { @sock.bind(@sockaddr) }.should_not raise_error
+    -> { @sock.bind(@sockaddr) }.should_not.raise
   end
 
   it "returns 0 if successful" do
@@ -23,19 +23,20 @@ describe "Socket#bind on SOCK_DGRAM socket" do
   it "raises Errno::EINVAL when already bound" do
     @sock.bind(@sockaddr)
 
-    lambda { @sock.bind(@sockaddr) }.should raise_error(Errno::EINVAL)
+    -> { @sock.bind(@sockaddr) }.should.raise(Errno::EINVAL)
   end
 
   it "raises Errno::EADDRNOTAVAIL when the specified sockaddr is not available from the local machine" do
     sockaddr1 = Socket.pack_sockaddr_in(0, "4.3.2.1")
-    lambda { @sock.bind(sockaddr1) }.should raise_error(Errno::EADDRNOTAVAIL)
+    -> { @sock.bind(sockaddr1) }.should.raise(Errno::EADDRNOTAVAIL)
   end
 
   platform_is_not :windows, :cygwin do
     as_user do
+      break if File.read('/proc/sys/net/ipv4/ip_unprivileged_port_start').to_i <= 1 rescue nil
       it "raises Errno::EACCES when the current user does not have permission to bind" do
         sockaddr1 = Socket.pack_sockaddr_in(1, "127.0.0.1")
-        lambda { @sock.bind(sockaddr1) }.should raise_error(Errno::EACCES)
+        -> { @sock.bind(sockaddr1) }.should.raise(Errno::EACCES)
       end
     end
   end
@@ -49,12 +50,12 @@ describe "Socket#bind on SOCK_STREAM socket" do
   end
 
   after :each do
-    @sock.closed?.should be_false
+    @sock.closed?.should == false
     @sock.close
   end
 
   it "binds to a port" do
-    lambda { @sock.bind(@sockaddr) }.should_not raise_error
+    -> { @sock.bind(@sockaddr) }.should_not.raise
   end
 
   it "returns 0 if successful" do
@@ -64,19 +65,20 @@ describe "Socket#bind on SOCK_STREAM socket" do
   it "raises Errno::EINVAL when already bound" do
     @sock.bind(@sockaddr)
 
-    lambda { @sock.bind(@sockaddr) }.should raise_error(Errno::EINVAL)
+    -> { @sock.bind(@sockaddr) }.should.raise(Errno::EINVAL)
   end
 
   it "raises Errno::EADDRNOTAVAIL when the specified sockaddr is not available from the local machine" do
     sockaddr1 = Socket.pack_sockaddr_in(0, "4.3.2.1")
-    lambda { @sock.bind(sockaddr1) }.should raise_error(Errno::EADDRNOTAVAIL)
+    -> { @sock.bind(sockaddr1) }.should.raise(Errno::EADDRNOTAVAIL)
   end
 
   platform_is_not :windows, :cygwin do
     as_user do
+      break if File.read('/proc/sys/net/ipv4/ip_unprivileged_port_start').to_i <= 1 rescue nil
       it "raises Errno::EACCES when the current user does not have permission to bind" do
         sockaddr1 = Socket.pack_sockaddr_in(1, "127.0.0.1")
-        lambda { @sock.bind(sockaddr1) }.should raise_error(Errno::EACCES)
+        -> { @sock.bind(sockaddr1) }.should.raise(Errno::EACCES)
       end
     end
   end
@@ -101,24 +103,26 @@ describe 'Socket#bind' do
       it 'raises Errno::EINVAL when binding to an already bound port' do
         @socket.bind(@sockaddr)
 
-        lambda { @socket.bind(@sockaddr) }.should raise_error(Errno::EINVAL)
+        -> { @socket.bind(@sockaddr) }.should.raise(Errno::EINVAL)
       end
 
       it 'raises Errno::EADDRNOTAVAIL when the specified sockaddr is not available' do
         ip = family == Socket::AF_INET ? '4.3.2.1' : '::2'
         sockaddr1 = Socket.sockaddr_in(0, ip)
 
-        lambda { @socket.bind(sockaddr1) }.should raise_error(Errno::EADDRNOTAVAIL)
+        -> { @socket.bind(sockaddr1) }.should.raise(Errno::EADDRNOTAVAIL)
       end
 
       platform_is_not :windows do
         as_user do
+          break if File.read('/proc/sys/net/ipv4/ip_unprivileged_port_start').to_i <= 1 rescue nil
+
           it 'raises Errno::EACCES when the user is not allowed to bind to the port' do
             sockaddr1 = Socket.pack_sockaddr_in(1, ip_address)
 
-            lambda { @socket.bind(sockaddr1) }.should raise_error(Errno::EACCES)
+            -> { @socket.bind(sockaddr1) }.should.raise(Errno::EACCES)
           end
-       end
+        end
       end
     end
 
@@ -134,7 +138,7 @@ describe 'Socket#bind' do
 
       it 'binds to an Addrinfo' do
         @socket.bind(@addr).should == 0
-        @socket.local_address.should be_an_instance_of(Addrinfo)
+        @socket.local_address.should.instance_of?(Addrinfo)
       end
 
       it 'uses a new Addrinfo for the local address' do

@@ -139,8 +139,8 @@ public class OSGiFileLocator {
 	 * Get a URL to the content of the bundle entry that uses the file: protocol.
 	 * The content of the bundle entry may be downloaded or extracted to the local
 	 * file system in order to create a file: URL.
-	 * @return a URL to the content of the bundle entry that uses the file: protocol
 	 * </p>
+	 * @return a URL to the content of the bundle entry that uses the file: protocol
 	 */
 	public static URL getFileURL(URL url)
 	{

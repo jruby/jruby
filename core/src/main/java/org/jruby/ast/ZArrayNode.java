@@ -32,10 +32,8 @@
 
 package org.jruby.ast;
 
-import java.util.List;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
@@ -43,8 +41,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  */
 public class ZArrayNode extends ListNode implements ILiteralNode {
-    public ZArrayNode(ISourcePosition position) {
-        super(position);
+    public ZArrayNode(int line) {
+        super(line);
     }
 
     public NodeType getNodeType() {

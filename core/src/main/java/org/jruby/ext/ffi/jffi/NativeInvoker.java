@@ -11,22 +11,17 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 abstract public class NativeInvoker extends DynamicMethod {
     protected final Arity arity;
     protected final com.kenai.jffi.Function function;
     private final int cbIndex;
     private final NativeCallbackFactory cbFactory;
-    private final Signature signature;
 
 
     public NativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, Visibility.PUBLIC, "ffi"+function.getFunctionAddress());
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
-        this.signature = signature;
 
         int cbIndex = -1;
         NativeCallbackFactory cbFactory = null;
@@ -48,16 +43,8 @@ abstract public class NativeInvoker extends DynamicMethod {
     }
 
     @Override
-    public final Arity getArity() {
-        return arity;
-    }
-    @Override
     public final boolean isNative() {
         return true;
-    }
-
-    Signature getSignature() {
-        return signature;
     }
 
     CallContext getCallContext() {
@@ -77,7 +64,7 @@ abstract public class NativeInvoker extends DynamicMethod {
             return call(context, self, clazz, name, args);
 
         } else {
-            Arity.checkArgumentCount(context.runtime, name, args,
+            Arity.checkArgumentCount(context, args,
                     arity.getValue() - 1, arity.getValue());
 
             IRubyObject[] params = new IRubyObject[arity.getValue()];

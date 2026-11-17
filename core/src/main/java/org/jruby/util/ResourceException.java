@@ -1,27 +1,44 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 
 import java.io.IOException;
 
 /**
- * @note Private API that might get removed later.
+ * <p>Note: Private API that might get removed later.</p>
  */
 // While it is public, please don't use this, since in master it will be
 // marked private and replaced by RaiseException usage.
 public abstract class ResourceException extends IOException {
     public ResourceException() {}
+    public ResourceException(String message) {
+        super(message);
+    }
     public ResourceException(Throwable t) {
         super(t);
     }
+    public ResourceException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    abstract static class ErrnoException extends ResourceException {
+    public static class ErrnoException extends ResourceException {
         private final String path;
         private final String errnoClass;
+        private final Errno errno;
 
         protected ErrnoException(String errnoClass, String path) {
+            super(errnoClass + ": " + path);
+            this.errno = Errno.valueOf(errnoClass);
             this.errnoClass = errnoClass;
+            this.path = path;
+        }
+
+        protected ErrnoException(Errno errno, String path) {
+            super(errno.name() + ": " + path);
+            this.errno = errno;
+            this.errnoClass = errno.name();
             this.path = path;
         }
 
@@ -30,7 +47,15 @@ public abstract class ResourceException extends IOException {
 
         @Override
         public RaiseException newRaiseException(Ruby runtime) {
-            return runtime.newRaiseException(runtime.getErrno().getClass(errnoClass), path);
+            return runtime.newRaiseException(runtime.getErrno().getClass(runtime.getCurrentContext(), errnoClass), path);
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public Errno getErrno() {
+            return errno;
         }
     }
 
@@ -62,7 +87,8 @@ public abstract class ResourceException extends IOException {
         public TooManySymlinks(String path) { super("ELOOP", path); }
     }
 
-    @Deprecated
+    // Deprecated in 9.2.1.0 but still used by methods not deprecated until 9.4-
+    @Deprecated(since = "9.4-")
     public static class IOError extends ResourceException {
         private final IOException ioe;
 

@@ -97,6 +97,11 @@ class TestSH < Test::Unit::TestCase
 		 [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
   end
 
+  def test_ajd
+    assert_equal(Date.civil(2008, 1, 16).ajd, 4908963r/2)
+    assert_equal(Date.civil(-11082381539297990, 2, 19).ajd, -8095679714453739481r/2)
+  end
+
   def test_ordinal
     d = Date.ordinal
     assert_equal([-4712, 1], [d.year, d.yday])
@@ -187,18 +192,18 @@ class TestSH < Test::Unit::TestCase
     d = Date.jd(Rational(2451944))
     assert_equal(2451944, d.jd)
     d = Date.jd(2451944.5)
-    assert_equal([2451944, 12], [d.jd, d.send('hour')])
+    assert_equal(2451944, d.jd)
     d = Date.jd(Rational('2451944.5'))
-    assert_equal([2451944, 12], [d.jd, d.send('hour')])
+    assert_equal(2451944, d.jd)
 
     d = Date.civil(2001, 2, 3.0)
     assert_equal([2001, 2, 3], [d.year, d.mon, d.mday])
     d = Date.civil(2001, 2, Rational(3))
     assert_equal([2001, 2, 3], [d.year, d.mon, d.mday])
     d = Date.civil(2001, 2, 3.5)
-    assert_equal([2001, 2, 3, 12], [d.year, d.mon, d.mday, d.send('hour')])
+    assert_equal([2001, 2, 3], [d.year, d.mon, d.mday])
     d = Date.civil(2001, 2, Rational('3.5'))
-    assert_equal([2001, 2, 3, 12], [d.year, d.mon, d.mday, d.send('hour')])
+    assert_equal([2001, 2, 3], [d.year, d.mon, d.mday])
 
     d = Date.ordinal(2001, 2.0)
     assert_equal([2001, 2], [d.year, d.yday])
@@ -266,10 +271,8 @@ class TestSH < Test::Unit::TestCase
   end
 
   def test_zone
-    d = Date.new(2001, 2, 3)
-    assert_equal(Encoding::US_ASCII, d.send(:zone).encoding)
     d = DateTime.new(2001, 2, 3)
-    assert_equal(Encoding::US_ASCII, d.send(:zone).encoding)
+    assert_equal(Encoding::US_ASCII, d.zone.encoding)
   end
 
   def test_to_s
@@ -532,17 +535,15 @@ class TestSH < Test::Unit::TestCase
 
   def test_marshal14
     s = "\x04\x03u:\x01\x04Date\x01\v\x04\x03[\x01\x02i\x03\xE8i%T"
-    d = Marshal.load(s)
+    d = suppress_warning {Marshal.load(s)}
     assert_equal(Rational(4903887,2), d.ajd)
-    assert_equal(0, d.send(:offset))
     assert_equal(Date::GREGORIAN, d.start)
   end
 
   def test_marshal16
     s = "\x04\x06u:\tDate\x0F\x04\x06[\ai\x03\xE8i%T"
-    d = Marshal.load(s)
+    d = suppress_warning {Marshal.load(s)}
     assert_equal(Rational(4903887,2), d.ajd)
-    assert_equal(0, d.send(:offset))
     assert_equal(Date::GREGORIAN, d.start)
   end
 
@@ -550,7 +551,6 @@ class TestSH < Test::Unit::TestCase
     s = "\x04\bu:\tDateP\x04\b[\bo:\rRational\a:\x0F@numeratori\x03\xCF\xD3J:\x11@denominatori\ai\x00o:\x13Date::Infinity\x06:\a@di\xFA"
     d = Marshal.load(s)
     assert_equal(Rational(4903887,2), d.ajd)
-    assert_equal(0, d.send(:offset))
     assert_equal(Date::GREGORIAN, d.start)
 
     s = "\x04\bu:\rDateTime`\x04\b[\bo:\rRational\a:\x0F@numeratorl+\b\xC9\xB0\x81\xBD\x02\x00:\x11@denominatori\x02\xC0\x12o;\x00\a;\x06i\b;\ai\ro:\x13Date::Infinity\x06:\a@di\xFA"
@@ -564,7 +564,6 @@ class TestSH < Test::Unit::TestCase
     s = "\x04\bU:\tDate[\bU:\rRational[\ai\x03\xCF\xD3Ji\ai\x00o:\x13Date::Infinity\x06:\a@di\xFA"
     d = Marshal.load(s)
     assert_equal(Rational(4903887,2), d.ajd)
-    assert_equal(Rational(0,24), d.send(:offset))
     assert_equal(Date::GREGORIAN, d.start)
 
     s = "\x04\bU:\rDateTime[\bU:\rRational[\al+\b\xC9\xB0\x81\xBD\x02\x00i\x02\xC0\x12U;\x06[\ai\bi\ro:\x13Date::Infinity\x06:\a@di\xFA"
@@ -572,35 +571,6 @@ class TestSH < Test::Unit::TestCase
     assert_equal(Rational(11769327817,4800), d.ajd)
     assert_equal(Rational(9,24), d.offset)
     assert_equal(Date::GREGORIAN, d.start)
-  end
-
-  def test_taint
-    h = Date._strptime('15:43+09:00', '%R%z')
-    assert_equal(false, h[:zone].tainted?)
-    h = Date._strptime('15:43+09:00'.dup.taint, '%R%z')
-    assert_equal(true, h[:zone].tainted?)
-
-    h = Date._strptime('1;1/0', '%d')
-    assert_equal(false, h[:leftover].tainted?)
-    h = Date._strptime('1;1/0'.dup.taint, '%d')
-    assert_equal(true, h[:leftover].tainted?)
-
-    h = Date._parse('15:43+09:00')
-    assert_equal(false, h[:zone].tainted?)
-    h = Date._parse('15:43+09:00'.dup.taint)
-    assert_equal(true, h[:zone].tainted?)
-
-    s = Date.today.strftime('new 105')
-    assert_equal(false, s.tainted?)
-    s = Date.today.strftime('new 105'.dup.taint)
-    assert_equal(true, s.tainted?)
-    s = Date.today.strftime("new \000 105".dup.taint)
-    assert_equal(true, s.tainted?)
-
-    s = DateTime.now.strftime('super $record')
-    assert_equal(false, s.tainted?)
-    s = DateTime.now.strftime('super $record'.dup.taint)
-    assert_equal(true, s.tainted?)
   end
 
   def test_enc
@@ -661,4 +631,12 @@ class TestSH < Test::Unit::TestCase
     assert_equal(true, Date.test_all)
   end if defined?(Date.test_all)
 
+  private
+
+  def suppress_warning
+    $VERBOSE, verbose = nil, $VERBOSE
+    yield
+  ensure
+    $VERBOSE = verbose
+  end
 end

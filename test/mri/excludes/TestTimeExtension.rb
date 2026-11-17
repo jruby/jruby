@@ -1,5 +1,3 @@
-exclude :test_completion_with_different_timezone, "needs investigation"
 exclude :test_iso8601_encode, "works except that we only have nano-sec precision up to 6-decimal values"
 exclude :test_strptime_s_N, "1/1000000000000 subsec precision not supported"
 exclude :test_xmlschema_encode, "works except that we only have nano-sec precision up to 6-decimal values"
-exclude :test_zone_0000, "needs investigation"

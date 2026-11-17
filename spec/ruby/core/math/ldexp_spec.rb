@@ -3,7 +3,7 @@ require_relative 'fixtures/classes'
 
 describe "Math.ldexp" do
   it "returns a float" do
-    Math.ldexp(1.0, 2).should be_kind_of(Float)
+    Math.ldexp(1.0, 2).should.is_a?(Float)
   end
 
   it "returns the argument multiplied by 2**n" do
@@ -15,27 +15,27 @@ describe "Math.ldexp" do
   end
 
   it "raises a TypeError if the first argument cannot be coerced with Float()" do
-    lambda { Math.ldexp("test", 2) }.should raise_error(TypeError)
+    -> { Math.ldexp("test", 2) }.should.raise(TypeError)
   end
 
   it "returns NaN given NaN" do
-    Math.ldexp(nan_value, 0).nan?.should be_true
+    Math.ldexp(nan_value, 0).nan?.should == true
   end
 
   it "raises RangeError if NaN is given as the second arg" do
-    lambda { Math.ldexp(0, nan_value) }.should raise_error(RangeError)
+    -> { Math.ldexp(0, nan_value) }.should.raise(RangeError)
   end
 
   it "raises a TypeError if the second argument cannot be coerced with Integer()" do
-    lambda { Math.ldexp(3.2, "this") }.should raise_error(TypeError)
+    -> { Math.ldexp(3.2, "this") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if the first argument is nil" do
-    lambda { Math.ldexp(nil, 2) }.should raise_error(TypeError)
+    -> { Math.ldexp(nil, 2) }.should.raise(TypeError)
   end
 
   it "raises a TypeError if the second argument is nil" do
-    lambda { Math.ldexp(3.1, nil) }.should raise_error(TypeError)
+    -> { Math.ldexp(3.1, nil) }.should.raise(TypeError)
   end
 
   it "accepts any first argument that can be coerced with Float()" do
@@ -44,6 +44,12 @@ describe "Math.ldexp" do
 
   it "accepts any second argument that can be coerced with Integer()" do
     Math.ldexp(3.23, MathSpecs::Integer.new).should be_close(12.92, TOLERANCE)
+  end
+
+  it "returns correct value that closes to the max value of double type" do
+    Math.ldexp(0.5122058490966879, 1024).should == 9.207889385574391e+307
+    Math.ldexp(0.9999999999999999, 1024).should == 1.7976931348623157e+308
+    Math.ldexp(0.99999999999999999, 1024).should == Float::INFINITY
   end
 end
 

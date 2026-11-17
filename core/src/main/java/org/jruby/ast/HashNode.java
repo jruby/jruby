@@ -33,11 +33,11 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -45,26 +45,58 @@ import org.jruby.util.KeyValuePair;
  * of default values or kwarg in a method call.
  */
 public class HashNode extends Node implements ILiteralNode {
-    private final List<KeyValuePair<Node,Node>> pairs;
+    private final List<KeyValuePair<Node,Node>> pairs = new ArrayList<>(1);
+    // contains at least one **k {a: 1, **k}, {**{}, **{}}
+    private boolean hasRestKwarg = false;
+
+    // Is this hash made up of only symbol characters (only of interest if this is !literal - simple kwargs processing)
     private boolean hasOnlySymbolKeys = true;
 
-    public HashNode(ISourcePosition position) {
-        super(position, false);
+    // Is this a hash literal foo({a: 1}) vs a keyword hash foo(a: 1)
+    private boolean isLiteral = false;
 
-        pairs = new ArrayList<KeyValuePair<Node,Node>>();
+    public HashNode(int line) {
+        super(line, false);
     }
     
-    public HashNode(ISourcePosition position, KeyValuePair<Node,Node> pair) {
-        this(position);
+    public HashNode(int line, KeyValuePair<Node,Node> pair) {
+        this(line);
 
         add(pair);
     }
 
+    public void setIsLiteral() {
+        isLiteral = true;
+    }
+
+    public boolean isLiteral() {
+        return isLiteral;
+    }
+
     /**
-     * @return true if all elements of this hash uses symbol keys (might end up representing a kwarg).
+     * Detect presence of a rest kwarg (**kw).
+     *
+     * @return true if it contains at least one rest kwarg.
      */
-    public boolean hasOnlySymbolKeys() {
-        return hasOnlySymbolKeys;
+    public boolean hasRestKwarg() {
+       return hasRestKwarg;
+    }
+
+    /**
+     * Detect whether only rest kwargs make up this hash.  Common
+     * case is **a which is HashNode{[(null, a)]}.  Less common is
+     * **a, **b which is HashNode{[(null, a), (null, b)].}
+     *
+     * @return true is only rest kwargs
+     */
+    public boolean hasOnlyRestKwargs() {
+        if (!hasRestKwarg) return false;
+
+        for (KeyValuePair pair: pairs) {
+            if (pair.getKey() != null) return false;
+        }
+
+        return true;
     }
 
     public NodeType getNodeType() {
@@ -72,16 +104,42 @@ public class HashNode extends Node implements ILiteralNode {
     }
 
     public HashNode add(KeyValuePair<Node,Node> pair) {
-        if (pair.getKey() != null && pair.getKey().containsVariableAssignment() ||
+        Node key = pair.getKey();
+
+        if (key != null && key.containsVariableAssignment() ||
                 pair.getValue() != null && pair.getValue().containsVariableAssignment()) {
             containsVariableAssignment = true;
         }
 
-        if (!(pair.getKey() instanceof SymbolNode) || pair.getKey() == null) hasOnlySymbolKeys = false;
+        if (key == null) {
+            hasRestKwarg = true;
+            hasOnlySymbolKeys = false;
+        } else if (!(pair.getKey() instanceof SymbolNode)) {
+            hasOnlySymbolKeys = false;
+        }
 
         pairs.add(pair);
 
         return this;
+    }
+
+    public boolean removeAll(final Collection<KeyValuePair<Node, Node>> pairsToRemove) {
+        boolean changed = this.pairs.removeAll(pairsToRemove);
+
+        if (changed) {
+            // reset as we're to re-built internal state
+            hasRestKwarg = false;
+            isLiteral = false;
+            hasOnlySymbolKeys = true;
+            // clear pairs and add what is meant to be kept:
+            Object[] pairsCopy = this.pairs.toArray();
+            this.pairs.clear();
+            for (int i = 0; i < pairsCopy.length; i++) {
+                add((KeyValuePair<Node, Node>) pairsCopy[i]);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -101,7 +159,7 @@ public class HashNode extends Node implements ILiteralNode {
     }
 
     public List<Node> childNodes() {
-        List<Node> children = new ArrayList<Node>();
+        List<Node> children = new ArrayList<>(pairs.size() * 2);
 
         for (KeyValuePair<Node,Node> pair: pairs) {
             children.add(pair.getKey());
@@ -109,5 +167,34 @@ public class HashNode extends Node implements ILiteralNode {
         }
 
         return children;
+    }
+
+    @Override
+    public String toStringExtraInfo() {
+        return isLiteral() ?
+                "literal" :
+                (hasRestKwarg() ?
+                        (hasOnlyRestKwargs() ? "onlykwrest" : "mixedkwrest") :
+                        "kwarg");
+    }
+
+    public boolean hasOnlySymbolKeys() {
+        return hasOnlySymbolKeys;
+    }
+
+    @Deprecated(since = "9.4.0.0")
+    public boolean isMaybeKwargs() {
+        return !isLiteral;
+    }
+
+    public Node[] getKeys() {
+        int length = pairs.size();
+        Node[] keys = new Node[length];
+
+        for (int i = 0; i < length; i++) {
+            keys[i] = pairs.get(i).getKey();
+        }
+
+        return keys;
     }
 }

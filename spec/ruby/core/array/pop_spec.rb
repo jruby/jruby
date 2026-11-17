@@ -30,28 +30,12 @@ describe "Array#pop" do
     array.pop.should == [1, 'two', 3.0, array, array, array, array]
   end
 
-  it "keeps taint status" do
-    a = [1, 2].taint
-    a.pop
-    a.tainted?.should be_true
-    a.pop
-    a.tainted?.should be_true
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.pop }.should.raise(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} on a frozen array" do
-    lambda { ArraySpecs.frozen_array.pop }.should raise_error(frozen_error_class)
-  end
-
-  it "raises a #{frozen_error_class} on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.pop }.should raise_error(frozen_error_class)
-  end
-
-  it "keeps untrusted status" do
-    a = [1, 2].untrust
-    a.pop
-    a.untrusted?.should be_true
-    a.pop
-    a.untrusted?.should be_true
+  it "raises a FrozenError on an empty frozen array" do
+    -> { ArraySpecs.empty_frozen_array.pop }.should.raise(FrozenError)
   end
 
   describe "passed a number n as an argument" do
@@ -87,7 +71,7 @@ describe "Array#pop" do
       popped2.should == []
       a.should == []
 
-      popped1.should_not equal(popped2)
+      popped1.should_not.equal?(popped2)
     end
 
     it "returns whole elements if n exceeds size of the array" do
@@ -98,14 +82,14 @@ describe "Array#pop" do
 
     it "does not return self even when it returns whole elements" do
       a = [1, 2, 3, 4, 5]
-      a.pop(5).should_not equal(a)
+      a.pop(5).should_not.equal?(a)
 
       a = [1, 2, 3, 4, 5]
-      a.pop(6).should_not equal(a)
+      a.pop(6).should_not.equal?(a)
     end
 
     it "raises an ArgumentError if n is negative" do
-      lambda{ [1, 2, 3].pop(-1) }.should raise_error(ArgumentError)
+      ->{ [1, 2, 3].pop(-1) }.should.raise(ArgumentError)
     end
 
     it "tries to convert n to an Integer using #to_int" do
@@ -120,49 +104,21 @@ describe "Array#pop" do
     end
 
     it "raises a TypeError when the passed n cannot be coerced to Integer" do
-      lambda{ [1, 2].pop("cat") }.should raise_error(TypeError)
-      lambda{ [1, 2].pop(nil) }.should raise_error(TypeError)
+      ->{ [1, 2].pop("cat") }.should.raise(TypeError)
+      ->{ [1, 2].pop(nil) }.should.raise(TypeError)
     end
 
     it "raises an ArgumentError if more arguments are passed" do
-      lambda{ [1, 2].pop(1, 2) }.should raise_error(ArgumentError)
+      ->{ [1, 2].pop(1, 2) }.should.raise(ArgumentError)
     end
 
     it "does not return subclass instances with Array subclass" do
-      ArraySpecs::MyArray[1, 2, 3].pop(2).should be_an_instance_of(Array)
+      ArraySpecs::MyArray[1, 2, 3].pop(2).should.instance_of?(Array)
     end
 
-    it "returns an untainted array even if the array is tainted" do
-      ary = [1, 2].taint
-      ary.pop(2).tainted?.should be_false
-      ary.pop(0).tainted?.should be_false
-    end
-
-    it "keeps taint status" do
-      a = [1, 2].taint
-      a.pop(2)
-      a.tainted?.should be_true
-      a.pop(2)
-      a.tainted?.should be_true
-    end
-
-    it "returns a trusted array even if the array is untrusted" do
-      ary = [1, 2].untrust
-      ary.pop(2).untrusted?.should be_false
-      ary.pop(0).untrusted?.should be_false
-    end
-
-    it "raises a #{frozen_error_class} on a frozen array" do
-      lambda { ArraySpecs.frozen_array.pop(2) }.should raise_error(frozen_error_class)
-      lambda { ArraySpecs.frozen_array.pop(0) }.should raise_error(frozen_error_class)
-    end
-
-    it "keeps untrusted status" do
-      a = [1, 2].untrust
-      a.pop(2)
-      a.untrusted?.should be_true
-      a.pop(2)
-      a.untrusted?.should be_true
+    it "raises a FrozenError on a frozen array" do
+      -> { ArraySpecs.frozen_array.pop(2) }.should.raise(FrozenError)
+      -> { ArraySpecs.frozen_array.pop(0) }.should.raise(FrozenError)
     end
   end
 end

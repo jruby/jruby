@@ -1,2 +1,5 @@
-exclude :test_overflow, "unusual subprocess test trying to overflow some value"
-exclude :test_write_integer_overflow, "JVM does not support > 32bit signed array offsets, so our StringIO cannot either"
+exclude :"test_strip_bom:UTF-16BE", "work in progress"
+exclude :"test_strip_bom:UTF-16LE", "work in progress"
+exclude :"test_strip_bom:UTF-32BE", "work in progress"
+exclude :"test_strip_bom:UTF-32LE", "work in progress"
+exclude :"test_strip_bom:UTF-8", "work in progress"

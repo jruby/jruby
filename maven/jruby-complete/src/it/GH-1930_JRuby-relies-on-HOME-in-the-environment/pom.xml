@@ -27,7 +27,7 @@
             </goals>
             <configuration>
               <target>
-		<java classpathref='maven.compile.classpath' classname='org.jruby.Main' fork='true' failonerror='true'>
+		<java classpathref='maven.compile.classpath' classname='org.jruby.main.Main' fork='true' failonerror='true'>
 		  <arg value="-e ENV['HOME']=nil;require('openssl');puts(ENV['HOME'])"/>
 		</java>
               </target>

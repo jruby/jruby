@@ -3,7 +3,7 @@ require 'strscan'
 
 describe "StringScanner#string" do
   before :each do
-    @string = "This is a test"
+    @string = +"This is a test"
     @s = StringScanner.new(@string)
   end
 
@@ -14,7 +14,7 @@ describe "StringScanner#string" do
   end
 
   it "returns the identical object passed in" do
-    @s.string.equal?(@string).should be_true
+    @s.string.equal?(@string).should == true
   end
 end
 

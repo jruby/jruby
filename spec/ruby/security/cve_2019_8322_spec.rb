@@ -1,11 +1,12 @@
 require_relative '../spec_helper'
 
-require 'yaml'
-require 'rubygems'
-require 'rubygems/safe_yaml'
-require 'rubygems/commands/owner_command'
+ruby_version_is ""..."4.0" do
 
-ruby_version_is "2.5.5" do
+  require 'yaml'
+  require 'rubygems'
+  require 'rubygems/safe_yaml'
+  require 'rubygems/commands/owner_command'
+
   describe "CVE-2019-8322 is resisted by" do
     it "sanitising owner names" do
       command = Gem::Commands::OwnerCommand.new

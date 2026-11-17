@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -30,15 +31,14 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
  * Stubby lambda node (1.9 only)
  */
 public class LambdaNode extends IterNode {
-    public LambdaNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position, args, body, scope);
+    public LambdaNode(int line, ArgsNode args, Node body, StaticScope scope, int endLine) {
+        super(line, args, body, scope, endLine);
     }
 
     @Override
@@ -62,5 +62,16 @@ public class LambdaNode extends IterNode {
     @Override
     public List<Node> childNodes() {
         return Node.createList(getArgs(), getBody());
+    }
+
+    public void setOperatorColumn(int operatorColumn) {
+        setSourceDetail(new SourcePosition(getLine(), operatorColumn));
+    }
+
+    /**
+     * The column of the -> the lambda is written with (on its line), or -1. MRI's lambda node starts there.
+     */
+    public int getOperatorColumn() {
+        return getSourceDetail() instanceof SourcePosition operator ? operator.column() : -1;
     }
 }

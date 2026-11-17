@@ -1,11 +1,11 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -25,27 +25,27 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope s, Object... data) {
-        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
+    public Object execute(FullInterpreterContext fic, Object... data) {
+        EnumSet<IRFlags> flags = fic.getFlags();
 
         if (flags.contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
-        if (!flags.contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
+        if (!fic.getScope().receivesClosureArg()) return null;
 
-        optimizeDelegatedVars(s);
+        optimizeDelegatedVars(fic);
 
         return true;
     }
 
     @Override
-    public boolean invalidate(IRScope s) {
+    public boolean invalidate(FullInterpreterContext fic) {
         // Not reversible right now
         return false;
     }
 
-    private static void optimizeDelegatedVars(IRScope s) {
+    private static void optimizeDelegatedVars(FullInterpreterContext fic) {
         Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
 
-        for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
+        for (BasicBlock bb: fic.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
                     ReifyClosureInstr ri = (ReifyClosureInstr) i;
@@ -55,7 +55,7 @@ public class OptimizeDelegationPass extends CompilerPass {
                     if (ri.getResult() instanceof LocalVariable) continue;
 
                     unusedExplicitBlocks.put(ri.getResult(), ri.getSource());
-                } else {
+                } else { 
                     Iterator<Operand> it = unusedExplicitBlocks.keySet().iterator();
                     while (it.hasNext()) {
                         Variable explicitBlock = (Variable) it.next();
@@ -67,7 +67,7 @@ public class OptimizeDelegationPass extends CompilerPass {
             }
         }
 
-        for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
+        for (BasicBlock bb: fic.getCFG().getBasicBlocks()) {
             ListIterator<Instr> instrs = bb.getInstrs().listIterator();
             while (instrs.hasNext()) {
                 Instr i = instrs.next();

@@ -1,8 +1,8 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -19,8 +19,8 @@ public class EnsureTempsAssigned extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope scope, Object... data) {
-        processCFG(scope.getCFG());
+    public Object execute(FullInterpreterContext fic, Object... data) {
+        processCFG(fic.getCFG());
 
         return null;
     }

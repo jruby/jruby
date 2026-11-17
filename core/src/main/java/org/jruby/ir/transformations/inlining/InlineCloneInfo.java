@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallBase;
@@ -25,9 +26,9 @@ import org.jruby.util.ByteList;
  * Context object when performing an inline.
  */
 public class InlineCloneInfo extends CloneInfo {
-    private static Integer globalInlineCount = 0;
+    private static final AtomicInteger globalInlineCount = new AtomicInteger(0);
 
-    private CFG hostCFG;
+    private final CFG hostCFG;
 
     private ByteList inlineVarPrefix;
 
@@ -37,13 +38,13 @@ public class InlineCloneInfo extends CloneInfo {
     private Variable argsArray;
     private boolean canMapArgsStatically;
 
-    private Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
+    private final Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
 
-    private boolean isClosure;    // true for closure inlining
+    private final boolean isClosure;    // true for closure inlining
     private Operand yieldArg;     // Closure inlining only
     private Variable yieldResult; // Closure inlining only
-    private List yieldSites = new ArrayList(); // Closure inlining only
-    private IRScope scopeBeingInlined; // host scope is where we are going and this was original scope
+    private final List<Tuple<BasicBlock, YieldInstr>> yieldSites = new ArrayList<>(); // Closure inlining only
+    private final IRScope scopeBeingInlined; // host scope is where we are going and this was original scope
 
 
     // Closure Inline
@@ -64,12 +65,9 @@ public class InlineCloneInfo extends CloneInfo {
         this.callArgs = call.getCallArgs();
         this.callReceiver = callReceiver;
         this.canMapArgsStatically = !containsSplat(callArgs);
-        this.argsArray = this.canMapArgsStatically ?  null : getHostScope().createTemporaryVariable();
+        this.argsArray = this.canMapArgsStatically ?  null : getHostScope().getFullInterpreterContext().createTemporaryVariable();
         this.scopeBeingInlined = scopeBeingInlined;
-        synchronized(globalInlineCount) {
-            this.inlineVarPrefix = new ByteList(("%in" + globalInlineCount + "_").getBytes());
-            globalInlineCount++;
-        }
+        this.inlineVarPrefix = new ByteList(("%in" + globalInlineCount.getAndIncrement() + "_").getBytes());
     }
 
     public boolean isClosure() {
@@ -173,17 +171,17 @@ public class InlineCloneInfo extends CloneInfo {
             // when inlining a closure,
             // - local var depths are reduced by 1 (to move them to the host scope)
             // - tmp vars are reallocated in the host scope
-            if (v instanceof LocalVariable) {
-                LocalVariable lv = (LocalVariable) v;
+            if (v instanceof LocalVariable lv) {
                 int depth = lv.getScopeDepth();
                 return getHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
             }
 
-            return getHostScope().createTemporaryVariable();
+            return getHostScope().getFullInterpreterContext().createTemporaryVariable();
         }
 
         // METHOD_INLINE
-        return getHostScope().getNewInlineVariable(inlineVarPrefix, v);
+        return getHostScope().getFullInterpreterContext().createTemporaryVariable();
+        // FIXME: getNewInlineVariable(inlineVarPrefix, v) we were trying to make a better named temp here to know original parentage.
     }
 
     public IRScope getScopeBeingInlined() {
@@ -194,12 +192,12 @@ public class InlineCloneInfo extends CloneInfo {
         return yieldResult;
     }
 
-    public List getYieldSites() {
+    public List<Tuple<BasicBlock, YieldInstr>> getYieldSites() {
         return yieldSites;
     }
 
     public void recordYieldSite(BasicBlock bb, YieldInstr i) {
-        yieldSites.add(new Tuple<BasicBlock, YieldInstr>(bb, i));
+        yieldSites.add(new Tuple<>(bb, i));
     }
 
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, int blockArityValue) {
@@ -211,7 +209,7 @@ public class InlineCloneInfo extends CloneInfo {
             yieldArg = yieldInstrArg;
             // 1:1 arg match
             if (((Array) yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
-        } else if (blockArityValue == 1 && yi.unwrapArray == false) {
+        } else if (blockArityValue == 1 && !yi.unwrapArray) {
             yieldArg = yieldInstrArg;
             canMapArgsStatically = true;
         } else {
@@ -219,7 +217,7 @@ public class InlineCloneInfo extends CloneInfo {
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction
             // that takes care of aligning the stars and bringing good fortune to arg yielder and arg receiver.
             IRScope callerScope   = getHostScope();
-            Variable yieldArgArray = callerScope.createTemporaryVariable();
+            Variable yieldArgArray = callerScope.getFullInterpreterContext().createTemporaryVariable();
             yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg));
             yieldArg = yieldArgArray;
         }
@@ -229,9 +227,9 @@ public class InlineCloneInfo extends CloneInfo {
 
     // SSS FIXME: This is a copy of a method in instructions/calladapter/CallAdapter.java
     // Maybe move this is to a util/Helpers class?
-    private static boolean containsSplat(Operand args[]) {
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof Splat) return true;
+    private static boolean containsSplat(Operand[] args) {
+        for (Operand arg: args) {
+            if (arg instanceof Splat) return true;
         }
 
         return false;

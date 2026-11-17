@@ -1,14 +1,15 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -16,17 +17,18 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class ClassSuperInstr extends CallInstr {
-    // clone constructor
-    protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
-                              Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
-    }
+    private final boolean isLiteralBlock;
 
     // normal constructor
-    public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
-                           boolean isPotentiallyRefined) {
-        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+    public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
+                           Operand closure, int flags, boolean isPotentiallyRefined) {
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, flags,
+                isPotentiallyRefined);
+
+        isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     public Operand getDefiningModule() {
@@ -34,18 +36,19 @@ public class ClassSuperInstr extends CallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.REQUIRES_CLASS); // for current class and method name
-        scope.getFlags().add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        scope.setUsesSuper();
+        flags.add(IRFlags.REQUIRES_CLASS); // for current class and method name
+        flags.add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
         return true;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
-                name, cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                name, cloneCallArgs(ii), getClosureArg().cloneForInlining(ii),
+                getFlags(), isPotentiallyRefined());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {
@@ -65,9 +68,10 @@ public class ClassSuperInstr extends CallInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
+        int flags = d.decodeInt();
 
-        return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, flags, d.getCurrentScope().maybeUsingRefinements());
     }
 
     /*
@@ -82,7 +86,14 @@ public class ClassSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
+
+        if (isLiteralBlock) {
+            return IRRuntimeHelpers.unresolvedSuperIter(context, self, args, block);
+        } else {
+            return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+        }
     }
 
     @Override

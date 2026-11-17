@@ -1,15 +1,3 @@
-exclude :test_bit_string_infinite_length, 'encoding works but decoding not implemented'
-exclude :test_cons_explicit_tagging, 'needs investigation'
-exclude :test_cons_explicit_tagging_inf_length, 'needs investigation'
-exclude :test_cons_implicit_tagging, 'needs investigation'
-exclude :test_cons_implicit_tagging_inf_length, 'needs investigation'
-exclude :test_cons_without_array_forbidden, 'needs investigation'
-exclude :test_create_inf_length_primitive, 'needs investigation'
-exclude :test_octet_string_infinite_length_explicit_tagging, 'needs investigation'
-exclude :test_octet_string_infinite_length_implicit_tagging, 'needs investigation'
-exclude :test_parse_empty_sequence, 'needs investigation'
-exclude :test_parse_tagged_0_infinite, 'needs investigation'
-exclude :test_prim_explicit_tagging, 'needs investigation'
-exclude :test_prim_implicit_tagging, 'needs investigation'
-exclude :test_recursive_octet_string_infinite_length, 'needs investigation'
-exclude :test_recursive_octet_string_parse, 'needs investigation'
+exclude :test_generalizedtime, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
+exclude :test_object_identifier, "work in progress"
+exclude :test_utctime, "ASN1Error expected but nothing raised"

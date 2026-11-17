@@ -15,7 +15,7 @@ describe 'Socket#recvfrom' do
 
     describe 'using an unbound socket' do
       it 'blocks the caller' do
-        lambda { @server.recvfrom(1) }.should block_caller
+        -> { @server.recvfrom(1) }.should block_caller
       end
     end
 
@@ -27,7 +27,7 @@ describe 'Socket#recvfrom' do
 
       describe 'without any data available' do
         it 'blocks the caller' do
-          lambda { @server.recvfrom(1) }.should block_caller
+          -> { @server.recvfrom(1) }.should block_caller
         end
       end
 
@@ -39,7 +39,7 @@ describe 'Socket#recvfrom' do
         it 'returns an Array containing the data and an Addrinfo' do
           ret = @server.recvfrom(1)
 
-          ret.should be_an_instance_of(Array)
+          ret.should.instance_of?(Array)
           ret.length.should == 2
         end
 
@@ -53,7 +53,7 @@ describe 'Socket#recvfrom' do
           end
 
           it 'contains an Addrinfo at index 1' do
-            @array[1].should be_an_instance_of(Addrinfo)
+            @array[1].should.instance_of?(Addrinfo)
           end
         end
 
@@ -85,6 +85,71 @@ describe 'Socket#recvfrom' do
           it 'uses the port of the client' do
             @addr.ip_port.should == @client.local_address.ip_port
           end
+        end
+      end
+    end
+  end
+end
+
+describe 'Socket#recvfrom' do
+  context "when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown)" do
+    describe "stream socket" do
+      before :each do
+        @server = Socket.new Socket::AF_INET, :STREAM, 0
+        sockaddr = Socket.sockaddr_in(0, "127.0.0.1")
+        @server.bind(sockaddr)
+        @server.listen(1)
+
+        server_ip    = @server.local_address.ip_port
+        @server_addr = Socket.sockaddr_in(server_ip, "127.0.0.1")
+
+        @client = Socket.new(Socket::AF_INET, :STREAM, 0)
+      end
+
+      after :each do
+        @server.close unless @server.closed?
+        @client.close unless @client.closed?
+      end
+
+      it "returns nil on a closed stream socket" do
+        t = Thread.new do
+          client, _ = @server.accept
+          client.recvfrom(10)
+        ensure
+          client.close if client
+        end
+
+        Thread.pass while t.status and t.status != "sleep"
+        t.status.should_not == nil
+
+        @client.connect(@server_addr)
+        @client.close
+
+        t.value.should == nil
+      end
+    end
+
+    describe "datagram socket" do
+      SocketSpecs.each_ip_protocol do |family, ip_address|
+        before :each do
+          @server = Socket.new(family, :DGRAM)
+          @client = Socket.new(family, :DGRAM)
+        end
+
+        after :each do
+          @server.close unless @server.closed?
+          @client.close unless @client.closed?
+        end
+
+        it "returns an empty String as received data" do
+          @server.bind(Socket.sockaddr_in(0, ip_address))
+          @client.connect(@server.getsockname)
+
+          @client.send('', 0)
+          message = @server.recvfrom(1)
+
+          message.should.is_a? Array
+          message[0].should == ""
         end
       end
     end

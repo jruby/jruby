@@ -1,2 +1,3 @@
 windows:File#reopen resets the stream to a new file path
 windows:File#reopen calls #to_path to convern an Object
+windows:File#reopen calls #to_path to convert an Object

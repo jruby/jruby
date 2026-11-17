@@ -16,7 +16,7 @@ public class Config implements ConfigMBean {
     }
     
     public String getVersionString() {
-        return OutputStrings.getVersionString();
+        return OutputStrings.getVersionString(ruby.get().getInstanceConfig());
     }
 
     public String getCopyrightString() {
@@ -43,16 +43,29 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getJitThreshold();
     }
 
+    public void setJitThreshold(int threshold) {
+        ruby.get().getInstanceConfig().setJitThreshold(threshold);
+    }
+
     public int getJitMax() {
         return ruby.get().getInstanceConfig().getJitMax();
+    }
+
+    public void setJitMax(int max) {
+        ruby.get().getInstanceConfig().setJitMax(max);
     }
 
     public int getJitMaxSize() {
         return ruby.get().getInstanceConfig().getJitMaxSize();
     }
 
+    public void setJitMaxSize(int maxSize) {
+        ruby.get().getInstanceConfig().setJitMaxSize(maxSize);
+    }
+
+    @Deprecated(since = "10.1.0.0")
     public boolean isRunRubyInProcess() {
-        return ruby.get().getInstanceConfig().isRunRubyInProcess();
+        return false;
     }
 
     public String getCurrentDirectory() {
@@ -151,8 +164,4 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getExcludedMethods().toString();
     }
 
-    @Deprecated
-    public String getCompatVersion() {
-        return org.jruby.CompatVersion.RUBY2_1.name();
-    }
 }

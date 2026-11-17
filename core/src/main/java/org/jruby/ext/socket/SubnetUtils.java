@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 /**
  * A class that performs some subnet calculations given a network address and a subnet mask.
  * @see "http://www.faqs.org/rfcs/rfc1519.html"
- * @author <rwinston@apache.org>
+ * @author rwinston@apache.org
  * @since 2.0
  * Extracted from Apache Commons Net Project.
  */

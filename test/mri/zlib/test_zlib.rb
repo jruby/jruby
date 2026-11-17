@@ -3,10 +3,15 @@
 require 'test/unit'
 require 'stringio'
 require 'tempfile'
+require 'tmpdir'
+require 'securerandom'
 
 begin
   require 'zlib'
 rescue LoadError
+else
+  z = "/zlib.#{RbConfig::CONFIG["DLEXT"]}"
+  LOADED_ZLIB, = $".select {|f| f.end_with?(z)}
 end
 
 if defined? Zlib
@@ -199,10 +204,10 @@ if defined? Zlib
       z = Zlib::Deflate.new
       s = z.deflate("foo", Zlib::FULL_FLUSH)
       z.avail_out = 0
-      z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)
+      EnvUtil.suppress_warning {z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)}
       s << z.deflate("bar", Zlib::FULL_FLUSH)
       z.avail_out = 0
-      z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)
+      EnvUtil.suppress_warning {z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)}
       s << z.deflate("baz", Zlib::FINISH)
       assert_equal("foobarbaz", Zlib::Inflate.inflate(s))
 
@@ -363,6 +368,65 @@ if defined? Zlib
       }
     end
 
+    def test_inflate_buffer
+      s = Zlib::Deflate.deflate("foo")
+      z = Zlib::Inflate.new
+      buf = String.new
+      s = z.inflate(s, buffer: buf)
+      assert_same(buf, s)
+      buf = String.new
+      s << z.inflate(nil, buffer: buf)
+      assert_equal("foo", s)
+      z.inflate("foo", buffer: buf) # ???
+      z << "foo" # ???
+    end
+
+    def test_inflate_buffer_partial_input
+      deflated = Zlib::Deflate.deflate "\0"
+
+      z = Zlib::Inflate.new
+
+      inflated = "".dup
+
+      buf = String.new
+      deflated.each_char do |byte|
+        inflated << z.inflate(byte, buffer: buf)
+      end
+
+      inflated << z.finish
+
+      assert_equal "\0", inflated
+    end
+
+    def test_inflate_buffer_chunked
+      # s = Zlib::Deflate.deflate("0" * 100_000)
+      zeros = "x\234\355\3011\001\000\000\000\302\240J\353\237\316\032\036@" \
+              "\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" \
+              "\000\000\000\000\000\000\000\257\006\351\247BH"
+
+      chunks = []
+
+      z = Zlib::Inflate.new
+
+      buf = String.new
+      z.inflate(zeros, buffer: buf) do |chunk|
+        assert_same(buf, chunk)
+        chunks << chunk.dup
+      end
+
+      assert_equal [16384, 16384, 16384, 16384, 16384, 16384, 1696],
+                   chunks.map { |chunk| chunk.size }
+
+      assert chunks.all? { |chunk|
+        chunk =~ /\A0+\z/
+      }
+    end
+
     def test_inflate_chunked_break
       # zeros = Zlib::Deflate.deflate("0" * 100_000)
       zeros = "x\234\355\3011\001\000\000\000\302\240J\353\237\316\032\036@" \
@@ -415,10 +479,10 @@ if defined? Zlib
       z = Zlib::Deflate.new
       s = z.deflate("foo" * 1000, Zlib::FULL_FLUSH)
       z.avail_out = 0
-      z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)
+      EnvUtil.suppress_warning {z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)}
       s << z.deflate("bar" * 1000, Zlib::FULL_FLUSH)
       z.avail_out = 0
-      z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)
+      EnvUtil.suppress_warning {z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)}
       s << z.deflate("baz" * 1000, Zlib::FINISH)
 
       z = Zlib::Inflate.new
@@ -443,9 +507,104 @@ if defined? Zlib
       assert_raise(Zlib::StreamError) { z.set_dictionary("foo") }
       z.close
     end
+
+    def test_multithread_deflate
+      pend 'hangs' if RUBY_ENGINE == 'truffleruby'
+      zd = Zlib::Deflate.new
+
+      s = "x" * 10000
+      (0...10).map do |x|
+        Thread.new do
+          1000.times { zd.deflate(s) }
+        end
+      end.each do |th|
+        th.join
+      end
+    ensure
+      zd&.finish
+      zd&.close
+    end
+
+    def test_multithread_inflate
+      pend 'hangs' if RUBY_ENGINE == 'truffleruby'
+      zi = Zlib::Inflate.new
+
+      s = Zlib.deflate("x" * 10000)
+      (0...10).map do |x|
+        Thread.new do
+          1000.times { zi.inflate(s) }
+        end
+      end.each do |th|
+        th.join
+      end
+    ensure
+      zi&.finish
+      zi&.close
+    end
+
+    def test_recursive_deflate
+      original_gc_stress = GC.stress
+      GC.stress = true
+      zd = Zlib::Deflate.new
+
+      s = SecureRandom.random_bytes(1024**2)
+      assert_raise(ThreadError) do
+        zd.deflate(s) do
+          zd.deflate(s)
+        end
+      end
+    ensure
+      GC.stress = original_gc_stress
+      zd&.finish
+      zd&.close
+    end
+
+    def test_recursive_inflate
+      original_gc_stress = GC.stress
+      GC.stress = true
+      zi = Zlib::Inflate.new
+
+      s = Zlib.deflate(SecureRandom.random_bytes(1024**2))
+
+      assert_raise(ThreadError) do
+        zi.inflate(s) do
+          zi.inflate(s)
+        end
+      end
+    ensure
+      GC.stress = original_gc_stress
+      zi&.close
+    end
   end
 
   class TestZlibGzipFile < Test::Unit::TestCase
+    def test_gzip_reader_zcat
+      Tempfile.create("test_zlib_gzip_file_to_io") {|t|
+        t.binmode
+        gz = Zlib::GzipWriter.new(t)
+        gz.print("foo")
+        gz.close
+        File.open(t.path, 'ab') do |f|
+          gz = Zlib::GzipWriter.new(f)
+          gz.print("bar")
+          gz.close
+        end
+
+        results = []
+        File.open(t.path, 'rb') do |f|
+          Zlib::GzipReader.zcat(f) do |str|
+            results << str
+          end
+        end
+        assert_equal(["foo", "bar"], results)
+
+        results = File.open(t.path, 'rb') do |f|
+          Zlib::GzipReader.zcat(f)
+        end
+        assert_equal("foobar", results)
+      }
+    end
+
     def test_to_io
       Tempfile.create("test_zlib_gzip_file_to_io") {|t|
         t.close
@@ -486,6 +645,17 @@ if defined? Zlib
           assert_equal(tim.to_i, f.mtime.to_i)
         end
       }
+    end
+
+    def test_zero_mtime
+      sio = StringIO.new
+      gz = Zlib::GzipWriter.new(sio)
+      gz.mtime = 0
+      gz.write("Hi")
+      gz.close
+      reading_io = StringIO.new(sio.string)
+      reader = Zlib::GzipReader.new(reading_io)
+      assert_equal(0, reader.mtime.to_i)
     end
 
     def test_level
@@ -621,10 +791,47 @@ if defined? Zlib
         gz.close
 
         sio = StringIO.new(s)
-        Zlib::GzipReader.new(sio) do |f|
-          assert_raise(NoMethodError) { f.path }
-        end
+        gz = Zlib::GzipReader.new(sio)
+        assert_raise(NoMethodError) { gz.path }
+        gz.close
       }
+    end
+
+    if defined?(File::TMPFILE) and RUBY_ENGINE != 'truffleruby'
+      def test_path_tmpfile
+        sio = StringIO.new("".dup, 'w')
+        gz = Zlib::GzipWriter.new(sio)
+        gz.write "hi"
+        gz.close
+
+        tmpdir = Dir.mktmpdir("zlib_file_tmpfile")
+        File.open(tmpdir, File::RDWR | File::TMPFILE) do |io|
+          io.write sio.string
+          io.rewind
+
+          gz0 = Zlib::GzipWriter.new(io)
+          gz1 = Zlib::GzipReader.new(io)
+
+          if IO.method_defined?(:path)
+            assert_nil gz0.path
+            assert_nil gz1.path
+          else
+            assert_raise(NoMethodError) { gz0.path }
+            assert_raise(NoMethodError) { gz1.path }
+          end
+
+          gz0.close
+          gz1.close
+        end
+      rescue Errno::EINVAL
+        omit 'O_TMPFILE not supported (EINVAL)'
+      rescue Errno::EISDIR
+        omit 'O_TMPFILE not supported (EISDIR)'
+      rescue Errno::EOPNOTSUPP
+        omit 'O_TMPFILE not supported (EOPNOTSUPP)'
+      ensure
+        Dir.rmdir(tmpdir) if tmpdir
+      end
     end
   end
 
@@ -673,6 +880,25 @@ if defined? Zlib
       r.ungetc ?!
 
       assert_equal(-1, r.pos, "[ruby-core:81488][Bug #13616]")
+    end
+
+    def test_ungetc_buffer_underflow
+      initial_bufsize = 1024
+      payload = "A" * initial_bufsize
+      gzip_io = StringIO.new
+      Zlib::GzipWriter.wrap(gzip_io) { |gz| gz.write(payload) }
+      compressed = gzip_io.string
+
+      reader = Zlib::GzipReader.new(StringIO.new(compressed))
+      reader.read(1)
+      overflow_bytes = "B" * (initial_bufsize)
+      reader.ungetc(overflow_bytes)
+      data = reader.read(overflow_bytes.bytesize)
+      assert_equal overflow_bytes.bytesize, data.bytesize, data
+      assert_empty data.delete("B"), data
+      data = reader.read()
+      assert_equal initial_bufsize - 1, data.bytesize, data
+      assert_empty data.delete("A"), data
     end
 
     def test_open
@@ -787,6 +1013,25 @@ if defined? Zlib
           assert_raise(ArgumentError) { f.read(-1) }
           assert_equal(str, f.read)
         end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          s = "".b
+
+          assert_raise(ArgumentError) { f.read(-1, s) }
+
+          assert_same s, f.read(1, s)
+          assert_equal "\xE3".b, s
+
+          assert_same s, f.read(2, s)
+          assert_equal "\x81\x82".b, s
+
+          assert_same s, f.read(6, s)
+          assert_equal "\u3044\u3046".b, s
+
+          assert_nil f.read(1, s)
+          assert_equal "".b, s
+          assert_predicate f, :eof?
+        end
       }
     end
 
@@ -801,10 +1046,14 @@ if defined? Zlib
 
         Zlib::GzipReader.open(t.path) do |f|
           s = "".dup
-          f.readpartial(3, s)
+          assert_same s, f.readpartial(3, s)
           assert("foo".start_with?(s))
 
           assert_raise(ArgumentError) { f.readpartial(-1) }
+
+          assert_same s, f.readpartial(3, s)
+
+          assert_predicate f, :eof?
         end
       }
     end
@@ -1004,6 +1253,38 @@ if defined? Zlib
       }
     end
 
+    # Various methods of Zlib::GzipReader failed when to reading files
+    # just a few bytes larger than GZFILE_READ_SIZE.
+    def test_gzfile_read_size_boundary
+      Tempfile.create("test_zlib_gzip_read_size_boundary") {|t|
+        t.close
+        # NO_COMPRESSION helps with recreating the error condition.
+        # The error happens on compressed files too, but it's harder to reproduce.
+        # For example, ~12750 bytes are needed to trigger the error using __FILE__.
+        # We avoid this because the test file will change over time.
+        Zlib::GzipWriter.open(t.path, Zlib::NO_COMPRESSION) do |gz|
+          gz.print("\n" * 2024) # range from 2024 to 2033 triggers the error
+          gz.flush
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          f.readpartial(1024) until f.eof?
+          assert_raise(EOFError) { f.readpartial(1) }
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          f.readline until f.eof?
+          assert_raise(EOFError) { f.readline }
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          b = f.readbyte until f.eof?
+          f.ungetbyte(b)
+          f.readbyte
+          assert_raise(EOFError) { f.readbyte }
+        end
+      }
+    end
   end
 
   class TestZlibGzipWriter < Test::Unit::TestCase
@@ -1081,12 +1362,28 @@ if defined? Zlib
         assert_nothing_raised { w.close }
       }
     end
+
+    def test_zlib_writer_buffered_write
+      bug15356 = '[ruby-core:90346] [Bug #15356]'.freeze
+      fixes = 'r61631 (commit a55abcc0ca6f628fc05304f81e5a044d65ab4a68)'.freeze
+      ary = []
+      def ary.write(*args)
+        self.concat(args)
+      end
+      gz = Zlib::GzipWriter.new(ary)
+      gz.write(bug15356)
+      gz.write("\n")
+      gz.write(fixes)
+      gz.close
+      assert_not_predicate ary, :empty?
+      exp = [ bug15356, fixes ]
+      assert_equal exp, Zlib.gunzip(ary.join('')).split("\n")
+    end
   end
 
   class TestZlib < Test::Unit::TestCase
     def test_version
       assert_instance_of(String, Zlib.zlib_version)
-      assert(Zlib.zlib_version.tainted?)
     end
 
     def test_adler32
@@ -1094,6 +1391,20 @@ if defined? Zlib
       assert_equal(0x02820145, Zlib.adler32("foo"))
       assert_equal(0x02820145, Zlib.adler32("o", Zlib.adler32("fo")))
       assert_equal(0x8a62c964, Zlib.adler32("abc\x01\x02\x03" * 10000))
+      assert_equal(0x97d1a9f7, Zlib.adler32("p", -305419897))
+      Tempfile.create("test_zlib_gzip_file_to_io") {|t|
+        File.binwrite(t.path, "foo")
+        t.rewind
+        assert_equal(0x02820145, Zlib.adler32(t))
+
+        t.rewind
+        crc = Zlib.adler32(t.read(2))
+        assert_equal(0x02820145, Zlib.adler32(t, crc))
+
+        File.binwrite(t.path, "abc\x01\x02\x03" * 10000)
+        t.rewind
+        assert_equal(0x8a62c964, Zlib.adler32(t))
+      }
     end
 
     def test_adler32_combine
@@ -1102,10 +1413,10 @@ if defined? Zlib
       begin
         assert_equal(0x02820145, Zlib.adler32_combine(one, two, 1))
       rescue NotImplementedError
-        skip "adler32_combine is not implemented"
-      rescue Minitest::Assertion
+        omit "adler32_combine is not implemented"
+      rescue Test::Unit::AssertionFailedError
         if /aix/ =~ RUBY_PLATFORM
-          skip "zconf.h in zlib does not handle _LARGE_FILES in AIX. Skip until it is fixed"
+          omit "zconf.h in zlib does not handle _LARGE_FILES in AIX. Skip until it is fixed"
         end
         raise $!
       end
@@ -1116,6 +1427,20 @@ if defined? Zlib
       assert_equal(0x8c736521, Zlib.crc32("foo"))
       assert_equal(0x8c736521, Zlib.crc32("o", Zlib.crc32("fo")))
       assert_equal(0x07f0d68f, Zlib.crc32("abc\x01\x02\x03" * 10000))
+      assert_equal(0xf136439b, Zlib.crc32("p", -305419897))
+      Tempfile.create("test_zlib_gzip_file_to_io") {|t|
+        File.binwrite(t.path, "foo")
+        t.rewind
+        assert_equal(0x8c736521, Zlib.crc32(t))
+
+        t.rewind
+        crc = Zlib.crc32(t.read(2))
+        assert_equal(0x8c736521, Zlib.crc32(t, crc))
+
+        File.binwrite(t.path, "abc\x01\x02\x03" * 10000)
+        t.rewind
+        assert_equal(0x07f0d68f, Zlib.crc32(t))
+      }
     end
 
     def test_crc32_combine
@@ -1124,10 +1449,10 @@ if defined? Zlib
       begin
         assert_equal(0x8c736521, Zlib.crc32_combine(one, two, 1))
       rescue NotImplementedError
-        skip "crc32_combine is not implemented"
-      rescue Minitest::Assertion
+        omit "crc32_combine is not implemented"
+      rescue Test::Unit::AssertionFailedError
         if /aix/ =~ RUBY_PLATFORM
-          skip "zconf.h in zlib does not handle _LARGE_FILES in AIX. Skip until it is fixed"
+          omit "zconf.h in zlib does not handle _LARGE_FILES in AIX. Skip until it is fixed"
         end
         raise $!
       end
@@ -1140,11 +1465,20 @@ if defined? Zlib
     end
 
     def test_inflate
-      TestZlibInflate.new(__name__).test_inflate
+      s = Zlib::Deflate.deflate("foo")
+      z = Zlib::Inflate.new
+      s = z.inflate(s)
+      s << z.inflate(nil)
+      assert_equal("foo", s)
+      z.inflate("foo") # ???
+      z << "foo" # ???
     end
 
     def test_deflate
-      TestZlibDeflate.new(__name__).test_deflate
+      s = Zlib::Deflate.deflate("foo")
+      assert_equal("foo", Zlib::Inflate.inflate(s))
+
+      assert_raise(Zlib::StreamError) { Zlib::Deflate.deflate("foo", 10000) }
     end
 
     def test_deflate_stream
@@ -1205,8 +1539,15 @@ if defined? Zlib
       assert_raise(Zlib::GzipFile::Error){ Zlib.gunzip(src) }
     end
 
+    # Zlib.gunzip input is always considered a binary string, regardless of its String#encoding.
+    def test_gunzip_encoding
+      #                vvvvvvvv = mtime, but valid UTF-8 string of U+0080
+      src = %w[1f8b0800c28000000003cb48cdc9c9070086a6103605000000].pack("H*").force_encoding('UTF-8')
+      assert_equal 'hello', Zlib.gunzip(src.freeze)
+    end
+
     def test_gunzip_no_memory_leak
-      assert_no_memory_leak(%[-rzlib], "#{<<~"{#"}", "#{<<~'};'}")
+      assert_no_memory_leak(%W[-r#{LOADED_ZLIB}], "#{<<~"{#"}", "#{<<~'};'}")
       d = Zlib.gzip("data")
       {#
         10_000.times {Zlib.gunzip(d)}

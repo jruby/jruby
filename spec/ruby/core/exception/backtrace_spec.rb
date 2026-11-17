@@ -7,15 +7,15 @@ describe "Exception#backtrace" do
   end
 
   it "returns nil if no backtrace was set" do
-    Exception.new.backtrace.should be_nil
+    Exception.new.backtrace.should == nil
   end
 
   it "returns an Array" do
-    @backtrace.should be_an_instance_of(Array)
+    @backtrace.should.instance_of?(Array)
   end
 
   it "sets each element to a String" do
-    @backtrace.each {|l| l.should be_an_instance_of(String)}
+    @backtrace.each {|l| l.should.instance_of?(String)}
   end
 
   it "includes the filename of the location where self raised in the first element" do
@@ -27,7 +27,7 @@ describe "Exception#backtrace" do
   end
 
   it "includes the name of the method from where self raised in the first element" do
-    @backtrace.first.should =~ /in `backtrace'/
+    @backtrace.first.should =~ /in [`'](?:ExceptionSpecs::Backtrace\.)?backtrace'/
   end
 
   it "includes the filename of the location immediately prior to where self raised in the second element" do
@@ -38,16 +38,29 @@ describe "Exception#backtrace" do
     @backtrace[1].should =~ /:6(:in )?/
   end
 
-  it "contains lines of the same format for each prior position in the stack" do
-    @backtrace[2..-1].each do |line|
-      # This regexp is deliberately imprecise to account for the need to abstract out
-      # the paths of the included mspec files and the desire to avoid specifying in any
-      # detail what the in `...' portion looks like.
-      line.should =~ /^[^ ]+\:\d+(:in `[^`]+')?$/
+  ruby_version_is ""..."3.4" do
+    it "contains lines of the same format for each prior position in the stack" do
+      @backtrace[2..-1].each do |line|
+        # This regexp is deliberately imprecise to account for the need to abstract out
+        # the paths of the included mspec files and the desire to avoid specifying in any
+        # detail what the in `...' portion looks like.
+        line.should =~ /^.+:\d+:in `[^`]+'$/
+      end
     end
   end
 
-  it "produces a backtrace for an exception captured using $!" do
+  ruby_version_is "3.4" do
+    it "contains lines of the same format for each prior position in the stack" do
+      @backtrace[2..-1].each do |line|
+        # This regexp is deliberately imprecise to account for the need to abstract out
+        # the paths of the included mspec files and the desire to avoid specifying in any
+        # detail what the in '...' portion looks like.
+        line.should =~ /^.+:\d+:in '[^`]+'$/
+      end
+    end
+  end
+
+  it "captures the backtrace for an exception into $!" do
     exception = begin
       raise
     rescue RuntimeError
@@ -55,6 +68,16 @@ describe "Exception#backtrace" do
     end
 
     exception.backtrace.first.should =~ /backtrace_spec/
+  end
+
+  it "captures the backtrace for an exception into $@" do
+    backtrace = begin
+      raise
+    rescue RuntimeError
+      $@
+    end
+
+    backtrace.first.should =~ /backtrace_spec/
   end
 
   it "returns an Array that can be updated" do
@@ -71,13 +94,13 @@ describe "Exception#backtrace" do
       raise
     rescue RuntimeError => err
       bt = err.backtrace
-      err.dup.backtrace.should equal(bt)
+      err.dup.backtrace.should.equal?(bt)
 
       new_bt = ['hi']
       err.set_backtrace new_bt
 
       err.backtrace.should == new_bt
-      err.dup.backtrace.should equal(new_bt)
+      err.dup.backtrace.should.equal?(new_bt)
     end
   end
 end

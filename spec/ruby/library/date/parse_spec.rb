@@ -5,6 +5,11 @@ require_relative 'shared/parse_eu'
 require 'date'
 
 describe "Date#parse" do
+  it "parses an ISO week without an explicit weekday" do
+    Date._parse("2020-W09").should == { cwyear: 2020, cweek: 9 }
+    Date.parse("2020-W09").should == Date.civil(2020, 2, 24)
+  end
+
   # The space separator is also different, doesn't work for only numbers
   it "parses a day name into a Date object" do
     d = Date.parse("friday")
@@ -23,7 +28,7 @@ describe "Date#parse" do
 
   # Specs using numbers
   it "throws an argument error for a single digit" do
-    lambda{ Date.parse("1") }.should raise_error(ArgumentError)
+    ->{ Date.parse("1") }.should.raise(ArgumentError)
   end
 
   it "parses DD as month day number" do
@@ -66,8 +71,25 @@ describe "Date#parse" do
   end
 
   it "raises a TypeError trying to parse non-String-like object" do
-    lambda { Date.parse(1) }.should raise_error(TypeError)
-    lambda { Date.parse(:invalid) }.should raise_error(TypeError)
+    -> { Date.parse(1) }.should.raise(TypeError)
+    -> { Date.parse([]) }.should.raise(TypeError)
+  end
+
+  it "coerces using to_str" do
+    c = Class.new do
+      attr_accessor :string
+      def to_str
+        @string
+      end
+    end
+    o = c.new
+    o.string = "19101101"
+
+    d = Date.parse(o)
+    d.should == Date.civil(1910, 11, 1)
+
+    # parse should not modify string value
+    o.to_str.should == "19101101"
   end
 end
 
@@ -76,7 +98,7 @@ describe "Date#parse with '.' separator" do
     @sep = '.'
   end
 
-  it_should_behave_like "date_parse"
+  it_should_behave_like :date_parse
 end
 
 describe "Date#parse with '/' separator" do
@@ -84,7 +106,7 @@ describe "Date#parse with '/' separator" do
     @sep = '/'
   end
 
-  it_should_behave_like "date_parse"
+  it_should_behave_like :date_parse
 end
 
 describe "Date#parse with ' ' separator" do
@@ -92,7 +114,7 @@ describe "Date#parse with ' ' separator" do
     @sep = ' '
   end
 
-  it_should_behave_like "date_parse"
+  it_should_behave_like :date_parse
 end
 
 describe "Date#parse with '/' separator US-style" do
@@ -100,7 +122,7 @@ describe "Date#parse with '/' separator US-style" do
     @sep = '/'
   end
 
-  it_should_behave_like "date_parse_us"
+  it_should_behave_like :date_parse_us
 end
 
 describe "Date#parse with '-' separator EU-style" do
@@ -108,7 +130,7 @@ describe "Date#parse with '-' separator EU-style" do
     @sep = '-'
   end
 
-  it_should_behave_like "date_parse_eu"
+  it_should_behave_like :date_parse_eu
 end
 
 describe "Date#parse(.)" do

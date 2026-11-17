@@ -1,1 +1,0 @@
-fails:Set#compare_by_identity is not equal to set what does not compare by identity

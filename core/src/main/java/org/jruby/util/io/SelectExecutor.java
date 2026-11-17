@@ -1,10 +1,12 @@
 package org.jruby.util.io;
 
-import jnr.enxio.channels.NativeSelectorProvider;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
+import org.jruby.api.Create;
+import org.jruby.ext.socket.RubyBasicSocket;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -15,6 +17,7 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +27,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 
 /**
  * Created by headius on 6/3/14.
@@ -52,6 +57,12 @@ public class SelectExecutor {
     }
 
     IRubyObject selectEnd(ThreadContext context) throws IOException {
+        // Stop wakeups before the selectors go back to the pool, or a late one could land on a selector
+        // another thread has borrowed: https://github.com/jruby/jruby/issues/9981
+        synchronized (wakeupLock) {
+            finished = true;
+        }
+
         if (selectors != null) {
             for (int i = 0; i < selectors.size(); i++) {
                 Selector selector = selectors.get(i);
@@ -99,14 +110,12 @@ public class SelectExecutor {
 
     IRubyObject selectInternal(ThreadContext context) throws IOException {
         Ruby runtime = context.runtime;
-        RubyArray res, list;
         OpenFile fptr;
-        long i;
 
         RubyArray readAry = null;
         if (!read.isNil()) {
             readAry = read.convertToArray();
-            for (i = 0; i < readAry.size(); i++) {
+            for (int i = 0; i < readAry.size(); i++) {
                 fptr = TypeConverter.ioGetIO(runtime, readAry.eltOk(i)).getOpenFileChecked();
                 fdSetRead(context, fptr.fd(), readAry.size());
                 if (fptr.READ_DATA_PENDING() || fptr.READ_CHAR_PENDING()) { /* check for buffered data */
@@ -122,7 +131,7 @@ public class SelectExecutor {
         RubyArray writeAry = null;
         if (!write.isNil()) {
             writeAry = write.convertToArray();
-            for (i = 0; i < writeAry.size(); i++) {
+            for (int i = 0; i < writeAry.size(); i++) {
                 RubyIO write_io = TypeConverter.ioGetIO(runtime, writeAry.eltOk(i)).GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
                 fdSetWrite(context, fptr.fd(), writeAry.size());
@@ -137,92 +146,96 @@ public class SelectExecutor {
             // This does not actually register anything because we do not have a way to select for error on JDK.
             // We make the calls for their side effects.
             exceptAry = except.convertToArray();
-            for (i = 0; i < exceptAry.size(); i++) {
+            for (int i = 0; i < exceptAry.size(); i++) {
                 RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
                 RubyIO write_io = io.GetWriteIO();
-                fptr = io.getOpenFileChecked();
+                io.getOpenFileChecked();
                 if (io != write_io) {
-                    fptr = write_io.getOpenFileChecked();
+                    write_io.getOpenFileChecked();
                 }
             }
         }
 
         int n = threadFdSelect(context);
 
-        if (n == 0 && pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
+        if (n == 0 && pendingReadFDs == null && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
-        res = RubyArray.newArray(runtime, 3);
-        res.push(runtime.newArray(Math.min(n, maxReadReadySize())));
-        res.push(runtime.newArray(Math.min(n, maxWriteReadySize())));
-        // we never add anything for error since JDK does not provide a way to select for error
-        res.push(runtime.newArray(0));
-
-        if (readKeyList != null) {
-            list = (RubyArray) res.eltOk(0);
-            for (i = 0; i < readAry.size(); i++) {
+        RubyArray<?> readReady;
+        if (readKeyList == null && pendingReadFDs == null && unselectableReadFDs == null) {
+            readReady = newEmptyArray(context);
+        } else {
+            final int len = Math.min(n, maxReadReadySize());
+            readReady = Create.allocArray(context, len);
+            for (int i = 0; i < readAry.size(); i++) {
                 IRubyObject obj = readAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 fptr = io.getOpenFileChecked();
-                if (fdIsSet(readKeyList, fptr.fd(), READ_ACCEPT_OPS) || (pendingReadFDs != null && pendingReadFDs.contains(fptr.fd()))) {
-                    list.push(obj);
-                }
-            }
-        }
-        if (unselectableReadFDs != null) {
-            list = (RubyArray) res.eltOk(0);
-            for (i = 0; i < readAry.size(); i++) {
-                IRubyObject obj = readAry.eltOk(i);
-                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
-                fptr = io.getOpenFileChecked();
-                if (unselectableReadFDs.contains(fptr.fd())) {
-                    list.push(obj);
+                if (readKeyList != null && fdIsSet(readKeyList, fptr.fd(), READ_ACCEPT_OPS) ||
+                        (pendingReadFDs != null && pendingReadFDs.contains(fptr.fd())) ||
+                        (unselectableReadFDs != null && unselectableReadFDs.contains(fptr.fd()))) {
+                    readReady.append(context, obj);
                 }
             }
         }
 
-        if (writeKeyList != null) {
-            list = (RubyArray) res.eltOk(1);
-            for (i = 0; i < writeAry.size(); i++) {
+        RubyArray<?> writeReady;
+        if (writeKeyList == null && unselectableWriteFDs == null) {
+            writeReady = newEmptyArray(context);
+        } else {
+            final int len = Math.min(n, maxWriteReadySize());
+            writeReady = Create.allocArray(context, len);
+            for (int i = 0; i < writeAry.size(); i++) {
                 IRubyObject obj = writeAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
-                if (fdIsSet(writeKeyList, fptr.fd(), WRITE_CONNECT_OPS)) {
-                    list.push(obj);
-                }
-            }
-        }
-        if (unselectableWriteFDs != null) {
-            list = (RubyArray) res.eltOk(1);
-            for (i = 0; i < writeAry.size(); i++) {
-                IRubyObject obj = writeAry.eltOk(i);
-                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
-                fptr = io.getOpenFileChecked();
-                if (unselectableWriteFDs.contains(fptr.fd())) {
-                    list.push(obj);
+                if (writeKeyList != null && fdIsSet(writeKeyList, fptr.fd(), WRITE_CONNECT_OPS) ||
+                        (unselectableWriteFDs != null && unselectableWriteFDs.contains(fptr.fd()))) {
+
+                    // ensure any pending connections get finished
+                    if (writeKeyList != null && writeKeyList.get(i).isConnectable()) {
+                        if (fptr.fd().ch instanceof SocketChannel socketChannel) {
+                            try {
+                                socketChannel.finishConnect();
+                            } catch (IOException ioe) {
+                                // select(2) reports a non-blocking connect that failed as writable
+                                // and leaves the error on the socket, for getsockopt(SO_ERROR) or
+                                // the next operation to report; it does not fail the select itself.
+                                // finishConnect() throws instead (and closes the channel), so hand
+                                // the error to the socket and carry on. Socket.tcp's Happy Eyeballs
+                                // v2 logic depends on this to fall back from one address family to
+                                // the other. See jruby/jruby#8786.
+                                // Only a socket can hold the error, so anything else still fails
+                                // the select the way it did before.
+                                if (!(write_io instanceof RubyBasicSocket socket)) throw ioe;
+                                socket.setConnectError(ioe);
+                            }
+                        }
+                    }
+
+                    writeReady.push(context, obj);
                 }
             }
         }
 
-        if (errorKeyList != null) {
-            list = (RubyArray) res.eltOk(2);
-            for (i = 0; i < exceptAry.size(); i++) {
+        RubyArray<?> error;
+        if (errorKeyList == null) {
+            error = newEmptyArray(context);
+        } else {
+            error = Create.allocArray(context, exceptAry.size());
+            for (int i = 0; i < exceptAry.size(); i++) {
                 IRubyObject obj = exceptAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = io.getOpenFileChecked();
-                if (errorKeyList.contains(fptr.fd())) {
-                    list.push(obj);
-                } else if (io != write_io) {
-                    fptr = write_io.getOpenFileChecked();
-                    if (errorKeyList.contains(fptr.fd())) {
-                        list.push(obj);
-                    }
+                if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS) ||
+                        (io != write_io && fdIsSet(errorKeyList, write_io.getOpenFileChecked().fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS))) {
+                    error.push(context, obj);
                 }
             }
         }
 
-        return res;			/* returns an empty array on interrupt */
+        return newArray(context, readReady, writeReady, error);
     }
 
     private int maxReadReadySize() {
@@ -265,13 +278,26 @@ public class SelectExecutor {
         writeKeyList.add(key);
     }
 
-    private boolean fdIsSet(List<SelectionKey> fds, ChannelFD fd, int operations) {
+    private boolean fdIsSet(List<SelectionKey> fds, ChannelFD fd, final int operations) {
         if (fds == null) return false;
 
         for (SelectionKey key : fds) {
-            if (key.isValid() && (key.readyOps() & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
+            if (key.isValid() && (readyOps(key) & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
         }
         return false;
+    }
+
+    private static int readyOps(SelectionKey key) {
+        int readyOps = key.readyOps();
+        // macOS poll(2) answers POLLNVAL for devices like /dev/null and jnr-enxio selects the key with no ready ops;
+        // CRuby's select(2) reports such devices as ready
+        if (readyOps == 0) {
+            Selector selector = key.selector();
+            if (selector.provider() != SelectorProvider.provider() && selector.selectedKeys().contains(key)) {
+                return key.interestOps();
+            }
+        }
+        return readyOps;
     }
 
     private SelectionKey trySelectRead(ThreadContext context, ChannelFD fd) throws IOException {
@@ -304,14 +330,16 @@ public class SelectExecutor {
         }
 
         if (selector == null) {
-            if (channel.provider() instanceof NativeSelectorProvider) {
+            // A JDK selector only accepts JDK channels, so a channel from any other provider (jnr-enxio has several,
+            // e.g. NativeFileSelectorProvider for FIFOs) needs a selector from its own provider
+            if (channel.provider() != SelectorProvider.provider()) {
                 // We don't pool these, so create it directly
                 selector = channel.provider().openSelector();
 
                 // need to create pipe between alt impl selector and native NIO selector
                 Pipe pipe = Pipe.open();
                 ENXIOSelector enxioSelector = new ENXIOSelector(selector, pipe);
-                if (enxioSelectors.isEmpty()) enxioSelectors = new ArrayList<ENXIOSelector>();
+                if (enxioSelectors.isEmpty()) enxioSelectors = new ArrayList<ENXIOSelector>(1);
                 enxioSelectors.add(enxioSelector);
                 pipe.source().configureBlocking(false);
                 pipe.source().register(getSelector(context, pipe.source()), SelectionKey.OP_READ, enxioSelector);
@@ -348,8 +376,8 @@ public class SelectExecutor {
         }
     }
 
-    // MRI: rb_thread_fd_select
-    private int threadFdSelect(ThreadContext context) throws IOException {
+    @CRuby(value = "rb_thread_fd_select", file = "thread.c")
+    private int threadFdSelect(ThreadContext context) {
         if (readKeyList == null && writeKeyList == null && errorKeyList == null) {
             if (timeout == null) { // sleep forever
                 try {
@@ -398,12 +426,10 @@ public class SelectExecutor {
         lerrno = 0;
 
         try {
-            result = th.executeTask(context, this, SelectTask);
+            result = th.executeTaskBlocking(context, this, SelectTask);
         } catch (InterruptedException ie) {
             throw context.runtime.newErrnoEINTRError();
         }
-
-        context.pollThreadEvents();
 
 //        errno = lerrno;
 
@@ -446,7 +472,7 @@ public class SelectExecutor {
         return result;
     }
 
-    private static RubyThread.Task<SelectExecutor, Integer> SelectTask = new RubyThread.Task<SelectExecutor, Integer>() {
+    private static final RubyThread.Task<SelectExecutor, Integer> SelectTask = new RubyThread.Task<SelectExecutor, Integer>() {
         @Override
         public Integer run(ThreadContext context, SelectExecutor s) throws InterruptedException {
             int ready = 0;
@@ -513,13 +539,20 @@ public class SelectExecutor {
 
         @Override
         public void wakeup(RubyThread thread, SelectExecutor selectExecutor) {
-            // Should be ok to interrupt selectors or pipes used for selection
-            thread.getNativeThread().interrupt();
+            // The thread clears its task and then the task's data, so missing data means the select is over
+            if (selectExecutor == null) return;
 
-            // wake up all selectors too
-            for (int i = 0; i < selectExecutor.selectors.size(); i++) {
-                Selector selector = selectExecutor.selectors.get(i);
-                selector.wakeup();
+            synchronized (selectExecutor.wakeupLock) {
+                if (selectExecutor.finished) return;
+
+                // Should be ok to interrupt selectors or pipes used for selection
+                thread.getNativeThread().interrupt();
+
+                // wake up all selectors too
+                for (int i = 0; i < selectExecutor.selectors.size(); i++) {
+                    Selector selector = selectExecutor.selectors.get(i);
+                    selector.wakeup();
+                }
             }
         }
     };
@@ -562,6 +595,8 @@ public class SelectExecutor {
     Selector mainSelector = null;
     List<Selector> selectors = null;
     List<ENXIOSelector> enxioSelectors = Collections.emptyList();
+    private final Object wakeupLock = new Object();
+    private boolean finished = false;
 
     Long timeout;
     final Ruby runtime;

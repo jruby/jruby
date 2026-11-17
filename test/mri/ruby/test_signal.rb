@@ -28,7 +28,8 @@ class TestSignal < Test::Unit::TestCase
   def test_signal_process_group
     bug4362 = '[ruby-dev:43169]'
     assert_nothing_raised(bug4362) do
-      pid = Process.spawn(EnvUtil.rubybin, '-e', 'sleep 10', :pgroup => true)
+      cmd = [ EnvUtil.rubybin, '--disable=gems' '-e', 'sleep 10' ]
+      pid = Process.spawn(*cmd, :pgroup => true)
       Process.kill(:"-TERM", pid)
       Process.waitpid(pid)
       assert_equal(true, $?.signaled?)
@@ -44,7 +45,7 @@ class TestSignal < Test::Unit::TestCase
       sig = "INT"
       term = :KILL
     end
-    IO.popen([EnvUtil.rubybin, '-e', <<-"End"], 'r+') do |io|
+    IO.popen([EnvUtil.rubybin, '--disable=gems', '-e', <<-"End"], 'r+') do |io|
         Signal.trap(:#{sig}, "EXIT")
         STDOUT.syswrite("a")
         Thread.start { sleep(2) }
@@ -83,10 +84,12 @@ class TestSignal < Test::Unit::TestCase
     assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { SignalException.new("\u{30eb 30d3 30fc}") }
     Signal.list.each do |signm, signo|
       next if signm == "EXIT"
-      assert_equal(SignalException.new(signm).signo, signo)
-      assert_equal(SignalException.new(signm.to_sym).signo, signo)
-      assert_equal(SignalException.new(signo).signo, signo)
+      assert_equal(signo, SignalException.new(signm).signo, signm)
+      assert_equal(signo, SignalException.new(signm.to_sym).signo, signm)
+      assert_equal(signo, SignalException.new(signo).signo, signo)
     end
+    e = assert_raise(ArgumentError) {SignalException.new("-SIGEXIT")}
+    assert_not_match(/SIG-SIG/, e.message)
   end
 
   def test_interrupt
@@ -134,11 +137,6 @@ class TestSignal < Test::Unit::TestCase
 
       assert_raise(ArgumentError) { Signal.trap }
 
-      assert_raise(SecurityError) do
-        s = proc {}.taint
-        Signal.trap(:INT, s)
-      end
-
       # FIXME!
       Signal.trap(:INT, nil)
       Signal.trap(:INT, "")
@@ -164,6 +162,8 @@ class TestSignal < Test::Unit::TestCase
       assert_raise(ArgumentError) { Signal.trap("XXXXXXXXXX", "SIG_DFL") }
 
       assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Signal.trap("\u{30eb 30d3 30fc}", "SIG_DFL") }
+
+      assert_raise(ArgumentError) { Signal.trap("EXIT\0") {} }
     ensure
       Signal.trap(:INT, oldtrap) if oldtrap
     end
@@ -228,20 +228,20 @@ class TestSignal < Test::Unit::TestCase
   end
 
   def test_signame_delivered
-    10.times do
-      IO.popen([EnvUtil.rubybin, "-e", <<EOS, :err => File::NULL]) do |child|
-        Signal.trap("INT") do |signo|
-          signame = Signal.signame(signo)
-          Marshal.dump(signame, STDOUT)
-          STDOUT.flush
-          exit 0
-        end
-        Process.kill("INT", $$)
-        sleep 1  # wait signal deliver
-EOS
+    args = [EnvUtil.rubybin, "--disable=gems", "-e", <<"", :err => File::NULL]
+      Signal.trap("INT") do |signo|
+        signame = Signal.signame(signo)
+        Marshal.dump(signame, STDOUT)
+        STDOUT.flush
+        exit 0
+      end
+      Process.kill("INT", $$)
+      sleep 1  # wait signal deliver
 
+    10.times do
+      IO.popen(args) do |child|
         signame = Marshal.load(child)
-        assert_equal(signame, "INT")
+        assert_equal("INT", signame)
       end
     end
   end if Process.respond_to?(:kill)
@@ -291,7 +291,8 @@ EOS
 
     if trap = Signal.list['TRAP']
       bug9820 = '[ruby-dev:48592] [Bug #9820]'
-      status = assert_in_out_err(['-e', 'Process.kill(:TRAP, $$)'])
+      no_core = "Process.setrlimit(Process::RLIMIT_CORE, 0); " if defined?(Process.setrlimit) && defined?(Process::RLIMIT_CORE)
+      status = assert_in_out_err(['-e', "#{no_core}Process.kill(:TRAP, $$)"])
       assert_predicate(status, :signaled?, bug9820)
       assert_equal(trap, status.termsig, bug9820)
     end
@@ -309,16 +310,58 @@ EOS
   end
 
   def test_self_stop
-    assert_ruby_status([], <<-'end;')
-      begin
-        fork{
-          sleep 1
-          Process.kill(:CONT, Process.ppid)
-        }
-        Process.kill(:STOP, Process.pid)
-      rescue NotImplementedError
-        # ok
-      end
-    end;
+    omit unless Process.respond_to?(:fork)
+    omit unless defined?(Process::WUNTRACED)
+
+    # Make a process that stops itself
+    child_pid = fork do
+      Process.kill(:STOP, Process.pid)
+    end
+
+    # The parent should be notified about the stop
+    _, status = Process.waitpid2(child_pid, Process::WUNTRACED)
+    assert status.stopped?
+
+    # It can be continued
+    Process.kill(:CONT, child_pid)
+
+    # And the child then runs to completion
+    _, status = Process.waitpid2(child_pid)
+    assert status.exited?
+    assert status.success?
   end
+
+  def test_sigwait_fd_unused
+    t = EnvUtil.apply_timeout_scale(0.1)
+    assert_separately([], <<-End)
+      tgt = $$
+      trap(:TERM) { exit(0) }
+      e = "Process.daemon; sleep #{t * 2}; Process.kill(:TERM,\#{tgt})"
+      term = [ '#{EnvUtil.rubybin}', '--disable=gems', '-e', e ]
+      t2 = Thread.new { sleep } # grab sigwait_fd
+      Thread.pass until t2.stop?
+      Thread.new do
+        sleep #{t}
+        t2.kill
+        t2.join
+      end
+      Process.spawn(*term)
+      # last thread remaining, ensure it can react to SIGTERM
+      loop { sleep }
+    End
+  end if Process.respond_to?(:kill) && Process.respond_to?(:daemon)
+
+  def test_signal_during_kwarg_call
+    status = assert_in_out_err([], <<~'RUBY', [], [], success: false)
+      Thread.new do
+        sleep 0.1
+        Process.kill("TERM", $$)
+      end
+
+      loop do
+        File.open(IO::NULL, kwarg: true) {}
+      end
+    RUBY
+    assert_predicate(status, :signaled?) if Signal.list.include?("QUIT")
+  end if Process.respond_to?(:kill)
 end

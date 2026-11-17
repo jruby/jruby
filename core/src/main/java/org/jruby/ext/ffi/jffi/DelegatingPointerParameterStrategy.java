@@ -4,9 +4,6 @@ import com.kenai.jffi.ObjectParameterType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public final class DelegatingPointerParameterStrategy extends PointerParameterStrategy {
     private static final ObjectParameterType OBJECT_TYPE = ObjectParameterType.create(ObjectParameterType.ARRAY, ObjectParameterType.ComponentType.BYTE);
     private final IRubyObject value;

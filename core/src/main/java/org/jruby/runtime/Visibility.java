@@ -27,8 +27,7 @@
 package org.jruby.runtime;
 
 public enum Visibility {
-    PUBLIC, PROTECTED, PRIVATE, MODULE_FUNCTION;
-
+    PUBLIC, PROTECTED, PRIVATE, MODULE_FUNCTION, UNDEFINED, DEFAULT;
     private static final Visibility[] VALUES = values();
 
     public boolean isPublic() {
@@ -49,5 +48,19 @@ public enum Visibility {
 
     public static Visibility[] getValues() {
         return VALUES;
+    }
+
+    public Visibility getDefaultVisibilityFor(String name) {
+        switch (this) {
+            case DEFAULT:
+                switch (name) {
+                    case "initialize":
+                    case "initialize_copy":
+                       return PRIVATE;
+                }
+                return PUBLIC;
+            default:
+                return this;
+        }
     }
 }

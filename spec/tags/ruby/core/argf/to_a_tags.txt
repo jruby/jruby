@@ -1,0 +1,1 @@
+fails:ARGF.to_a is an alias of ARGF.readlines

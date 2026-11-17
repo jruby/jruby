@@ -3,6 +3,22 @@ require_relative 'helper'
 
 module Psych
   class TestStream < TestCase
+    [
+      [Psych::Nodes::Alias, :alias?],
+      [Psych::Nodes::Document, :document?],
+      [Psych::Nodes::Mapping, :mapping?],
+      [Psych::Nodes::Scalar, :scalar?],
+      [Psych::Nodes::Sequence, :sequence?],
+      [Psych::Nodes::Stream, :stream?],
+    ].each do |klass, block|
+      define_method :"test_predicate_#{block}" do
+        rb = Psych.parse_stream("---\n- foo: bar\n- &a !!str Anchored\n- *a")
+        nodes = rb.grep(klass)
+        assert_operator nodes.length, :>, 0
+        assert_equal nodes, rb.find_all(&block)
+      end
+    end
+
     def test_parse_partial
       rb = Psych.parse("--- foo\n...\n--- `").to_ruby
       assert_equal 'foo', rb
@@ -33,6 +49,14 @@ module Psych
     def test_load_stream_yields_documents
       list = []
       Psych.load_stream("--- foo\n...\n--- bar") do |ruby|
+        list << ruby
+      end
+      assert_equal %w{ foo bar }, list
+    end
+
+    def test_safe_load_stream_yields_documents
+      list = []
+      Psych.safe_load_stream("--- foo\n...\n--- bar") do |ruby|
         list << ruby
       end
       assert_equal %w{ foo bar }, list

@@ -6,6 +6,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -13,34 +14,33 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ZSuperInstr extends UnresolvedSuperInstr {
-    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
-                       boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
-    }
+import java.util.EnumSet;
 
-    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
-        super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
+public class ZSuperInstr extends UnresolvedSuperInstr {
+    // normal constructor
+    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure, int flags,
+                       boolean isPotentiallyRefined) {
+        super(scope, Operation.ZSUPER, result, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.USES_ZSUPER);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        scope.setUsesSuper();
+        scope.setUsesZSuper();
         return true;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                cloneCallArgs(ii), getClosureArg().cloneForInlining(ii), getFlags(),
+                isPotentiallyRefined());
     }
 
     public static ZSuperInstr decode(IRReaderDecoder d) {
@@ -62,18 +62,22 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
+        int flags = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new ZSuperInstr(d.getCurrentScope(), result, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ZSuperInstr(d.getCurrentScope(), result, receiver, args, closure, flags, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
+
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
+
         return IRRuntimeHelpers.zSuper(context, self, args, block);
     }
 

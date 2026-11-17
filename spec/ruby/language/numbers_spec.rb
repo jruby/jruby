@@ -11,7 +11,7 @@ describe "A number literal" do
   end
 
   it "cannot have a leading underscore" do
-    lambda { eval("_4_2") }.should raise_error(NameError)
+    -> { eval("_4_2") }.should.raise(NameError)
   end
 
   it "can have a decimal point" do
@@ -20,8 +20,8 @@ describe "A number literal" do
 
   it "must have a digit before the decimal point" do
     0.75.should == 0.75
-    lambda { eval(".75")  }.should raise_error(SyntaxError)
-    lambda { eval("-.75") }.should raise_error(SyntaxError)
+    -> { eval(".75")  }.should.raise(SyntaxError)
+    -> { eval("-.75") }.should.raise(SyntaxError)
   end
 
   it "can have an exponent" do
@@ -45,7 +45,15 @@ describe "A number literal" do
     eval('-3r').should == Rational(-3, 1)
   end
 
-  it "can be an bignum literal with trailing 'r' to represent a Rational" do
+  it "can be an float literal with trailing 'r' to represent a Rational in a canonical form" do
+    eval('1.0r').should == Rational(1, 1)
+  end
+
+  it "can be a float literal with trailing 'r' to represent a Rational" do
+    eval('0.0174532925199432957r').should == Rational(174532925199432957, 10000000000000000000)
+  end
+
+  it "can be a bignum literal with trailing 'r' to represent a Rational" do
     eval('1111111111111111111111111111111111111111111111r').should == Rational(1111111111111111111111111111111111111111111111, 1)
     eval('-1111111111111111111111111111111111111111111111r').should == Rational(-1111111111111111111111111111111111111111111111, 1)
   end

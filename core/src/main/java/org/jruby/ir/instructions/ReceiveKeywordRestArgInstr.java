@@ -9,46 +9,40 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public final int required;
 
-    public ReceiveKeywordRestArgInstr(Variable result, int required) {
-        super(Operation.RECV_KW_REST_ARG, result, -1);
-        this.required = required;
+    public ReceiveKeywordRestArgInstr(Variable result, Variable keywords) {
+        super(Operation.RECV_KW_REST_ARG, result, keywords);
     }
 
     @Override
-    public String[] toStringNonOperandArgs() {
-        return new String[] { "req: " + required };
-    }
-
-    @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.RECEIVES_KEYWORD_ARGS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setReceivesKeywordArgs();
         return true;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), required);
-    }
-
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(required);
+        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()));
     }
 
     public static ReceiveKeywordRestArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
+        return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeVariable());
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
-        return IRRuntimeHelpers.receiveKeywordRestArg(context, args, required, keywordArgumentSupplied);
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                  Object[] temp, IRubyObject[] args, boolean ruby2keyword) {
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.receiveKeywordRestArg(context, keywords);
     }
 
     @Override

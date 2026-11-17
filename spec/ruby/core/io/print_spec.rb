@@ -1,16 +1,27 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
-describe IO, "#print" do
+describe "IO#print" do
   before :each do
-    @old_separator = $\
-    $\ = '->'
+    @old_record_separator = $\
+    @old_field_separator = $,
+    suppress_warning {
+      $\ = '->'
+      $, = '^^'
+    }
     @name = tmp("io_print")
   end
 
   after :each do
-    $\ = @old_separator
+    suppress_warning {
+      $\ = @old_record_separator
+      $, = @old_field_separator
+    }
     rm_r @name
+  end
+
+  it "returns nil" do
+    touch(@name) { |f| f.print.should == nil }
   end
 
   it "writes $_.to_s followed by $\\ (if any) to the stream if no arguments given" do
@@ -38,16 +49,18 @@ describe IO, "#print" do
     IO.read(@name).should == "hello#{$\}"
   end
 
-  it "writes each obj.to_s to the stream and appends $\\ (if any) given multiple objects" do
+  it "writes each obj.to_s to the stream separated by $, (if any) and appends $\\ (if any) given multiple objects" do
     o, o2 = Object.new, Object.new
     def o.to_s(); 'o'; end
     def o2.to_s(); 'o2'; end
 
-    touch(@name) { |f| f.print(o, o2) }
-    IO.read(@name).should == "#{o.to_s}#{o2.to_s}#{$\}"
+    suppress_warning {
+      touch(@name) { |f| f.print(o, o2) }
+    }
+    IO.read(@name).should == "#{o.to_s}#{$,}#{o2.to_s}#{$\}"
   end
 
   it "raises IOError on closed stream" do
-    lambda { IOSpecs.closed_io.print("stuff") }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.print("stuff") }.should.raise(IOError)
   end
 end

@@ -1,5 +1,6 @@
 require_relative 'spec_helper'
 require_relative 'fixtures/class'
+require_relative '../../core/module/fixtures/classes'
 
 load_extension("class")
 compile_extension("class_under_autoload")
@@ -10,7 +11,8 @@ autoload :ClassIdUnderAutoload, "#{object_path}/class_id_under_autoload_spec"
 
 describe :rb_path_to_class, shared: true do
   it "returns a class or module from a scoped String" do
-    @s.send(@method, "CApiClassSpecs::A::B").should equal(CApiClassSpecs::A::B)
+    @s.send(@method, "CApiClassSpecs::A::B").should.equal?(CApiClassSpecs::A::B)
+    @s.send(@method, "CApiClassSpecs::A::M").should.equal?(CApiClassSpecs::A::M)
   end
 
   it "resolves autoload constants" do
@@ -18,19 +20,21 @@ describe :rb_path_to_class, shared: true do
   end
 
   it "raises an ArgumentError if a constant in the path does not exist" do
-    lambda { @s.send(@method, "CApiClassSpecs::NotDefined::B") }.should raise_error(ArgumentError)
+    -> { @s.send(@method, "CApiClassSpecs::NotDefined::B") }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError if the final constant does not exist" do
-    lambda { @s.send(@method, "CApiClassSpecs::NotDefined") }.should raise_error(ArgumentError)
+    -> { @s.send(@method, "CApiClassSpecs::NotDefined") }.should.raise(ArgumentError)
   end
 
   it "raises a TypeError if the constant is not a class or module" do
-    lambda { @s.send(@method, "CApiClassSpecs::A::C") }.should raise_error(TypeError)
+    -> {
+      @s.send(@method, "CApiClassSpecs::A::C")
+    }.should.raise(TypeError, 'CApiClassSpecs::A::C does not refer to class/module')
   end
 
   it "raises an ArgumentError even if a constant in the path exists on toplevel" do
-    lambda { @s.send(@method, "CApiClassSpecs::Object") }.should raise_error(ArgumentError)
+    -> { @s.send(@method, "CApiClassSpecs::Object") }.should.raise(ArgumentError)
   end
 end
 
@@ -39,16 +43,114 @@ describe "C-API Class function" do
     @s = CApiClassSpecs.new
   end
 
+  describe "rb_class_instance_methods" do
+    it "returns the public and protected methods of self and its ancestors" do
+      methods = @s.rb_class_instance_methods(ModuleSpecs::Basic)
+      methods.should.include?(:protected_module)
+      methods.should.include?(:public_module)
+
+      methods = @s.rb_class_instance_methods(ModuleSpecs::Basic, true)
+      methods.should.include?(:protected_module)
+      methods.should.include?(:public_module)
+    end
+
+    it "when passed false as a parameter, returns the instance methods of the class" do
+      methods = @s.rb_class_instance_methods(ModuleSpecs::Child, false)
+      methods.to_set.should >= Set[:protected_child, :public_child]
+    end
+  end
+
+  describe "rb_class_public_instance_methods" do
+    it "returns a list of public methods in module and its ancestors" do
+      methods = @s.rb_class_public_instance_methods(ModuleSpecs::CountsChild)
+      methods.should.include?(:public_3)
+      methods.should.include?(:public_2)
+      methods.should.include?(:public_1)
+
+      methods = @s.rb_class_public_instance_methods(ModuleSpecs::CountsChild, true)
+      methods.should.include?(:public_3)
+      methods.should.include?(:public_2)
+      methods.should.include?(:public_1)
+    end
+
+    it "when passed false as a parameter, should return only methods defined in that module" do
+      @s.rb_class_public_instance_methods(ModuleSpecs::CountsChild, false).should == [:public_1]
+    end
+  end
+
+  describe "rb_class_protected_instance_methods" do
+    it "returns a list of protected methods in module and its ancestors" do
+      methods = @s.rb_class_protected_instance_methods(ModuleSpecs::CountsChild)
+      methods.should.include?(:protected_3)
+      methods.should.include?(:protected_2)
+      methods.should.include?(:protected_1)
+
+      methods = @s.rb_class_protected_instance_methods(ModuleSpecs::CountsChild, true)
+      methods.should.include?(:protected_3)
+      methods.should.include?(:protected_2)
+      methods.should.include?(:protected_1)
+    end
+
+    it "when passed false as a parameter, should return only methods defined in that module" do
+      @s.rb_class_public_instance_methods(ModuleSpecs::CountsChild, false).should == [:public_1]
+    end
+  end
+
+  describe "rb_class_private_instance_methods" do
+    it "returns a list of private methods in module and its ancestors" do
+      @s.rb_class_private_instance_methods(ModuleSpecs::CountsChild).should == ModuleSpecs::CountsChild.private_instance_methods
+      @s.rb_class_private_instance_methods(ModuleSpecs::CountsChild, true).should == ModuleSpecs::CountsChild.private_instance_methods
+    end
+
+    it "when passed false as a parameter, should return only methods defined in that module" do
+      methods = @s.rb_class_private_instance_methods(ModuleSpecs::CountsChild, false)
+      methods.should == [:private_1]
+    end
+  end
+
   describe "rb_class_new_instance" do
     it "allocates and initializes a new object" do
-      o = @s.rb_class_new_instance(0, nil, CApiClassSpecs::Alloc)
+      o = @s.rb_class_new_instance([], CApiClassSpecs::Alloc)
       o.class.should == CApiClassSpecs::Alloc
-      o.initialized.should be_true
+      o.initialized.should == true
     end
 
     it "passes arguments to the #initialize method" do
-      o = @s.rb_class_new_instance(2, [:one, :two], CApiClassSpecs::Alloc)
+      o = @s.rb_class_new_instance([:one, :two], CApiClassSpecs::Alloc)
       o.arguments.should == [:one, :two]
+    end
+  end
+
+  describe "rb_class_new_instance_kw" do
+    it "passes arguments and keywords to the #initialize method" do
+      obj = @s.rb_class_new_instance_kw([{pos: 1}, {kw: 2}], CApiClassSpecs::KeywordAlloc)
+      obj.args.should == [{pos: 1}]
+      obj.kwargs.should == {kw: 2}
+
+      obj = @s.rb_class_new_instance_kw([{}], CApiClassSpecs::KeywordAlloc)
+      obj.args.should == []
+      obj.kwargs.should == {}
+    end
+
+    it "coerces the last argument to a hash by calling #to_hash" do
+      h = mock('to_hash')
+      h.should_receive(:to_hash).and_return(kw: 2)
+      obj = @s.rb_class_new_instance_kw([h], CApiClassSpecs::KeywordAlloc)
+      obj.kwargs.should == {kw: 2}
+    end
+
+    it "raises a TypeError if the last argument does not respond to #to_hash" do
+      -> {
+        @s.rb_class_new_instance_kw([42], CApiClassSpecs::KeywordAlloc)
+      }.should raise_consistent_error(TypeError, 'no implicit conversion of Integer into Hash')
+    end
+
+    it "raises a TypeError if #to_hash does not return a hash" do
+      h = mock('to_hash')
+      h.should_receive(:to_hash).and_return(42)
+      -> {
+        @s.rb_class_new_instance_kw([h], CApiClassSpecs::KeywordAlloc)
+      }.should raise_consistent_error(TypeError, "can't convert MockObject into Hash (MockObject#to_hash gives Integer)")
     end
   end
 
@@ -56,9 +158,20 @@ describe "C-API Class function" do
     it "includes a module into a class" do
       c = Class.new
       o = c.new
-      lambda { o.included? }.should raise_error(NameError)
+      -> { o.included? }.should.raise(NameError)
       @s.rb_include_module(c, CApiClassSpecs::M)
-      o.included?.should be_true
+      o.included?.should == true
+    end
+  end
+
+  describe "rb_prepend_module" do
+    it "prepends a module into a class" do
+      klass = Class.new
+      mod = Module.new
+
+      @s.rb_prepend_module(klass, mod)
+
+      klass.ancestors[0, 2].should == [mod, klass]
     end
   end
 
@@ -70,12 +183,12 @@ describe "C-API Class function" do
     it "defines an attr_reader when passed true, false" do
       @s.rb_define_attr(CApiClassSpecs::Attr, :foo, true, false)
       @a.foo.should == 1
-      lambda { @a.foo = 5 }.should raise_error(NameError)
+      -> { @a.foo = 5 }.should.raise(NameError)
     end
 
     it "defines an attr_writer when passed false, true" do
       @s.rb_define_attr(CApiClassSpecs::Attr, :bar, false, true)
-      lambda { @a.bar }.should raise_error(NameError)
+      -> { @a.bar }.should.raise(NameError)
       @a.bar = 5
       @a.instance_variable_get(:@bar).should == 5
     end
@@ -98,7 +211,7 @@ describe "C-API Class function" do
     it "calls the method in the superclass with the correct self" do
       @s.define_call_super_method CApiClassSpecs::SubSelf, "call_super_method"
       obj = CApiClassSpecs::SubSelf.new
-      obj.call_super_method.should equal obj
+      obj.call_super_method.should.equal? obj
     end
 
     it "calls the method in the superclass through two native levels" do
@@ -107,15 +220,149 @@ describe "C-API Class function" do
       obj = CApiClassSpecs::SubSub.new
       obj.call_super_method.should == :super_method
     end
-  end
 
-  describe "rb_define_method" do
-    it "defines a method taking variable arguments as a C array if the argument count is -1" do
-      @s.rb_method_varargs_1(1, 3, 7, 4).should == [1, 3, 7, 4]
+    it "passes block argument as is" do
+      @s.define_call_super_method CApiClassSpecs::Sub, "call_super_method_block"
+      obj = CApiClassSpecs::Sub.new
+      obj.call_super_method_block { :block_val }.should == :block_val
     end
 
-    it "defines a method taking variable arguments as a Ruby array if the argument count is -2" do
-      @s.rb_method_varargs_2(1, 3, 7, 4).should == [1, 3, 7, 4]
+    it "calls #method_missing if there is no super method and #method_missing is defined" do
+      @s.define_call_super_method CApiClassSpecs::Sub, "non_existent_method"
+      obj = CApiClassSpecs::Sub.new
+      def obj.method_missing(name, *args)
+        [name, args]
+      end
+      obj.non_existent_method(1, 2).should == [:non_existent_method, [1, 2]]
+    end
+
+    it "raises a NoMethodError if there is no super method and no #method_missing defined" do
+      @s.define_call_super_method CApiClassSpecs::Sub, "non_existent_method"
+      obj = CApiClassSpecs::Sub.new
+      -> { obj.non_existent_method }.should.raise(NoMethodError)
+    end
+  end
+
+  describe "rb_call_super_kw" do
+    it "calls the method in the superclass" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method.should == :super_method
+
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method({a: 3}).should == :super_method
+    end
+
+    it "calls the method in the superclass with correct self" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_self", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_self.should.equal? obj
+
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_self", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_self({a: 1}).should.equal? obj
+    end
+
+    it "passes the last argument as a positional parameter when called with RB_NO_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_args(1, 2, {a: 3}).should == [[1, 2, {a: 3}], {}]
+    end
+
+    it "passes the last argument as keyword arguments when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_args(1, 2, {a: 3}).should == [[1, 2], {a: 3}]
+    end
+
+    it "passes the last argument as keyword arguments when called with RB_PASS_CALLED_KEYWORDS and with keyword arguments" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_CALLED_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_args(1, 2, a: 3).should == [[1, 2], {a: 3}]
+    end
+
+    it "passes the last argument as a positional parameter when called with RB_PASS_CALLED_KEYWORDS and with a positional Hash" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_CALLED_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      hash_obj = {a: 3}
+      obj.call_super_method_args(1, 2, hash_obj).should == [[1, 2, {a: 3}], {}]
+    end
+
+    it "passes block argument as is" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_block", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_block { :block_val }.should == :block_val
+
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_block", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_block({a: 3}) { :block_val }.should == :block_val
+    end
+
+    it "calls #method_missing if there is no super method and #method_missing is defined" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "non_existent_method", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      def obj.method_missing(name, *args)
+        [name, args]
+      end
+      obj.non_existent_method(1, 2).should == [:non_existent_method, [1, 2]]
+
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "non_existent_method", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      def obj.method_missing(name, *args)
+        [name, args]
+      end
+      obj.non_existent_method(1, 2, {a: 3}).should == [:non_existent_method, [1, 2, {a: 3}]]
+    end
+
+    it "raises a NoMethodError if there is no super method and no #method_missing defined" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "non_existent_method", :RB_NO_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      -> { obj.non_existent_method }.should.raise(NoMethodError)
+
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "non_existent_method", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      -> { obj.non_existent_method({a: 3}) }.should.raise(NoMethodError)
+    end
+
+    it "tolerates giving no positional or keyword arguments when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_args.should == [[], {}]
+    end
+
+    it "tolerates giving {} as the last positional argument when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      obj.call_super_method_args({}).should == [[], {}]
+    end
+
+    it "coerces the last argument to a hash by calling #to_hash when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      h = mock('to_hash')
+      h.should_receive(:to_hash).and_return({a: 3})
+      obj.call_super_method_args(1, 2, h).should == [[1, 2], {a: 3}]
+    end
+
+    it "raises a TypeError if the last argument does not respond to #to_hash when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+
+      -> {
+        obj.call_super_method_args(1, 2, 3)
+      }.should raise_consistent_error(TypeError, 'no implicit conversion of Integer into Hash')
+    end
+
+    it "raises a TypeError if #to_hash does not return a hash when called with RB_PASS_KEYWORDS" do
+      @s.define_call_super_kw_method CApiClassSpecs::SubKw, "call_super_method_args", :RB_PASS_KEYWORDS
+      obj = CApiClassSpecs::SubKw.new
+      h = mock('to_hash')
+      h.should_receive(:to_hash).and_return(42)
+
+      -> {
+        obj.call_super_method_args(1, 2, h)
+      }.should raise_consistent_error(TypeError, "can't convert MockObject into Hash (MockObject#to_hash gives Integer)")
     end
   end
 
@@ -125,7 +372,11 @@ describe "C-API Class function" do
     end
 
     it "returns a string for an anonymous class" do
-      @s.rb_class2name(Class.new).should be_kind_of(String)
+      @s.rb_class2name(Class.new).should.is_a?(String)
+    end
+
+    it "returns a string beginning with # for an anonymous class" do
+      @s.rb_class2name(Struct.new(:x, :y).new(1, 2).class).should.start_with?('#')
     end
   end
 
@@ -145,7 +396,7 @@ describe "C-API Class function" do
     end
 
     it "returns a string for an anonymous class" do
-      @s.rb_class_name(Class.new).should be_kind_of(String)
+      @s.rb_class_name(Class.new).should.is_a?(String)
     end
   end
 
@@ -159,22 +410,22 @@ describe "C-API Class function" do
 
   describe "rb_cvar_defined" do
     it "returns false when the class variable is not defined" do
-      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@@nocvar").should be_false
+      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@@nocvar").should == false
     end
 
     it "returns true when the class variable is defined" do
-      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@@cvar").should be_true
+      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@@cvar").should == true
     end
 
     it "returns true if the class instance variable is defined" do
-      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@c_ivar").should be_true
+      @s.rb_cvar_defined(CApiClassSpecs::CVars, "@c_ivar").should == true
     end
   end
 
   describe "rb_cv_set" do
     it "sets a class variable" do
       o = CApiClassSpecs::CVars.new
-      o.new_cv.should be_nil
+      o.new_cv.should == nil
       @s.rb_cv_set(CApiClassSpecs::CVars, "@@new_cv", 1)
       o.new_cv.should == 1
       CApiClassSpecs::CVars.remove_class_variable :@@new_cv
@@ -187,16 +438,16 @@ describe "C-API Class function" do
     end
 
     it "raises a NameError if the class variable is not defined" do
-      lambda {
+      -> {
         @s.rb_cv_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError, /class variable @@no_cvar/)
+      }.should.raise(NameError, /class variable @@no_cvar/)
     end
   end
 
   describe "rb_cvar_set" do
     it "sets a class variable" do
       o = CApiClassSpecs::CVars.new
-      o.new_cvar.should be_nil
+      o.new_cvar.should == nil
       @s.rb_cvar_set(CApiClassSpecs::CVars, "@@new_cvar", 1)
       o.new_cvar.should == 1
       CApiClassSpecs::CVars.remove_class_variable :@@new_cvar
@@ -210,8 +461,8 @@ describe "C-API Class function" do
     end
 
     it "creates a subclass of the superclass" do
-      @cls.should be_kind_of(Class)
-      ClassSpecDefineClass.should equal(@cls)
+      @cls.should.is_a?(Class)
+      ClassSpecDefineClass.should.equal?(@cls)
       @cls.superclass.should == CApiClassSpecs::Super
     end
 
@@ -226,21 +477,30 @@ describe "C-API Class function" do
     end
 
     it "raises a TypeError when given a non class object to superclass" do
-      lambda {
+      -> {
         @s.rb_define_class("ClassSpecDefineClass3", Module.new)
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
     end
 
     it "raises a TypeError when given a mismatched class to superclass" do
-      lambda {
+      -> {
         @s.rb_define_class("ClassSpecDefineClass", Object)
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
     end
 
     it "raises a ArgumentError when given NULL as superclass" do
-      lambda {
+      -> {
         @s.rb_define_class("ClassSpecDefineClass4", nil)
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
+    end
+
+    it "allows arbitrary names, including constant names not valid in Ruby" do
+      cls = @s.rb_define_class("_INVALID_CLASS", CApiClassSpecs::Super)
+      cls.name.should == "_INVALID_CLASS"
+
+      -> {
+        Object.const_get(cls.name)
+      }.should.raise(NameError, /wrong constant name/)
     end
   end
 
@@ -249,8 +509,8 @@ describe "C-API Class function" do
       cls = @s.rb_define_class_under(CApiClassSpecs,
                                      "ClassUnder1",
                                      CApiClassSpecs::Super)
-      cls.should be_kind_of(Class)
-      CApiClassSpecs::Super.should be_ancestor_of(CApiClassSpecs::ClassUnder1)
+      cls.should.is_a?(Class)
+      CApiClassSpecs::ClassUnder1.ancestors.should.include?(CApiClassSpecs::Super)
     end
 
     it "sets the class name" do
@@ -265,18 +525,20 @@ describe "C-API Class function" do
     end
 
     it "raises a TypeError when given a non class object to superclass" do
-      lambda { @s.rb_define_class_under(CApiClassSpecs,
+      -> { @s.rb_define_class_under(CApiClassSpecs,
                                         "ClassUnder5",
                                         Module.new)
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
     end
 
     it "raises a TypeError when given a mismatched class to superclass" do
       CApiClassSpecs::ClassUnder6 = Class.new(CApiClassSpecs::Super)
-      lambda { @s.rb_define_class_under(CApiClassSpecs,
+      -> { @s.rb_define_class_under(CApiClassSpecs,
                                         "ClassUnder6",
                                         Class.new)
-      }.should raise_error(TypeError)
+      }.should.raise(TypeError)
+    ensure
+      CApiClassSpecs.send(:remove_const, :ClassUnder6)
     end
 
     it "defines a class for an existing Autoload" do
@@ -284,15 +546,24 @@ describe "C-API Class function" do
     end
 
     it "raises a TypeError if class is defined and its superclass mismatches the given one" do
-      lambda { @s.rb_define_class_under(CApiClassSpecs, "Sub", Object) }.should raise_error(TypeError)
+      -> { @s.rb_define_class_under(CApiClassSpecs, "Sub", Object) }.should.raise(TypeError)
+    end
+
+    it "allows arbitrary names, including constant names not valid in Ruby" do
+      cls = @s.rb_define_class_under(CApiClassSpecs, "_INVALID_CLASS", CApiClassSpecs::Super)
+      cls.name.should == "CApiClassSpecs::_INVALID_CLASS"
+
+      -> {
+        CApiClassSpecs.const_get(cls.name)
+      }.should.raise(NameError, /wrong constant name/)
     end
   end
 
   describe "rb_define_class_id_under" do
     it "creates a subclass of the superclass contained in a module" do
       cls = @s.rb_define_class_id_under(CApiClassSpecs, :ClassIdUnder1, CApiClassSpecs::Super)
-      cls.should be_kind_of(Class)
-      CApiClassSpecs::Super.should be_ancestor_of(CApiClassSpecs::ClassIdUnder1)
+      cls.should.is_a?(Class)
+      CApiClassSpecs::ClassIdUnder1.ancestors.should.include?(CApiClassSpecs::Super)
     end
 
     it "sets the class name" do
@@ -311,14 +582,23 @@ describe "C-API Class function" do
     end
 
     it "raises a TypeError if class is defined and its superclass mismatches the given one" do
-      lambda { @s.rb_define_class_id_under(CApiClassSpecs, :Sub, Object) }.should raise_error(TypeError)
+      -> { @s.rb_define_class_id_under(CApiClassSpecs, :Sub, Object) }.should.raise(TypeError)
+    end
+
+    it "allows arbitrary names, including constant names not valid in Ruby" do
+      cls = @s.rb_define_class_id_under(CApiClassSpecs, :_INVALID_CLASS2, CApiClassSpecs::Super)
+      cls.name.should == "CApiClassSpecs::_INVALID_CLASS2"
+
+      -> {
+        CApiClassSpecs.const_get(cls.name)
+      }.should.raise(NameError, /wrong constant name/)
     end
   end
 
   describe "rb_define_class_variable" do
     it "sets a class variable" do
       o = CApiClassSpecs::CVars.new
-      o.rbdcv_cvar.should be_nil
+      o.rbdcv_cvar.should == nil
       @s.rb_define_class_variable(CApiClassSpecs::CVars, "@@rbdcv_cvar", 1)
       o.rbdcv_cvar.should == 1
       CApiClassSpecs::CVars.remove_class_variable :@@rbdcv_cvar
@@ -331,25 +611,25 @@ describe "C-API Class function" do
     end
 
     it "raises a NameError if the class variable is not defined" do
-      lambda {
+      -> {
         @s.rb_cvar_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError, /class variable @@no_cvar/)
+      }.should.raise(NameError, /class variable @@no_cvar/)
     end
   end
 
   describe "rb_class_new" do
-    it "returns an new subclass of the superclass" do
+    it "returns a new subclass of the superclass" do
       subclass = @s.rb_class_new(CApiClassSpecs::NewClass)
-      CApiClassSpecs::NewClass.should be_ancestor_of(subclass)
+      subclass.ancestors.should.include?(CApiClassSpecs::NewClass)
     end
 
     it "raises a TypeError if passed Class as the superclass" do
-      lambda { @s.rb_class_new(Class) }.should raise_error(TypeError)
+      -> { @s.rb_class_new(Class) }.should.raise(TypeError)
     end
 
     it "raises a TypeError if passed a singleton class as the superclass" do
       metaclass = Object.new.singleton_class
-      lambda { @s.rb_class_new(metaclass) }.should raise_error(TypeError)
+      -> { @s.rb_class_new(metaclass) }.should.raise(TypeError)
     end
   end
 
@@ -360,7 +640,7 @@ describe "C-API Class function" do
     end
 
     it "returns nil if the class has no superclass" do
-      @s.rb_class_superclass(BasicObject).should be_nil
+      @s.rb_class_superclass(BasicObject).should == nil
     end
   end
 
@@ -379,6 +659,26 @@ describe "C-API Class function" do
 
     it "returns 0 if passed 0" do
       @s.rb_class_real(0).should == 0
+    end
+  end
+
+  describe "rb_class_get_superclass" do
+    it "returns parent class for a provided class" do
+      a = Class.new
+      @s.rb_class_get_superclass(Class.new(a)).should == a
+    end
+
+    it "returns false when there is no parent class" do
+      @s.rb_class_get_superclass(BasicObject).should == false
+      @s.rb_class_get_superclass(Module.new).should == false
+    end
+  end
+
+  describe "a constant defined in C" do
+    it "raises TypeError if constant given as class name exists and is a Number" do
+      -> {
+         class CApiClassSpecs::CONST_DEFINED_IN_NATIVE_CODE; end
+      }.should.raise(TypeError, /CONST_DEFINED_IN_NATIVE_CODE is not a class/)
     end
   end
 end

@@ -14,6 +14,7 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -22,9 +23,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class BasicBlock implements ExplicitVertexID, Comparable {
-    private int         id;             // Basic Block id
-    private CFG         cfg;            // CFG that this basic block belongs to
+public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
+    private final int         id;             // Basic Block id
+    private final CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
@@ -41,7 +42,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     private void initInstrs() {
-        instrs = new ArrayList<>();
+        instrs = new ArrayList<>(1);
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_DEBUG_IGV != null) {
             IRManager irManager = cfg.getManager();
             InstructionsListener listener = irManager.getInstructionsListener();
@@ -71,6 +72,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         }
 
         return false;
+    }
+
+    /**
+     * On an exception occurring in this block which BB should we go to?
+     * @return BB of exception handling or null if none.
+     */
+    public BasicBlock exceptionBB() {
+        return cfg.getRescuerBBFor(this);
     }
 
     public boolean isEntryBB() {
@@ -136,7 +145,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     // Adds all instrs after the found instr to a new BB and removes them from the original BB
-    // If includeSpltpointInstr is true it will include that instr in the new BB.
+    // If includeSplitpointInstr is true it will include that instr in the new BB.
     public BasicBlock splitAtInstruction(Site splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
@@ -148,7 +157,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
             // Move instructions from split point into the new bb
             if (found) {
-                // FIXME: move includeSplit when found so we can remove consuing site id logic from here...
+                // FIXME: move includeSplit when found so we can remove consuming site id logic from here...
                 if (includeSplitPointInstr ||
                         !(i instanceof Site) ||
                         ((Site) i).getCallSiteId() != splitPoint.getCallSiteId()) newBB.addInstr(i);
@@ -157,7 +166,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             }
         }
 
-        if (!found) throw new RuntimeException("Cound not find split point: " + splitPoint);
+        if (!found) throw new RuntimeException("Could not find split point: " + splitPoint);
 
         // Remove all instructions from current bb that were moved over.
         for (int j = 0; j < numInstrs-idx; j++) {
@@ -179,14 +188,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
         for (Instr instr: instrs) {
             Instr newInstr = instr.clone(info);
-            // Inlining clones the original CFG/BBs and we want to maintain ipc since it is how
+            // Inlining clones the original CFG/BBs, and we want to maintain ipc since it is how
             // we find which instr we want (we clone original instr and ipc is our identity).
             //if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
             //    newInstr.setIPC(instr.getIPC());
             //    newInstr.setRPC(instr.getRPC());
             //}
 
-            // All call-derived types do not clone this field.  Inliner clones original instrs
+            // All call-derived types do not clone this field.  Inliner clones original instrs,
             // and we need this preserved to make sure we do not endless inline the same call.
             if (instr instanceof CallBase && ((CallBase) instr).inliningBlocked()) {
                 ((CallBase) newInstr).blockInlining();
@@ -228,7 +237,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
                     ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
                 } else if (i instanceof NonlocalReturnInstr && clonedInstr instanceof CopyInstr) {
                     // non-local returns assign to method return variable but must jump to proper exit point
-                    clonedBB.addInstr(new JumpInstr(ii.getHostScope().getCFG().getExitBB().getLabel()));
+                    clonedBB.addInstr(new JumpInstr(ii.getHostScope().getFullInterpreterContext().getCFG().getExitBB().getLabel()));
                     // FIXME: enebo...I see no guarantee that this copy will be part of a return?  This behavior is
                     // masked in any case I can see with optimization to not use a copy but convert non-local to local return.
                 }
@@ -239,13 +248,8 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        BasicBlock other = (BasicBlock) o;
-
-        if (id == other.id) return 0;
-        if (id < other.id) return -1;
-
-        return 1;
+    public int compareTo(final BasicBlock other) {
+        return Integer.compare(id, other.id);
     }
 
     @Override
@@ -256,10 +260,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     public String toStringInstrs() {
         StringBuilder buf = new StringBuilder(toString());
 
-        Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
+        Collection<Edge<BasicBlock, CFG.EdgeType>> outs = cfg.getOutgoingEdges(this);
         if (!outs.isEmpty()) {
-            for (Edge<BasicBlock> edge : outs) {
-                buf.append(" -" + edge.getType() + "->" + edge.getDestination().getID());
+            for (Edge<BasicBlock, CFG.EdgeType> edge : outs) {
+                buf.append(" -").append(edge.getType()).append("->").append(edge.getDestination().getID());
             }
         }
         buf.append('\n');

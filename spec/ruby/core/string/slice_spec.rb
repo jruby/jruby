@@ -1,39 +1,12 @@
-# -*- encoding: utf-8 -*-
-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 require_relative 'shared/slice'
 
 describe "String#slice" do
-  it_behaves_like :string_slice, :slice
-end
-
-describe "String#slice with index, length" do
-  it_behaves_like :string_slice_index_length, :slice
-end
-
-describe "String#slice with Range" do
-  it_behaves_like :string_slice_range, :slice
-end
-
-describe "String#slice with Regexp" do
-  it_behaves_like :string_slice_regexp, :slice
-end
-
-describe "String#slice with Regexp, index" do
-  it_behaves_like :string_slice_regexp_index, :slice
-end
-
-describe "String#slice with Regexp, group" do
-  it_behaves_like :string_slice_regexp_group, :slice
-end
-
-describe "String#slice with String" do
-  it_behaves_like :string_slice_string, :slice
-end
-
-describe "String#slice with Symbol" do
-  it_behaves_like :string_slice_symbol, :slice
+  it "is an alias of String#[]" do
+    String.instance_method(:slice).should == String.instance_method(:[])
+  end
 end
 
 describe "String#slice! with index" do
@@ -53,10 +26,10 @@ describe "String#slice! with index" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
-    lambda { "hello".freeze.slice!(1)  }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(10) }.should raise_error(frozen_error_class)
-    lambda { "".freeze.slice!(0)       }.should raise_error(frozen_error_class)
+  it "raises a FrozenError if self is frozen" do
+    -> { "hello".freeze.slice!(1)  }.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(10) }.should.raise(FrozenError)
+    -> { "".freeze.slice!(0)       }.should.raise(FrozenError)
   end
 
   it "calls to_int on index" do
@@ -94,14 +67,6 @@ describe "String#slice! with index, length" do
     a.should == "h"
   end
 
-  it "always taints resulting strings when self is tainted" do
-    str = "hello world"
-    str.taint
-
-    str.slice!(0, 0).tainted?.should == true
-    str.slice!(2, 1).tainted?.should == true
-  end
-
   it "returns nil if the given position is out of self" do
     a = "hello"
     a.slice(10, 3).should == nil
@@ -117,14 +82,14 @@ describe "String#slice! with index, length" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
-    lambda { "hello".freeze.slice!(1, 2)  }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(10, 3) }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(4, -3) }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(10, 3) }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.slice!(4, -3) }.should raise_error(frozen_error_class)
+  it "raises a FrozenError if self is frozen" do
+    -> { "hello".freeze.slice!(1, 2)  }.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(10, 3) }.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(-10, 3)}.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(4, -3) }.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(10, 3) }.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(-10, 3)}.should.raise(FrozenError)
+    -> { "hello".freeze.slice!(4, -3) }.should.raise(FrozenError)
   end
 
   it "calls to_int on idx and length" do
@@ -140,12 +105,11 @@ describe "String#slice! with index, length" do
     "hello".slice!(obj, obj).should == "ll"
   end
 
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(0, 0).should be_an_instance_of(StringSpecs::MyString)
-    s.slice!(0, 4).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(0, 0).should.instance_of?(String)
+    s.slice!(0, 4).should.instance_of?(String)
   end
-
 
   it "returns the substring given by the character offsets" do
     "hellö there".slice!(1,0).should == ""
@@ -184,18 +148,10 @@ describe "String#slice! Range" do
     b.should == "hello"
   end
 
-  it "always taints resulting strings when self is tainted" do
-    str = "hello world"
-    str.taint
-
-    str.slice!(0..0).tainted?.should == true
-    str.slice!(2..3).tainted?.should == true
-  end
-
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(0...0).should be_an_instance_of(StringSpecs::MyString)
-    s.slice!(0..4).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(0...0).should.instance_of?(String)
+    s.slice!(0..4).should.instance_of?(String)
   end
 
   it "calls to_int on range arguments" do
@@ -244,13 +200,13 @@ describe "String#slice! Range" do
   end
 
 
-  it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "hello".freeze.slice!(1..3)  }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen instance that is modified" do
+    -> { "hello".freeze.slice!(1..3)  }.should.raise(FrozenError)
   end
 
   # see redmine #1551
-  it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda { "hello".freeze.slice!(10..20)}.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen instance that would not be modified" do
+    -> { "hello".freeze.slice!(10..20)}.should.raise(FrozenError)
   end
 end
 
@@ -271,32 +227,10 @@ describe "String#slice! with Regexp" do
     s.should == "this is a string"
   end
 
-  it "always taints resulting strings when self or regexp is tainted" do
-    strs = ["hello world"]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      str = str.dup
-      str.slice!(//).tainted?.should == str.tainted?
-      str.slice!(/hello/).tainted?.should == str.tainted?
-
-      tainted_re = /./
-      tainted_re.taint
-
-      str.slice!(tainted_re).tainted?.should == true
-    end
-  end
-
-  it "doesn't taint self when regexp is tainted" do
-    s = "hello"
-    s.slice!(/./.taint)
-    s.tainted?.should == false
-  end
-
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(//).should be_an_instance_of(StringSpecs::MyString)
-    s.slice!(/../).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(//).should.instance_of?(String)
+    s.slice!(/../).should.instance_of?(String)
   end
 
   it "returns the matching portion of self with a multi byte character" do
@@ -312,12 +246,12 @@ describe "String#slice! with Regexp" do
     $~.should == nil
   end
 
-  it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "this is a string".freeze.slice!(/s.*t/) }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen instance that is modified" do
+    -> { "this is a string".freeze.slice!(/s.*t/) }.should.raise(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda { "this is a string".freeze.slice!(/zzz/)  }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen instance that would not be modified" do
+    -> { "this is a string".freeze.slice!(/zzz/)  }.should.raise(FrozenError)
   end
 end
 
@@ -328,28 +262,6 @@ describe "String#slice! with Regexp, index" do
     str.should == "ho there"
     str.slice!(/(t)h/, 1).should == "t"
     str.should == "ho here"
-  end
-
-  it "always taints resulting strings when self or regexp is tainted" do
-    strs = ["hello world"]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      str = str.dup
-      str.slice!(//, 0).tainted?.should == str.tainted?
-      str.slice!(/hello/, 0).tainted?.should == str.tainted?
-
-      tainted_re = /(.)(.)(.)/
-      tainted_re.taint
-
-      str.slice!(tainted_re, 1).tainted?.should == true
-    end
-  end
-
-  it "doesn't taint self when regexp is tainted" do
-    s = "hello"
-    s.slice!(/(.)(.)/.taint, 1)
-    s.tainted?.should == false
   end
 
   it "returns nil if there was no match" do
@@ -375,10 +287,10 @@ describe "String#slice! with Regexp, index" do
     "har".slice!(/(.)(.)(.)/, obj).should == "a"
   end
 
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(/(.)(.)/, 0).should be_an_instance_of(StringSpecs::MyString)
-    s.slice!(/(.)(.)/, 1).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(/(.)(.)/, 0).should.instance_of?(String)
+    s.slice!(/(.)(.)/, 1).should.instance_of?(String)
   end
 
   it "returns the encoding aware capture for the given index" do
@@ -402,10 +314,10 @@ describe "String#slice! with Regexp, index" do
     $~.should == nil
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
-    lambda { "this is a string".freeze.slice!(/s.*t/)  }.should raise_error(frozen_error_class)
-    lambda { "this is a string".freeze.slice!(/zzz/, 0)}.should raise_error(frozen_error_class)
-    lambda { "this is a string".freeze.slice!(/(.)/, 2)}.should raise_error(frozen_error_class)
+  it "raises a FrozenError if self is frozen" do
+    -> { "this is a string".freeze.slice!(/s.*t/)  }.should.raise(FrozenError)
+    -> { "this is a string".freeze.slice!(/zzz/, 0)}.should.raise(FrozenError)
+    -> { "this is a string".freeze.slice!(/(.)/, 2)}.should.raise(FrozenError)
   end
 end
 
@@ -414,21 +326,6 @@ describe "String#slice! with String" do
     c = "hello hello"
     c.slice!('llo').should == "llo"
     c.should == "he hello"
-  end
-
-  it "taints resulting strings when other is tainted" do
-    strs = ["", "hello world", "hello"]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      str = str.dup
-      strs.each do |other|
-        other = other.dup
-        r = str.slice!(other)
-
-        r.tainted?.should == !r.nil? & other.tainted?
-      end
-    end
   end
 
   it "doesn't set $~" do
@@ -448,19 +345,19 @@ describe "String#slice! with String" do
     o = mock('x')
     o.should_not_receive(:to_str)
 
-    lambda { "hello".slice!(o) }.should raise_error(TypeError)
+    -> { "hello".slice!(o) }.should.raise(TypeError)
   end
 
   it "returns a subclass instance when given a subclass instance" do
     s = StringSpecs::MyString.new("el")
     r = "hello".slice!(s)
     r.should == "el"
-    r.should be_an_instance_of(StringSpecs::MyString)
+    r.should.instance_of?(String)
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
-    lambda { "hello hello".freeze.slice!('llo')     }.should raise_error(frozen_error_class)
-    lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(frozen_error_class)
-    lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(frozen_error_class)
+  it "raises a FrozenError if self is frozen" do
+    -> { "hello hello".freeze.slice!('llo')     }.should.raise(FrozenError)
+    -> { "this is a string".freeze.slice!('zzz')}.should.raise(FrozenError)
+    -> { "this is a string".freeze.slice!('zzz')}.should.raise(FrozenError)
   end
 end

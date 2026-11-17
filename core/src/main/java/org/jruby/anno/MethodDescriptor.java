@@ -140,7 +140,7 @@ public abstract class MethodDescriptor<T> {
             }
 
             if (actualRequired != 0) {
-                throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported");
+                throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported: " + methodObject);
             }
         }
 
@@ -159,7 +159,7 @@ public abstract class MethodDescriptor<T> {
      * @return arity value of specific required arity which can be used as an unboxed call or -1 for all other cases.
      */
     public int calculateSpecificCallArity() {
-        if (optional == 0 && !rest) {
+        if (optional == 0 && !rest && !hasVarArgs) {
             if (required == 0) {
                 if (actualRequired <= MAX_REQUIRED_UNBOXED_ARITY) return actualRequired;
             } else if (required >= 0 && required <= MAX_REQUIRED_UNBOXED_ARITY) {

@@ -9,9 +9,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class NopInstr extends NoOperandInstr implements FixedArityInstr {
-    public static NopInstr NOP = new NopInstr();
+    public static final NopInstr NOP = new NopInstr();
 
-    private NopInstr() {
+    protected NopInstr() {
         super(Operation.NOP);
         this.markDead();
     }

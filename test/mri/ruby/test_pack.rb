@@ -1,25 +1,44 @@
 # coding: US-ASCII
 # frozen_string_literal: false
 require 'test/unit'
+require 'rbconfig'
+require 'rbconfig/sizeof'
 
 class TestPack < Test::Unit::TestCase
+  # Note: the size of intptr_t and uintptr_t should be equal.
+  J_SIZE = RbConfig::SIZEOF['uintptr_t']
+
   def test_pack
-    $format = "c2x5CCxsdils_l_a6";
+    format = "c2x5CCxsdils_l_a6";
     # Need the expression in here to force ary[5] to be numeric.  This avoids
     # test2 failing because ary2 goes str->numeric->str and ary does not.
     ary = [1,-100,127,128,32767,987.654321098 / 100.0,12345,123456,-32767,-123456,"abcdef"]
-    $x = ary.pack($format)
-    ary2 = $x.unpack($format)
+    x = ary.pack(format)
+    ary2 = x.unpack(format)
 
     assert_equal(ary.length, ary2.length)
     assert_equal(ary.join(':'), ary2.join(':'))
-    assert_match(/def/, $x)
+    assert_match(/def/, x)
 
-    $x = [-1073741825]
-    assert_equal($x, $x.pack("q").unpack("q"))
+    x = [-1073741825]
+    assert_equal(x, x.pack("q").unpack("q"))
 
-    $x = [-1]
-    assert_equal($x, $x.pack("l").unpack("l"))
+    x = [-1]
+    assert_equal(x, x.pack("l").unpack("l"))
+  end
+
+  def test_ascii_incompatible
+    assert_raise(Encoding::CompatibilityError) do
+      ["foo"].pack("u".encode("UTF-32BE"))
+    end
+
+    assert_raise(Encoding::CompatibilityError) do
+      "foo".unpack("C".encode("UTF-32BE"))
+    end
+
+    assert_raise(Encoding::CompatibilityError) do
+      "foo".unpack1("C".encode("UTF-32BE"))
+    end
   end
 
   def test_pack_n
@@ -79,11 +98,11 @@ class TestPack < Test::Unit::TestCase
     assert_equal("\x01\x02\x03\x04", [0x01020304].pack("L"+mod))
     assert_equal("\x01\x02\x03\x04\x05\x06\x07\x08", [0x0102030405060708].pack("q"+mod))
     assert_equal("\x01\x02\x03\x04\x05\x06\x07\x08", [0x0102030405060708].pack("Q"+mod))
-    psize = [nil].pack('p').bytesize
-    if psize == 4
+    case J_SIZE
+    when 4
       assert_equal("\x01\x02\x03\x04", [0x01020304].pack("j"+mod))
       assert_equal("\x01\x02\x03\x04", [0x01020304].pack("J"+mod))
-    elsif psize == 8
+    when 8
       assert_equal("\x01\x02\x03\x04\x05\x06\x07\x08", [0x0102030405060708].pack("j"+mod))
       assert_equal("\x01\x02\x03\x04\x05\x06\x07\x08", [0x0102030405060708].pack("J"+mod))
     end
@@ -95,10 +114,11 @@ class TestPack < Test::Unit::TestCase
     assert_match(/\A\x00*\x01\x02\x03\x04\z/, [0x01020304].pack("I!"+mod))
     assert_match(/\A\x00*\x01\x02\x03\x04\z/, [0x01020304].pack("l!"+mod))
     assert_match(/\A\x00*\x01\x02\x03\x04\z/, [0x01020304].pack("L!"+mod))
-    if psize == 4
+    case J_SIZE
+    when 4
       assert_match(/\A\x00*\x01\x02\x03\x04\z/, [0x01020304].pack("j!"+mod))
       assert_match(/\A\x00*\x01\x02\x03\x04\z/, [0x01020304].pack("J!"+mod))
-    elsif psize == 8
+    when 8
       assert_match(/\A\x00*\x01\x02\x03\x04\x05\x06\x07\x08\z/, [0x0102030405060708].pack("j!"+mod))
       assert_match(/\A\x00*\x01\x02\x03\x04\x05\x06\x07\x08\z/, [0x0102030405060708].pack("J!"+mod))
     end
@@ -127,11 +147,11 @@ class TestPack < Test::Unit::TestCase
     assert_equal("\x04\x03\x02\x01", [0x01020304].pack("L"+mod))
     assert_equal("\x08\x07\x06\x05\x04\x03\x02\x01", [0x0102030405060708].pack("q"+mod))
     assert_equal("\x08\x07\x06\x05\x04\x03\x02\x01", [0x0102030405060708].pack("Q"+mod))
-    psize = [nil].pack('p').bytesize
-    if psize == 4
+    case J_SIZE
+    when 4
       assert_equal("\x04\x03\x02\x01", [0x01020304].pack("j"+mod))
       assert_equal("\x04\x03\x02\x01", [0x01020304].pack("J"+mod))
-    elsif psize == 8
+    when 8
       assert_equal("\x08\x07\x06\x05\x04\x03\x02\x01", [0x0102030405060708].pack("j"+mod))
       assert_equal("\x08\x07\x06\x05\x04\x03\x02\x01", [0x0102030405060708].pack("J"+mod))
     end
@@ -143,10 +163,11 @@ class TestPack < Test::Unit::TestCase
     assert_match(/\A\x04\x03\x02\x01\x00*\z/, [0x01020304].pack("I!"+mod))
     assert_match(/\A\x04\x03\x02\x01\x00*\z/, [0x01020304].pack("l!"+mod))
     assert_match(/\A\x04\x03\x02\x01\x00*\z/, [0x01020304].pack("L!"+mod))
-    if psize == 4
+    case J_SIZE
+    when 4
       assert_match(/\A\x04\x03\x02\x01\x00*\z/, [0x01020304].pack("j!"+mod))
       assert_match(/\A\x04\x03\x02\x01\x00*\z/, [0x01020304].pack("J!"+mod))
-    elsif psize == 8
+    when 8
       assert_match(/\A\x08\x07\x06\x05\x04\x03\x02\x01\x00*\z/, [0x0102030405060708].pack("j!"+mod))
       assert_match(/\A\x08\x07\x06\x05\x04\x03\x02\x01\x00*\z/, [0x0102030405060708].pack("J!"+mod))
     end
@@ -182,8 +203,8 @@ class TestPack < Test::Unit::TestCase
   end
 
   def test_integer_endian_explicit
-      _integer_big_endian('>')
-      _integer_little_endian('<')
+    _integer_big_endian('>')
+    _integer_little_endian('<')
   end
 
   def test_pack_U
@@ -224,6 +245,18 @@ class TestPack < Test::Unit::TestCase
     assert_raise(RuntimeError) do
       [o, o].pack(fmt)
     end
+  end
+
+  def test_unpack_with_block_modifying_string
+    # [Bug #22315]
+    s = "C" * 4000
+    assert_raise_with_message(RuntimeError, /string modified/) {
+      s.unpack("L*") { s.clear }
+    }
+    s = "ABCD"
+    assert_raise_with_message(RuntimeError, /string modified/) {
+      s.unpack("C*") { s << "E" * 100 }
+    }
   end
 
   def test_comment
@@ -437,6 +470,7 @@ class TestPack < Test::Unit::TestCase
 
     # Note: q! and Q! should not work on platform which has no long long type.
     # Is there a such platform now?
+    # @shyouhei: Yes. gcc -ansi is one of such platform.
     s1 = [578437695752307201, -506097522914230529].pack("q!*")
     s2 = [578437695752307201, 17940646550795321087].pack("Q!*")
     assert_equal([578437695752307201, -506097522914230529], s2.unpack("q!*"))
@@ -446,13 +480,11 @@ class TestPack < Test::Unit::TestCase
     assert_equal(8, [1].pack("Q").bytesize)
     assert_operator(8, :<=, [1].pack("q!").bytesize)
     assert_operator(8, :<=, [1].pack("Q!").bytesize)
-  end
+  end if RbConfig::CONFIG['HAVE_LONG_LONG']
 
   def test_pack_unpack_jJ
-    # Note: we assume that the size of intptr_t and uintptr_t equals to the size
-    # of real pointer.
-    psize = [nil].pack("p").bytesize
-    if psize == 4
+    case J_SIZE
+    when 4
       s1 = [67305985, -50462977].pack("j*")
       s2 = [67305985, 4244504319].pack("J*")
       assert_equal(s1, s2)
@@ -466,7 +498,7 @@ class TestPack < Test::Unit::TestCase
 
       assert_equal(4, [1].pack("j").bytesize)
       assert_equal(4, [1].pack("J").bytesize)
-    elsif psize == 8
+    when 8
       s1 = [578437695752307201, -506097522914230529].pack("j*")
       s2 = [578437695752307201, 17940646550795321087].pack("J*")
       assert_equal(s1, s2)
@@ -636,6 +668,14 @@ EXPECTED
     end;
   end
 
+  def test_bug_18343
+    bug18343 = '[ruby-core:106096] [Bug #18343]'
+    assert_separately(%W[- #{bug18343}], <<-'end;')
+      bug = ARGV.shift
+      assert_raise(ArgumentError, bug){[0].pack('c', {})}
+    end;
+  end
+
   def test_pack_unpack_m0
     assert_equal("", [""].pack("m0"))
     assert_equal("AA==", ["\0"].pack("m0"))
@@ -753,52 +793,33 @@ EXPECTED
   end
 
   def test_pack_garbage
-    verbose = $VERBOSE
-    $VERBOSE = false
-
-    assert_silent do
+    assert_raise(ArgumentError, %r%unknown pack directive '\*' in '\*U'$%) do
       assert_equal "\000", [0].pack("*U")
     end
-
-    $VERBOSE = true
-
-    _, err = capture_io do
-      assert_equal "\000", [0].pack("*U")
-    end
-
-    assert_match %r%unknown pack directive '\*' in '\*U'$%, err
-  ensure
-    $VERBOSE = verbose
   end
 
   def test_unpack_garbage
-    verbose = $VERBOSE
-    $VERBOSE = false
-
-    assert_silent do
+    assert_raise(ArgumentError, %r%unknown unpack directive '\*' in '\*U'$%) do
       assert_equal [0], "\000".unpack("*U")
     end
-
-    $VERBOSE = true
-
-    _, err = capture_io do
-      assert_equal [0], "\000".unpack("*U")
-    end
-
-    assert_match %r%unknown unpack directive '\*' in '\*U'$%, err
-  ensure
-    $VERBOSE = verbose
   end
 
   def test_invalid_warning
-    assert_warning(/unknown pack directive ',' in ','/) {
+    assert_raise(ArgumentError, /unknown pack directive ',' in ','/) {
       [].pack(",")
     }
-    assert_warning(/\A[ -~]+\Z/) {
+    assert_raise(ArgumentError, /\A[ -~]+\Z/) {
       [].pack("\x7f")
     }
-    assert_warning(/\A(.* in '\u{3042}'\n)+\z/) {
+    assert_raise(ArgumentError, /\A(.* in '\u{3042}'\n)+\z/) {
       [].pack("\u{3042}")
+    }
+
+    assert_raise(ArgumentError, /\A.* in '.*U'\Z/) {
+      assert_equal "\000", [0].pack("\0U")
+    }
+    assert_raise(ArgumentError, /\A.* in '.*U'\Z/) {
+      "\000".unpack("\0U")
     }
   end
 
@@ -861,19 +882,70 @@ EXPECTED
     assert_equal "01000001", "A".unpack1("B*")
   end
 
-  def test_pack_infection
-    tainted_array_string = ["123456"]
-    tainted_array_string.first.taint
-    ['a', 'A', 'Z', 'B', 'b', 'H', 'h', 'u', 'M', 'm', 'P', 'p'].each do |f|
-      assert_predicate(tainted_array_string.pack(f), :tainted?)
-    end
+  def test_unpack1_offset
+    assert_equal 65, "ZA".unpack1("C", offset: 1)
+    assert_equal "01000001", "YZA".unpack1("B*", offset: 2)
+    assert_nil "abc".unpack1("C", offset: 3)
+    assert_raise_with_message(ArgumentError, /offset can't be negative/) {
+      "a".unpack1("C", offset: -1)
+    }
+    assert_raise_with_message(ArgumentError, /offset outside of string/) {
+      "a".unpack1("C", offset: 2)
+    }
+    assert_nil "a".unpack1("C", offset: 1)
   end
 
-  def test_unpack_infection
-    tainted_string = "123456"
-    tainted_string.taint
-    ['a', 'A', 'Z', 'B', 'b', 'H', 'h', 'u', 'M', 'm'].each do |f|
-      assert_predicate(tainted_string.unpack(f).first, :tainted?)
-    end
+  def test_unpack_offset
+    assert_equal [65], "ZA".unpack("C", offset: 1)
+    assert_equal ["01000001"], "YZA".unpack("B*", offset: 2)
+    assert_equal [nil, nil, nil], "abc".unpack("CCC", offset: 3)
+    assert_raise_with_message(ArgumentError, /offset can't be negative/) {
+      "a".unpack("C", offset: -1)
+    }
+    assert_raise_with_message(ArgumentError, /offset outside of string/) {
+      "a".unpack("C", offset: 2)
+    }
+    assert_equal [nil], "a".unpack("C", offset: 1)
+  end
+
+  def test_monkey_pack
+    assert_separately([], <<-'end;')
+      $-w = false
+      class Array
+        alias :old_pack :pack
+        def pack _; "oh no"; end
+      end
+
+      v = [2 ** 15].pack('n')
+
+      class Array
+        alias :pack :old_pack
+      end
+
+      assert_equal "oh no", v
+    end;
+  end
+
+  def test_monkey_pack_buffer
+    assert_separately([], <<-'end;')
+      $-w = false
+      class Array
+        alias :old_pack :pack
+        def pack _, buffer:; buffer << " no"; end
+      end
+
+      def test
+        b = +"oh"
+        [2 ** 15].pack('n', buffer: b)
+      end
+
+      v = test
+
+      class Array
+        alias :pack :old_pack
+      end
+
+      assert_equal "oh no", v
+    end;
   end
 end

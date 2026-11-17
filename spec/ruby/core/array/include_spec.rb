@@ -30,4 +30,29 @@ describe "Array#include?" do
     ary = [one, two, three]
     ary.include?(key).should == true
   end
+
+  it "compares an Integer with Float elements using Float#==" do
+    [0.5, 1.0, 2.5].include?(1).should == true
+    [0.5, 1.5, 2.5].include?(1).should == false
+  end
+
+  it "compares a Float with Integer elements using Integer#==" do
+    [0, 1, 2].include?(1.0).should == true
+    [0, 1, 2].include?(1.5).should == false
+  end
+
+  it "considers 0.0 and -0.0 equal" do
+    [1.0, 0.0, 2.0].include?(-0.0).should == true
+  end
+
+  it "finds a NaN element only if it is the same object" do
+    nan = Float::NAN
+    [1.0, nan, 2.0].include?(nan).should == true
+    [1.0, nan, 2.0].include?(0.0 / 0.0).should == false
+  end
+
+  it "uses a redefined Integer#==" do
+    result = ArraySpecs.with_redefined_integer_equality { [1, 2, 3].include?(42) }
+    result.should == true
+  end
 end

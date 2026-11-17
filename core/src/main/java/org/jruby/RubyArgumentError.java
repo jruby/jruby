@@ -29,6 +29,11 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ArgumentError.
@@ -45,10 +50,8 @@ public class RubyArgumentError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass argumentErrorClass = runtime.defineClass("ArgumentError", exceptionClass, (r, klass) -> new RubyArgumentError(runtime, klass));
-
-        return argumentErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "ArgumentError", StandardError, RubyArgumentError::new);
     }
 
     @Override

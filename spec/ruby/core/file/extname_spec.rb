@@ -2,7 +2,7 @@
 require_relative '../../spec_helper'
 
 describe "File.extname" do
-  it "returns the extension (the portion of file name in path after the period)." do
+  it "returns the extension (the portion of file name in path after the period)" do
     File.extname("foo.rb").should == ".rb"
     File.extname("/foo/bar.rb").should == ".rb"
     File.extname("/foo.rb/bar.c").should == ".c"
@@ -12,7 +12,17 @@ describe "File.extname" do
     File.extname(".app.conf").should == ".conf"
   end
 
-  it "returns the extension (the portion of file name in path after the period).(edge cases)" do
+  it "returns unfrozen strings" do
+    File.extname("foo.rb").frozen?.should == false
+    File.extname("/foo/bar.rb").frozen?.should == false
+    File.extname("/foo.rb/bar.c").frozen?.should == false
+    File.extname("bar").frozen?.should == false
+    File.extname(".bashrc").frozen?.should == false
+    File.extname("/foo.bar/baz").frozen?.should == false
+    File.extname(".app.conf").frozen?.should == false
+  end
+
+  it "returns the extension for edge cases" do
     File.extname("").should ==  ""
     File.extname(".").should ==  ""
     File.extname("/").should ==  ""
@@ -20,8 +30,22 @@ describe "File.extname" do
     File.extname("..").should ==  ""
     File.extname("...").should ==  ""
     File.extname("....").should ==  ""
-    File.extname(".foo.").should ==  ""
-    File.extname("foo.").should ==  ""
+  end
+
+  describe "for a filename ending with a dot" do
+    platform_is :windows do
+      it "returns ''" do
+        File.extname(".foo.").should == ""
+        File.extname("foo.").should == ""
+      end
+    end
+
+    platform_is_not :windows do
+      it "returns '.'" do
+        File.extname(".foo.").should == "."
+        File.extname("foo.").should == "."
+      end
+    end
   end
 
   it "returns only the last extension of a file with several dots" do
@@ -33,15 +57,15 @@ describe "File.extname" do
   end
 
   it "raises a TypeError if not passed a String type" do
-    lambda { File.extname(nil)   }.should raise_error(TypeError)
-    lambda { File.extname(0)     }.should raise_error(TypeError)
-    lambda { File.extname(true)  }.should raise_error(TypeError)
-    lambda { File.extname(false) }.should raise_error(TypeError)
+    -> { File.extname(nil)   }.should.raise(TypeError)
+    -> { File.extname(0)     }.should.raise(TypeError)
+    -> { File.extname(true)  }.should.raise(TypeError)
+    -> { File.extname(false) }.should.raise(TypeError)
   end
 
   it "raises an ArgumentError if not passed one argument" do
-    lambda { File.extname }.should raise_error(ArgumentError)
-    lambda { File.extname("foo.bar", "foo.baz") }.should raise_error(ArgumentError)
+    -> { File.extname }.should.raise(ArgumentError)
+    -> { File.extname("foo.bar", "foo.baz") }.should.raise(ArgumentError)
   end
 
 
@@ -49,4 +73,8 @@ describe "File.extname" do
     File.extname('Имя.m4a').should == ".m4a"
   end
 
+  it "preserves the encoding of the path" do
+    path = "foo.bar".encode(Encoding::EUC_JP)
+    File.extname(path).encoding.should == Encoding::EUC_JP
+  end
 end

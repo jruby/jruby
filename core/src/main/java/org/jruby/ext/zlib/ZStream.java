@@ -30,19 +30,20 @@ package org.jruby.ext.zlib;
 import com.jcraft.jzlib.JZlib;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Access.getModule;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::ZStream")
 public abstract class ZStream extends RubyObject {
 
@@ -54,14 +55,28 @@ public abstract class ZStream extends RubyObject {
 
     protected abstract boolean internalStreamEndP();
 
-    protected abstract void internalReset();
+    @Deprecated(since = "10.0.0.0")
+    protected void internalReset() {
+        internalReset(getCurrentContext());
+    }
+
+    protected void internalReset(ThreadContext context) {
+        throw new RuntimeException("Missing internalReset Implementation");
+    }
 
     protected abstract boolean internalFinished();
 
     protected abstract long internalAdler();
 
-    // TODO: eliminate?
-    protected abstract IRubyObject internalFinish(Block block);
+    @Deprecated(since = "10.0.0.0")
+    protected IRubyObject internalFinish(Block block) {
+        return internalFinish(getCurrentContext(), block);
+    }
+
+    protected IRubyObject internalFinish(ThreadContext context, Block block) {
+        throw new RuntimeException("Missing internalFinish Implementation");
+    }
+
 
     protected abstract void internalClose();
 
@@ -76,108 +91,167 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod
     public IRubyObject flush_next_out(ThreadContext context, Block block) {
-        return RubyString.newEmptyString(context.getRuntime());
+        return RubyString.newEmptyBinaryString(context.getRuntime());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject total_out() {
+        return total_out(getCurrentContext());
     }
 
     @JRubyMethod
-    public IRubyObject total_out() {
-        checkClosed();
-        return getRuntime().newFixnum(internalTotalOut());
+    public IRubyObject total_out(ThreadContext context) {
+        checkClosed(context);
+        return asFixnum(context, internalTotalOut());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject stream_end_p() {
+        return stream_end_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "stream_end?")
-    public IRubyObject stream_end_p() {
-        return internalStreamEndP() ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject stream_end_p(ThreadContext context) {
+        return internalStreamEndP() ? context.tru : context.fals;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject data_type() {
+        return data_type(getCurrentContext());
     }
 
     @JRubyMethod(name = "data_type")
-    public IRubyObject data_type() {
-        checkClosed();
-        return getRuntime().getModule("Zlib").getConstant("UNKNOWN");
+    public IRubyObject data_type(ThreadContext context) {
+        checkClosed(context);
+        return getModule(context, "Zlib").getConstant(context, "UNKNOWN");
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject closed_p() {
+        return closed_p(getCurrentContext());
     }
 
     @JRubyMethod(name = {"closed?", "ended?"})
-    public IRubyObject closed_p() {
-        return closed ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject closed_p(ThreadContext context) {
+        return closed ? context.tru : context.fals;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject reset() {
+        return reset(getCurrentContext());
     }
 
     @JRubyMethod(name = "reset")
-    public IRubyObject reset() {
-        checkClosed();
-        internalReset();
+    public IRubyObject reset(ThreadContext context) {
+        checkClosed(context);
+        internalReset(context);
         
-        return getRuntime().getNil();
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject avail_out() {
+        return avail_out(getCurrentContext());
     }
 
     @JRubyMethod(name = "avail_out")
-    public IRubyObject avail_out() {
-        return RubyFixnum.zero(getRuntime());
+    public IRubyObject avail_out(ThreadContext context) {
+        return asFixnum(context, 0);
     }
 
-    @JRubyMethod(name = "avail_out=", required = 1)
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_avail_out(IRubyObject p1) {
-        checkClosed();
+        return set_avail_out(getCurrentContext(), p1);
+    }
+
+    @JRubyMethod(name = "avail_out=")
+    public IRubyObject set_avail_out(ThreadContext context, IRubyObject p1) {
+        checkClosed(context);
         
         return p1;
     }
 
     @JRubyMethod(name = "adler")
+    public IRubyObject adler(ThreadContext context) {
+        checkClosed(context);
+
+        return asFixnum(context, internalAdler());
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject adler() {
-        checkClosed();
-        
-        return getRuntime().newFixnum(internalAdler());
+        return adler(getCurrentContext());
     }
 
     @JRubyMethod(name = "finish")
     public IRubyObject finish(ThreadContext context, Block block) {
-        checkClosed();
+        checkClosed(context);
         
-        IRubyObject result = internalFinish(block);
+        IRubyObject result = internalFinish(context, block);
         
         return result;
     }
 
-    @JRubyMethod(name = "avail_in")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject avail_in() {
-        return RubyFixnum.zero(getRuntime());
+        return avail_in(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "avail_in")
+    public IRubyObject avail_in(ThreadContext context) {
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(name = "flush_next_in")
     public IRubyObject flush_next_in(ThreadContext context) {
-        return RubyString.newEmptyString(context.getRuntime());
+        return RubyString.newEmptyBinaryString(context.getRuntime());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject total_in() {
+        return total_in(getCurrentContext());
     }
 
     @JRubyMethod(name = "total_in")
-    public IRubyObject total_in() {
-        checkClosed();
-        
-        return getRuntime().newFixnum(internalTotalIn());
+    public IRubyObject total_in(ThreadContext context) {
+        checkClosed(context);
+        return asFixnum(context, internalTotalIn());
     }
 
     @JRubyMethod(name = "finished?")
     public IRubyObject finished_p(ThreadContext context) {
-        checkClosed();
-        Ruby runtime = context.getRuntime();
-        return internalFinished() ? runtime.getTrue() : runtime.getFalse();
+        checkClosed(context);
+        return asBoolean(context, internalFinished());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject close() {
+        return close(getCurrentContext());
     }
 
     @JRubyMethod(name = {"close", "end"})
-    public IRubyObject close() {
-        checkClosed();
+    public IRubyObject close(ThreadContext context) {
+        checkClosed(context);
         internalClose();
         closed = true;
-        return getRuntime().getNil();
+        return context.nil;
     }
 
+    @Deprecated(since = "10.0.0.0")
     void checkClosed() {
-        if (closed) throw RubyZlib.newZlibError(getRuntime(), "stream is not ready");
+        checkClosed(getCurrentContext());
+    }
+
+    void checkClosed(ThreadContext context) {
+        if (closed) throw RubyZlib.newZlibError(context, "stream is not ready");
     }
 
     // TODO: remove when JZlib checks the given level
-    static void checkLevel(Ruby runtime, int level) {
+    static int checkLevel(ThreadContext context, int level) {
         if ((level < 0 || level > 9) && level != JZlib.Z_DEFAULT_COMPRESSION) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid level");
+            throw RubyZlib.newStreamError(context, "stream error: invalid level");
         }
+        return level;
     }
 
     /**
@@ -187,32 +261,35 @@ public abstract class ZStream extends RubyObject {
      * decompression) and MAX_WBITS + 32(automatic detection of gzip and LZ77).
      */
     // TODO: remove when JZlib checks the given windowBits
-    static void checkWindowBits(Ruby runtime, int wbits, boolean forInflate) {
-        wbits = Math.abs(wbits);
+    static int checkWindowBits(ThreadContext context, int value, boolean forInflate) {
+        int wbits = Math.abs(value);
         if ((wbits & 0xf) < 8) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         }
         if ((wbits & 0xf) != 0xf) {
             // windowBits < 15 for reducing memory is meaningless on Java platform. 
-            runtime.getWarnings().warn("windowBits < 15 is ignored on this platform");
+            warn(context, "windowBits < 15 is ignored on this platform");
             // continue
         }
         if (forInflate && wbits > JZlib.MAX_WBITS + 32) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         } else if (!forInflate && wbits > JZlib.MAX_WBITS + 16) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         }
+
+        return value;
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    static void checkStrategy(Ruby runtime, int strategy) {
+        checkStrategy(runtime.getCurrentContext(), strategy);
     }
 
     // TODO: remove when JZlib checks the given strategy
-    static void checkStrategy(Ruby runtime, int strategy) {
+    static void checkStrategy(ThreadContext context, int strategy) {
         switch (strategy) {
-            case JZlib.Z_DEFAULT_STRATEGY:
-            case JZlib.Z_FILTERED:
-            case JZlib.Z_HUFFMAN_ONLY:
-                break;
-            default:
-                throw RubyZlib.newStreamError(runtime, "stream error: invalid strategy");
+            case JZlib.Z_DEFAULT_STRATEGY, JZlib.Z_FILTERED, JZlib.Z_HUFFMAN_ONLY -> {}
+            default -> throw RubyZlib.newStreamError(context, "stream error: invalid strategy");
         }
     }
 }

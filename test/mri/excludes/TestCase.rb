@@ -1,2 +1,1 @@
-exclude :test_deoptimization, "needs investigation"
-exclude :test_deoptimize_nil, "uses refinements (#3548)"
+exclude :test_deoptimization, "we do not dyncall Symbol#==="

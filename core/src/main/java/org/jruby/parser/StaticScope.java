@@ -31,23 +31,34 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
 
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
+
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
-import org.jruby.ast.IScopedNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
@@ -55,6 +66,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import static org.jruby.util.BitPacker.pack;
+
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.allocArray;
+import static org.jruby.api.Define.defineModule;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -67,14 +83,15 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * will point to the previous scope of the enclosing module/class (cref).
  * 
  */
-public class StaticScope implements Serializable {
+public class StaticScope implements Serializable, Cloneable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
+
+    public static final int IMPLICIT = -2;
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
-    final protected StaticScope enclosingScope;
+    protected StaticScope enclosingScope;
 
     // Live reference to module
     private transient RubyModule cref = null;
@@ -86,10 +103,9 @@ public class StaticScope implements Serializable {
     // as key to Symbol table for actual encoded versions].
     private String[] variableNames;
 
-    private int variableNamesLength;
+    private BitSet implicitVariables;
 
-    // A list of booleans indicating which variables are named captures from regexp
-    private boolean[] namedCaptures;
+    private int variableNamesLength;
 
     // Arity of this scope if there is one
     private Signature signature;
@@ -107,10 +123,6 @@ public class StaticScope implements Serializable {
     private boolean isBlockOrEval;
     private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private long commandArgumentStack;
-
-    private int firstKeywordIndex = -1;
-
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
     private IRScope irScope;
@@ -118,6 +130,20 @@ public class StaticScope implements Serializable {
     private RubyModule overlayModule;
 
     private volatile MethodHandle constructor;
+
+    private volatile Collection<String> ivarNames;
+
+    private BitSet keywordIndices = null;
+
+    // This is set for Prism since it knows all names for a scope right after parse but does not know which
+    // ones are keywords until we are actually processing those keywords in builder.
+    public void setKeywordIndices(BitSet keywordIndices) {
+        this.keywordIndices = keywordIndices;
+    }
+
+    public BitSet getKeywordIndices() {
+        return keywordIndices == null ? new BitSet() : keywordIndices;
+    }
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -131,9 +157,7 @@ public class StaticScope implements Serializable {
      *
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String file) {
-        this(type, enclosingScope, NO_NAMES);
-
-        this.file = file;
+        this(type, enclosingScope, file, NO_NAMES, -1);
     }
 
     /**
@@ -143,7 +167,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      */
     protected StaticScope(Type type, StaticScope enclosingScope) {
-        this(type, enclosingScope, NO_NAMES);
+        this(type, enclosingScope, null, NO_NAMES, -1);
     }
 
     /**
@@ -156,27 +180,28 @@ public class StaticScope implements Serializable {
      * @param names          The list of interned String variable names.
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
+        this(type, enclosingScope, null ,names, firstKeywordIndex);
+    }
+
+    protected StaticScope(Type type, StaticScope enclosingScope, String file, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
 
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.variableNamesLength = names.length;
         this.type = type;
-        if (enclosingScope != null && enclosingScope.irScope != null) {
-            this.irScope = enclosingScope.irScope;
-            this.scopeType = irScope.getScopeType();
-        }
+        if (enclosingScope != null) this.scopeType = enclosingScope.getScopeType();
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
-        this.firstKeywordIndex = firstKeywordIndex;
+        this.file = file;
     }
 
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
-        this(type, enclosingScope, names, -1);
+        this(type, enclosingScope, null, names, -1);
     }
 
     public int getFirstKeywordIndex() {
-        return firstKeywordIndex;
+        return -1;
     }
 
     public DynamicScope construct(DynamicScope parent) {
@@ -241,6 +266,36 @@ public class StaticScope implements Serializable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
+        return addVariableName(name);
+    }
+
+    /**
+     * Add an implicit variable ("it", "_1") to this (current) scope unless it is already defined in the
+     * current scope. The variable will be marked as implicit to omit it from local variable lists and functions.
+     *
+     * @param name of new variable
+     * @return index of variable
+     */
+    public int addImplicitVariableThisScope(String name) {
+        int slot = exists(name);
+
+        if (slot >= 0) return slot;
+
+        slot = addVariableName(name);
+
+        markImplicitVariable(slot);
+
+        return slot;
+    }
+
+    public void markImplicitVariable(int slot) {
+        if (implicitVariables == null) implicitVariables = new BitSet();
+
+        implicitVariables.set(slot);
+    }
+
+    public int addVariableName(String name) {
+        // Clear constructor since we are adding a name
         constructor = null;
 
         // This is perhaps innefficient timewise?  Optimal spacewise
@@ -248,20 +303,6 @@ public class StaticScope implements Serializable {
 
         // Returns slot of variable
         return variableNames.length - 1;
-    }
-
-    /**
-     * Add a new named capture variable to this (current) scope.
-     *
-     * @param name name of variable.
-     * @return index of variable
-     */
-    public int addNamedCaptureVariable(String name) {
-        int index = addVariableThisScope(name);
-
-        growNamedCaptures(index);
-
-        return index;
     }
 
     /**
@@ -277,21 +318,11 @@ public class StaticScope implements Serializable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
-        constructor = null;
-
-        // This is perhaps innefficient timewise?  Optimal spacewise
-        growVariableNames(name);
-
-        // Returns slot of variable
-        return variableNames.length - 1;
+        return addVariableName(name);
     }
 
     public String[] getVariables() {
-        String[] newVars = new String[variableNames.length];
-        for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = variableNames[i];
-        }
-        return newVars;
+        return variableNames;
     }
 
     public int getNumberOfVariables() {
@@ -309,46 +340,62 @@ public class StaticScope implements Serializable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject getConstantDefined(String internedName) {
+        return getConstantDefined(cref.getRuntime().getCurrentContext(), internedName);
+    }
+
     /**
      * Gets a constant back from lexical search from the cref in this scope.
      * As it is for defined? we will not forced resolution of autoloads nor
      * call const_defined
      */
-    public IRubyObject getConstantDefined(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
+    public IRubyObject getConstantDefined(ThreadContext context, String internedName) {
+        IRubyObject result = cref.fetchConstant(context, internedName);
 
         if (result != null) return result;
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(context, internedName);
     }
 
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantDefinedNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantDefined(internedName);
+        return getConstantDefinedNoObject(cref.getRuntime().getCurrentContext(), internedName);
     }
 
+    private IRubyObject getConstantDefinedNoObject(ThreadContext context, String internedName) {
+        return previousCRefScope == null ? null : getConstantDefined(context, internedName);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstant(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstantNoConstMissing(internedName) : result;
+        return getConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
 
+    public IRubyObject getConstant(ThreadContext context, String internedName) {
+        IRubyObject result = getScopedConstant(context, internedName);
+
+        // If we could not find the constant from cref..then try getting from inheritance hierarchy
+        return result == null ? cref.getConstantNoConstMissing(context, internedName) : result;
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantInner(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
-
-        if (result != null) {
-            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
-        }
-
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);
+        return getScopedConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
 
-    private IRubyObject getConstantInnerNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
+    public IRubyObject getScopedConstant(ThreadContext context, String internedName) {
+        IRubyObject result = cref.getConstantWithAutoload(context, internedName, RubyBasicObject.UNDEF, true);
 
-        return getConstantInner(internedName);
+        // If we had a failed autoload, give up hierarchy search
+        if (result == RubyBasicObject.UNDEF) return null;
+        if (result != null) return result;
+
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(context, internedName);
+    }
+
+    private IRubyObject getConstantInnerNoObject(ThreadContext context, String internedName) {
+        return previousCRefScope == null ? null : getScopedConstant(context, internedName);
     }
 
     /**
@@ -364,6 +411,10 @@ public class StaticScope implements Serializable {
         return enclosingScope;
     }
 
+    public void setEnclosingScope(StaticScope parent) {
+        this.enclosingScope = parent;
+    }
+
     /**
      * Does the variable exist?
      *
@@ -372,6 +423,18 @@ public class StaticScope implements Serializable {
      */
     public int exists(String name) {
         return findVariableName(name);
+    }
+
+    /**
+     * Does the variable exist and not implicit?
+     *
+     * @param name of the variable to find
+     * @return index of variable; -1 if it does not exist; -2 if is implicit.
+     */
+    public int existsOrImplicit(String name) {
+        int slot = findVariableName(name);
+        if (slot >= 0 && isImplicitVariable(slot)) return IMPLICIT;
+        return slot;
     }
 
     private int findVariableName(String name) {
@@ -393,41 +456,62 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Make a DASgn or LocalAsgn node based on scope logic
+     * Is this name visible to the current scope as either a variable or an implicit variable
      *
-     * @param position
-     * @param name
-     * @param value
-     * @return
+     * @param name to be looked for
+     * @return a location where the left-most 16 bits of number of scopes down it is and the
+     * right-most 16 bits represents its index in that scope
+     */
+    public int isDefinedOrImplicit(String name) {
+        return isDefinedOrImplicit(name, 0);
+    }
+
+    /**
+     * Is this name visible to the current scope and not an implicit parameter ("it", "_1", etc).
+     *
+     * @param name to be looked for
+     * @return -1 if it is not defined; -2 if it is implicit; or a location where the left-most 16 bits of number of scopes down it is and the
+     * right-most 16 bits represents its index in that scope.
+     */
+    public int isDefinedImplicitParameter(String name) {
+        return isDefinedImplicitParameter(name, 0);
+    }
+
+    /**
+     * @return whether the given slot contains an implicit variable ("it", "_1", etc).
+     */
+    public boolean isImplicitVariable(int slot) {
+        return implicitVariables != null && implicitVariables.get(slot);
+    }
+
+    /**
+     * Make a DASgn or LocalAsgn node based on scope logic
      *
      * Note: This is private code made public only for parser.
      */
-    public AssignableNode assign(ISourcePosition position, RubySymbol name, Node value) {
-        return assign(position, name, value, this, 0);
+    public AssignableNode assign(int line, RubySymbol name, Node value) {
+        return assign(line, name, value, this, 0);
     }
 
     /**
      * Register a keyword argument with this staticScope.  It additionally will track
      * where the first keyword argument started so we can test and tell whether we have
      * a kwarg or an ordinary variable during live execution (See keywordExists).
-     * @param position
-     * @param symbolID
-     * @param value
-     * @return
      */
-    public AssignableNode assignKeyword(ISourcePosition position, RubySymbol symbolID, Node value) {
-        AssignableNode assignment = assign(position, symbolID, value, this, 0);
+    public AssignableNode assignKeyword(int line, RubySymbol symbolID, Node value) {
+        AssignableNode assignable = assign(line, symbolID, value, this, 0);
 
-        // register first keyword index encountered
-        if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
+        if (keywordIndices == null) keywordIndices = new BitSet();
+        keywordIndices.set(isDefined(symbolID.idString()));
 
-        return assignment;
+        return assignable;
     }
 
     public boolean keywordExists(String name) {
+        if (name.equals("_")) return true;
         int slot = exists(name);
 
-        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
+        return slot >= 0 && keywordIndices != null && keywordIndices.get(slot);
     }
 
     /**
@@ -437,86 +521,244 @@ public class StaticScope implements Serializable {
      * @return a list of all names (sans $~ and $_ which are special names)
      */
     public String[] getAllNamesInScope() {
-        String[] names = getVariables();
-        if (isBlockOrEval) {
-            String[] ourVariables = names;
-            String[] variables = enclosingScope.getAllNamesInScope();
+        return collectVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
+    }
 
-            // we know variables cannot be null since this IRStaticScope always returns a non-null array
-            names = new String[variables.length + ourVariables.length];
+    public <T> T collectVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        StaticScope current = this;
 
-            System.arraycopy(variables, 0, names, 0, variables.length);
-            System.arraycopy(ourVariables, 0, names, variables.length, ourVariables.length);
+        T collection = collectionFactory.apply(current.variableNamesLength);
+
+        HashMap<String, Object> dedup = new HashMap<>();
+
+        while (current.isBlockOrEval) {
+            for (String name : current.variableNames) {
+                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+            }
+            current = current.enclosingScope;
         }
 
-        return names;
+        // once more for method scope
+        for (String name : current.variableNames) {
+            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+        }
+
+        return collection;
+
+    }
+
+    /**
+     * Populate a deduplicated collection of variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectAllVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        T collection = collectVariables(context, collectionFactory, collectionPopulator, false, true);
+        return collectVariables(context, (t, i) -> collection, collectionPopulator, true, true);
+    }
+
+    /**
+     * Populate a deduplicated collection of non-implicit variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, false, true);
+    }
+
+    /**
+     * Populate a deduplicated collection of implicit variable names("it", "_1", etc) in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectImplicitParameters(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, true, false);
+    }
+
+    private <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, boolean implicit, boolean parents) {
+        StaticScope current = this;
+
+        T collection = collectionFactory.apply(context, current.variableNamesLength);
+
+        HashMap<String, Object> dedup = new HashMap<>();
+
+        addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
+
+        if (parents) {
+            // blocks and evals see the variables of each scope around them, up to and including the first that isn't one
+            while (current.isBlockOrEval) {
+                current = current.enclosingScope;
+                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
+            }
+        }
+
+        return collection;
+    }
+
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, boolean implicit) {
+        BitSet implicitVariables = current.implicitVariables;
+
+        boolean hasImplicits = implicitVariables != null;
+        if (implicit && !hasImplicits) return;
+
+        int variableNamesLength = current.variableNamesLength;
+        String[] variableNames = current.variableNames;
+
+        for (int i = 0; i < variableNamesLength; i++) {
+            if (hasImplicits && implicitVariables.get(i)) {
+                if (!implicit) continue;
+            } else if (implicit) continue;
+
+            String name = variableNames[i];
+            dedup.computeIfAbsent(name, key -> {
+                collectionPopulator.accept(collection, key);
+                return key;});
+        }
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public RubyArray getLocalVariables(Ruby runtime) {
+        return getLocalVariables(runtime.getCurrentContext());
+    }
+
+    /**
+     * Get a Ruby Array of all local variables.
+     *
+     * @param context the current context
+     * @return populated RubyArray
+     */
+    public RubyArray getLocalVariables(ThreadContext context) {
+        return collectVariables(
+                context,
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    /**
+     * Get a Ruby Array of all implicit local variables.
+     *
+     * @param context the current context
+     * @return populated RubyArray
+     */
+    public RubyArray getImplicitParameters(ThreadContext context) {
+        return collectImplicitParameters(
+                context,
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    private static void appendVariableIfValid(ThreadContext context, RubyArray<?> array, String id) {
+        RubySymbol symbol = Convert.asSymbol(context, id);
+        if (symbol.validLocalVariableName()) array.append(context, symbol);
     }
 
     public int isDefined(String name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
-            if (slot >= 0) return (depth << 16) | slot;
+            if (slot >= 0) return packLocation(depth, slot);
 
             return enclosingScope.isDefined(name, depth + 1);
         } else {
-            return (depth << 16) | exists(name);
+            return packLocation(depth, exists(name));
         }
     }
 
-    public AssignableNode addAssign(ISourcePosition position, RubySymbol symbolID, Node value) {
-        int slot = addVariable(symbolID.idString());
-        // No bit math to store level since we know level is zero for this case
-        return new DAsgnNode(position, symbolID, slot, value);
+    public int isDefinedOrImplicit(String name, int depth) {
+        if (isBlockOrEval) {
+            int slot = existsOrImplicit(name);
+            if (slot == IMPLICIT) return slot;
+
+            if (slot >= 0) return packLocation(depth, slot);
+
+            return enclosingScope.isDefinedOrImplicit(name, depth + 1);
+        } else {
+            return packLocation(depth, existsOrImplicit(name));
+        }
     }
 
-    public AssignableNode assign(ISourcePosition position, RubySymbol symbolID, Node value,
-                                 StaticScope topScope, int depth) {
+    public int isDefinedImplicitParameter(String name, int depth) {
+        int slot = existsOrImplicit(name);
+        if (slot == IMPLICIT) return slot;
+
+        return -1;
+    }
+
+    public AssignableNode addAssign(int line, RubySymbol symbolID, Node value) {
+        int slot = addVariable(symbolID.idString());
+        // No bit math to store level since we know level is zero for this case
+        return new DAsgnNode(line, symbolID, slot, value);
+    }
+
+    public AssignableNode assign(int line, RubySymbol symbolID, Node value, StaticScope topScope, int depth) {
         String id = symbolID.idString();
         int slot = exists(id);
 
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(position, symbolID, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(position, symbolID, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnNode(line, symbolID, packLocation(depth, slot), value)
+                    : new LocalAsgnNode(line, symbolID, packLocation(depth, slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
             slot = addVariable(id);
 
-            return new LocalAsgnNode(position, symbolID, slot, value);
+            return new LocalAsgnNode(line, symbolID, slot, value);
         }
 
         // If we are not a block-scope and we go there, we know that 'topScope' is a block scope
         // because a local scope cannot be within a local scope
         // If topScope was itself it would have created a LocalAsgnNode above.
         return isBlockOrEval ?
-                enclosingScope.assign(position, symbolID, value, topScope, depth + 1) :
-                topScope.addAssign(position, symbolID, value);
+                enclosingScope.assign(line, symbolID, value, topScope, depth + 1) :
+                topScope.addAssign(line, symbolID, value);
     }
 
     // Note: This is private code made public only for parser.
-    public Node declare(ISourcePosition position, RubySymbol symbolID, int depth) {
+    public Node declare(int line, RubySymbol symbolID, int depth) {
         int slot = exists(symbolID.idString());
 
         if (slot >= 0) {
             return isBlockOrEval ?
-                    new DVarNode(position, ((depth << 16) | slot), symbolID) :
-                    new LocalVarNode(position, ((depth << 16) | slot), symbolID);
+                    new DVarNode(line, packLocation(depth, slot), symbolID) :
+                    new LocalVarNode(line, packLocation(depth, slot), symbolID);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, symbolID, depth + 1) : new VCallNode(position, symbolID);
+        return isBlockOrEval ? enclosingScope.declare(line, symbolID, depth + 1) : new VCallNode(line, symbolID);
+    }
+
+    private static int packLocation(int depth, int slot) {
+        if (slot < 0) return slot;
+        return pack((char) depth, (char) slot);
     }
 
     /**
      * Make a DVar or LocalVar node based on scoping logic
      *
-     * @param position the location that in the source that the new node will come from
+     * @param line the location that in the source that the new node will come from
      * @param symbolID of the variable to be created is named
      * @return a DVarNode or LocalVarNode
      *
      * Note: This is private code made public only for parser.
      */
-    public Node declare(ISourcePosition position, RubySymbol symbolID) {
-        return declare(position, symbolID, 0);
+    public Node declare(int line, RubySymbol symbolID) {
+        return declare(line, symbolID, 0);
     }
 
     /**
@@ -613,14 +855,6 @@ public class StaticScope implements Serializable {
         return dummyScope == null ? dummyScope = DynamicScope.newDynamicScope(this) : dummyScope;
     }
 
-    public void setCommandArgumentStack(long commandArgumentStack) {
-        this.commandArgumentStack = commandArgumentStack;
-    }
-
-    public long getCommandArgumentStack() {
-        return commandArgumentStack;
-    }
-
     private void growVariableNames(String name) {
         String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
@@ -629,22 +863,16 @@ public class StaticScope implements Serializable {
         variableNames[variableNames.length - 1] = name;
     }
 
-    private void growNamedCaptures(int index) {
-        boolean[] namedCaptures = this.namedCaptures;
-        boolean[] newNamedCaptures;
-        if (namedCaptures != null) {
-            newNamedCaptures = new boolean[Math.max(index + 1, namedCaptures.length)];
-            System.arraycopy(namedCaptures, 0, newNamedCaptures, 0, namedCaptures.length);
-        } else {
-            newNamedCaptures = new boolean[index + 1];
+    /**
+     * Determine if we happen to be within a method definition.
+     * @return true if so
+     */
+    public boolean isWithinMethod() {
+        for (StaticScope current = this; current != null; current = current.getEnclosingScope()) {
+            if (current.getScopeType().isMethod()) return true;
         }
-        newNamedCaptures[index] = true;
-        this.namedCaptures = newNamedCaptures;
-    }
 
-    public boolean isNamedCapture(int index) {
-        boolean[] namedCaptures = this.namedCaptures;
-        return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
+        return false;
     }
 
     @Override
@@ -661,6 +889,10 @@ public class StaticScope implements Serializable {
         return file;
     }
 
+    public void setFile(String file) {
+        this.file = file;
+    }
+
     public StaticScope duplicate() {
         StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
         // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.
@@ -669,7 +901,9 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setFile(file);
         dupe.setSignature(signature);
+        dupe.setKeywordIndices(keywordIndices);
 
         return dupe;
     }
@@ -681,8 +915,48 @@ public class StaticScope implements Serializable {
     public RubyModule getOverlayModuleForWrite(ThreadContext context) {
         RubyModule omod = overlayModule;
         if (omod == null) {
-            overlayModule = omod = RubyModule.newModule(context.runtime);
+            overlayModule = omod = defineModule(context);
         }
         return omod;
+    }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.  Caller must
+     * decide whether this scope is using (or maybe) using refinements.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        for (StaticScope cur = this.getEnclosingScope(); cur != null; cur = cur.getEnclosingScope()) {
+            RubyModule overlay = cur.getOverlayModuleForRead();
+            if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                // capture current refinements at definition time
+                RubyModule myOverlay = getOverlayModuleForWrite(context);
+
+                // FIXME: MRI does a copy-on-write thing here with the overlay
+                myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                // only search until we find an overlay
+                break;
+            }
+        }
+    }
+
+    public Collection<String> getInstanceVariableNames() {
+        if (ivarNames != null) return ivarNames;
+
+        if (irScope instanceof IRMethod) {
+            return ivarNames = ((IRMethod) irScope).getMethodData().getIvarNames();
+        }
+
+        return ivarNames = Collections.EMPTY_LIST;
+    }
+
+    public void setInstanceVariableNames(Collection<String> ivarWrites) {
+        this.ivarNames = ivarWrites;
+    }
+
+    public boolean isRuby2Keywords() {
+        return irScope.isRuby2Keywords();
     }
 }

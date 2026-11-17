@@ -35,12 +35,19 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
+import org.jruby.exceptions.ReadPartialBufferOverflowException;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 
 /**
  * Wrap an IO object in a Channel.
@@ -50,11 +57,11 @@ import org.jruby.runtime.callsite.RespondToCallSite;
  * @see IOReadableWritableByteChannel
  */
 public abstract class IOChannel implements Channel {
-    private final IRubyObject io;
+    protected final IRubyObject io;
     private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
     private final RespondToCallSite respondToClosed = new RespondToCallSite("closed?");
     private final CallSite isClosedAdapter = MethodIndex.getFunctionalCallSite("closed?");
-    private final Ruby runtime;
+    protected final Ruby runtime;
 
     protected IOChannel(final IRubyObject io) {
         this.io = io;
@@ -83,47 +90,95 @@ public abstract class IOChannel implements Channel {
         return true;
     }
 
-    protected int read(CallSite read, ByteBuffer dst) throws IOException {
-        IRubyObject readValue = read.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(dst.remaining()));
+    protected static int read(Ruby runtime, IRubyObject io, FunctionalCachingCallSite read, ByteBuffer dst) throws IOException {
+        ThreadContext context = runtime.getCurrentContext();
+        int remaining = dst.remaining();
+
+        CacheEntry readMethodEntry = read.retrieveCache(io);
+        RubyFixnum remainingFixnum = asFixnum(context, remaining);
+        IRubyObject readValue, retValue;
+        if (readMethodEntry.method.getSignature().isTwoArguments()) {
+            if (dst.hasArray()) {
+                readValue = RubyString.newStringNoCopy(runtime, dst.array(), dst.position(), remaining);
+            } else {
+                readValue = RubyString.newStringLight(runtime, remaining);
+            }
+            retValue = read.call(context, io, io, remainingFixnum, readValue);
+        } else {
+            retValue = readValue = read.call(context, io, io, remainingFixnum);
+        }
+
         int returnValue = -1;
-        if (!readValue.isNil()) {
-            ByteList str = ((RubyString)readValue).getByteList();
-            dst.put(str.getUnsafeBytes(), str.getBegin(), str.getRealSize());
-            returnValue = str.getRealSize();
+        RubyString readString;
+        if (!retValue.isNil()
+                && (readString = readValue.convertToString()).size() > 0) {
+            ByteList str = readString.getByteList();
+            int realSize = str.getRealSize();
+
+            if (realSize > remaining) {
+                throw new ReadPartialBufferOverflowException(
+                        "error calling " + io.getType() + "#readpartial: requested " + remaining + " bytes but received " + realSize);
+            }
+
+            dst.put(str.getUnsafeBytes(), str.getBegin(), realSize);
+            returnValue = realSize;
         }
         return returnValue;
     }
 
-    protected int write(CallSite write, ByteBuffer src) throws IOException {
+    /**
+     * Perform a write to the given IO-like object, using the given call site, and passing the contents of the given
+     * buffer.
+     *
+     * The buffer and its contents should not be referenced beyond the method's return.
+     *
+     * @param runtime the current runtime
+     * @param io the target IO-like object
+     * @param write the call site for making dynamic `write` calls
+     * @param src the data to write
+     * @return the amount of data reported written by the dynamic `write` call
+     */
+    protected static int write(Ruby runtime, IRubyObject io, FunctionalCachingCallSite write, ByteBuffer src) {
         ByteList buffer;
+        int position = src.position();
+        int remaining = src.remaining();
 
+        // copy buffer contents to a ByteList
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
+            buffer = new ByteList(src.array(), src.position(), remaining, true);
         } else {
-            buffer = new ByteList(src.remaining());
-            buffer.append(src, src.remaining());
+            buffer = new ByteList(remaining);
+            buffer.append(src, remaining);
         }
-        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
-        return (int)written.convertToInteger().getLongValue();
+
+        var context = runtime.getCurrentContext();
+        // call write with new String based on this ByteList
+        IRubyObject written = write.call(context, io, io, RubyString.newStringLight(runtime, buffer));
+        int wrote = toInt(context, written);
+
+        // set source position to match bytes written
+        if (wrote > 0) src.position(position + wrote);
+
+        return wrote;
     }
 
-    protected CallSite initReadSite(String readMethod) {
+    protected FunctionalCachingCallSite initReadSite(String readMethod) {
         // no call site use here since this will only be called once
         if(io.respondsTo(readMethod)) {
-            return MethodIndex.getFunctionalCallSite(readMethod);
+            return new FunctionalCachingCallSite(readMethod);
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `" + readMethod + "' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no '" + readMethod + "' method");
         }
     }
 
-    protected CallSite initWriteSite() {
+    protected FunctionalCachingCallSite initWriteSite() {
         // no call site use here since this will only be called once
         if(io.respondsTo("write")) {
-            return MethodIndex.getFunctionalCallSite("write");
+            return new FunctionalCachingCallSite("write");
         } else if (io.respondsTo("<<")) {
-            return MethodIndex.getFunctionalCallSite("<<");
+            return new FunctionalCachingCallSite("<<");
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `write' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no 'write' method");
         }
     }
 
@@ -131,7 +186,7 @@ public abstract class IOChannel implements Channel {
      * A {@link ReadableByteChannel} wrapper around an IO-like Ruby object.
      */
     public static class IOReadableByteChannel extends IOChannel implements ReadableByteChannel {
-        private final CallSite read;
+        private final FunctionalCachingCallSite read;
 
         public IOReadableByteChannel(final IRubyObject io) {
             this(io, "read");
@@ -143,7 +198,7 @@ public abstract class IOChannel implements Channel {
         }
         
         public int read(ByteBuffer dst) throws IOException {
-            return read(read, dst);
+            return read(runtime, io, read, dst);
         }
     }
 
@@ -152,14 +207,14 @@ public abstract class IOChannel implements Channel {
      * A {@link WritableByteChannel} wrapper around an IO-like Ruby object.
      */
     public static class IOWritableByteChannel extends IOChannel implements WritableByteChannel {
-        private final CallSite write;
+        private final FunctionalCachingCallSite write;
         public IOWritableByteChannel(final IRubyObject io) {
             super(io);
             write = initWriteSite();
         }
 
         public int write(ByteBuffer src) throws IOException {
-            return write(write, src);
+            return write(runtime, io, write, src);
         }
     }
 
@@ -168,8 +223,8 @@ public abstract class IOChannel implements Channel {
      * A {@link ReadableByteChannel} and {@link WritableByteChannel} wrapper around an IO-like Ruby object.
      */
     public static class IOReadableWritableByteChannel extends IOChannel implements ReadableByteChannel, WritableByteChannel {
-        private final CallSite write;
-        private final CallSite read;
+        private final FunctionalCachingCallSite write;
+        private final FunctionalCachingCallSite read;
         public IOReadableWritableByteChannel(final IRubyObject io) {
             super(io);
             read = initReadSite("read");
@@ -177,11 +232,12 @@ public abstract class IOChannel implements Channel {
         }
 
         public int read(ByteBuffer dst) throws IOException {
-            return read(read, dst);
+            return read(runtime, io, read, dst);
         }
 
         public int write(ByteBuffer src) throws IOException {
-            return write(write, src);
+            return write(runtime, io, write, src);
         }
     }
+
 }

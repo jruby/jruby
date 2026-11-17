@@ -17,6 +17,11 @@ import static org.jruby.util.StringSupport.codePoint;
  * Helper methods to make Ruby Strings without the ceremony of manually building the string up.
   */
 public class RubyStringBuilder {
+
+    public static RubyString types(ThreadContext context, RubyModule type) {
+        return inspectIdentifierByteList(context.runtime, type.toRubyString(context).getByteList());
+    }
+
     public static RubyString types(Ruby runtime, RubyModule type) {
         ThreadContext context = runtime.getCurrentContext();
 
@@ -104,7 +109,7 @@ public class RubyStringBuilder {
                             (c == '#' &&
                                     p < end &&
                                     MBCLEN_CHARFOUND_P(StringSupport.preciseLength(enc, bytes, p, end)) &&
-                                    ((cc = codePoint(runtime, enc, bytes, p, end)) == '$' ||
+                                    ((cc = codePoint(runtime.getCurrentContext(), enc, bytes, p, end)) == '$' ||
                                             cc == '@' || cc == '{')
                             )
                     )) {
@@ -162,7 +167,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        catUTF8(runtime, buf, message);
+        cat(runtime, buf, message);
 
         return buf.toString();
     }
@@ -170,7 +175,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String message, IRubyObject value) {
         RubyString buf = runtime.newString(message);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
 
         return buf.toString();
     }
@@ -178,8 +183,8 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
-        catUTF8(runtime, buf, messageEnd);
+        buf.catWithCodeRange(value.asString());
+        cat(runtime, buf, messageEnd);
 
         return buf.toString();
     }
@@ -187,8 +192,8 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        catUTF8(runtime, buf, message);
-        buf.cat19(value2.asString());
+        cat(runtime, buf, message);
+        buf.catWithCodeRange(value2.asString());
 
         return buf.toString();
     }
@@ -196,9 +201,9 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2, String message2) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        catUTF8(runtime, buf, message);
-        buf.cat19(value2.asString());
-        catUTF8(runtime, buf, message2);
+        cat(runtime, buf, message);
+        buf.catWithCodeRange(value2.asString());
+        cat(runtime, buf, message2);
 
         return buf.toString();
     }
@@ -206,9 +211,9 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
-        catUTF8(runtime, buf, messageMiddle);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value.asString());
+        cat(runtime, buf, messageMiddle);
+        buf.catWithCodeRange(value2.asString());
 
         return buf.toString();
     }
@@ -216,33 +221,62 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
-        catUTF8(runtime, buf, messageMiddle);
-        buf.cat19(value2.asString());
-        catUTF8(runtime, buf, messageEnd);
+        buf.catWithCodeRange(value.asString());
+        cat(runtime, buf, messageMiddle);
+        buf.catWithCodeRange(value2.asString());
+        cat(runtime, buf, messageEnd);
 
         return buf.toString();
     }
 
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2,
+                             String messageMiddle2, IRubyObject value3, String messageEnd) {
+        RubyString buf = runtime.newString(messageBegin);
+
+        buf.catWithCodeRange(value.asString());
+        cat(runtime, buf, messageMiddle);
+        buf.catWithCodeRange(value2.asString());
+        cat(runtime, buf, messageMiddle2);
+        buf.catWithCodeRange(value3.asString());
+        cat(runtime, buf, messageEnd);
+
+        return buf.toString();
+    }
 
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, RubyString value2,
                               String messageMiddle2, IRubyObject value3, String messageMiddle3, RubyString value4, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
-        catUTF8(runtime, buf, messageMiddle);
-        buf.cat19(value2);
-        catUTF8(runtime, buf, messageMiddle2);
-        buf.cat19(value3.asString());
-        catUTF8(runtime, buf, messageMiddle3);
-        buf.cat19(value4);
-        catUTF8(runtime, buf, messageEnd);
+        buf.catWithCodeRange(value.asString());
+        cat(runtime, buf, messageMiddle);
+        buf.catWithCodeRange(value2);
+        cat(runtime, buf, messageMiddle2);
+        buf.catWithCodeRange(value3.asString());
+        cat(runtime, buf, messageMiddle3);
+        buf.catWithCodeRange(value4);
+        cat(runtime, buf, messageEnd);
 
         return buf.toString();
     }
 
-    private static void catUTF8(final Ruby runtime, final RubyString str, final String value) {
+    public static RubyString cat(final Ruby runtime, final RubyString str, final String value) {
         EncodingUtils.encStrBufCat(runtime, str, value);
+        return str;
+    }
+
+    public static RubyString cat(final Ruby runtime, RubyString buf, int b) {
+        EncodingUtils.encStrBufCat(runtime, buf, new byte[] { (byte) b });
+        return buf;
+    }
+
+    public static RubyString cat(final Ruby runtime, RubyString buf, byte[] bytes) {
+        EncodingUtils.encStrBufCat(runtime, buf, bytes);
+        return buf;
+    }
+
+    public static RubyString cat(final Ruby runtime, RubyString buf, ByteList bytes) {
+        EncodingUtils.encStrBufCat(runtime, buf, bytes);
+        return buf;
     }
 
 }

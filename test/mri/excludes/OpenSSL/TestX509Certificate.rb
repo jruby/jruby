@@ -1,2 +1,1 @@
-#exclude :test_public_key, "new failure but we really want to run this test"
-#warn "!!! excluding TestX509Certificate#test_public_key"
+exclude :test_inspect, "inspect format differs from CRuby (subject= vs subject=#<OpenSSL::X509::Name>)"

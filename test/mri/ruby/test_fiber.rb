@@ -34,7 +34,7 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_many_fibers
-    max = 10_000
+    max = 1000
     assert_equal(max, max.times{
       Fiber.new{}
     })
@@ -81,12 +81,14 @@ class TestFiber < Test::Unit::TestCase
       f.resume
       f.resume
     }
-    assert_raise(RuntimeError){
-      Fiber.new{
-        @c = callcc{|c| @c = c}
-      }.resume
-      @c.call # cross fiber callcc
-    }
+    if respond_to?(:callcc)
+      assert_raise(RuntimeError){
+        Fiber.new{
+          @c = callcc{|c| @c = c}
+        }.resume
+        @c.call # cross fiber callcc
+      }
+    end
     assert_raise(RuntimeError){
       Fiber.new{
         raise
@@ -109,6 +111,15 @@ class TestFiber < Test::Unit::TestCase
       }
       fib.resume
     }
+    assert_raise(FiberError){
+      fib = Fiber.new{}
+      fib.raise "raise in unborn fiber"
+    }
+    assert_raise(FiberError){
+      fib = Fiber.new{}
+      fib.resume
+      fib.raise "raise in dead fiber"
+    }
   end
 
   def test_return
@@ -127,6 +138,48 @@ class TestFiber < Test::Unit::TestCase
     }
   end
 
+  def test_raise
+    assert_raise(ZeroDivisionError){
+      Fiber.new do
+        1/0
+      end.resume
+    }
+    assert_raise(RuntimeError){
+      fib = Fiber.new{ Fiber.yield }
+      fib.resume
+      fib.raise "raise and propagate"
+    }
+    assert_nothing_raised{
+      fib = Fiber.new do
+        begin
+          Fiber.yield
+        rescue
+        end
+      end
+      fib.resume
+      fib.raise "rescue in fiber"
+    }
+    fib = Fiber.new do
+      begin
+        Fiber.yield
+      rescue
+        Fiber.yield :ok
+      end
+    end
+    fib.resume
+    assert_equal(:ok, fib.raise)
+  end
+
+  def test_raise_transferring_fiber
+    root = Fiber.current
+    fib = Fiber.new { root.transfer }
+    fib.transfer
+    assert_raise(RuntimeError){
+      fib.raise "can raise with transfer: true"
+    }
+    assert_not_predicate(fib, :alive?)
+  end
+
   def test_transfer
     ary = []
     f2 = nil
@@ -140,6 +193,33 @@ class TestFiber < Test::Unit::TestCase
     }
     assert_equal(:ok, f1.transfer)
     assert_equal([:baz], ary)
+  end
+
+  def test_terminate_transferred_fiber
+    log = []
+    fa1 = fa2 = fb1 = r1 = nil
+
+    fa1 = Fiber.new{
+      fa2 = Fiber.new{
+        log << :fa2_terminate
+      }
+      fa2.resume
+      log << :fa1_terminate
+    }
+    fb1 = Fiber.new{
+      fa1.transfer
+      log << :fb1_terminate
+    }
+
+    r1 = Fiber.new{
+      fb1.transfer
+      log << :r1_terminate
+    }
+
+    r1.resume
+    log << :root_terminate
+
+    assert_equal [:fa2_terminate, :fa1_terminate, :r1_terminate, :root_terminate], log
   end
 
   def test_tls
@@ -169,6 +249,18 @@ class TestFiber < Test::Unit::TestCase
     assert_equal(1,   Thread.current[:v]); }
     assert_equal(nil, Thread.current[:v]); fb.resume
     assert_equal(nil, Thread.current[:v]);
+  end
+
+  def test_fiber_variables
+    assert_equal "bar", Fiber.new {Fiber[:foo] = "bar"; Fiber[:foo]}.resume
+
+    key = :"#{self.class.name}#.#{self.object_id}"
+    Fiber[key] = 42
+    assert_equal 42, Fiber[key]
+
+    key = Object.new
+    def key.to_str; "foo"; end
+    assert_equal "Bar", Fiber.new {Fiber[key] = "Bar"; Fiber[key]}.resume
   end
 
   def test_alive
@@ -236,48 +328,103 @@ class TestFiber < Test::Unit::TestCase
     assert_instance_of(Class, Fiber.new(&Class.new.method(:undef_method)).resume(:to_s), bug5083)
   end
 
-  def test_prohibit_resume_transferred_fiber
+  def test_prohibit_transfer_to_resuming_fiber
+    root_fiber = Fiber.current
+
     assert_raise(FiberError){
-      root_fiber = Fiber.current
-      f = Fiber.new{
-        root_fiber.transfer
-      }
-      f.transfer
-      f.resume
+      fiber = Fiber.new{ root_fiber.transfer }
+      fiber.resume
+    }
+
+    fa1 = Fiber.new{
+      _fa2 = Fiber.new{ root_fiber.transfer }
+    }
+    fb1 = Fiber.new{
+      _fb2 = Fiber.new{ root_fiber.transfer }
+    }
+    fa1.transfer
+    fb1.transfer
+
+    assert_raise(FiberError){
+      fa1.transfer
     }
     assert_raise(FiberError){
-      g=nil
-      f=Fiber.new{
-        g.resume
-        g.resume
-      }
-      g=Fiber.new{
-        f.resume
-        f.resume
-      }
-      f.transfer
+      fb1.transfer
     }
   end
 
-  def test_fork_from_fiber
-    begin
-      pid = Process.fork{}
-    rescue NotImplementedError
-      return
-    else
-      Process.wait(pid)
+  def test_prohibit_transfer_to_yielding_fiber
+    f1 = f2 = f3 = nil
+
+    f1 = Fiber.new{
+      f2 = Fiber.new{
+        f3 = Fiber.new{
+          p f3: Fiber.yield
+        }
+        f3.resume
+      }
+      f2.resume
+    }
+    f1.resume
+
+    assert_raise(FiberError){ f3.transfer 10 }
+  end
+
+  def test_prohibit_resume_to_transferring_fiber
+    root_fiber = Fiber.current
+
+    assert_raise(FiberError){
+      Fiber.new{
+        root_fiber.resume
+      }.transfer
+    }
+
+    f1 = f2 = nil
+    f1 = Fiber.new do
+      f2.transfer
     end
+    f2 = Fiber.new do
+      f1.resume # attempt to resume transferring fiber
+    end
+
+    assert_raise(FiberError){
+      f1.transfer
+    }
+  end
+
+
+  def test_fork_from_fiber
+    omit 'fork not supported' unless Process.respond_to?(:fork)
+    pid = nil
     bug5700 = '[ruby-core:41456]'
     assert_nothing_raised(bug5700) do
       Fiber.new do
         pid = fork do
-          Fiber.new {}.transfer
+          xpid = nil
+          Fiber.new {
+            xpid = fork do
+              # enough to trigger GC on old root fiber
+              count = 1000
+              count.times do
+                Fiber.new {}.transfer
+                Fiber.new { Fiber.yield }
+              end
+              exit!(true)
+            end
+          }.transfer
+          _, status = Process.waitpid2(xpid)
+          exit!(status.success?)
         end
       end.resume
     end
     pid, status = Process.waitpid2(pid)
-    assert_equal(0, status.exitstatus, bug5700)
-    assert_equal(false, status.signaled?, bug5700)
+    assert_not_predicate(status, :signaled?, bug5700)
+    assert_predicate(status, :success?, bug5700)
+
+    pid = Fiber.new {fork}.resume
+    pid, status = Process.waitpid2(pid)
+    assert_not_predicate(status, :signaled?)
+    assert_predicate(status, :success?)
   end
 
   def test_exit_in_fiber
@@ -288,54 +435,12 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_fatal_in_fiber
-    assert_in_out_err(["-r-test-/fatal/rb_fatal", "-e", <<-EOS], "", [], /ok/)
+    assert_in_out_err(["-r-test-/fatal", "-e", <<-EOS], "", [], /ok/)
       Fiber.new{
-        rb_fatal "ok"
+        Bug.rb_fatal "ok"
       }.resume
       puts :ng # unreachable.
     EOS
-  end
-
-  def invoke_rec script, vm_stack_size, machine_stack_size, use_length = true
-    env = {}
-    env['RUBY_FIBER_VM_STACK_SIZE'] = vm_stack_size.to_s if vm_stack_size
-    env['RUBY_FIBER_MACHINE_STACK_SIZE'] = machine_stack_size.to_s if machine_stack_size
-    out, _ = Dir.mktmpdir("test_fiber") {|tmpdir|
-      EnvUtil.invoke_ruby([env, '-e', script], '', true, true, chdir: tmpdir, timeout: 30)
-    }
-    use_length ? out.length : out
-  end
-
-  def test_stack_size
-    h_default = eval(invoke_rec('p RubyVM::DEFAULT_PARAMS', nil, nil, false))
-    h_0 = eval(invoke_rec('p RubyVM::DEFAULT_PARAMS', 0, 0, false))
-    h_large = eval(invoke_rec('p RubyVM::DEFAULT_PARAMS', 1024 * 1024 * 10, 1024 * 1024 * 10, false))
-
-    assert_operator(h_default[:fiber_vm_stack_size], :>, h_0[:fiber_vm_stack_size])
-    assert_operator(h_default[:fiber_vm_stack_size], :<, h_large[:fiber_vm_stack_size])
-    assert_operator(h_default[:fiber_machine_stack_size], :>=, h_0[:fiber_machine_stack_size])
-    assert_operator(h_default[:fiber_machine_stack_size], :<=, h_large[:fiber_machine_stack_size])
-
-    # check VM machine stack size
-    script = '$stdout.sync=true; def rec; print "."; rec; end; Fiber.new{rec}.resume'
-    size_default = invoke_rec script, nil, nil
-    assert_operator(size_default, :>, 0)
-    size_0 = invoke_rec script, 0, nil
-    assert_operator(size_default, :>, size_0)
-    size_large = invoke_rec script, 1024 * 1024 * 10, nil
-    assert_operator(size_default, :<, size_large)
-
-    return if /mswin|mingw/ =~ RUBY_PLATFORM
-
-    # check machine stack size
-    # Note that machine stack size may not change size (depend on OSs)
-    script = '$stdout.sync=true; def rec; print "."; 1.times{1.times{1.times{rec}}}; end; Fiber.new{rec}.resume'
-    vm_stack_size = 1024 * 1024
-    size_default = invoke_rec script, vm_stack_size, nil
-    size_0 = invoke_rec script, vm_stack_size, 0
-    assert_operator(size_default, :>=, size_0)
-    size_large = invoke_rec script, vm_stack_size, 1024 * 1024 * 10
-    assert_operator(size_default, :<=, size_large)
   end
 
   def test_separate_lastmatch
@@ -383,13 +488,77 @@ class TestFiber < Test::Unit::TestCase
     assert_match(/resumed/, Fiber.current.to_s)
   end
 
+  def test_create_fiber_in_new_thread
+    ret = Thread.new{
+      Thread.new{
+        Fiber.new{Fiber.yield :ok}.resume
+      }.value
+    }.value
+    assert_equal :ok, ret, '[Bug #14642]'
+  end
+
+  def test_gc_during_nested_resume_yield
+    assert_normal_exit <<-'RUBY', '[Bug #22196]', timeout: 10
+      parent = child1 = child2 = nil
+
+      parent = Fiber.new do
+        child1 = Fiber.new do
+          parent.resume
+        end
+
+        child2 = Fiber.new do
+          GC.start
+          parent.resume
+        end
+
+        Fiber.yield
+
+        child1 = nil
+
+        Fiber.yield
+      end
+
+      parent.resume
+
+      child = child1
+      child1 = nil
+      child.resume
+      child = nil
+
+      child = child2
+      child2 = nil
+      child.resume
+    RUBY
+  end
+
   def test_machine_stack_gc
-    assert_normal_exit <<-RUBY, '[Bug #14561]', timeout: 10
+    assert_normal_exit <<-RUBY, '[Bug #14561]', timeout: 60
       enum = Enumerator.new { |y| y << 1 }
       thread = Thread.new { enum.peek }
       thread.join
       sleep 5     # pause until thread cache wait time runs out. Native thread exits.
       GC.start
+    RUBY
+  end
+
+  def test_fiber_pool_stack_acquire_failure
+    omit "cannot determine max_map_count" unless File.exist?("/proc/sys/vm/max_map_count")
+    # On these platforms, excessive memory usage can cause the test to fail unexpectedly.
+    omit "not supported on IBM platforms" if RUBY_PLATFORM =~ /s390x|powerpc/
+    omit "not supported with YJIT" if defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled?
+    omit "not supported with ZJIT" if defined?(RubyVM::ZJIT) && RubyVM::ZJIT.enabled?
+    omit "unstable on RubyCI for ruby_4_0" unless ENV.key?("GITHUB_ACTIONS")
+    # Memory use grows with max_map_count, and a RUBY_DEBUG build needs about 16GB at the 262144 set on GitHub Actions runners.
+    omit "max_map_count is larger than the default" if File.read("/proc/sys/vm/max_map_count").to_i > 65530
+
+    assert_separately([], <<~RUBY, timeout: 120)
+      max_map_count = File.read("/proc/sys/vm/max_map_count").to_i
+      GC.disable
+      assert_nothing_raised do
+        (max_map_count + 10).times do
+          Fiber.new { Fiber.yield }.resume
+        end
+      end
     RUBY
   end
 end

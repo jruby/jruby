@@ -30,15 +30,16 @@ package org.jruby.util;
 
 import java.io.InputStream;
 import java.io.IOException;
-import org.jcodings.Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * This class wraps a IRubyObject in an InputStream. Depending on which messages
@@ -50,6 +51,7 @@ import org.jruby.runtime.MethodIndex;
  * that it responds to read() like IO.
  */
 public class IOInputStream extends InputStream {
+    private final Ruby runtime;
     private final IRubyObject io;
     private final InputStream in;
     private final IRubyObject numOne;
@@ -66,6 +68,7 @@ public class IOInputStream extends InputStream {
     }
 
     public IOInputStream(final IRubyObject io, boolean verifyCanRead) {
+        this.runtime = io.getRuntime();
         this.io = io;
         this.in = ( io instanceof RubyIO && !((RubyIO) io).isClosed() &&
                 ((RubyIO) io).isBuiltin("read") ) ?
@@ -76,15 +79,19 @@ public class IOInputStream extends InputStream {
                         "cause it doesn't respond to \"read\".");
             }
         }
-        this.numOne = RubyFixnum.one(io.getRuntime());
+        this.numOne = RubyFixnum.one(runtime);
     }
 
     @Override
     public void close() throws IOException {
+        InputStream in = this.in;
         if (in != null) {
             in.close();
-        } else if (io.respondsTo("close")) {
-            closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
+        } else {
+            IRubyObject io = this.io;
+            if (io.respondsTo("close")) {
+                closeAdapter.call(runtime.getCurrentContext(), io, io);
+            }
         }
     }
 
@@ -92,6 +99,7 @@ public class IOInputStream extends InputStream {
     // only for RubyIO objects. For everything else returns 0.
     @Override
     public int available() throws IOException {
+        InputStream in = this.in;
         if (in != null) {
             return in.available();
         } else {
@@ -100,12 +108,17 @@ public class IOInputStream extends InputStream {
     }
     
     public int read() throws IOException {
+        InputStream in = this.in;
+
         if (in != null) {
             return in.read();
         }
-        final Ruby runtime = io.getRuntime();
+
+        IRubyObject io = this.io;
         IRubyObject readValue = readAdapter.call(runtime.getCurrentContext(), io, io, numOne);
+
         if (readValue.isNil()) return -1;
+
         return readValue.convertToString().getByteList().get(0) & 0xff;
     }
 
@@ -116,14 +129,26 @@ public class IOInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (in != null) {
-            return in.read(b, off, len);
-        }
-        final Ruby runtime = io.getRuntime();
-        IRubyObject readValue = readAdapter.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(len));
+        InputStream in = this.in;
+
+        if (in != null) return in.read(b, off, len);
+
+        IRubyObject io = this.io;
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject readValue = readAdapter.call(context, io, io, asFixnum(context, len));
+
         if (readValue.isNil()) return -1;
+
         ByteList str = readValue.convertToString().getByteList();
-        System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
-        return str.getRealSize();
+
+        int readSize = str.realSize();
+
+        if (readSize > len) {
+            throw context.runtime.newIOError("read call of " + len + " bytes produced a String of length " + readSize);
+        }
+
+        System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, readSize);
+
+        return readSize;
      }
 }

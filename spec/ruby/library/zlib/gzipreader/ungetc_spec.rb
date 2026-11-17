@@ -2,7 +2,7 @@ require_relative '../../../spec_helper'
 require 'stringio'
 require 'zlib'
 
-describe 'GzipReader#ungetc' do
+describe "Zlib::GzipReader#ungetc" do
   before :each do
     @data = '12345abcde'
     @zip = [31, 139, 8, 0, 44, 220, 209, 71, 0, 3, 51, 52, 50, 54, 49, 77,
@@ -190,7 +190,7 @@ describe 'GzipReader#ungetc' do
 
       it 'makes eof? false' do
         @gz.ungetc 'x'
-        @gz.eof?.should be_false
+        @gz.eof?.should == false
       end
     end
 
@@ -207,7 +207,7 @@ describe 'GzipReader#ungetc' do
 
       it 'makes eof? false' do
         @gz.ungetc 'ŷ'
-        @gz.eof?.should be_false
+        @gz.eof?.should == false
       end
     end
 
@@ -224,7 +224,7 @@ describe 'GzipReader#ungetc' do
 
       it 'makes eof? false' do
         @gz.ungetc 'xŷž'
-        @gz.eof?.should be_false
+        @gz.eof?.should == false
       end
     end
 
@@ -241,7 +241,7 @@ describe 'GzipReader#ungetc' do
 
       it 'makes eof? false' do
         @gz.ungetc 0x21
-        @gz.eof?.should be_false
+        @gz.eof?.should == false
       end
     end
 
@@ -258,7 +258,7 @@ describe 'GzipReader#ungetc' do
 
       it 'does not make eof? false' do
         @gz.ungetc ''
-        @gz.eof?.should be_true
+        @gz.eof?.should == true
       end
     end
 
@@ -276,7 +276,7 @@ describe 'GzipReader#ungetc' do
 
         it 'does not make eof? false' do
           @gz.ungetc nil
-          @gz.eof?.should be_true
+          @gz.eof?.should == true
         end
       end
     end

@@ -31,7 +31,7 @@ package org.jruby.ext.ffi;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.jruby.Ruby;
+
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -41,29 +41,26 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Error.indexError;
+import static org.jruby.api.Error.typeError;
 
 /**
 * FFI specific I/O routines
  */
 public class IOModule {
 
-    public static void createIOModule(Ruby runtime, RubyModule ffi) {
-        RubyModule module = ffi.defineModuleUnder("IO");
-        module.defineAnnotatedMethods(IOModule.class);
+    public static void createIOModule(ThreadContext context, RubyModule FFI) {
+        FFI.defineModuleUnder(context, "IO").defineMethods(context, IOModule.class);
     }
 
     @JRubyMethod(name = "native_read", module = true)
     public static final IRubyObject native_read(ThreadContext context, IRubyObject self,
             IRubyObject src, IRubyObject dst, IRubyObject rbLength) {
-        if (!(src instanceof RubyIO)) {
-            throw context.runtime.newTypeError("wrong argument (expected IO)");
-        }
+        if (!(src instanceof RubyIO)) throw typeError(context, "wrong argument (expected IO)");
+        if (!(dst instanceof AbstractMemory)) throw typeError(context, "wrong argument (expected FFI memory)");
 
-        if (!(dst instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError("wrong argument (expected FFI memory)");
-        }
-
-        Ruby runtime = context.runtime;
         try {
             OpenFile openFile = ((RubyIO) src).getOpenFile();
             openFile.checkClosed();
@@ -71,11 +68,9 @@ public class IOModule {
 
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
-            int count = RubyNumeric.num2int(rbLength);
+            int count = toInt(context, rbLength);
 
-            if (count > buffer.remaining()) {
-                throw runtime.newIndexError("read count too big for output buffer");
-            }
+            if (count > buffer.remaining()) throw indexError(context, "read count too big for output buffer");
 
             if (count < buffer.remaining()) {
                 buffer = buffer.duplicate();
@@ -83,11 +78,11 @@ public class IOModule {
             }
 
             // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
-            return runtime.newFixnum(openFile.readChannel().read(buffer));
+            return asFixnum(context, openFile.readChannel().read(buffer));
         } catch (EOFException e) {
-            return runtime.newFixnum(-1);
+            return asFixnum(context, -1);
         } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
+            throw context.runtime.newIOErrorFromException(e);
         }
     }
 }

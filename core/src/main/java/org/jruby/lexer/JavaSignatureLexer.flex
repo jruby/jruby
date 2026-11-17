@@ -8,6 +8,7 @@ import org.jruby.parser.JavaSignatureParser;
 %standalone
 %unicode
 %line
+%int
 %column
 %{
   boolean stringResult = false;
@@ -31,27 +32,27 @@ import org.jruby.parser.JavaSignatureParser;
   }
 
   public static JavaSignatureLexer create(java.io.InputStream stream) {
-    return new JavaSignatureLexer(stream);
+    return new JavaSignatureLexer(new java.io.InputStreamReader(stream));
   }
 %}
 
 LineTerminator = \r|\n|\r\n
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Identifier     = [:jletter:] [:jletterdigit:]*
-//Digit          = [0-9]
-//HexDigit       = {Digit} | [a-f] | [A-F]
-//UnicodeEscape  = "\\u" {HexDigit} {HexDigit} {HexDigit} {HexDigit}
-//EscapedChar    = "\\" [nybrf\\'\"]
-//NonEscapedChar = [^nybrf\\'\"]
-//CharacterLiteral = "'" ({NonEscapedChar} | {EscapedChar} | {UnicodeEscape}) "'"
-//StringLiteral  = "\"" ({NonEscapedChar} | {EscapedChar} | {UnicodeEscape})* "\""
+Digit          = [0-9]
+HexDigit       = {Digit} | [a-f] | [A-F]
+HexNumber      = "0x" {HexDigit} ("_" ? {HexDigit})*
+NumComponent   = {Digit} ("_"? {Digit})*
+Number         = "-"? {NumComponent} ("." {NumComponent})?
 
 %state CHARACTER
 %state STRING
+%state NUMBER
 
 %%
 
 <YYINITIAL> {
+    
     // primitive types
     "boolean"       { return JavaSignatureParser.BOOLEAN;      }
     "byte"          { return JavaSignatureParser.BYTE;         }
@@ -97,7 +98,13 @@ Identifier     = [:jletter:] [:jletterdigit:]*
     "super"         { return JavaSignatureParser.SUPER;        }
     ">>"            { return JavaSignatureParser.RSHIFT;       }
     ">>>"           { return JavaSignatureParser.URSHIFT;      }
-
+    
+    "false"         { return JavaSignatureParser.FALSE_LITERAL;}
+    "true"          { return JavaSignatureParser.TRUE_LITERAL; }
+    
+    {HexNumber}     { return JavaSignatureParser.HEXNUM_LITERAL; }
+    {Number}        { return JavaSignatureParser.NUM_LITERAL;  }
+    
     {Identifier}    { return JavaSignatureParser.IDENTIFIER;   }
     \"              { yybegin(STRING); } 
     \'              { yybegin(CHARACTER); } 
@@ -109,7 +116,15 @@ Identifier     = [:jletter:] [:jletterdigit:]*
          yybegin(YYINITIAL);
          return JavaSignatureParser.CHARACTER_LITERAL; 
        }
-    .  { stringBuf.append(yytext()); }
+  [^\n\r\'\\]+      { stringBuf.append( yytext() ); }
+  \\t               { stringBuf.append('\t'); }
+  \\b               { stringBuf.append('\b'); }
+  \\n               { stringBuf.append('\n'); }
+  \\r               { stringBuf.append('\r'); }
+  \\f               { stringBuf.append('\f'); }
+  \\\'              { stringBuf.append('\''); }
+  \\\"              { stringBuf.append('\"'); }
+  \\                { stringBuf.append('\\'); }
 }
 
 <STRING> {
@@ -120,10 +135,14 @@ Identifier     = [:jletter:] [:jletterdigit:]*
   }
   [^\n\r\"\\]+      { stringBuf.append( yytext() ); }
   \\t               { stringBuf.append('\t'); }
+  \\b               { stringBuf.append('\b'); }
   \\n               { stringBuf.append('\n'); }
   \\r               { stringBuf.append('\r'); }
+  \\f               { stringBuf.append('\f'); }
+  \\\'              { stringBuf.append('\''); }
   \\\"              { stringBuf.append('\"'); }
   \\                { stringBuf.append('\\'); }
 }
 
-.|\n  { throw new Error("Invalid character ("+yytext()+")"); }
+// . doesn't match all characters, because "." excludes all Unicode newline chars - use "[^]" instead
+[^]  { throw new Error("Invalid character ("+yytext()+")"); }

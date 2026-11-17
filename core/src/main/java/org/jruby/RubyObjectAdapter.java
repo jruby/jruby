@@ -4,10 +4,6 @@ package org.jruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author nicksieger
- */
 public interface RubyObjectAdapter {
 
     boolean isKindOf(IRubyObject value, RubyModule rubyModule);

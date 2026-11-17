@@ -1,55 +1,31 @@
 module KernelSpecs
-  def self.Array_function(arg)
-    Array(arg)
-  end
-
-  def self.Array_method(arg)
-    Kernel.Array(arg)
-  end
-
-  def self.Hash_function(arg)
-    Hash(arg)
-  end
-
-  def self.Hash_method(arg)
-    Kernel.Hash(arg)
-  end
-
-  def self.Integer_function(arg)
-    Integer(arg)
-  end
-
-  def self.Integer_method(arg)
-    Kernel.Integer(arg)
-  end
-
-  def self.putc_function(arg)
-    putc arg
-  end
-
-  def self.putc_method(arg)
-    Kernel.putc arg
-  end
-
-  def self.has_private_method(name)
-    IO.popen([*ruby_exe, "-n", "-e", "print Kernel.private_method_defined?(#{name.inspect})"], "r+") do |io|
+  def self.private_instance_method_with_dash_n?(name)
+    IO.popen([*ruby_exe, "-n", "-e", "print Kernel.private_instance_methods(false).include?(#{name.inspect})"], "r+") do |io|
       io.puts
       io.close_write
       io.read
     end == "true"
   end
 
-  def self.chop(str, method)
-    IO.popen([*ruby_exe, "-n", "-e", "$_ = #{str.inspect}; #{method}; print $_"], "r+") do |io|
+  def self.public_singleton_method_with_dash_n?(name)
+    IO.popen([*ruby_exe, "-n", "-e", "print Kernel.public_methods(false).include?(#{name.inspect})"], "r+") do |io|
+      io.puts
+      io.close_write
+      io.read
+    end == "true"
+  end
+
+  def self.chop_with_dash_n(str)
+    IO.popen([*ruby_exe, "-n", "-e", "$_ = #{str.inspect}; chop; print $_"], "r+") do |io|
       io.puts
       io.close_write
       io.read
     end
   end
 
-  def self.chomp(str, method, sep="\n")
-    code = "$_ = #{str.inspect}; $/ = #{sep.inspect}; #{method}; print $_"
-    IO.popen([*ruby_exe, "-n", "-e", code], "r+") do |io|
+  def self.chomp_with_dash_n(str, sep="\n")
+    code = "$_ = #{str.inspect}; $/ = #{sep.inspect}; chomp; print $_"
+    IO.popen([*ruby_exe, "-W0", "-n", "-e", code], "r+") do |io|
       io.puts
       io.close_write
       io.read
@@ -180,6 +156,25 @@ module KernelSpecs
     alias aliased_pub_method pub_method
   end
 
+  class BasicA < BasicObject
+    define_method(:respond_to?, ::Kernel.instance_method(:respond_to?))
+
+    def pub_method; :public_method; end
+
+    def undefed_method; :undefed_method; end
+    undef_method :undefed_method
+
+    protected
+    def protected_method; :protected_method; end
+
+    private
+    def private_method; :private_method; end
+  end
+
+  class MissingA < A
+    undef :respond_to_missing?
+  end
+
   class VisibilityChange
     class << self
       private :new
@@ -219,41 +214,27 @@ module KernelSpecs
       block_given?
     end
 
+    def self.accept_block_inside_block()
+      yield_self {
+        block_given?
+      }
+    end
+
+    def self.accept_block_as_argument_inside_block(&block)
+      yield_self {
+        block_given?
+      }
+    end
+
     class << self
       define_method(:defined_block) do
         block_given?
       end
-    end
-  end
 
-  module SelfBlockGiven
-    def self.accept_block
-      self.send(:block_given?)
-    end
-
-    def self.accept_block_as_argument(&block)
-      self.send(:block_given?)
-    end
-
-    class << self
-      define_method(:defined_block) do
-        self.send(:block_given?)
-      end
-    end
-  end
-
-  module KernelBlockGiven
-    def self.accept_block
-      Kernel.block_given?
-    end
-
-    def self.accept_block_as_argument(&block)
-      Kernel.block_given?
-    end
-
-    class << self
-      define_method(:defined_block) do
-        Kernel.block_given?
+      define_method(:defined_block_inside_block) do
+        yield_self {
+          block_given?
+        }
       end
     end
   end
@@ -281,14 +262,25 @@ module KernelSpecs
       @two = two
     end
 
-    def initialize_copy(other)
+    def initialize_copy(other, **kw)
       ScratchPad.record object_id
+    end
+
+    # define to support calling #clone with optional :freeze keyword argument
+    def initialize_clone(other, **kw)
+      super(other) # to call #initialize_copy
     end
   end
 
   class Clone
     def initialize_clone(other)
-      ScratchPad.record other.object_id
+      ScratchPad.record other
+    end
+  end
+
+  class CloneFreeze
+    def initialize_clone(other, **kwargs)
+      ScratchPad.record([other, kwargs])
     end
   end
 
@@ -328,7 +320,7 @@ module KernelSpecs
     def inner
       b = mp { return :good }
 
-      pr = lambda { |x| x.call }
+      pr = -> x { x.call }
 
       pr.call(b)
 
@@ -337,21 +329,44 @@ module KernelSpecs
     end
   end
 
+  module LambdaSpecs
+    module ZSuper
+      def lambda
+        super
+      end
+    end
+
+    class ForwardBlockWithZSuper
+      prepend(ZSuper)
+    end
+
+    module Ampersand
+      def lambda(&block)
+        suppress_warning {super(&block)}
+      end
+    end
+
+    class SuperAmpersand
+      prepend(Ampersand)
+    end
+  end
+
   class RespondViaMissing
     def respond_to_missing?(method, priv=false)
       case method
-        when :handled_publicly
-          true
-        when :handled_privately
-          priv
-        when :not_handled
-          false
-        else
-          raise "Typo in method name"
+      when :handled_publicly
+        true
+      when :handled_privately
+        priv
+      when :not_handled
+        false
+      else
+        raise "Typo in method name: #{method.inspect}"
       end
     end
 
     def method_missing(method, *args)
+      raise "the method name should be a Symbol" unless Symbol === method
       "Done #{method}(#{args})"
     end
   end
@@ -424,6 +439,20 @@ module KernelSpecs
     def f2_call_lineno; method(:f3).source_location[1] + 1; end
     def f3_call_lineno; method(:f4).source_location[1] + 1; end
   end
+
+  CustomRangeInteger = Struct.new(:value) do
+    def to_int; value; end
+    def <=>(other); to_int <=> other.to_int; end
+    def -(other); self.class.new(to_int - other.to_int); end
+    def +(other); self.class.new(to_int + other.to_int); end
+  end
+
+  CustomRangeFloat = Struct.new(:value) do
+    def to_f; value; end
+    def <=>(other); to_f <=> other.to_f; end
+    def -(other); to_f - other.to_f; end
+    def +(other); self.class.new(to_f + other.to_f); end
+  end
 end
 
 class EvalSpecs
@@ -452,14 +481,5 @@ class EvalSpecs
     f = __FILE__
     eval "true", binding, "(eval)", 1
     return f
-  end
-end
-
-# for Kernel#sleep to have Channel in it's specs
-# TODO: switch directly to queue for both Kernel#sleep and Thread specs?
-unless defined? Channel
-  require 'thread'
-  class Channel < Queue
-    alias receive shift
   end
 end

@@ -15,6 +15,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class RecordEndBlockInstr extends OneOperandInstr implements FixedArityInstr {
     private final IRScope declaringScope;
 
@@ -33,8 +35,8 @@ public class RecordEndBlockInstr extends OneOperandInstr implements FixedArityIn
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.HAS_END_BLOCKS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.HAS_END_BLOCKS);
         return true;
     }
 

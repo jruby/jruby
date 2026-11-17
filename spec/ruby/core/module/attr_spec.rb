@@ -1,5 +1,6 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
+require_relative 'shared/attr_added'
 
 describe "Module#attr" do
   before :each do
@@ -89,8 +90,8 @@ describe "Module#attr" do
       attr :foo, true
     end
 
-    lambda { c.new.foo }.should raise_error(NoMethodError)
-    lambda { c.new.foo=1 }.should raise_error(NoMethodError)
+    -> { c.new.foo }.should.raise(NoMethodError)
+    -> { c.new.foo=1 }.should.raise(NoMethodError)
   end
 
   it "creates a getter but no setter for all given attribute names" do
@@ -120,36 +121,39 @@ describe "Module#attr" do
       attr :foo, :bar
     end
 
-    lambda { c.new.foo }.should raise_error(NoMethodError)
-    lambda { c.new.bar }.should raise_error(NoMethodError)
+    -> { c.new.foo }.should.raise(NoMethodError)
+    -> { c.new.bar }.should.raise(NoMethodError)
   end
 
-  it "converts non string/symbol/fixnum names to strings using to_str" do
+  it "converts non string/symbol names to strings using to_str" do
     (o = mock('test')).should_receive(:to_str).any_number_of_times.and_return("test")
     Class.new { attr o }.new.respond_to?("test").should == true
   end
 
   it "raises a TypeError when the given names can't be converted to strings using to_str" do
     o = mock('o')
-    lambda { Class.new { attr o } }.should raise_error(TypeError)
+    -> { Class.new { attr o } }.should.raise(TypeError)
     (o = mock('123')).should_receive(:to_str).and_return(123)
-    lambda { Class.new { attr o } }.should raise_error(TypeError)
+    -> { Class.new { attr o } }.should.raise(TypeError)
   end
 
   it "with a boolean argument emits a warning when $VERBOSE is true" do
-    lambda {
+    -> {
       Class.new { attr :foo, true }
     }.should complain(/boolean argument is obsoleted/, verbose: true)
   end
 
-  ruby_version_is ''...'2.5' do
-    it "is a private method" do
-      Module.should have_private_instance_method(:attr, false)
+  it "is a public method" do
+    Module.public_instance_methods(false).should.include?(:attr)
+  end
+
+  it "returns an array of defined method names as symbols" do
+    Class.new do
+      (attr :foo, 'bar').should == [:foo, :bar]
+      (attr :baz, false).should == [:baz]
+      (attr :qux, true).should == [:qux, :qux=]
     end
   end
-  ruby_version_is '2.5' do
-    it "is a public method" do
-      Module.should have_public_instance_method(:attr, false)
-    end
-  end
+
+  it_behaves_like :module_attr_added, :attr
 end

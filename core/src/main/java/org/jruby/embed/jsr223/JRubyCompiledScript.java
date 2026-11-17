@@ -30,6 +30,7 @@
 package org.jruby.embed.jsr223;
 
 import java.io.Reader;
+import java.util.Objects;
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
@@ -38,71 +39,54 @@ import javax.script.ScriptException;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * This is a concrete class for javax.script.CompiledScript.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyCompiledScript extends CompiledScript {
-    private ScriptingContainer container;
-    private JRubyEngine engine;
+    private final ScriptingContainer container;
+    private final JRubyEngine engine;
     private final EmbedEvalUnit unit;
 
-    JRubyCompiledScript(ScriptingContainer container,
-            JRubyEngine engine, String script) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, String script) throws RaiseException {
         this.container = container;
         this.engine = engine;
         Utils.preEval(container, engine.getContext());
-        unit = container.parse(script);
+        try {
+            unit = container.parse(script);
+        } finally {
+            Utils.postEval(container, engine.getContext());
+        }
     }
 
-    JRubyCompiledScript(ScriptingContainer container,
-            JRubyEngine engine, Reader reader) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, Reader reader) throws RaiseException {
         this.container = container;
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
         Utils.preEval(container, engine.getContext());
-        unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
+        try {
+            unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
+        } finally {
+            Utils.postEval(container, engine.getContext());
+        }
     }
 
     @Override
     public Object eval(Bindings bindings) throws ScriptException {
-        if (bindings == null) {
-            throw new NullPointerException("bindings is null");
-        }
-        ScriptContext context = engine.getScriptContext(bindings);
-        return eval(context);
+        return eval(engine.getScriptContext(bindings));
     }
-    
+
+    @Override
     public Object eval(ScriptContext context) throws ScriptException {
-        try {
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
-            }
-            Utils.preEval(container, context);
-            IRubyObject ret = unit.run();
-            if (!(ret instanceof RubyNil)) {
-                return JavaEmbedUtils.rubyToJava(ret);
-            }
-            return null;
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
-                container.terminate();
-            }
-        }
+        return JRubyEngine.doEval(container, context, () -> unit);
     }
 
-    private ScriptException wrapException(Exception e) throws ScriptException {
-        return new ScriptException(e);
-    }
-
+    @Override
     public ScriptEngine getEngine() {
         return engine;
     }

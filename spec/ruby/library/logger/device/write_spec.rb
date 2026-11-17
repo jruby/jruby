@@ -37,6 +37,6 @@ describe "Logger::LogDevice#write" do
 
   it "fails if the device is already closed" do
     @device.close
-    lambda { @device.write "foo" }.should complain(/\Alog writing failed\./)
+    -> { @device.write "foo" }.should complain(/\Alog shifting failed\./)
   end
 end

@@ -1,8 +1,6 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
@@ -12,22 +10,18 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+
 public class SuperCallSite extends CallSite {
     protected volatile SuperTuple cache = SuperTuple.NULL_CACHE;
 
-    private static class SuperTuple {
+    private record SuperTuple(String name, CacheEntry cache) {
         static final SuperTuple NULL_CACHE = new SuperTuple("", CacheEntry.NULL_CACHE);
-        public final String name;
-        public final CacheEntry cache;
-
-        public SuperTuple(String name, CacheEntry cache) {
-            this.name = name;
-            this.cache = cache;
-        }
 
         public boolean cacheOk(String name, RubyClass klass) {
-            return this.name.equals(name) && cache.typeOk(klass);
-        }
+                return this.name.equals(name) && cache.typeOk(klass);
+            }
     }
     
     public SuperCallSite() {
@@ -35,17 +29,22 @@ public class SuperCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        return call(context, caller, self, RubyFixnum.newFixnum(context.runtime, fixnum));
+        return call(context, caller, self, asFixnum(context, fixnum));
     }
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
-        return call(context, caller, self, RubyFloat.newFloat(context.runtime, flote));
+        return call(context, caller, self, asFloat(context, flote));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, args);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject... args) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -58,6 +57,11 @@ public class SuperCallSite extends CallSite {
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, args, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -75,39 +79,82 @@ public class SuperCallSite extends CallSite {
         }
     }
 
-    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
-        switch (args.length) {
-            case 0: return call(context, caller, self);
-            case 1: return call(context, caller, self, args[0]);
-            case 2: return call(context, caller, self, args[0], args[1]);
-            case 3: return call(context, caller, self, args[0], args[1], args[2]);
-            default: return call(context, caller, self, args);
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        try {
+            return call(context, caller, self, klazz, name, args, block);
+        } finally {
+            block.escape();
         }
+    }
+
+    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
+        return switch (args.length) {
+            case 0 -> call(context, caller, self);
+            case 1 -> call(context, caller, self, args[0]);
+            case 2 -> call(context, caller, self, args[0], args[1]);
+            case 3 -> call(context, caller, self, args[0], args[1], args[2]);
+            default -> call(context, caller, self, args);
+        };
+    }
+
+    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject... args) {
+        return switch (args.length) {
+            case 0 -> call(context, caller, self, klazz, name);
+            case 1 -> call(context, caller, self, klazz, name, args[0]);
+            case 2 -> call(context, caller, self, klazz, name, args[0], args[1]);
+            case 3 -> call(context, caller, self, klazz, name, args[0], args[1], args[2]);
+            default -> call(context, caller, self, klazz, name, args);
+        };
     }
 
     public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0: return call(context, caller, self, block);
-            case 1: return call(context, caller, self, args[0], block);
-            case 2: return call(context, caller, self, args[0], args[1], block);
-            case 3: return call(context, caller, self, args[0], args[1], args[2], block);
-            default: return call(context, caller, self, args, block);
-        }
+        return switch (args.length) {
+            case 0 -> call(context, caller, self, block);
+            case 1 -> call(context, caller, self, args[0], block);
+            case 2 -> call(context, caller, self, args[0], args[1], block);
+            case 3 -> call(context, caller, self, args[0], args[1], args[2], block);
+            default -> call(context, caller, self, args, block);
+        };
+    }
+
+    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        return switch (args.length) {
+            case 0 -> call(context, caller, self, klazz, name, block);
+            case 1 -> call(context, caller, self, klazz, name, args[0], block);
+            case 2 -> call(context, caller, self, klazz, name, args[0], args[1], block);
+            case 3 -> call(context, caller, self, klazz, name, args[0], args[1], args[2], block);
+            default -> call(context, caller, self, klazz, name, args, block);
+        };
     }
 
     public IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0: return callIter(context, caller, self, block);
-            case 1: return callIter(context, caller, self, args[0], block);
-            case 2: return callIter(context, caller, self, args[0], args[1], block);
-            case 3: return callIter(context, caller, self, args[0], args[1], args[2], block);
-            default: return callIter(context, caller, self, args, block);
-        }
+        return switch (args.length) {
+            case 0 -> callIter(context, caller, self, block);
+            case 1 -> callIter(context, caller, self, args[0], block);
+            case 2 -> callIter(context, caller, self, args[0], args[1], block);
+            case 3 -> callIter(context, caller, self, args[0], args[1], args[2], block);
+            default -> callIter(context, caller, self, args, block);
+        };
+    }
+
+    public IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        return switch (args.length) {
+            case 0 -> callIter(context, caller, self, klazz, name, block);
+            case 1 -> callIter(context, caller, self, klazz, name, args[0], block);
+            case 2 -> callIter(context, caller, self, klazz, name, args[0], args[1], block);
+            case 3 -> callIter(context, caller, self, klazz, name, args[0], args[1], args[2], block);
+            default -> callIter(context, caller, self, klazz, name, args, block);
+        };
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -120,6 +167,11 @@ public class SuperCallSite extends CallSite {
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, Block block) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -137,9 +189,22 @@ public class SuperCallSite extends CallSite {
         }
     }
 
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, Block block) {
+        try {
+            return call(context, caller, self, klazz, name, block);
+        } finally {
+            block.escape();
+        }
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -152,6 +217,11 @@ public class SuperCallSite extends CallSite {
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -169,9 +239,22 @@ public class SuperCallSite extends CallSite {
         }
     }
 
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
+        try {
+            return call(context, caller, self, klazz, name, arg1, block);
+        } finally {
+            block.escape();
+        }
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1, arg2);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -184,6 +267,11 @@ public class SuperCallSite extends CallSite {
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1, arg2, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -201,9 +289,22 @@ public class SuperCallSite extends CallSite {
         }
     }
 
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+        try {
+            return call(context, caller, self, klazz, name, arg1, arg2, block);
+        } finally {
+            block.escape();
+        }
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1, arg2, arg3);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -216,6 +317,11 @@ public class SuperCallSite extends CallSite {
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
+
+        return call(context, caller, self, klazz, name, arg1, arg2, arg3, block);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         SuperTuple myCache = cache;
@@ -228,6 +334,14 @@ public class SuperCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             return call(context, caller, self, arg1, arg2, arg3, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        try {
+            return call(context, caller, self, klazz, name, arg1, arg2, arg3, block);
         } finally {
             block.escape();
         }

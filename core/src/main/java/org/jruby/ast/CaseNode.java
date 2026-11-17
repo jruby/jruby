@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A Case statement.  Represents a complete case statement, including the body with its
@@ -52,8 +51,8 @@ public class CaseNode extends Node {
     private final ListNode cases;
     private Node elseNode = null;
     
-    public CaseNode(ISourcePosition position, Node caseNode, ListNode cases) {
-        super(position, caseNode != null && caseNode.containsVariableAssignment() || cases.containsVariableAssignment());
+    public CaseNode(int line, Node caseNode, ListNode cases) {
+        super(line, caseNode != null && caseNode.containsVariableAssignment() || cases.containsVariableAssignment());
         
         assert cases != null : "caseBody is not null";
         // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just

@@ -6,14 +6,14 @@ describe "ERB#filename" do
     filename = 'foobar.rhtml'
     erb = ERB.new('<% if true %>')   # will raise SyntaxError
     erb.filename = filename
-    lambda {
+    -> {
       begin
         erb.result(binding)
       rescue Exception => e
         @ex = e
         raise e
       end
-    }.should raise_error(SyntaxError)
+    }.should.raise(SyntaxError)
     expected = filename
 
     @ex.message =~ /^(.*?):(\d+): /
@@ -23,14 +23,14 @@ describe "ERB#filename" do
 
   it "uses '(erb)' as filename when filename is not set" do
     erb = ERB.new('<% if true %>')   # will raise SyntaxError
-    lambda {
+    -> {
       begin
         erb.result(binding)
       rescue Exception => e
         @ex = e
         raise e
       end
-    }.should raise_error(SyntaxError)
+    }.should.raise(SyntaxError)
     expected = '(erb)'
 
     @ex.message =~ /^(.*?):(\d+): /

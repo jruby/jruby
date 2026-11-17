@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * A proxy cache that uses Java 7's ClassValue.
  */
+@Deprecated(since = "9.4.13.0")
 final class Java7ClassValue<T> extends ClassValue<T> {
 
     public Java7ClassValue(ClassValueCalculator<T> calculator) {
@@ -17,6 +18,10 @@ final class Java7ClassValue<T> extends ClassValue<T> {
         // We don't check for null on the WeakReference since the
         // value is strongly referenced by proxy's list
         return proxy.get(cls).get();
+    }
+
+    public void clear() {
+        // nothing to clear and values are weakly referenced by the ClassValue anyway
     }
 
     // If we put any objects that reference an org.jruby.Ruby runtime

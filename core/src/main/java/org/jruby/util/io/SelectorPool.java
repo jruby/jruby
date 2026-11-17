@@ -33,13 +33,13 @@ import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.List;
 
 import java.nio.channels.spi.SelectorProvider;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * This is a simple implementation of a hard-referenced java.nio.channels.Selector
@@ -54,7 +54,7 @@ import java.util.Iterator;
  * @author headius
  */
 public class SelectorPool {
-    private final Map<SelectorProvider, List<Selector>> pool = new HashMap<SelectorProvider, List<Selector>>();
+    private final Map<SelectorProvider, Queue<Selector>> pool = new ConcurrentHashMap<>();
 
     /**
      * Get a selector from the pool (or create a new one). Selectors come from
@@ -63,7 +63,7 @@ public class SelectorPool {
      * @return a java.nio.channels.Selector
      * @throws IOException if there's a problem opening a new selector
      */
-    public synchronized Selector get() throws IOException{
+    public Selector get() throws IOException{
         return retrieveFromPool(SelectorProvider.provider());
     }
 
@@ -74,7 +74,7 @@ public class SelectorPool {
      * @return a java.nio.channels.Selector
      * @throws IOException if there's a problem opening a new selector
      */
-    public synchronized Selector get(SelectorProvider provider) throws IOException{
+    public Selector get(SelectorProvider provider) throws IOException{
         return retrieveFromPool(provider);
     }
 
@@ -109,38 +109,47 @@ public class SelectorPool {
      * All selectors in a pool are closed and the pool gets empty.
      * 
      */
-    public synchronized void cleanup() {
-        for (Map.Entry<SelectorProvider, List<Selector>> entry : pool.entrySet()) {
-            List<Selector> providerPool = entry.getValue();
-            while (!providerPool.isEmpty()) {
-                Selector selector = providerPool.remove(providerPool.size() - 1);
-                try {
-                    selector.close();
-                } catch (IOException ioe) {
-                    // ignore IOException at termination.
-                }
-            }
-        }
+    public void cleanup() {
+        pool.forEach(SelectorPool::clearProviderPool);
         pool.clear();
     }
 
+    private static void clearProviderPool(SelectorProvider provider, Queue<Selector> providerPool) {
+        while (!providerPool.isEmpty()) {
+            Selector selector;
+            try {
+                selector = providerPool.remove();
+            } catch (NoSuchElementException nsme) {
+                // empty, done
+                break;
+            }
+
+            try {
+                selector.close();
+            } catch (IOException ioe) {
+                // ignore IOException at termination.
+            }
+        }
+    }
+
     private Selector retrieveFromPool(SelectorProvider provider) throws IOException {
-        List<Selector> providerPool = pool.get(provider);
+        Queue<Selector> providerPool = pool.get(provider);
         if (providerPool != null && !providerPool.isEmpty()) {
-            return providerPool.remove(providerPool.size() - 1);
+            try {
+                return providerPool.remove();
+            } catch (NoSuchElementException nsme) {
+                // someone drained it before us, just fall back on creating a new one below
+            }
         }
 
+        // otherwise just return a new one
         return SelectorFactory.openWithRetryFrom(null, provider);
     }
 
-    private synchronized void returnToPool(Selector selector) {
+    private void returnToPool(Selector selector) {
         if (selector.isOpen()) {
             SelectorProvider provider = selector.provider();
-            List<Selector> providerPool = pool.get(provider);
-            if (providerPool == null) {
-                providerPool = new LinkedList<Selector>();
-                pool.put(provider, providerPool);
-            }
+            Queue<Selector> providerPool = pool.computeIfAbsent(provider, p -> new ConcurrentLinkedQueue<>());
             providerPool.add(selector);
         }
     }

@@ -1,17 +1,21 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 describe "String#swapcase" do
   it "returns a new string with all uppercase chars from self converted to lowercase and vice versa" do
-   "Hello".swapcase.should == "hELLO"
-   "cYbEr_PuNk11".swapcase.should == "CyBeR_pUnK11"
-   "+++---111222???".swapcase.should == "+++---111222???"
+    "Hello".swapcase.should == "hELLO"
+    "cYbEr_PuNk11".swapcase.should == "CyBeR_pUnK11"
+    "+++---111222???".swapcase.should == "+++---111222???"
   end
 
-  it "taints resulting string when self is tainted" do
-    "".taint.swapcase.tainted?.should == true
-    "hello".taint.swapcase.tainted?.should == true
+  it "returns a String in the same encoding as self" do
+    "Hello".encode("US-ASCII").swapcase.encoding.should == Encoding::US_ASCII
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.swapcase.should == "Ab\xE4\xC4\0Cd".b
   end
 
   describe "full Unicode case mapping" do
@@ -25,13 +29,37 @@ describe "String#swapcase" do
       swapcased.should == "aSSET"
       swapcased.size.should == 5
       swapcased.bytesize.should == 5
-      swapcased.ascii_only?.should be_true
+      swapcased.ascii_only?.should == true
     end
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid US-ASCII" do
+      -> { "a\xFFB".dup.force_encoding(Encoding::US_ASCII).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).swapcase(:ascii).should == "\x83AAb".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
+    it "raises ArgumentError for invalid UTF-8" do
+      -> { "\xFFaB".swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
     it "does not swapcase non-ASCII characters" do
       "aßet".swapcase(:ascii).should == "AßET"
+    end
+
+    it "works with substrings" do
+      "prefix aTé"[-3..-1].swapcase(:ascii).should == "Até"
     end
   end
 
@@ -45,7 +73,7 @@ describe "String#swapcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "aiS".swapcase(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { "aiS".swapcase(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -59,29 +87,35 @@ describe "String#swapcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "aiS".swapcase(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { "aiS".swapcase(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    lambda { "abc".swapcase(:fold) }.should raise_error(ArgumentError)
+    -> { "abc".swapcase(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    lambda { "abc".swapcase(:invalid_option) }.should raise_error(ArgumentError)
+    -> { "abc".swapcase(:invalid_option) }.should.raise(ArgumentError)
   end
 
-  it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("").swapcase.should be_an_instance_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("hello").swapcase.should be_an_instance_of(StringSpecs::MyString)
+  it "returns String instances when called on a subclass" do
+    StringSpecs::MyString.new("").swapcase.should.instance_of?(String)
+    StringSpecs::MyString.new("hello").swapcase.should.instance_of?(String)
   end
 end
 
 describe "String#swapcase!" do
   it "modifies self in place" do
     a = "cYbEr_PuNk11"
-    a.swapcase!.should equal(a)
+    a.swapcase!.should.equal?(a)
     a.should == "CyBeR_pUnK11"
+  end
+
+  it "modifies self in place for non-ascii-compatible encodings" do
+    a = "cYbEr_PuNk11".encode("utf-16le")
+    a.swapcase!
+    a.should == "CyBeR_pUnK11".encode("utf-16le")
   end
 
   describe "full Unicode case mapping" do
@@ -91,6 +125,12 @@ describe "String#swapcase!" do
       a.should == "ÄöÜ"
     end
 
+    it "works for non-ascii-compatible encodings" do
+      a = "äÖü".encode("utf-16le")
+      a.swapcase!
+      a.should == "ÄöÜ".encode("utf-16le")
+    end
+
     it "updates string metadata" do
       swapcased = "Aßet"
       swapcased.swapcase!
@@ -98,7 +138,7 @@ describe "String#swapcase!" do
       swapcased.should == "aSSET"
       swapcased.size.should == 5
       swapcased.bytesize.should == 5
-      swapcased.ascii_only?.should be_true
+      swapcased.ascii_only?.should == true
     end
   end
 
@@ -107,6 +147,12 @@ describe "String#swapcase!" do
       a = "aßet"
       a.swapcase!(:ascii)
       a.should == "AßET"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "aBc".encode("utf-16le")
+      a.swapcase!(:ascii)
+      a.should == "AbC".encode("utf-16le")
     end
   end
 
@@ -124,7 +170,7 @@ describe "String#swapcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "aiS"; a.swapcase!(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "aiS"; a.swapcase!(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -142,16 +188,35 @@ describe "String#swapcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "aiS"; a.swapcase!(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "aiS"; a.swapcase!(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    lambda { a = "abc"; a.swapcase!(:fold) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.swapcase!(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    lambda { a = "abc"; a.swapcase!(:invalid_option) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.swapcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.swapcase!.should.equal?(a)
+    a.should == "Ab\xE4\xC4\0Cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.swapcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.swapcase!
+    slice.should == "AbCd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do
@@ -162,10 +227,10 @@ describe "String#swapcase!" do
     "".swapcase!.should == nil
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     ["", "hello"].each do |a|
       a.freeze
-      lambda { a.swapcase! }.should raise_error(frozen_error_class)
+      -> { a.swapcase! }.should.raise(FrozenError)
     end
   end
 end

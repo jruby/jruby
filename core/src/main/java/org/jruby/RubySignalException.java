@@ -32,15 +32,17 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SignalException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
+
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubySignal;
-import org.jruby.util.TypeConverter;
 
 /**
  * The Java representation of a Ruby SignalException.
@@ -49,9 +51,6 @@ import org.jruby.util.TypeConverter;
  */
 @JRubyClass(name="SignalException", parent="Exception")
 public class RubySignalException extends RubyException {
-    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR =
-            (runtime, klass) -> new RubySignalException(runtime, klass);
-
     protected RubySignalException(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
@@ -61,57 +60,42 @@ public class RubySignalException extends RubyException {
         return new SignalException(message, this);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, SIGNAL_EXCEPTION_ALLOCATOR);
-        signalExceptionClass.defineAnnotatedMethods(RubySignalException.class);
-
-        return signalExceptionClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SignalException", Exception, RubySignalException::new).
+                defineMethods(context, RubySignalException.class);
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
         int argnum = 1;
-        IRubyObject sig = context.nil;
-        long _signo;
-        int argc = args.length;
+        IRubyObject sig = checkToInteger(context, args[0]);
 
-        if (argc > 0) {
-            sig = TypeConverter.checkIntegerType(runtime, args[0], "to_int");
-
-            if (sig.isNil()) {
-                sig = args[0];
-            } else {
-                argnum = 2;
-            }
+        if (sig.isNil()) {
+            sig = args[0];
+            Arity.checkArgumentCount(context, args, 1, argnum);
+        } else {
+            argnum = 2;
         }
 
-        Arity.checkArgumentCount(runtime, args, 1, argnum);
+        long _signo;
 
         if (argnum == 2) {
-            _signo = sig.convertToInteger().getLongValue();
-            if (_signo < 0 || _signo > NSIG.longValue()) {
-                throw runtime.newArgumentError("invalid signal number (" + _signo + ")");
-            }
+            _signo = ((RubyInteger) sig).asLong(context);
+            if (_signo < 0 || _signo > NSIG.longValue()) throw argumentError(context, "invalid signal number (" + _signo + ")");
 
-            if (argc > 1) {
-                sig = args[1];
-            } else {
-                sig = runtime.newString(RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));
-            }
+            sig = argc > 1 ? args[1] : newString(context, RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));
         } else {
             String signm = sig.toString();
             _signo = RubySignal.signm2signo(RubySignal.signmWithoutPrefix(signm));
 
-            if (_signo == 0) {
-                throw runtime.newArgumentError("unsupported name " + sig);
-            }
+            if (_signo == 0) throw argumentError(context, "unsupported name " + sig);
 
-            sig = runtime.newString(RubySignal.signmWithPrefix(signm));
+            sig = newString(context, RubySignal.signmWithPrefix(signm));
         }
 
         super.initialize(new IRubyObject[]{sig}, block);
-        this.signo = runtime.newFixnum(_signo);
+        this.signo = asFixnum(context, _signo);
 
         return this;
     }
@@ -119,16 +103,20 @@ public class RubySignalException extends RubyException {
     @JRubyMethod
     public IRubyObject signo(ThreadContext context) {
         assert signo != null;
-
-        if (signo == RubyBasicObject.UNDEF) return context.nil;
-
-        return signo;
+        return signo == RubyBasicObject.UNDEF ? context.nil : signo;
     }
 
     @JRubyMethod(name = {"message","signm"})
     @Override
     public IRubyObject message(ThreadContext context) {
         return super.message(context);
+    }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubySignalException exception = (RubySignalException)clone;
+        exception.signo = signo;
     }
 
     private IRubyObject signo;

@@ -1,66 +1,45 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
-begin
-  gem_home_files = lambda{
-    if Dir.exist?(ENV["GEM_HOME"])
-      require "find"
-      ary = Find.find(ENV["GEM_HOME"]).to_a
-    else
-      []
-    end
-  }
-  prev_gem_home = ENV["GEM_HOME"]
-  prev_gem_home_files = gem_home_files.call
-  prev_threads = Thread.list.map{|e| e.inspect}
 
-  require 'rubygems/gem_runner'
-ensure
-  if $!
-    msg = <<eom
-***************
-PREV
-  GEM_HOME: #{prev_gem_home}
-  Files in GEM_HOME: #{prev_gem_home_files.inspect}
-  Threads: #{prev_threads.inspect}
-Current:
-  GEM_HOME: #{ENV["GEM_HOME"]}
-  Files in GEM_HOME: #{gem_home_files.call}
-  Threads: #{Thread.list.map{|e| e.inspect}.inspect}
-Exception: #{$!.message}
-eom
-    p $!.class
-    p $!.message.frozen?
-    raise $!.class, msg, $!.backtrace
-  end
-end
+require_relative "helper"
 
 class TestGemGemRunner < Gem::TestCase
-
   def setup
+    require "rubygems/command"
+    @orig_args = Gem::Command.build_args
+    @orig_specific_extra_args = Gem::Command.specific_extra_args_hash.dup
+    @orig_extra_args = Gem::Command.extra_args.dup
+
     super
 
-    @orig_args = Gem::Command.build_args
+    @orig_gem_home = ENV["GEM_HOME"]
+    ENV["GEM_HOME"] = @gemhome
+
+    require "rubygems/gem_runner"
     @runner = Gem::GemRunner.new
   end
 
   def teardown
+    ENV["GEM_HOME"] = @orig_gem_home
+
     super
 
     Gem::Command.build_args = @orig_args
+    Gem::Command.specific_extra_args_hash = @orig_specific_extra_args
+    Gem::Command.extra_args = @orig_extra_args
   end
 
   def test_do_configuration
     Gem.clear_paths
 
-    temp_conf = File.join @tempdir, '.gemrc'
+    temp_conf = File.join @tempdir, ".gemrc"
 
-    other_gem_path = File.join @tempdir, 'other_gem_path'
-    other_gem_home = File.join @tempdir, 'other_gem_home'
+    other_gem_path = File.join @tempdir, "other_gem_path"
+    other_gem_home = File.join @tempdir, "other_gem_home"
 
     Gem.ensure_gem_subdirectories other_gem_path
     Gem.ensure_gem_subdirectories other_gem_home
 
-    File.open temp_conf, 'w' do |fp|
+    File.open temp_conf, "w" do |fp|
       fp.puts "gem: --commands"
       fp.puts "gemhome: #{other_gem_home}"
       fp.puts "gempath:"
@@ -73,6 +52,12 @@ class TestGemGemRunner < Gem::TestCase
 
     assert_equal [other_gem_path, other_gem_home], Gem.path
     assert_equal %w[--commands], Gem::Command.extra_args
+  end
+
+  def test_validate_encoding
+    assert_raise Gem::OptionParser::InvalidArgument do
+      @runner.run(["install\xFF", "foo"])
+    end
   end
 
   def test_extract_build_args
@@ -97,5 +82,33 @@ class TestGemGemRunner < Gem::TestCase
     assert_equal %w[--foo], args
   end
 
-end
+  def test_info_succeeds
+    args = %w[info]
 
+    use_ui @ui do
+      @runner.run(args)
+    end
+
+    assert_empty @ui.error
+  end
+
+  def test_list_succeeds
+    args = %w[list]
+
+    use_ui @ui do
+      @runner.run(args)
+    end
+
+    assert_empty @ui.error
+  end
+
+  def test_search_succeeds
+    args = %w[search]
+
+    use_ui @ui do
+      @runner.run(args)
+    end
+
+    assert_empty @ui.error
+  end
+end

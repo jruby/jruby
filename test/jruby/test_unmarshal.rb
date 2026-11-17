@@ -9,7 +9,7 @@ require 'tempfile'
 class TestUnmarshal < Test::Unit::TestCase
 
   def testUnmarshal
-    dump = ''
+    dump = +''
     dump << Marshal.dump("hey")
     dump << Marshal.dump("there")
 
@@ -49,7 +49,7 @@ class TestUnmarshal < Test::Unit::TestCase
   end
 
   def test_ivar_in_built_in_class
-    (o = "").instance_variable_set("@ivar", C.new)
+    (o = +"").instance_variable_set("@ivar", C.new)
     assert_nothing_raised do
       Marshal.load(Marshal.dump(o))
     end
@@ -62,7 +62,7 @@ class TestUnmarshal < Test::Unit::TestCase
     end
 
     def _dump(depth)
-      str = ""
+      str = +""
       str.instance_variable_set("@ivar", @ivar)
       str
     end

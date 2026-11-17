@@ -4,7 +4,7 @@ http://www.jruby.org
 
 == DESCRIPTION:
 
-This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
+This gem includes JRuby core and the Ruby standard library as jar files.
 It provides a way to have other gems depend on JRuby without including (and
 freezing to) a specific jruby-complete jar version.
 
@@ -35,7 +35,7 @@ Install like any other gem.
 To run an instance of JRuby core without stdlib, you can do the following:
 
   require 'jruby-jars'
-  exec("java", "-cp", JRubyJars.core_jar_path, "org.jruby.Main")
+  exec("java", "-cp", JRubyJars.core_jar_path, "org.jruby.main.Main")
 
 If you need access to the standard library as well, then you can do:
 
@@ -43,12 +43,12 @@ If you need access to the standard library as well, then you can do:
     JRubyJars.core_jar_path,
     JRubyJars.stdlib_jar_path
   ].join(File::PATH_SEPARATOR)
-  exec("java", "-cp", classpath, "org.jruby.Main")
+  exec("java", "-cp", classpath, "org.jruby.main.Main")
 
 Building on this this, then, you could build a cross-platform way to execute
 commands with jruby:
 
-  args = ["-cp", classpath, "org.jruby.Main"] + ARGV
+  args = ["-cp", classpath, "org.jruby.main.Main"] + ARGV
   exec("java", *args)
 
 And call this with:

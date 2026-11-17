@@ -38,7 +38,8 @@ import org.jruby.ast.*;
  * Visitor interface to be implemented by visitors of the jRuby AST.
  * each node will call the visit method appropriate to its type.
  * @see org.jruby.ast.Node
-  *
+ *
+ * @param <T> the return value of visit
  * @author Benoit Cerrina
  **/
 public interface NodeVisitor<T> {
@@ -49,6 +50,7 @@ public interface NodeVisitor<T> {
     T visitArgsPushNode(ArgsPushNode iVisited);
     T visitArgumentNode(ArgumentNode iVisited);
     T visitArrayNode(ArrayNode iVisited);
+    T visitArrayPatternNode(ArrayPatternNode iVisited);
     T visitAttrAssignNode(AttrAssignNode iVisited);
     T visitBackRefNode(BackRefNode iVisited);
     T visitBeginNode(BeginNode iVisited);
@@ -79,9 +81,11 @@ public interface NodeVisitor<T> {
     T visitDotNode(DotNode iVisited);
     T visitEncodingNode(EncodingNode iVisited);
     T visitEnsureNode(EnsureNode iVisited);
+    T visitErrorNode(ErrorNode iVisited);
     T visitEvStrNode(EvStrNode iVisited);
     T visitFCallNode(FCallNode iVisited);
     T visitFalseNode(FalseNode iVisited);
+    T visitFindPatternNode(FindPatternNode iVisited);
     T visitFixnumNode(FixnumNode iVisited);
     T visitFlipNode(FlipNode iVisited);
     T visitFloatNode(FloatNode iVisited);
@@ -89,6 +93,8 @@ public interface NodeVisitor<T> {
     T visitGlobalAsgnNode(GlobalAsgnNode iVisited);
     T visitGlobalVarNode(GlobalVarNode iVisited);
     T visitHashNode(HashNode iVisited);
+    T visitHashPatternNode(HashPatternNode iVisited);
+    T visitInNode(InNode iVisited);
     T visitInstAsgnNode(InstAsgnNode iVisited);
     T visitInstVarNode(InstVarNode iVisited);
     T visitIfNode(IfNode iVisited);
@@ -105,10 +111,11 @@ public interface NodeVisitor<T> {
     T visitMatch3Node(Match3Node iVisited);
     T visitMatchNode(MatchNode iVisited);
     T visitModuleNode(ModuleNode iVisited);
-    T visitNewlineNode(NewlineNode iVisited);
     T visitNextNode(NextNode iVisited);
     T visitNilNode(NilNode iVisited);
+    T visitNilRestArgNode(NilRestArgNode iVisited);
     T visitNthRefNode(NthRefNode iVisited);
+    T visitOperatorCallNode(OperatorCallNode iVisited);
     T visitOpElementAsgnNode(OpElementAsgnNode iVisited);
     T visitOpAsgnNode(OpAsgnNode iVisited);
     T visitOpAsgnAndNode(OpAsgnAndNode iVisited);
@@ -116,6 +123,7 @@ public interface NodeVisitor<T> {
     T visitOpAsgnOrNode(OpAsgnOrNode iVisited);
     T visitOptArgNode(OptArgNode iVisited);
     T visitOrNode(OrNode iVisited);
+    T visitPatternCaseNode(PatternCaseNode iVisited);
     T visitPreExeNode(PreExeNode iVisited);
     T visitPostExeNode(PostExeNode iVisited);
     T visitRationalNode(RationalNode iVisited);
@@ -148,7 +156,4 @@ public interface NodeVisitor<T> {
     T visitZArrayNode(ZArrayNode iVisited);
     T visitZSuperNode(ZSuperNode iVisited);
     T visitOther(Node iVisited);
-
-    @Deprecated
-    default T visitClassVarDeclNode(ClassVarDeclNode iVisited) { return null; }
 }

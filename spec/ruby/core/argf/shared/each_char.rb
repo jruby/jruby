@@ -16,6 +16,14 @@ describe :argf_each_char, shared: true do
     end
   end
 
+  it "yields a multibyte character as one String" do
+    multibyte_name = fixture __FILE__, "multibyte.txt"
+    argf [multibyte_name] do
+      @argf.set_encoding(Encoding::UTF_8)
+      @argf.send(@method).to_a.should == ["é", "t", "é", "€"]
+    end
+  end
+
   it "returns self when passed a block" do
     argf [@file1_name, @file2_name] do
       @argf.send(@method) {}.should equal(@argf)

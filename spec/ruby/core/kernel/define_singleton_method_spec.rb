@@ -14,14 +14,14 @@ describe "Kernel#define_singleton_method" do
     end
 
     it "adds the new method to the methods list" do
-      DefineSingletonMethodSpecClass.should have_method(:another_test_method)
+      DefineSingletonMethodSpecClass.should.respond_to?(:another_test_method)
     end
 
     it "defines any Child class method from any Parent's class methods" do
       um = KernelSpecs::Parent.method(:parent_class_method).unbind
       KernelSpecs::Child.send :define_singleton_method, :child_class_method, um
       KernelSpecs::Child.child_class_method.should == :foo
-      lambda{KernelSpecs::Parent.child_class_method}.should raise_error(NoMethodError)
+      ->{KernelSpecs::Parent.child_class_method}.should.raise(NoMethodError)
     end
 
     it "will raise when attempting to define an object's singleton method from another object's singleton method" do
@@ -33,7 +33,7 @@ describe "Kernel#define_singleton_method" do
         end
       end
       um = p.method(:singleton_method).unbind
-      lambda{ other.send :define_singleton_method, :other_singleton_method, um }.should raise_error(TypeError)
+      ->{ other.send :define_singleton_method, :other_singleton_method, um }.should.raise(TypeError)
     end
 
   end
@@ -41,7 +41,7 @@ describe "Kernel#define_singleton_method" do
   it "defines a new method with the given name and the given block as body in self" do
     class DefineSingletonMethodSpecClass
       define_singleton_method(:block_test1) { self }
-      define_singleton_method(:block_test2, &lambda { self })
+      define_singleton_method(:block_test2, &-> { self })
     end
 
     o = DefineSingletonMethodSpecClass
@@ -50,22 +50,22 @@ describe "Kernel#define_singleton_method" do
   end
 
   it "raises a TypeError when the given method is no Method/Proc" do
-    lambda {
+    -> {
       Class.new { define_singleton_method(:test, "self") }
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
 
-    lambda {
+    -> {
       Class.new { define_singleton_method(:test, 1234) }
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "defines a new singleton method for objects" do
     obj = Object.new
     obj.define_singleton_method(:test) { "world!" }
     obj.test.should == "world!"
-    lambda {
+    -> {
       Object.new.test
-    }.should raise_error(NoMethodError)
+    }.should.raise(NoMethodError)
   end
 
   it "maintains the Proc's scope" do
@@ -81,9 +81,9 @@ describe "Kernel#define_singleton_method" do
 
   it "raises an ArgumentError when no block is given" do
     obj = Object.new
-    lambda {
+    -> {
       obj.define_singleton_method(:test)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "does not use the caller block when no block is given" do
@@ -92,8 +92,29 @@ describe "Kernel#define_singleton_method" do
       define_singleton_method(name)
     end
 
-    lambda {
+    -> {
       o.define(:foo) { raise "not used" }
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
+  end
+
+  it "always defines the method with public visibility" do
+    cls = Class.new
+    def cls.define(name, &block)
+      private
+      define_singleton_method(name, &block)
+    end
+
+    -> {
+      suppress_warning do
+        cls.define(:foo) { :ok }
+      end
+      cls.foo.should == :ok
+    }.should_not.raise(NoMethodError)
+  end
+
+  it "cannot define a singleton method with a frozen singleton class" do
+    o = Object.new
+    o.freeze
+    -> { o.define_singleton_method(:foo) { 1 } }.should.raise(FrozenError)
   end
 end

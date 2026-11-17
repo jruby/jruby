@@ -39,60 +39,60 @@ describe "GetoptLong#set_options" do
 
   it "raises an ArgumentError if too many argument flags where given" do
     argv [] do
-      lambda {
+      -> {
         @opts.set_options(["--size", GetoptLong::NO_ARGUMENT, GetoptLong::REQUIRED_ARGUMENT])
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
   it "raises a RuntimeError if processing has already started" do
     argv [] do
       @opts.get
-      lambda {
+      -> {
         @opts.set_options()
-      }.should raise_error(RuntimeError)
+      }.should.raise(RuntimeError)
     end
   end
 
   it "raises an ArgumentError if no argument flag was given" do
     argv [] do
-      lambda {
+      -> {
         @opts.set_options(["--size"])
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
   it "raises an ArgumentError if one of the given arguments is not an Array" do
     argv [] do
-      lambda {
+      -> {
         @opts.set_options(
           ["--size", GetoptLong::REQUIRED_ARGUMENT],
           "test")
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
   it "raises an ArgumentError if the same option is given twice" do
     argv [] do
-      lambda {
+      -> {
         @opts.set_options(
           ["--size", GetoptLong::NO_ARGUMENT],
           ["--size", GetoptLong::OPTIONAL_ARGUMENT])
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
 
-      lambda {
+      -> {
         @opts.set_options(
           ["--size", GetoptLong::NO_ARGUMENT],
           ["-s", "--size", GetoptLong::OPTIONAL_ARGUMENT])
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
   it "raises an ArgumentError if the given option is invalid" do
     argv [] do
-      lambda {
+      -> {
         @opts.set_options(["-size", GetoptLong::NO_ARGUMENT])
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 end

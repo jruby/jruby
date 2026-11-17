@@ -22,14 +22,14 @@ describe :sizedqueue_enq, shared: true do
     q = @object.call(2)
 
     non_blocking = true
-    add_to_queue = lambda { q.send(@method, Object.new, non_blocking) }
+    add_to_queue = -> { q.send(@method, Object.new, non_blocking) }
 
     q.size.should == 0
     add_to_queue.call
     q.size.should == 1
     add_to_queue.call
     q.size.should == 2
-    add_to_queue.should raise_error(ThreadError)
+    add_to_queue.should.raise(ThreadError)
   end
 
   it "interrupts enqueuing threads with ClosedQueueError when the queue is closed" do
@@ -37,7 +37,7 @@ describe :sizedqueue_enq, shared: true do
     q << 1
 
     t = Thread.new {
-      lambda { q.send(@method, 2) }.should raise_error(ClosedQueueError)
+      -> { q.send(@method, 2) }.should.raise(ClosedQueueError, "queue closed")
     }
 
     Thread.pass until q.num_waiting == 1
@@ -46,5 +46,99 @@ describe :sizedqueue_enq, shared: true do
 
     t.join
     q.pop.should == 1
+  end
+
+  describe "with a timeout" do
+    it "returns self if the item was pushed in time" do
+      q = @object.call(1)
+      q << 1
+
+      t = Thread.new {
+        q.send(@method, 2, timeout: TIME_TOLERANCE).should == q
+      }
+      Thread.pass until t.status == "sleep" && q.num_waiting == 1
+      q.pop
+      t.join
+    end
+
+    it "keeps waiting after Thread#wakeup" do
+      q = @object.call(1)
+      q << 1
+
+      t = Thread.new {
+        q.send(@method, 2, timeout: TIME_TOLERANCE)
+      }
+      Thread.pass until t.status == "sleep" && q.num_waiting == 1
+      t.wakeup
+      t.join(0.1).should == nil
+      q.pop
+      t.value.should == q
+      q.pop.should == 2
+    end
+
+    it "does nothing if the timeout is nil" do
+      q = @object.call(1)
+      q << 1
+      t = Thread.new {
+        q.send(@method, 2, timeout: nil).should == q
+      }
+      t.join(0.2).should == nil
+      q.pop
+      t.join
+    end
+
+    it "returns nil if no space is available and timeout is 0" do
+      q = @object.call(1)
+      q.send(@method, 1, timeout: 0).should == q
+      q.send(@method, 2, timeout: 0).should == nil
+    end
+
+    it "returns nil if no space is available in time" do
+      q = @object.call(1)
+      q << 1
+      Thread.new {
+        q.send(@method, 2, timeout: 0.001).should == nil
+      }.join
+    end
+
+    it "raise TypeError if timeout is not a valid numeric" do
+      q = @object.call(1)
+      -> {
+        q.send(@method, 2, timeout: "1")
+      }.should raise_consistent_error(TypeError, "no implicit conversion of String into Float")
+
+      -> {
+        q.send(@method, 2, timeout: false)
+      }.should raise_consistent_error(TypeError, "no implicit conversion of false into Float")
+    end
+
+    it "raise ArgumentError if non_block = true is passed too" do
+      q = @object.call(1)
+      -> {
+        q.send(@method, 2, true, timeout: 1)
+      }.should.raise(ArgumentError, "can't set a timeout if non_block is enabled")
+    end
+
+    it "raise ClosedQueueError when closed before enqueued" do
+      q = @object.call(1)
+      q.close
+      -> { q.send(@method, 2, timeout: 1) }.should.raise(ClosedQueueError, "queue closed")
+    end
+
+    it "interrupts enqueuing threads with ClosedQueueError when the queue is closed" do
+      q = @object.call(1)
+      q << 1
+
+      t = Thread.new {
+        -> { q.send(@method, 1, timeout: TIME_TOLERANCE) }.should.raise(ClosedQueueError, "queue closed")
+      }
+
+      Thread.pass until q.num_waiting == 1
+
+      q.close
+
+      t.join
+      q.pop.should == 1
+    end
   end
 end

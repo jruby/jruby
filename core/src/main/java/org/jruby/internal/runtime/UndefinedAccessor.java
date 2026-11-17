@@ -34,10 +34,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class UndefinedAccessor implements IAccessor {
     private final Ruby runtime;
     private final GlobalVariable globalVariable;
@@ -61,7 +57,7 @@ public class UndefinedAccessor implements IAccessor {
      */
     public IRubyObject getValue() {
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
+            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable '" + name + "' not initialized");
         }
         return runtime.getNil();
     }

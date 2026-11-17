@@ -1,5 +1,0 @@
-exclude :test_find, "fails to EACCES an unreadable path, root cause of test_find.rb's test_unreadable_dir failure?"
-exclude :test_lchmod, "fails on Travis, maybe on Linux in general?"
-exclude :test_realdirpath, "bad symlink resolution"
-exclude :test_realpath, "needs investigation"
-exclude :test_relative_path_from_casefold, "path encoding problems"

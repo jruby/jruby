@@ -56,4 +56,9 @@ public class Regexp extends ImmutableLiteral {
     public void visit(IRVisitor visitor) {
         visitor.Regexp(this);
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

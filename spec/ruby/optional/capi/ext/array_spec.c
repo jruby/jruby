@@ -33,12 +33,30 @@ static VALUE array_spec_RARRAY_PTR_assign(VALUE self, VALUE array, VALUE value) 
   return Qnil;
 }
 
+
+static VALUE array_spec_RARRAY_PTR_memcpy(VALUE self, VALUE array1, VALUE array2) {
+  VALUE *ptr1, *ptr2;
+  long size;
+  size = RARRAY_LEN(array1);
+  ptr1 = RARRAY_PTR(array1);
+  ptr2 = RARRAY_PTR(array2);
+  if (ptr1 != NULL && ptr2 != NULL) {
+    memcpy(ptr2, ptr1, size * sizeof(VALUE));
+  }
+  return Qnil;
+}
+
 static VALUE array_spec_RARRAY_LEN(VALUE self, VALUE array) {
   return INT2FIX(RARRAY_LEN(array));
 }
 
 static VALUE array_spec_RARRAY_AREF(VALUE self, VALUE array, VALUE index) {
   return RARRAY_AREF(array, FIX2INT(index));
+}
+
+static VALUE array_spec_RARRAY_ASET(VALUE self, VALUE array, VALUE index, VALUE value) {
+  RARRAY_ASET(array, FIX2INT(index), value);
+  return value;
 }
 
 static VALUE array_spec_rb_ary_aref(int argc, VALUE *argv, VALUE self) {
@@ -144,6 +162,14 @@ static VALUE array_spec_rb_ary_shift(VALUE self, VALUE array) {
   return rb_ary_shift(array);
 }
 
+static VALUE array_spec_rb_ary_sort(VALUE self, VALUE array) {
+  return rb_ary_sort(array);
+}
+
+static VALUE array_spec_rb_ary_sort_bang(VALUE self, VALUE array) {
+  return rb_ary_sort_bang(array);
+}
+
 static VALUE array_spec_rb_ary_store(VALUE self, VALUE array, VALUE offset, VALUE value) {
   rb_ary_store(array, FIX2INT(offset), value);
 
@@ -166,10 +192,11 @@ static VALUE array_spec_rb_assoc_new(VALUE self, VALUE first, VALUE second) {
   return rb_assoc_new(first, second);
 }
 
-static VALUE copy_ary(VALUE el, VALUE new_ary) {
+static VALUE copy_ary(RB_BLOCK_CALL_FUNC_ARGLIST(el, new_ary)) {
   return rb_ary_push(new_ary, el);
 }
 
+#ifndef RUBY_VERSION_IS_4_1
 static VALUE array_spec_rb_iterate(VALUE self, VALUE ary) {
   VALUE new_ary = rb_ary_new();
 
@@ -177,11 +204,21 @@ static VALUE array_spec_rb_iterate(VALUE self, VALUE ary) {
 
   return new_ary;
 }
+#endif
 
-static VALUE sub_pair(VALUE el, VALUE holder) {
+static VALUE array_spec_rb_block_call(VALUE self, VALUE ary) {
+  VALUE new_ary = rb_ary_new();
+
+  rb_block_call(ary, rb_intern("each"), 0, 0, copy_ary, new_ary);
+
+  return new_ary;
+}
+
+static VALUE sub_pair(RB_BLOCK_CALL_FUNC_ARGLIST(el, holder)) {
   return rb_ary_push(holder, rb_ary_entry(el, 1));
 }
 
+#ifndef RUBY_VERSION_IS_4_1
 static VALUE each_pair(VALUE obj) {
   return rb_funcall(obj, rb_intern("each_pair"), 0);
 }
@@ -193,14 +230,70 @@ static VALUE array_spec_rb_iterate_each_pair(VALUE self, VALUE obj) {
 
   return new_ary;
 }
+#endif
 
-static VALUE iter_yield(VALUE el, VALUE ary) {
+static VALUE array_spec_rb_block_call_each_pair(VALUE self, VALUE obj) {
+  VALUE new_ary = rb_ary_new();
+
+  rb_block_call(obj, rb_intern("each_pair"), 0, 0, sub_pair, new_ary);
+
+  return new_ary;
+}
+
+#ifndef RUBY_VERSION_IS_4_1
+struct rb_iterate_pointer_data {
+  int magic;
+  VALUE array;
+};
+
+static VALUE pointer_iter(VALUE value) {
+  struct rb_iterate_pointer_data *data = (struct rb_iterate_pointer_data *)value;
+  VALUE array;
+
+  if (data->magic != 0x1234) {
+    rb_raise(rb_eRuntimeError, "invalid iteration pointer");
+  }
+
+  if (rb_block_given_p()) {
+    rb_yield(INT2FIX(14));
+    return Qnil;
+  } else {
+    array = rb_ary_new();
+    rb_ary_push(array, INT2FIX(14));
+    return rb_funcall(array, rb_intern("each"), 0);
+  }
+}
+
+static VALUE pointer_block(RB_BLOCK_CALL_FUNC_ARGLIST(el, value)) {
+  struct rb_iterate_pointer_data *data = (struct rb_iterate_pointer_data *)value;
+  if (data->magic != 0x1234) {
+    rb_raise(rb_eRuntimeError, "invalid block pointer");
+  }
+
+  return rb_ary_push(data->array, el);
+}
+
+static VALUE array_spec_rb_iterate_with_pointer(VALUE self) {
+  struct rb_iterate_pointer_data data = { 0x1234, rb_ary_new() };
+  rb_iterate(pointer_iter, (VALUE)&data, pointer_block, (VALUE)&data);
+  return data.array;
+}
+#endif
+
+static VALUE iter_yield(RB_BLOCK_CALL_FUNC_ARGLIST(el, ary)) {
   rb_yield(el);
   return Qnil;
 }
 
+#ifndef RUBY_VERSION_IS_4_1
 static VALUE array_spec_rb_iterate_then_yield(VALUE self, VALUE obj) {
   rb_iterate(rb_each, obj, iter_yield, obj);
+  return Qnil;
+}
+#endif
+
+static VALUE array_spec_rb_block_call_then_yield(VALUE self, VALUE obj) {
+  rb_block_call(obj, rb_intern("each"), 0, 0, iter_yield, obj);
   return Qnil;
 }
 
@@ -229,7 +322,9 @@ void Init_array_spec(void) {
   rb_define_method(cls, "RARRAY_LEN", array_spec_RARRAY_LEN, 1);
   rb_define_method(cls, "RARRAY_PTR_iterate", array_spec_RARRAY_PTR_iterate, 1);
   rb_define_method(cls, "RARRAY_PTR_assign", array_spec_RARRAY_PTR_assign, 2);
+  rb_define_method(cls, "RARRAY_PTR_memcpy", array_spec_RARRAY_PTR_memcpy, 2);
   rb_define_method(cls, "RARRAY_AREF", array_spec_RARRAY_AREF, 2);
+  rb_define_method(cls, "RARRAY_ASET", array_spec_RARRAY_ASET, 3);
   rb_define_method(cls, "rb_ary_aref", array_spec_rb_ary_aref, -1);
   rb_define_method(cls, "rb_ary_clear", array_spec_rb_ary_clear, 1);
   rb_define_method(cls, "rb_ary_delete", array_spec_rb_ary_delete, 2);
@@ -252,14 +347,22 @@ void Init_array_spec(void) {
   rb_define_method(cls, "rb_ary_reverse", array_spec_rb_ary_reverse, 1);
   rb_define_method(cls, "rb_ary_rotate", array_spec_rb_ary_rotate, 2);
   rb_define_method(cls, "rb_ary_shift", array_spec_rb_ary_shift, 1);
+  rb_define_method(cls, "rb_ary_sort", array_spec_rb_ary_sort, 1);
+  rb_define_method(cls, "rb_ary_sort_bang", array_spec_rb_ary_sort_bang, 1);
   rb_define_method(cls, "rb_ary_store", array_spec_rb_ary_store, 3);
   rb_define_method(cls, "rb_ary_concat", array_spec_rb_ary_concat, 2);
   rb_define_method(cls, "rb_ary_plus", array_spec_rb_ary_plus, 2);
   rb_define_method(cls, "rb_ary_unshift", array_spec_rb_ary_unshift, 2);
   rb_define_method(cls, "rb_assoc_new", array_spec_rb_assoc_new, 2);
+#ifndef RUBY_VERSION_IS_4_1
   rb_define_method(cls, "rb_iterate", array_spec_rb_iterate, 1);
   rb_define_method(cls, "rb_iterate_each_pair", array_spec_rb_iterate_each_pair, 1);
   rb_define_method(cls, "rb_iterate_then_yield", array_spec_rb_iterate_then_yield, 1);
+  rb_define_method(cls, "rb_iterate_with_pointer", array_spec_rb_iterate_with_pointer, 0);
+#endif
+  rb_define_method(cls, "rb_block_call", array_spec_rb_block_call, 1);
+  rb_define_method(cls, "rb_block_call_each_pair", array_spec_rb_block_call_each_pair, 1);
+  rb_define_method(cls, "rb_block_call_then_yield", array_spec_rb_block_call_then_yield, 1);
   rb_define_method(cls, "rb_mem_clear", array_spec_rb_mem_clear, 1);
   rb_define_method(cls, "rb_ary_freeze", array_spec_rb_ary_freeze, 1);
   rb_define_method(cls, "rb_ary_to_ary", array_spec_rb_ary_to_ary, 1);

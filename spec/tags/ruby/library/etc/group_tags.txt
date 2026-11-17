@@ -1,1 +1,0 @@
-windows:Etc.group raises a RuntimeError for parallel iteration

@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * An implementation of BiVariable for JSR223 style global variable. The assigned
  * name is like a local variables in Java, but a global in Ruby.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class LocalGlobalVariable extends GlobalVariable {
 
@@ -49,7 +49,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      * Returns an instance of this class. This factory method is used when a local
      * global type variable is put into {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of LocalGlobalVariable
@@ -114,7 +114,7 @@ public class LocalGlobalVariable extends GlobalVariable {
         final GlobalVariables globalVars = runtime.getGlobalVariables();
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
-        final String gName = ("$" + name).intern();
+        final String gName = ('$' + name);
         if ( ! globalVars.getNames().contains(gName) ) return;
 
         // the specified key is found, so let's update
@@ -150,21 +150,19 @@ public class LocalGlobalVariable extends GlobalVariable {
     @Override
     public void inject() {
         synchronized (getRuntime()) {
-            String gName = (name.startsWith("$") ? name : "$" + name);
-            getRuntime().getGlobalVariables().set( gName.intern(), irubyObject );
+            String name = this.name.startsWith("$") ? this.name : '$' + this.name;
+            getRuntime().getGlobalVariables().set(name, rubyObject);
         }
     }
 
     /**
      * Removes this object from {@link BiVariableMap}.
-     *
-     * @param runtime environment where a variable is removed.
      */
     @Override
     public void remove() {
         synchronized (getRuntime()) {
-            String gName = (name.startsWith("$") ? name : "$" + name);
-            getRuntime().getGlobalVariables().clear( gName.intern() );
+            String name = this.name.startsWith("$") ? this.name : '$' + this.name;
+            getRuntime().getGlobalVariables().clear(name);
         }
     }
 }

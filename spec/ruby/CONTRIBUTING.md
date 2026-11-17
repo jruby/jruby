@@ -8,17 +8,19 @@ Spec are grouped in 5 separate top-level groups:
 
 * `command_line`: for the ruby executable command-line flags (`-v`, `-e`, etc)
 * `language`: for the language keywords and syntax constructs (`if`, `def`, `A::B`, etc)
-* `core`: for the core methods (`Fixnum#+`, `String#upcase`, no need to require anything)
+* `core`: for the core methods (`Integer#+`, `String#upcase`, no need to require anything)
 * `library`: for the standard libraries methods (`CSV.new`, `YAML.parse`, need to require the stdlib)
 * `optional/capi`: for functions available to the Ruby C-extension API
 
 The exact file for methods is decided by the `#owner` of a method, for instance for `#group_by`:
+
 ```ruby
 > [].method(:group_by)
 => #<Method: Array(Enumerable)#group_by>
 > [].method(:group_by).owner
 => Enumerable
 ```
+
 Which should therefore be specified in `core/enumerable/group_by_spec.rb`.
 
 ### MkSpec - a tool to generate the spec structure
@@ -53,12 +55,19 @@ which indicates the file was generated but the method unspecified.
 Here is a list of frequently-used matchers, which should be enough for most specs.
 There are a few extra specific matchers used in the couple specs that need it.
 
+The general idea is: add `.should` just before the predicate you expect to be truthy, and done!
+This works for most needs and provides a great error when it fails.
+It's immediately clear which method is used and there no need to remember a mapping like in RSpec between e.g. `eq` and `==`.
+See [this blog post](https://eregon.me/blog/2019/10/07/a-new-should-syntax.html) for the motivation behind that syntax.
+
+#### Comparison matchers
+
 ```ruby
 (1 + 2).should == 3 # Calls #==
 (1 + 2).should_not == 5
 
-File.should equal(File) # Calls #equal? (tests identity)
-(1 + 2).should eql(3) # Calls #eql? (Hash equality)
+File.should.equal?(File) # Calls #equal? (tests identity)
+(1 + 2).should.eql?(3) # Calls #eql? (Hash equality)
 
 1.should < 2
 2.should <= 2
@@ -66,32 +75,55 @@ File.should equal(File) # Calls #equal? (tests identity)
 4.should > 3
 
 "Hello".should =~ /l{2}/ # Calls #=~ (Regexp match)
+```
 
-[].should be_empty # Calls #empty?
-[1,2,3].should include(2) # Calls #include?
+#### Predicate matchers
+
+```ruby
+[].should.empty?
+[1,2,3].should.include?(2)
+
+"hello".should.start_with?("h")
+"hello".should.end_with?("o")
 
 (0.1 + 0.2).should be_close(0.3, TOLERANCE) # (0.2-0.1).abs < TOLERANCE
-(0.0/0.0).should be_nan # Calls Float#nan?
-(1.0/0.0).should be_positive_infinity
-(-1.0/0.0).should be_negative_infinity
+(0.0/0.0).should.nan?
 
-3.14.should be_an_instance_of(Float) # Calls #instance_of?
-3.14.should be_kind_of(Numeric) # Calls #is_a?
-Numeric.should be_ancestor_of(Float) # Float.ancestors.include?(Numeric)
+3.14.should.instance_of?(Float) # Calls #instance_of?
+3.14.should.is_a?(Numeric) # Calls #is_a?
 
-3.14.should respond_to(:to_i) # Calls #respond_to?
-Fixnum.should have_instance_method(:+)
-Array.should have_method(:new)
-# Also have_constant, have_private_instance_method, have_singleton_method, etc
+3.14.should.respond_to?(:to_i)
+Integer.should.method_defined?(:+, false)
+```
+
+#### Exception matchers
+
+```ruby
+-> {
+  raise "oops"
+}.should.raise(RuntimeError, /oops/)
 
 -> {
   raise "oops"
-}.should raise_error(RuntimeError, /oops/)
+}.should.raise(RuntimeError) { |e|
+  # Custom checks on the Exception object
+  e.message.should.include?("oops")
+  e.cause.should == nil
+}
+```
 
-# To avoid! Instead, use an expectation testing what the code in the lambda does.
-# If an exception is raised, it will fail the example anyway.
--> { ... }.should_not raise_error
+##### `should_not.raise`
 
+**Avoid this!** Instead, use an expectation testing what the code in the lambda does.
+If an exception is raised, it will fail the example anyway.
+
+```ruby
+-> { ... }.should_not.raise
+```
+
+#### Warning matcher
+
+```ruby
 -> {
   Fixnum
 }.should complain(/constant ::Fixnum is deprecated/) # Expect a warning
@@ -102,15 +134,21 @@ Array.should have_method(:new)
 Different guards are available as defined by mspec.
 Here is a list of the most commonly-used guards:
 
+#### Version guards
+
 ```ruby
-ruby_version_is ""..."2.4" do
-  # Specs for RUBY_VERSION < 2.4
+ruby_version_is ""..."3.2" do
+  # Specs for RUBY_VERSION < 3.2
 end
 
-ruby_version_is "2.4" do
-  # Specs for RUBY_VERSION >= 2.4
+ruby_version_is "3.2" do
+  # Specs for RUBY_VERSION >= 3.2
 end
+```
 
+#### Platform guards
+
+```ruby
 platform_is :windows do
   # Specs only valid on Windows
 end
@@ -125,40 +163,56 @@ end
 platform_is_not :linux, :darwin do # Not Linux and not Darwin
 end
 
-platform_is wordsize: 64 do
+platform_is pointer_size: 64 do
   # 64-bit platform
 end
 
 big_endian do
   # Big-endian platform
 end
+```
 
-# In case there is a bug in MRI but the expected behavior is obvious
-# First file a bug at https://bugs.ruby-lang.org/
-# It is better to use a ruby_version_is guard if there was a release with the fix
-ruby_bug '#13669', ''...'2.5' do
+#### Guard for bug
+
+In case there is a bug in MRI and the fix will be backported to previous versions.
+If it is not backported or not likely, use `ruby_version_is` instead.
+First, file a bug at https://bugs.ruby-lang.org/.
+The problem is `ruby_bug` would make non-MRI implementations fail this spec while MRI itself does not pass it, so it should only be used if the bug is/will be fixed and backported.
+Otherwise, non-MRI implementations would have to choose between being incompatible with the latest release of MRI (which has the bug) to pass the spec, or behave the same as the latest release of MRI (which has the bug) and fail the spec, both which make no sense.
+
+IOW, `ruby_bug '#NN', ''...'X.Y' do` is equivalent to `guard_not { RUBY_ENGINE == "ruby" && ruby_version_is ''...'X.Y' } do`. So it skips tests on MRI on specified versions (where a bug is present) and runs tests on alternative implementations only.
+
+```ruby
+ruby_bug '#13669', ''...'3.2' do
   it "works like this" do
     # Specify the expected behavior here, not the bug
   end
 end
+```
 
+#### Combining guards
 
-# Combining guards
-guard -> { platform_is :windows and ruby_version_is ""..."2.5" } do
-  # Windows and RUBY_VERSION < 2.5
+```ruby
+guard -> { platform_is :windows and ruby_version_is ""..."3.2" } do
+  # Windows and RUBY_VERSION < 3.2
 end
 
-guard_not -> { platform_is :windows and ruby_version_is ""..."2.5" } do
+guard_not -> { platform_is :windows and ruby_version_is ""..."3.2" } do
   # The opposite
 end
+```
 
-# Custom guard
+#### Custom guard
+
+```ruby
 max_uint = (1 << 32) - 1
 guard -> { max_uint <= fixnum_max } do
 end
 ```
 
 Custom guards are better than a simple `if` as they allow [mspec commands](https://github.com/ruby/mspec/issues/30#issuecomment-312487779) to work properly.
+
+#### Implementation-specific behaviors
 
 In general, the usage of guards should be minimized as possible.
 
@@ -171,11 +225,11 @@ If an implementation does not support some feature, simply tag the related specs
 ### Shared Specs
 
 Often throughout Ruby, identical functionality is used by different methods and modules. In order
-to avoid duplication of specs, we have shared specs that are re-used in other specs.  The use is a
+to avoid duplication of specs, we have shared specs that are re-used in other specs. The use is a
 bit tricky however, so let's go over it.
 
 Commonly, if a shared spec is only reused within its own module, the shared spec will live within a
-shared directory inside that module's directory. For example, the `core/hash/shared/key.rb` spec is
+shared directory inside that module's directory. For example, the `core/hash/shared/iteration.rb` spec is
 only used by `Hash` specs, and so it lives inside `core/hash/shared/`.
 
 When a shared spec is used across multiple modules or classes, it lives within the `shared/` directory.
@@ -183,54 +237,54 @@ An example of this is the `shared/file/socket.rb` which is used by `core/file/so
 `core/filetest/socket_spec.rb`, and `core/file/state/socket_spec.rb` and so it lives in the root `shared/`.
 
 Defining a shared spec involves adding a `shared: true` option to the top-level `describe` block. This
-will signal not to run the specs directly by the runner.  Shared specs have access to two instance
+will signal not to run the specs directly by the runner. Shared specs have access to two instance
 variables from the implementor spec: `@method` and `@object`, which the implementor spec will pass in.
 
 Here's an example of a snippet of a shared spec and two specs which integrates it:
 
 ```ruby
-# core/hash/shared/key.rb
-describe :hash_key_p, shared: true do
-  it "returns true if the key's matching value was false" do
-    { xyz: false }.send(@method, :xyz).should == true
+# core/hash/shared/iteration.rb
+describe :hash_iteration_no_block, shared: true do
+  it "returns an Enumerator if called on a non-empty hash without a block" do
+    { 1 => 2 }.send(@method).should.instance_of?(Enumerator)
   end
 end
 
-# core/hash/key_spec.rb
-describe "Hash#key?" do
-  it_behaves_like :hash_key_p, :key?
+# core/hash/select_spec.rb
+describe "Hash#select" do
+  it_behaves_like :hash_iteration_no_block, :select
 end
 
-# core/hash/include_spec.rb
-describe "Hash#include?" do
-  it_behaves_like :hash_key_p, :include?
+# core/hash/reject_spec.rb
+describe "Hash#reject" do
+  it_behaves_like :hash_iteration_no_block, :reject
 end
 ```
 
-In the example, the first `describe` defines the shared spec `:hash_key_p`, which defines a spec that
-calls the `@method` method with an expectation.  In the implementor spec, we use `it_behaves_like` to
-integrate the shared spec.  `it_behaves_like` takes 3 parameters: the key of the shared spec, a method,
-and an object.  These last two parameters are accessible via `@method` and `@object` in the shared spec.
+In the example, the first `describe` defines the shared spec `:hash_iteration_no_block`, which defines a spec that
+calls the `@method` method with an expectation. In the implementor spec, we use `it_behaves_like` to
+integrate the shared spec. `it_behaves_like` takes 3 parameters: the key of the shared spec, a method,
+and an object. These last two parameters are accessible via `@method` and `@object` in the shared spec.
 
 Sometimes, shared specs require more context from the implementor class than a simple object. We can address
-this by passing a lambda as the method, which will have the scope of the implementor.  Here's an example of
+this by passing a lambda as the method, which will have the scope of the implementor. Here's an example of
 how this is used currently:
 
 ```ruby
 describe :kernel_sprintf, shared: true do
   it "raises TypeError exception if cannot convert to Integer" do
-    -> { @method.call("%b", Object.new) }.should raise_error(TypeError)
+    -> { @method.call("%b", Object.new) }.should.raise(TypeError)
   end
 end
 
 describe "Kernel#sprintf" do
-  it_behaves_like :kernel_sprintf, -> (format, *args) {
+  it_behaves_like :kernel_sprintf, -> format, *args {
     sprintf(format, *args)
   }
 end
 
 describe "Kernel.sprintf" do
-  it_behaves_like :kernel_sprintf, -> (format, *args) {
+  it_behaves_like :kernel_sprintf, -> format, *args {
     Kernel.sprintf(format, *args)
   }
 end

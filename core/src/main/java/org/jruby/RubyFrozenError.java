@@ -27,8 +27,15 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Error;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.FrozenError;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby FrozenError.
@@ -37,17 +44,73 @@ import org.jruby.exceptions.FrozenError;
  */
 @JRubyClass(name="FrozenError", parent="RuntimeError")
 public class RubyFrozenError extends RubyRuntimeError {
+    private IRubyObject receiver;
+
     protected RubyFrozenError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass frozenErrorClass = runtime.defineClass("FrozenError", exceptionClass, (r, klass) -> new RubyFrozenError(runtime, klass));
+    static RubyClass define(ThreadContext context, RubyClass RuntimeError) {
+        return defineClass(context, "FrozenError", RuntimeError, RubyFrozenError::new).
+                defineMethods(context, RubyFrozenError.class);
+    }
 
-        return frozenErrorClass;
+    public static RubyFrozenError newFrozenError(ThreadContext context, IRubyObject message, IRubyObject receiver) {
+        RubyFrozenError rfe = new RubyFrozenError(context.runtime, context.runtime.getFrozenError());
+
+        rfe.initializeCommon(context, message, receiver);
+
+        return rfe;
     }
 
     protected RaiseException constructThrowable(String message) {
         return new FrozenError(message, this);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context) {
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject messageOrKwargs) {
+        IRubyObject receiver = ArgsUtil.extractKeywordArg(context, messageOrKwargs, "receiver");
+
+        if (receiver == null) return super.initialize(context, messageOrKwargs);
+
+        return super.initialize(context, null, message);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject kwargs) {
+        IRubyObject receiver = ArgsUtil.extractKeywordArg(context, kwargs, "receiver");
+
+        return initializeCommon(context, message, receiver);
+    }
+
+    IRubyObject initializeCommon(ThreadContext context, IRubyObject message, IRubyObject receiver) {
+        this.receiver = receiver;
+
+        if (message == null) {
+            return super.initialize(context);
+        }
+
+        return super.initialize(context, message);
+    }
+
+    @JRubyMethod
+    public IRubyObject receiver(ThreadContext context) {
+        IRubyObject receiver = this.receiver;
+
+        if (receiver == null) throw Error.argumentError(context, "no receiver is available");
+
+        return receiver;
+    }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyFrozenError exception = (RubyFrozenError)clone;
+        exception.receiver = receiver;
     }
 }

@@ -1,4 +1,5 @@
-# -*- encoding: binary -*-
+# encoding: binary
+# frozen_string_literal: false
 require_relative '../../../spec_helper'
 
 describe "Encoding::Converter#primitive_convert" do
@@ -7,19 +8,23 @@ describe "Encoding::Converter#primitive_convert" do
   end
 
   it "accepts a nil source buffer" do
-    lambda { @ec.primitive_convert(nil,"") }.should_not raise_error
+    -> { @ec.primitive_convert(nil,"") }.should_not.raise
   end
 
   it "accepts a String as the source buffer" do
-    lambda { @ec.primitive_convert("","") }.should_not raise_error
+    -> { @ec.primitive_convert("","") }.should_not.raise
+  end
+
+  it "raises FrozenError when the destination buffer is a frozen String" do
+    -> { @ec.primitive_convert("", "".freeze) }.should.raise(FrozenError)
   end
 
   it "accepts nil for the destination byte offset" do
-    lambda { @ec.primitive_convert("","", nil) }.should_not raise_error
+    -> { @ec.primitive_convert("","", nil) }.should_not.raise
   end
 
   it "accepts an integer for the destination byte offset" do
-    lambda { @ec.primitive_convert("","a", 1) }.should_not raise_error
+    -> { @ec.primitive_convert("","a", 1) }.should_not.raise
   end
 
   it "calls #to_int to convert the destination byte offset" do
@@ -30,10 +35,10 @@ describe "Encoding::Converter#primitive_convert" do
   end
 
   it "raises an ArgumentError if the destination byte offset is greater than the bytesize of the destination buffer" do
-    lambda { @ec.primitive_convert("","am", 0) }.should_not raise_error
-    lambda { @ec.primitive_convert("","am", 1) }.should_not raise_error
-    lambda { @ec.primitive_convert("","am", 2) }.should_not raise_error
-    lambda { @ec.primitive_convert("","am", 3) }.should raise_error(ArgumentError)
+    -> { @ec.primitive_convert("","am", 0) }.should_not.raise
+    -> { @ec.primitive_convert("","am", 1) }.should_not.raise
+    -> { @ec.primitive_convert("","am", 2) }.should_not.raise
+    -> { @ec.primitive_convert("","am", 3) }.should.raise(ArgumentError)
   end
 
   it "uses the destination byte offset to determine where to write the result in the destination buffer" do
@@ -49,19 +54,19 @@ describe "Encoding::Converter#primitive_convert" do
   end
 
   it "accepts nil for the destination bytesize" do
-    lambda { @ec.primitive_convert("","", nil, nil) }.should_not raise_error
+    -> { @ec.primitive_convert("","", nil, nil) }.should_not.raise
   end
 
   it "accepts an integer for the destination bytesize" do
-    lambda { @ec.primitive_convert("","", nil, 0) }.should_not raise_error
+    -> { @ec.primitive_convert("","", nil, 0) }.should_not.raise
   end
 
   it "allows a destination bytesize value greater than the bytesize of the source buffer" do
-    lambda { @ec.primitive_convert("am","", nil, 3) }.should_not raise_error
+    -> { @ec.primitive_convert("am","", nil, 3) }.should_not.raise
   end
 
   it "allows a destination bytesize value less than the bytesize of the source buffer" do
-    lambda { @ec.primitive_convert("am","", nil, 1) }.should_not raise_error
+    -> { @ec.primitive_convert("am","", nil, 1) }.should_not.raise
   end
 
   it "calls #to_int to convert the destination byte size" do
@@ -85,7 +90,7 @@ describe "Encoding::Converter#primitive_convert" do
   end
 
   it "accepts an options hash" do
-    @ec.primitive_convert("","",nil,nil, {after_output: true}).should == :finished
+    @ec.primitive_convert("","",nil,nil, after_output: true).should == :finished
   end
 
   it "sets the destination buffer's encoding to the destination encoding if the conversion succeeded" do

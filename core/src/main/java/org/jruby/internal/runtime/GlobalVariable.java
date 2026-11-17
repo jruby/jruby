@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
@@ -41,16 +42,12 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.cli.Options;
 
-/**
- * 
- * @author jpetersen
- */
 public final class GlobalVariable {
     public enum Scope { GLOBAL, THREAD, FRAME }
     private IAccessor accessor;
     private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
-    private Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
+    private final Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
     private final Scope scope;
 
     public GlobalVariable(IAccessor accessor, Scope scope) {
@@ -78,7 +75,7 @@ public final class GlobalVariable {
 
     public void addTrace(RubyProc command) {
         if (traces == null) {
-            traces = new ArrayList<IRubyObject>();
+            traces = new ArrayList<>(2);
         }
         traces.add(command);
     }
@@ -97,6 +94,7 @@ public final class GlobalVariable {
 
     public void setAccessor(IAccessor accessor) {
         this.accessor = accessor;
+        this.invalidator.invalidate();
     }
     public boolean isTracing() {
         return tracing;
@@ -118,6 +116,15 @@ public final class GlobalVariable {
         } finally {
             context.setWithinTrace(false);
         }
+    }
+
+    /**
+     * read-only variables like $FILENAME are ony read-only to the user.  We need to change them behind the curtain.
+     * @param newValue
+     */
+    public void forceValue(IRubyObject newValue) {
+        accessor.forceValue(newValue);
+        invalidate();
     }
     
     public Invalidator getInvalidator() {

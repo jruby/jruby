@@ -3,6 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -51,9 +52,7 @@ public class DynamicSymbol extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         IRubyObject obj = (IRubyObject) symbolName.retrieve(context, self, currScope, currDynScope, temp);
-        String str = obj.asJavaString();
-        Encoding encoding = obj.asString().getByteList().getEncoding();
-        return context.runtime.newSymbol(str, encoding);
+        return IRRuntimeHelpers.newDSymbol(context, obj);
     }
 
     @Override

@@ -27,40 +27,26 @@
 
 package org.jruby.runtime.invokedynamic;
 
-import org.jruby.ir.targets.Bootstrap;
-import org.jruby.runtime.ivars.VariableAccessor;
-
-import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.SwitchPoint;
 
-import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.runtime.ivars.FieldVariableAccessor;
-import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.JavaNameMangler;
-import org.jruby.util.cli.Options;
 
-@SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
-    
+    private static final Lookup LOOKUP = MethodHandles.lookup();
+    private static final Module JRUBY_MODULE = InvokeDynamicSupport.class.getModule();
+
     ////////////////////////////////////////////////////////////////////////////
     // method_missing support code
     ////////////////////////////////////////////////////////////////////////////
@@ -70,44 +56,8 @@ public class InvokeDynamicSupport {
         return method.isUndefined() || (callType == CallType.NORMAL && !name.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
 
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, args, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, block);
-    }
-
     public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
         return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, args, block);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, block);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, block);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, block);
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -116,8 +66,7 @@ public class InvokeDynamicSupport {
 
     public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
-        RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
-        return selfType;
+        return RubyBasicObject.getMetaClass(self);
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -126,21 +75,17 @@ public class InvokeDynamicSupport {
     
     public static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
-            return lookup().findStatic(target, name, type);
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
-        } catch (IllegalAccessException nae) {
-            throw new RuntimeException(nae);
+            return LOOKUP.findStatic(target, name, type);
+        } catch (NoSuchMethodException|IllegalAccessException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
     public static MethodHandle findVirtual(Class target, String name, MethodType type) {
         try {
-            return lookup().findVirtual(target, name, type);
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
-        } catch (IllegalAccessException nae) {
-            throw new RuntimeException(nae);
+            return LOOKUP.findVirtual(target, name, type);
+        } catch (NoSuchMethodException|IllegalAccessException ex) {
+            throw new RuntimeException(ex);
         }
     }
 }

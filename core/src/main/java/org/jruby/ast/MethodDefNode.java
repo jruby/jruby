@@ -31,7 +31,6 @@ package org.jruby.ast;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -43,18 +42,31 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected final StaticScope scope;
     protected final Node bodyNode;
     protected final int endLine;
+    // We lazily compile methods in IR but Ruby expects next and break to raise syntax error so we will eagerly
+    // build methods which contain those two keywords.
+    protected boolean containsNextBreak = false;
 
-    public MethodDefNode(ISourcePosition position, RubySymbol name, ArgsNode argsNode,
-                         StaticScope scope, Node bodyNode, int endLine) {
-        super(position, bodyNode.containsVariableAssignment());
+    public MethodDefNode(int line, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode, int endLine) {
+        this(line, -1, name, argsNode, scope, bodyNode, endLine, -1);
+    }
+
+    public MethodDefNode(int line, int startColumn, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode,
+                         int endLine, int endColumn) {
+        super(line, bodyNode.containsVariableAssignment());
 
         this.name = name;
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.endLine = endLine;
+        // the columns are only known when the parser records positions
+        if (startColumn >= 0) setSourceSpan(startColumn, endLine, endColumn);
     }
 
+    @Override
+    public int getEndLine() {
+        return endLine;
+    }
 
     /**
      * Gets the argsNode.
@@ -90,11 +102,12 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         return name;
     }
 
-    /**
-     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-     * @return the zero-based line number
-     */
-    public int getEndLine() {
-        return endLine;
+
+    public void setContainsNextBreak() {
+        containsNextBreak = true;
+    }
+
+    public boolean containsBreakNext() {
+        return containsNextBreak;
     }
 }

@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a call to 'super' with no arguments in a method.
@@ -42,8 +41,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ZSuperNode extends Node implements BlockAcceptingNode {
     private Node iterNode;
 
-    public ZSuperNode(ISourcePosition position) {
-        super(position, false);
+    public ZSuperNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {

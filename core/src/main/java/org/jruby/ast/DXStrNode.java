@@ -35,24 +35,23 @@ package org.jruby.ast;
 import org.jcodings.Encoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
  * or maybe the X is due to the %x general quote syntax?
  */
 public class DXStrNode extends DNode implements ILiteralNode {
-    public DXStrNode(ISourcePosition position, DStrNode node) {
-        super(position, node.getEncoding());
+    public DXStrNode(int line, DStrNode node) {
+        super(line, node.getEncoding());
         addAll(node);
     }
 
-    public DXStrNode(ISourcePosition position, Encoding encoding) {
-        super(position, encoding);
+    public DXStrNode(int line, Encoding encoding) {
+        super(line, encoding);
     }
     
-    public DXStrNode(ISourcePosition position) {
-        super(position);
+    public DXStrNode(int line) {
+        super(line);
     }
 
     @Override

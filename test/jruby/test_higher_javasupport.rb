@@ -1,4 +1,5 @@
 require 'java'
+require 'jruby'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
@@ -9,7 +10,7 @@ end
 
 class TestHigherJavasupport < Test::Unit::TestCase
   include TestHelper
-  TestHelper = org.jruby.test.TestHelper
+
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
   Annotation = java.lang.annotation.Annotation
@@ -49,26 +50,31 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_passing_a_java_class_auto_reifies
     assert_nil Klass2.to_java.getReifiedClass
     # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
-    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert org.jruby.test.TestHelper.getClassName(Klass2).end_with?('.TestHigherJavasupport.Klass2')
     assert_not_nil Klass2.to_java.getReifiedClass
     assert_not_nil Klass1.to_java.getReifiedClass
   end
 
   def test_java_passing_class
-    assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
+    assert_equal("java.util.ArrayList", org.jruby.test.TestHelper.getClassName(ArrayList))
   end
 
-  @@include_java_lang = Proc.new {
+  class IncludePackageTest < Test::Unit::TestCase
+
+    @@include_java_lang = Proc.new {
       include_package "java.lang"
       java_alias :JavaInteger, :Integer
-  }
+    }
 
-  def test_java_class_loading_and_class_name_collisions
-    assert_raises(NameError) { System }
-    @@include_java_lang.call
-    assert_nothing_raised { System }
-    assert_equal(10, JavaInteger.new(10).intValue)
-    assert_raises(NoMethodError) { Integer.new(10) }
+    def test_java_class_loading_and_class_name_collisions
+      assert_raises(NameError) { VirtualMachineError }
+      @@include_java_lang.call
+      assert_nothing_raised { VirtualMachineError }
+      assert_equal(10, JavaInteger.new(10).intValue)
+      assert_nothing_raised { Integer.to_s }
+      assert_raises(NoMethodError) { Integer.new(10) }
+    end
+
   end
 
   def test_java_alias_prior_to_import
@@ -110,7 +116,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_dispatching_on_nil
-    sb = TestHelper.getInterfacedInstance()
+    sb = org.jruby.test.TestHelper.getInterfacedInstance()
     assert_equal(nil, sb.dispatchObject(nil))
   end
 
@@ -304,7 +310,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal [10, 1234], array.entries
     assert_equal 10, array.min
 
-    assert_raises(ArgumentError) { array[3] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[3] } # IndexOutOfBoundsException
 
     array = Java::int[5].new
     assert_equal 5, array.size
@@ -313,8 +319,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 1, array[1]
     assert_equal 4, array.max
 
-    assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
-    assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[6] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[-1] } # IndexOutOfBoundsException
 
     room_array = Room[1].new
     assert_equal 1, room_array.length
@@ -634,6 +640,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
   end
+  
+  def test_inner_classes_should_not_be_nested
+    Java::JavaAwt::Desktop::Action
+    assert_raises(NameError){ Java::JavaAwt::Desktop::Action::Action }
+  end
 
   def test_subclasses_and_their_return_types
     l = ArrayList.new
@@ -675,17 +686,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_support_of_other_class_loaders
-    assert_helper_class = Java::JavaClass.for_name("org.jruby.test.TestHelper")
-    assert_helper_class2 = Java::JavaClass.for_name("org.jruby.test.TestHelper")
-    assert(assert_helper_class.java_class == assert_helper_class2.java_class, "Successive calls return the same class")
-    method = assert_helper_class.java_method('loadAlternateClass')
-    alt_assert_helper_class = method.invoke_static()
+    loaded_class = JRuby::Util.load_java_class("org.jruby.test.AlternativelyLoaded")
+    assert_equal loaded_class, java.lang.Class.forName("org.jruby.test.AlternativelyLoaded")
+    method = loaded_class.java_method('loadAlternateClass')
+    alt_loaded_class = method.invoke_static() # loaded with a different class loader
+    assert_not_equal loaded_class, alt_loaded_class
 
-    constructor = alt_assert_helper_class.constructor();
-    alt_assert_helper = constructor.new_instance();
-    identityMethod = alt_assert_helper_class.java_method('identityTest')
-    identity = identityMethod.invoke(alt_assert_helper)
-    assert_equal("ABCDEFGH",  identity)
+    method = loaded_class.java_method('invokeIdentifyTest', java.lang.Class)
+    assert_equal"Original", method.invoke_static(loaded_class)
+
+    assert_equal"ABCDEFGH", method.invoke_static(alt_loaded_class)
   end
 
   module Foo
@@ -704,7 +714,17 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_high_level_java_should_only_deal_with_proxies_and_not_low_level_java_class
     a = JString.new
-    assert(a.getClass().class != "Java::JavaClass")
+    assert_equal Java::JavaLang::Class, a.getClass().class
+    assert Java::JavaLang::Class.equal? a.getClass().class
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+  end
+
+  def test_proxy_class_initialized_once
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+    assert_equal java.lang.String.object_id, Java::JavaLang::String.object_id
+    assert_equal Java::JavaIo::Serializable.object_id, java.io.Serializable.object_id
+    assert Java::JavaLang::Object.equal? java.lang.Object.new.class
+    assert Java::JavaLang::Object.equal? java.lang.Object
   end
 
   # We had a problem with accessing singleton class versus class earlier. Sanity check
@@ -839,15 +859,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { Collections::EMPTY_LIST.each {|element| } }
   end
 
-  def test_already_loaded_proxies_should_still_see_extend_proxy
-    JavaUtilities.extend_proxy('java.util.List') do
-      def foo
-        true
-      end
-    end
-    assert_equal(true, Foo::ArrayList.new.foo)
-  end
-
   def test_same_proxy_does_not_raise
     # JString already included and it is the same proxy, so do not throw an error
     # (e.g. intent of java_import already satisfied)
@@ -881,10 +892,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
     compare_to_ignore_case concat contentEquals content_equals endsWith
     ends_with equals equalsIgnoreCase equals_ignore_case getBytes getChars
     getClass get_bytes get_chars get_class hashCode hash_code indexOf
-    index_of intern java_class java_object java_object= lastIndexOf last_index_of
+    index_of intern java_class java_object lastIndexOf last_index_of
     length matches notify notifyAll notify_all regionMatches region_matches replace
     replaceAll replaceFirst replace_all replace_first split startsWith starts_with
-    subSequence sub_sequence substring taint tainted? toCharArray toLowerCase
+    subSequence sub_sequence substring toCharArray toLowerCase
     toString toUpperCase to_char_array to_lower_case to_string
     to_upper_case trim wait]
 
@@ -912,13 +923,34 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(0, a.size)
   end
 
+  def test_open_reflected_field
+    java_fields = java.lang.Class.forName('org.jruby.RubyBoolean')
+    begin
+      java_fields.field('hashCode')
+      fail('value field is not public!')
+    rescue java.lang.NoSuchFieldException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
+      assert e
+    end
+    value_field = java_fields.declared_field('hashCode')
+    assert_equal false, value_field.static?
+    assert_equal false, value_field.public?
+    assert_equal true, value_field.final?
+    assert_equal false, value_field.accessible?
+    value_field.accessible = true
+    assert_equal JRuby.ref(true).hashCode, value_field.value( JRuby.ref(true) )
+    assert_equal 'int', value_field.value_type
+  end
+
   def test_reflected_field
-    j_integer = Java::JavaClass.for_name('java.lang.Integer')
+    skip if JAVA_9
+
+    j_integer = java.lang.Class.for_name('java.lang.Integer')
     begin
       j_integer.field('value')
       fail('value field is not public!')
-    rescue NameError => e
-      assert e
+    rescue java.lang.NoSuchFieldException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
     end
     value_field = j_integer.declared_field('value')
     assert_equal false, value_field.static?
@@ -929,7 +961,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 123456789, value_field.value( 123456789.to_java(:int) )
     assert_equal 'int', value_field.value_type
 
-    value1_field = Java::JavaClass.for_name('java.lang.reflect.Method').field(:DECLARED)
+    value1_field = java.lang.reflect.Method.java_class.field(:DECLARED)
     value2_field = Java::JavaLangReflect::Constructor.java_class.field('DECLARED')
 
     assert_equal value1_field, value2_field
@@ -941,24 +973,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_reflected_callable_to_s_and_inspect
-    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    java_class = java.lang.Class.for_name('java.util.ArrayList')
     constructors = java_class.constructors
     c = constructors.find { |constructor| constructor.parameter_types == [ Java::int.java_class ] }
-    assert_equal '#<Java::JavaConstructor(int)>', c.inspect
+    assert_equal '#<Java::JavaLangReflect::Constructor: public java.util.ArrayList(int)>', c.inspect
     assert_equal 'public java.util.ArrayList(int)', c.to_s
     c = constructors.find { |constructor| constructor.parameter_types == [] }
-    assert_equal '#<Java::JavaConstructor()>', c.inspect
+    assert_equal '#<Java::JavaLangReflect::Constructor: public java.util.ArrayList()>', c.inspect
 
     m = java_class.java_instance_methods.find { |method| method.name == 'get' }
-    assert_equal '#<Java::JavaMethod/get(int)>', m.inspect
+    assert_equal '#<Java::JavaLangReflect::Method: public java.lang.Object java.util.ArrayList.get(int)>', m.inspect
     assert_equal 'public java.lang.Object java.util.ArrayList.get(int)', m.to_s
 
     m = java_class.java_instance_methods.find { |method| method.name == 'set' }
-    assert_equal '#<Java::JavaMethod/set(int,java.lang.Object)>', m.inspect
+    assert_equal '#<Java::JavaLangReflect::Method: public java.lang.Object java.util.ArrayList.set(int,java.lang.Object)>', m.inspect
   end
 
   def test_java_class_callable_methods
-    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    java_class = java.lang.Class.for_name('java.util.ArrayList')
     assert java_class.declared_constructor
     assert java_class.constructor Java::int
 
@@ -967,23 +999,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert java_class.declared_method 'size'
     assert java_class.declared_method 'indexOf', java.lang.Object.java_class
     begin
-      java_class.declared_method 'indexOf'
-      fail('not failed')
-    rescue NameError => e
-      assert e.message.index "undefined method `indexOf'"
+      method = java_class.declared_method 'indexOf'
+      fail("expected to not find method: #{method}")
+    rescue java.lang.NoSuchMethodException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
     end
   end
 
-  def test_exposed_java_proxy_types
-    Java::JavaProxyClass
-    Java::JavaProxyMethod
-    Java::JavaProxyConstructor
-  end
+  # def test_exposed_java_proxy_types
+  #   Java::JavaProxyClass
+  #   Java::JavaProxyMethod
+  #   Java::JavaProxyConstructor
+  # end
 
-#  def test_java_class_equality
-#    long_class = java.lang.Long
-#    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
-#  end
+  def test_java_class_equality
+    long_class = java.lang.Long.java_class
+    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
+  end
 
   Properties = Java::java.util.Properties
 
@@ -993,13 +1025,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("b", p.getProperty("a"))
   end
 
-  if java.awt.event.ActionListener.instance_of?(Module)
-    class MyBadActionListener
-      include java.awt.event.ActionListener
-    end
-  else
-    class MyBadActionListener < java.awt.event.ActionListener
-    end
+  class MyBadActionListener
+    include java.awt.event.ActionListener
   end
 
   def test_expected_missing_interface_method
@@ -1044,31 +1071,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
   def test_package_class
+    # Java::JavaPackage is now not directly accessible as a normal constant but it still exists.
+    # We can still test by asking for the name of the class
+    java_package = "Java::JavaPackage"
     assert org.jruby.class.is_a?(Class)
-    assert_equal org.jruby.class, Java::JavaPackage
-    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+    assert_equal org.jruby.class.name, java_package
+    assert_equal Java::OrgJrubyJavasupport.class.name, java_package
 
     assert org.jruby.singleton_class.is_a?(Class)
     assert_not_equal org.jruby.singleton_class, org.jruby.class
     assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
-
-    # really to avoid unexpected outcomes for Class instances :
-
-    assert Java::JavaPackage.is_a?(Module)
-    # can not make it a Module instance "only", really
-    if Java::JavaPackage.is_a?(Class)
-      assert_equal Module, Java::JavaPackage.superclass
-    end
   end
 
   def test_package_name_colliding_with_name_method
     assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
     assert_equal true, org.jruby.javasupport.respond_to?(:name)
-    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
 
     assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
     # we can use :: to access the name package :
-    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
     assert Java::OrgJrubyJavasupportTestName::Sample
   end
 
@@ -1249,15 +1269,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
   end
 
-  # Test the new "import" syntax
-  def test_import
-
-    assert_nothing_raised {
-      import java.nio.ByteBuffer
-      ByteBuffer.allocate(10)
-    }
-  end
-
   def test_java_exception_handling
     list = ArrayList.new
     begin
@@ -1426,12 +1437,10 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
     assert org.jruby.test.smallLetterClazz.is_a?(Module)
     assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
     
     assert_equal Class, org.jruby.test.smallLetterClass.class
-    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
   Module.send :remove_method, :attr
@@ -1461,7 +1470,6 @@ CLASSDEF
 
   # JRUBY-2106
   def test_package_load_doesnt_set_error
-    $! = nil
     undo = javax.swing.undo
     assert_nil($!)
     assert undo
@@ -1469,11 +1477,9 @@ CLASSDEF
 
   # JRUBY-2106
   def test_top_level_package_load_doesnt_set_error
-    $! = nil
     Java::boom
     assert_nil($!)
 
-    $! = nil
     Java::Boom
     assert_nil($!)
   end
@@ -1571,7 +1577,7 @@ CLASSDEF
     java.util.ArrayList.__persistent__ = true
     x = java.util.ArrayList.new
     def x.foo; end
-    assert(x.java_class.kind_of?Java::JavaClass)
+    assert x.java_class.kind_of?(java.lang.Class)
   end
 
   java_import 'org.jruby.javasupport.test.name.Sample'
@@ -1631,7 +1637,7 @@ CLASSDEF
       num2 = java.lang.Short.new(num2)
     end
     pack = [ num1, num2 ].pack('D')
-    assert_equal "\x00\x00\x00\x00\x00\x00\xE0?".force_encoding('ASCII-8BIT'), pack
+    assert_equal (+"\x00\x00\x00\x00\x00\x00\xE0?").force_encoding('ASCII-8BIT'), pack
 
     i = java.lang.Integer.new(1)
     arr = []; arr[i] = 'one'
@@ -1719,6 +1725,29 @@ CLASSDEF
     end
   end
 
+  def test_no_warnings_on_interface_impls_being_set_as_constants
+    runner_base = Class.new do
+      class << self
+        def run; self != self end
+      end
+    end
+
+    runner_impl1 = Class.new(runner_base)
+    runner_impl2 = Class.new(runner_base)
+    runner_impl3 = Class.new(runner_base)
+
+    output = with_stderr_captured do
+      threads = []
+      threads << java.lang.Thread.new(runner_impl1)
+      threads << java.lang.Thread.new(runner_impl2)
+      threads << java.lang.Thread.new(runner_impl3)
+      threads.each(&:start)
+      threads.each(&:join)
+    end
+    # expect no warning: already initialized constant org.jruby.gen::InterfaceImpl1353309827
+    refute output.index('already initialized constant'), output
+  end
+
   def test_no_warnings_on_concurrent_package_const_initialization
     output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :
@@ -1728,7 +1757,7 @@ CLASSDEF
     end
     # expect no already initialized constant warning written e.g.
     # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
-    assert ! output.index('already initialized constant'), output
+    refute output.index('already initialized constant'), output
   end
 
   def test_no_warnings_on_concurrent_class_const_initialization
@@ -1742,7 +1771,53 @@ CLASSDEF
     end
     # expect no already initialized constant warning written e.g.
     # ... warning: already initialized constant DefaultPackageClass
-    assert ! output.index('already initialized constant'), output
+    refute output.index('already initialized constant'), output
+  end
+
+  def test_no_warnings_on_concurrent_class_loading_with_include_package
+    mod = Module.new do
+      include_package 'java.lang'
+      include_package 'java.lang.annotation'
+      include_package 'java.lang.invoke'
+      include_package 'java.lang.management'
+      include_package 'java.lang.reflect'
+      include_package 'java.math'
+      include_package 'java.net'
+    end
+
+    thread_count = 50
+
+    output = with_stderr_captured do
+      latch = java.util.concurrent.CountDownLatch.new(1)
+      waiting_thread_count = java.util.concurrent.atomic.AtomicInteger.new
+
+      threads = (0...thread_count).map do
+        Thread.start do
+          waiting_thread_count.incrementAndGet
+          latch.await
+
+          mod::URLEncoder
+          mod::Field
+          mod::ThreadInfo
+          mod::LockInfo
+          mod::Array
+        end
+      end
+
+      Thread.pass while (waiting_thread_count.get < thread_count)
+      latch.countDown
+
+      threads.each { |thread| thread.join }
+    end
+
+    # expect no warnings setting the constant on the module, like:
+    #   warning: already initialized constant #<Module:0x6ffeb468>::ThreadInfo
+    # or warnings while setting the actual Java proxy class such as:
+    #   warning: already initialized constant java.lang.management::ThreadInfo
+    #   warning: already initialized constant java.lang.reflect::Array
+    refute output.index('already initialized constant'), output
+
+    assert_same java.lang.reflect.Array, mod::Array
   end
 
   # reproducing https://github.com/jruby/jruby/issues/2014
@@ -1802,7 +1877,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue NameError => e
       msg = e.message
-      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArray) on Java::JavaLang::StringBuilder'), msg
+      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArrayNative) on Java::JavaLang::StringBuilder'), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (int)'), msg
       assert msg.index('  (java.lang.String)'), msg
@@ -1814,7 +1889,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue => e # NameError
       msg = e.message
-      assert msg.start_with?("no method 'valueOf' for arguments (org.jruby.RubyHash) on Java::JavaLang::Short"), msg
+      assert msg.match?(/^no method 'valueOf' for arguments \(org\.jruby\.RubyHash.*\) on Java::JavaLang::Short/), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (short)'), msg
       assert msg.index('  (java.lang.String)'), msg
@@ -1832,7 +1907,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue => e # NameError
       msg = e.message
-      assert msg.start_with?("no method 'getBytes' for arguments (org.jruby.RubyFixnum) on Java::JavaLang::String"), msg
+      assert msg.match?(/no method 'getBytes' for arguments \(org\.jruby\.RubyFixnum.*\) on Java::JavaLang::String/), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (java.lang.String)'), msg
     end
@@ -1844,7 +1919,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue ArgumentError => e
       msg = e.message
-      assert msg.start_with?("wrong number of arguments calling `length` (given 1, expected 0)"), msg
+      assert msg.start_with?("wrong number of arguments (given 1, expected 0)"), msg
     end
 
     begin # array proxy class
@@ -1921,24 +1996,66 @@ CLASSDEF
     assert_equal 255, color.getRed # assert we called (float,float,float)
   end
 
-  # original report: https://jira.codehaus.org/browse/JRUBY-5582
-  # NOTE: we're not testing this "early" on still a good JI exercise
-  def test_set_security_manager
-    security_manager = java.lang.System.getSecurityManager
-    begin
-      java.lang.System.setSecurityManager( JRubySecurityManager.new )
-      assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
-      #puts java.lang.System.getSecurityManager.checked_perms.inspect
-    ensure
-      java.lang.System.setSecurityManager( security_manager )
+  def test_no_ambiguous_warning_when_method_inherited_from_2_interfaces
+    map = org.jruby.javasupport.test.TestConcurrentMapFactory.newMap
+    output = with_stderr_captured do # exact match should not warn:
+      map.compute(:key) { 42 } # warning: multiple Java methods found, use -Xjruby.ji.ambiguous.calls.debug for backtrace.
+      # Choosing compute(java.lang.Object,java.util.function.BiFunction)
+    end
+    assert_equal "", output
+  end
+
+  class Runner
+    def run; end
+  end
+
+  def test_concurrent_interface_proxy_generation
+    100.times do |_|
+      runner = Runner.new
+
+      assert_nothing_raised do
+        3.times.map do
+          Thread.start { assert runner.to_java(java.lang.Runnable) }
+        end.each(&:join)
+      end
     end
   end
 
-  class JRubySecurityManager < java.lang.SecurityManager
-    def initialize; @checked = [] end
-    def checked_perms; @checked end
+  # The Java security manager subsystem was deprecated in Java 17 and disabled in 18
+  if ENV_JAVA["java.specification.version"] < "18"
+    # original report: https://jira.codehaus.org/browse/JRUBY-5582
+    # NOTE: we're not testing this "early" on still a good JI exercise
+    def test_set_security_manager
+      security_manager = java.lang.System.getSecurityManager
+      begin
+        java.lang.System.setSecurityManager( JRubySecurityManager.new )
+        assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
+        #puts java.lang.System.getSecurityManager.checked_perms.inspect
+      ensure
+        java.lang.System.setSecurityManager( security_manager )
+      end
+    end
 
-    def checkPermission( perm ); @checked << perm end
+    class JRubySecurityManager < java.lang.SecurityManager
+      def initialize; @checked = [] end
+      def checked_perms; @checked end
+
+      def checkPermission( perm ); @checked << perm end
+    end
+  end
+
+  def test_method_bind_edge_cases # GH-7244
+    # exercise JI hitting the edge case with CHM's CollectionView (implements Collection)
+    # implementing most methods that are also present in the java.util.Set interface
+    # CHM's keySet than returns a KeySetView (extends CollectionView implements Set)
+    java.util.concurrent.ConcurrentHashMap.new.keySet.toArray # was failing prior to bug fix
+    map = java.util.concurrent.ConcurrentHashMap.new(1 => '11')
+    assert_equal 1, map.keySet.size
+    key_set = map.key_set
+    assert_equal false, key_set.isEmpty
+    key_set.remove(1)
+    assert key_set.empty?
+    key_set.clear
   end
 
   private

@@ -10,8 +10,8 @@ describe :bigdecimal_power, shared: true do
     e = BigDecimal("1.00000000000000000000123456789")
     one = BigDecimal("1")
     ten = BigDecimal("10")
-    # The tolerance is dependent upon the size of BASE_FIG
-    tolerance = BigDecimal("1E-70")
+    # Accuracy is at least ndigits(== 30) + DOUBLE_FIG(== 16)
+    tolerance = BigDecimal("1E-46")
     ten_powers = BigDecimal("1E10000")
     pi = BigDecimal("3.14159265358979")
     e3_minus.send(@method, 2).should == e3_minus_power_2
@@ -53,8 +53,8 @@ describe :bigdecimal_power, shared: true do
   end
 
   it "returns NaN if self is NaN" do
-    BigDecimal("NaN").send(@method, -5).nan?.should == true
-    BigDecimal("NaN").send(@method, 5).nan?.should == true
+    BigDecimal("NaN").send(@method, -5).should.nan?
+    BigDecimal("NaN").send(@method, 5).should.nan?
   end
 
   it "returns 0.0 if self is infinite and argument is negative" do

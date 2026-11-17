@@ -51,7 +51,7 @@ import static org.jruby.util.URLUtil.getPath;
  * Utility methods to retrieve System properties or environment variables to
  * get configuration parameters.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SystemPropertyCatcher {
 
@@ -156,122 +156,6 @@ public class SystemPropertyCatcher {
         }
         // NOTE: no JRuby COMPAT version setting, since it no longer makes sense in 9K !
         // String compat = SafePropertyAccessor.getProperty(PropertyName.COMPATVERSION.toString());
-    }
-
-    /**
-     * Sets JRuby home if it is given by a JRUBY_HOME environment variable,
-     * jruby.home system property, or jury.home in jruby-complete.jar
-     *
-     * @param container ScriptingContainer to be set jruby home.
-     */
-    @Deprecated
-    public static void setJRubyHome(ScriptingContainer container) {
-        String jrubyhome = findJRubyHome(container);
-        if (jrubyhome != null) {
-            container.getProvider().getRubyInstanceConfig().setJRubyHome(jrubyhome);
-        }
-    }
-
-    /**
-     * Tries to find JRuby home from the order of JRUBY_HOME environment variable,
-     * jruby.home System property, then "/META-INF/jruby.home" if jruby-complete.jar
-     * is used.
-     *
-     * @param instance any instance to get a resource
-     * @return JRuby home path if exists, null when failed to find it.
-     */
-    @Deprecated
-    public static String findJRubyHome(Object instance) {
-        String jrubyhome;
-        if ((jrubyhome = SafePropertyAccessor.getenv("JRUBY_HOME")) != null) {
-            return jrubyhome;
-        }
-        if ((jrubyhome = SafePropertyAccessor.getProperty("jruby.home")) != null) {
-            return jrubyhome;
-        }
-        return "uri:classloader://META-INF/jruby.home";
-    }
-
-    @Deprecated
-    public static String findFromJar(Object instance) {
-        URL resource = instance.getClass().getResource("/META-INF/jruby.home");
-        if (resource == null) {
-            // on IBM WebSphere getResource for a dir returns null but an actual
-            // file if it's there returns e.g. wsjar:file:/opt/IBM/WebSphere/...
-            // .../jruby-stdlib-1.6.7.dev.jar!/META-INF/jruby.home/bin/jrubyc
-            resource = instance.getClass().getResource("/META-INF/jruby.home/bin/jrubyc");
-            if (resource == null) return null;
-        }
-
-        String location;
-        if (resource.getProtocol().equals("jar")) {
-            location = getPath(resource);
-            if (!location.startsWith("file:")) {
-                // for remote-sourced classpath resources, just use classpath:
-                location = "classpath:/META-INF/jruby.home";
-            }
-            if (location.startsWith("file:") && location.contains(" ")) {
-                location = location.replaceAll( " ", "%20" );
-            }
-        } else {
-            location = "classpath:/META-INF/jruby.home";
-        }
-
-        // Trim trailing slash. It confuses OSGi containers...
-        if (location.endsWith("/")) {
-            location = location.substring(0, location.length() - 1);
-        }
-
-        return location;
-    }
-
-    /**
-     * Tries to find load paths for ruby files and/or libraries. This methods
-     * sees org.jruby.embed.class.path system property first, then java.class.path.
-     *
-     * @return a list of load paths.
-     */
-    @Deprecated
-    public static List<String> findLoadPaths() {
-        String paths = SafePropertyAccessor.getProperty(PropertyName.CLASSPATH.toString());
-        List<String> loadPaths = new ArrayList<String>();
-        if (paths == null) {
-            paths = SafePropertyAccessor.getProperty("java.class.path");
-        }
-        if (paths == null) return loadPaths;
-        String[] possiblePaths = paths.split(File.pathSeparator);
-        String[] prefixes = {"file", "url"};
-        for (int i=0; i<possiblePaths.length; i++) {
-            int startIndex = i;
-            for (int j=0; j < prefixes.length; j++) {
-                if (prefixes[j].equals(possiblePaths[i]) && i < possiblePaths.length - 1) {
-                    loadPaths.add(possiblePaths[i] + ":" + possiblePaths[++i]);
-                    break;
-                }
-            }
-            if (startIndex == i) {
-                loadPaths.add(possiblePaths[i]);
-            }
-        }
-        return loadPaths;
-    }
-
-    /**
-     * Checks that a given name is an appropriate configuration parameter to
-     * choose Ruby 1.9 mode.
-     *
-     * @param name a possible name that expresses Ruby 1.9.
-     * @return true is the given name is correct to choose Ruby 1.9 version. Otherwise,
-     *         returns false.
-     */
-    @Deprecated
-    public static boolean isRuby19(String name) {
-        return matches(name.toLowerCase(), "j?ruby1[\\._]?9");
-    }
-
-    private static boolean matches(final String name, final String pattern) {
-        Matcher matcher = Pattern.compile(pattern).matcher( name );
-        return matcher.matches();
     }
 
     /**

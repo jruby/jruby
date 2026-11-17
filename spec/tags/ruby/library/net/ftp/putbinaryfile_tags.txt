@@ -1,2 +1,0 @@
-windows:Net::FTP#putbinaryfile when passed a block yields the transmitted content as binary blocks of the passed size
-windows:Net::FTP#putbinaryfile when resuming an existing file sends the remaining content of the passed local_file to the passed remote_file

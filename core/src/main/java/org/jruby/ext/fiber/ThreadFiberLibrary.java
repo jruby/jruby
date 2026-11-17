@@ -28,25 +28,22 @@
 
 package org.jruby.ext.fiber;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.load.Library;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.util.cli.Options;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * A thread-based implementation of Ruby 1.9 Fiber library.
  */
-public class ThreadFiberLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) {
-        RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new ThreadFiber(runtime, klazz);
-            }
-        });
+public class ThreadFiberLibrary {
+    public RubyClass createFiberClass(ThreadContext context, RubyClass Object) {
+        RubyClass Fiber = defineClass(context, "Fiber", Object, ThreadFiber::new).defineMethods(context, ThreadFiber.class);
 
-        cFiber.defineAnnotatedMethods(ThreadFiber.class);
+        // define additional methods for Fiber::Scheduler support
+        if (Options.FIBER_SCHEDULER.load()) Fiber.defineMethods(context, ThreadFiber.FiberSchedulerSupport.class);
 
-        runtime.setFiber(cFiber);
+        return Fiber;
     }
 }

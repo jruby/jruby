@@ -4,7 +4,7 @@ require 'matrix'
 
 describe "Matrix.zero" do
   it "returns an object of type Matrix" do
-    Matrix.zero(3).should be_kind_of(Matrix)
+    Matrix.zero(3).should.is_a?(Matrix)
   end
 
   it "creates a n x n matrix" do
@@ -30,23 +30,23 @@ describe "Matrix.zero" do
 
   describe "for a subclass of Matrix" do
     it "returns an instance of that subclass" do
-      MatrixSub.zero(3).should be_an_instance_of(MatrixSub)
+      MatrixSub.zero(3).should.instance_of?(MatrixSub)
     end
   end
 end
 
 describe "Matrix.zero?" do
   it "returns true for empty matrices" do
-    Matrix.empty.zero?.should == true
-    Matrix.empty(3,0).zero?.should == true
-    Matrix.empty(0,3).zero?.should == true
+    Matrix.empty.should.zero?
+    Matrix.empty(3,0).should.zero?
+    Matrix.empty(0,3).should.zero?
   end
 
   it "returns true for matrices with zero entries" do
-    Matrix.zero(2,3).zero?.should == true
+    Matrix.zero(2,3).should.zero?
   end
 
   it "returns false for matrices with non zero entries" do
-    Matrix[[1]].zero?.should == false
+    Matrix[[1]].should_not.zero?
   end
 end

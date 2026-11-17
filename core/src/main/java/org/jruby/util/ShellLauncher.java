@@ -31,6 +31,12 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +47,11 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -55,7 +65,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.Main;
+import org.jruby.main.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -64,6 +74,9 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.api.Access;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
@@ -116,7 +129,7 @@ public class ShellLauncher {
         private RubyInstanceConfig config;
         private Thread processThread;
         private int result;
-        private Ruby parentRuntime;
+        private final Ruby parentRuntime;
 
         public ScriptThreadProcess(Ruby parentRuntime, final String[] argArray, final String[] env, final File dir) {
             this(parentRuntime, argArray, env, dir, true);
@@ -192,6 +205,11 @@ public class ShellLauncher {
             return processError;
         }
 
+        public long pid() {
+            // no pid for a script so we return -1
+            return -1;
+        }
+
         public int waitFor() throws InterruptedException {
             processThread.join();
             return result;
@@ -224,75 +242,69 @@ public class ShellLauncher {
         return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), false);
     }
 
+    @Deprecated(since = "10.0.0.0")
     public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean clearEnv) {
-        ThreadContext context = runtime.getCurrentContext();
+        return getModifiedEnv(runtime.getCurrentContext(), mergeEnv, clearEnv);
+    }
 
+    public static String[] getModifiedEnv(ThreadContext context, Collection mergeEnv, boolean clearEnv) {
         // disable tracing for the dup call below
         boolean traceEnabled = context.isEventHooksEnabled();
         context.setEventHooksEnabled(false);
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = null;
-            if (!clearEnv) {
-                hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
-            }
-            String[] ret;
+            RubyHash hash = clearEnv ? newHash(context) : (RubyHash) objectClass(context).getConstant(context, "ENV").dup();
 
-            if (mergeEnv != null) {
-                ret = new String[hash.size() + mergeEnv.size()];
-            } else {
-                ret = new String[hash.size()];
-            }
-
-            int i = 0;
-            if (hash != null) {
-                for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
-                    // if the key is nil, raise TypeError
-                    if (e.getKey() == null) {
-                        throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                    }
-                    // ignore if the value is nil
-                    if (e.getValue() == null) {
-                        continue;
-                    }
-                    ret[i] = e.getKey() + '=' + e.getValue();
-                    i++;
-                }
-            }
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
                         // if the key is nil, raise TypeError
-                        if (e.getKey() == null) {
-                            throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                        }
+                        Object key = e.getKey();
+                        if (key == null) throw typeError(context, context.nil, "Struct");
+
                         // ignore if the value is nil
-                        if (e.getValue() == null) {
+                        Object value = e.getValue();
+                        if (value == null) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        ret[i] = e.getKey().toString() + '=' + e.getValue();
-                        i++;
+                        hash.put(key.toString(), value.toString());
                     }
                 } else if (mergeEnv instanceof RubyArray) {
                     for (int j = 0; j < mergeEnv.size(); j++) {
                         RubyArray e = ((RubyArray)mergeEnv).eltOk(j).convertToArray();
                         // if there are not two elements, raise ArgumentError
-                        if (e.size() != 2) {
-                            throw runtime.newArgumentError("env assignments must come in pairs");
-                        }
+                        if (e.size() != 2) throw argumentError(context, "env assignments must come in pairs");
+
                         // if the key is nil, raise TypeError
-                        if (e.eltOk(0) == null) {
-                            throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                        }
+                        IRubyObject key = e.eltOk(0);
+                        if (key == null || key.isNil()) throw typeError(context, context.nil, "Struct");
+
                         // ignore if the value is nil
-                        if (e.eltOk(1) == null) {
+                        IRubyObject value = e.eltOk(1);
+                        if (value == null || value.isNil()) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        ret[i] = e.eltOk(0).toString() + '=' + e.eltOk(1).toString();
-                        i++;
+
+                        hash.put(key.toString(), value.toString());
                     }
                 }
+            }
+
+            String[] ret = new String[hash.size()];
+
+            int i = 0;
+            for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
+                // if the key is nil, raise TypeError
+                if (e.getKey() == null) throw typeError(context, context.nil, "Struct");
+
+                // ignore if the value is nil
+                if (e.getValue() == null) continue;
+
+                ret[i] = e.getKey() + '=' + e.getValue();
+                i++;
             }
 
             return arrayOfLength(ret, i);
@@ -353,7 +365,9 @@ public class ShellLauncher {
         return false;
     }
 
-    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec) {
+    // With raiseOnNotExecutable false a non-executable match is treated as no match, as MRI's dln_find_1
+    // does while walking PATH, rather than raising EACCES.
+    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec, boolean raiseOnNotExecutable) {
         File validFile = null;
         if (isExec && Platform.IS_WINDOWS) {
             if (withExeSuffix(fname)) {
@@ -374,6 +388,7 @@ public class ShellLauncher {
                     return null;
                 }
                 if (isExec && !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable()) {
+                    if (!raiseOnNotExecutable) return null;
                     throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
                 }
             }
@@ -383,11 +398,14 @@ public class ShellLauncher {
 
     private static File isValidFile(Ruby runtime, String fname, boolean isExec) {
         String fdir = null;
-        return isValidFile(runtime, fdir, fname, isExec);
+        return isValidFile(runtime, fdir, fname, isExec, true);
     }
 
     private static File findPathFile(Ruby runtime, String fname, String[] path, boolean isExec) {
         File pathFile = null;
+        // MRI: dln_find_1 skips non-regular files, so an empty name never resolves (each candidate is a PATH
+        // dir); here the search would instead hit the dir entries themselves and can raise EACCES
+        if (fname.isEmpty()) return null;
         if (Platform.IS_WINDOWS && fname.startsWith("\"") && fname.endsWith("\"")) {
             fname = fname.substring(1, fname.length() - 1); // remove double quotes if present
         }
@@ -398,7 +416,8 @@ public class ShellLauncher {
                 //       MRI's, which can't handle user names after the tilde
                 //       when searching the executable path
                 try {
-                    pathFile = isValidFile(runtime, fdir, fname, isExec);
+                    // MRI: dln_find_1 skips candidates it cannot execute and keeps walking PATH
+                    pathFile = isValidFile(runtime, fdir, fname, isExec, false);
                     if (pathFile != null) {
                         break;
                     }
@@ -414,21 +433,27 @@ public class ShellLauncher {
     }
 
     public static File findPathExecutable(Ruby runtime, String fname) {
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
-        return findPathExecutable(runtime, fname, pathObject);
+        ThreadContext context = runtime.getCurrentContext();
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
+        IRubyObject pathObject = env.op_aref(context, newString(context, PATH_ENV));
+        return findPathExecutable(context, fname, pathObject);
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+        return findPathExecutable(runtime.getCurrentContext(), fname, pathObject);
     }
 
     // MRI: Hopefully close to dln_find_exe_r used by popen logic
-    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+    public static File findPathExecutable(ThreadContext context, String fname, IRubyObject pathObject) {
         String[] pathNodes;
 
         if (pathObject == null || pathObject.isNil()) {
-            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-            pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+            RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
+            pathObject = env.op_aref(context, newString(context, PATH_ENV));
         }
 
-        if (pathObject == null) {
+        if (pathObject.isNil() || pathObject.convertToString().size() == 0) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
 
@@ -441,7 +466,7 @@ public class ShellLauncher {
             }
             pathNodes = path.split(pathSeparator);
         }
-        return findPathFile(runtime, fname, pathNodes, true);
+        return findPathFile(context.runtime, fname, pathNodes, true);
     }
 
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs) {
@@ -471,7 +496,6 @@ public class ShellLauncher {
                     log(runtime, "Launching with shell");
                     // execute command with sh -c ... this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    process = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
@@ -503,7 +527,7 @@ public class ShellLauncher {
             env = null;
         }
 
-        IRubyObject[] rawArgs = args.convertToArray().toJavaArray();
+        IRubyObject[] rawArgs = args.convertToArray().toJavaArray(runtime.getCurrentContext());
 
         OutputStream output = runtime.getOutputStream();
         OutputStream error = runtime.getErrorStream();
@@ -560,9 +584,9 @@ public class ShellLauncher {
     }
 
     public static String changeDirInsideJar(final Ruby runtime, final String arg) {
-        // only if inside a jar and spawning org.jruby.Main we change to the current directory inside the jar
-        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.Main")) {
-            return StringSupport.replaceFirst(arg, "org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()).toString();
+        // only if inside a jar and spawning org.jruby.main.Main we change to the current directory inside the jar
+        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.main.Main")) {
+            return StringSupport.replaceFirst(arg, "org.jruby.main.Main", "org.jruby.main.Main -C " + runtime.getCurrentDirectory()).toString();
         }
         return null;
     }
@@ -654,98 +678,159 @@ public class ShellLauncher {
     private static final Field UNIXProcess_pid;
     private static final Class ProcessImpl;
     private static final Field ProcessImpl_handle;
+    private static final Method ProcessImpl_pid;
     private interface PidGetter { long getPid(Process process); }
     private static final PidGetter PID_GETTER;
 
     static {
-        PidGetter pidGetter;
+        PidGetter pidGetter = null;
 
+        // try Java 9+ pid access:
+        try {
+            Method pid = Process.class.getMethod("pid");
+            pidGetter = (PidGetter) LambdaMetafactory.altMetafactory(
+                            MethodHandles.lookup(),
+                            "getPid",
+                            MethodType.methodType(PidGetter.class),
+                            MethodType.methodType(long.class, Process.class),
+                            MethodHandles.lookup().unreflect(pid),
+                            MethodType.methodType(long.class, Process.class),
+                            0)
+                    .dynamicInvoker().invoke();
+        } catch (Throwable t) {
+            // fall through to other options
+        }
+
+        // try reflective access to process internals
         Class up = null;
         Field pid = null;
-        try {
-            up = Class.forName("java.lang.UNIXProcess");
-            pid = up.getDeclaredField("pid");
-            pid.setAccessible(true);
-        } catch (Exception e) {
-            // ignore and try windows version
+        Class pi = null;
+        Field handle = null;
+        Method pi_pid = null;
+
+        if (pidGetter == null) {
+            try {
+                up = Class.forName("java.lang.UNIXProcess");
+            } catch (ClassNotFoundException e) {
+                try {
+                    // Renamed in 11 (or earlier)
+                    up = Class.forName("java.lang.ProcessImpl");
+                } catch (ClassNotFoundException e2) {
+                    // ignore and try windows version
+                }
+            }
+
+            if (up != null) {
+                try {
+                    pid = up.getDeclaredField("pid");
+                    if (!Java.trySetAccessible(pid)) pid = null;
+                } catch (NoSuchFieldException | SecurityException e) {
+                    // ignore and try windows version
+                }
+            }
+
+            try {
+                pi = Class.forName("java.lang.ProcessImpl");
+                handle = pi.getDeclaredField("handle");
+                if (!Java.trySetAccessible(handle)) {
+                    handle = null;
+                }
+            } catch (Exception e) {
+                // ignore and use hashcode
+            }
+
+            if (pi != null) {
+                try {
+                    pi_pid = pi.getMethod("pid");
+                    if (!Java.trySetAccessible(pi_pid)) {
+                        pi_pid = null;
+                        if (handle == null) pi = null;
+                    }
+                } catch (Exception e) {
+                    // ignore and use hashcode
+                }
+            }
+
+            if (pid != null) {
+                if (handle != null) {
+                    // try both
+                    pidGetter = ShellLauncher::getPidBoth;
+                } else {
+                    // just unix
+                    pidGetter = ShellLauncher::getPidUnix;
+                }
+            } else if (handle != null || pi_pid != null) {
+                // just windows
+                pidGetter = ShellLauncher::getPidWindows;
+            } else {
+                // neither - default PidGetter
+                pidGetter = Object::hashCode;
+            }
         }
+
         UNIXProcess = up;
         UNIXProcess_pid = pid;
 
-        Class pi = null;
-        Field handle = null;
-        try {
-            pi = Class.forName("java.lang.ProcessImpl");
-            handle = pi.getDeclaredField("handle");
-            handle.setAccessible(true);
-        } catch (Exception e) {
-            // ignore and use hashcode
-        }
         ProcessImpl = pi;
         ProcessImpl_handle = handle;
+        ProcessImpl_pid = pi_pid;
 
-        if (UNIXProcess_pid != null) {
-            if (ProcessImpl_handle != null) {
-                // try both
-                pidGetter = new PidGetter() {
-                    public long getPid(Process process) {
-                        try {
-                            if (UNIXProcess.isInstance(process)) {
-                                return (Integer)UNIXProcess_pid.get(process);
-                            } else if (ProcessImpl.isInstance(process)) {
-                                Long hproc = (Long) ProcessImpl_handle.get(process);
-                                return WindowsFFI.getKernel32().GetProcessId(hproc);
-                            }
-                        } catch (Exception e) {
-                            // ignore and use hashcode
-                        }
-                        return process.hashCode();
-                    }
-                };
-            } else {
-                // just unix
-                pidGetter = new PidGetter() {
-                    public long getPid(Process process) {
-                        try {
-                            if (UNIXProcess.isInstance(process)) {
-                                return (Integer)UNIXProcess_pid.get(process);
-                            }
-                        } catch (Exception e) {
-                            // ignore and use hashcode
-                        }
-                        return process.hashCode();
-                    }
-                };
-            }
-        } else if (ProcessImpl_handle != null) {
-            // just windows
-            pidGetter = new PidGetter() {
-                public long getPid(Process process) {
-                    try {
-                        if (ProcessImpl.isInstance(process)) {
-                            Long hproc = (Long) ProcessImpl_handle.get(process);
-                            return WindowsFFI.getKernel32().GetProcessId(hproc);
-                        }
-
-                    } catch (Exception e) {
-                        // ignore and use hashcode
-                    }
-                    return process.hashCode();
-                }
-            };
-        } else {
-            // neither - default PidGetter
-            pidGetter = new PidGetter() {
-                public long getPid(Process process) {
-                    return process.hashCode();
-                }
-            };
-        }
         PID_GETTER = pidGetter;
     }
 
     public static long reflectPidFromProcess(Process process) {
         return PID_GETTER.getPid(process);
+    }
+
+    private static long getPidBoth(Process process) {
+        try {
+            if (UNIXProcess.isInstance(process)) {
+                return getPidUnix(process);
+            } else if (ProcessImpl.isInstance(process)) {
+                return getPidWindows(process);
+            }
+        } catch (Exception e) {
+            // fall back on hashcode
+        }
+
+        return process.hashCode();
+    }
+
+    private static long getPidWindows(Process process) {
+        long pid = -1;
+        if (ProcessImpl_handle != null) {
+            try {
+                if (ProcessImpl.isInstance(process)) {
+                    Long hproc = (Long) ProcessImpl_handle.get(process);
+                    return WindowsFFI.getKernel32().GetProcessId(hproc);
+                }
+            } catch (Exception e) {
+                // fall back on pid logic
+            }
+        }
+
+        if (pid == -1 && ProcessImpl_pid != null) {
+            // JDK > 8 has a new way to look it up and also can't use "handle" field anymore
+            try {
+                return (long) ProcessImpl_pid.invoke(process);
+            } catch (Exception e2) {
+                // fall back on hashcode
+            }
+        }
+
+        return process.hashCode();
+    }
+
+    private static long getPidUnix(Process process) {
+        try {
+            if (UNIXProcess.isInstance(process)) {
+                return (Integer) UNIXProcess_pid.get(process);
+            }
+        } catch (Exception e) {
+            // fall back on hashcode
+        }
+
+        return process.hashCode();
     }
 
     public static Process run(Ruby runtime, IRubyObject string) throws IOException {
@@ -764,26 +849,6 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, true), runtime, modes);
     }
 
-    @Deprecated
-    public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
-    }
-
-    @Deprecated
-    public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, IOOptions modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
-    }
-
-    @Deprecated
-    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings));
-    }
-
-    @Deprecated
-    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, boolean addShell) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings, null, addShell));
-    }
-
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
         return popenShared(runtime, strings, null);
     }
@@ -793,8 +858,8 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
+        var context = runtime.getCurrentContext();
         String shell = getShell(runtime);
-        Process childProcess;
         File pwd = new File(runtime.getCurrentDirectory());
 
         try {
@@ -807,45 +872,25 @@ public class ShellLauncher {
 
             // Peel off options hash and warn that we don't support them
             if (strings.length > 1 && !(envHash = TypeConverter.checkHashType(runtime, strings[strings.length - 1])).isNil()) {
-                if (!((RubyHash)envHash).isEmpty()) {
-                    runtime.getWarnings().warn("popen3 does not support spawn options in JRuby 1.7");
-                }
+                if (!((RubyHash)envHash).isEmpty()) warn(context, "popen3 does not support spawn options in JRuby 1.7");
                 strings = Arrays.copyOfRange(strings, 0, strings.length - 1);
             }
 
-            String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
+            String[] args = parseCommandLine(context, runtime, strings);
+            LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
+            boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
-            if (strings.length == 1) {
-                if (useShell) {
-                    // single string command, pass to sh to expand wildcards
-                    String[] argArray = new String[3];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    argArray[2] = strings[0].asJavaString();
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+            if (useShell) {
+                cfg.verifyExecutableForShell();
             } else {
-                if (useShell) {
-                    String[] argArray = new String[args.length + 2];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    // direct invocation of the command
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+                cfg.verifyExecutableForDirect();
             }
+
+            return buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
-
-        return childProcess;
     }
 
     public static class POpenProcess extends Process {
@@ -865,11 +910,6 @@ public class ShellLauncher {
         private FileChannel inerrChannel;
         private Pumper inputPumper;
         private Pumper inerrPumper;
-
-        @Deprecated
-        public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
-            this(child, runtime, modes.getModeFlags());
-        }
 
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
@@ -924,6 +964,10 @@ public class ShellLauncher {
 
         public FileChannel getOutput() {
             return outputChannel;
+        }
+
+        public long pid() {
+            return PID_GETTER.getPid(child);
         }
 
         public FileChannel getError() {
@@ -1065,57 +1109,9 @@ public class ShellLauncher {
          * Only run an in-process script if the script name has "ruby", ".rb",
          * or "irb" in the name.
          */
+        @Deprecated(since = "10.1.0.0")
         public boolean shouldRunInProcess() {
-            if (!runtime.getInstanceConfig().isRunRubyInProcess()
-                    || RubyInstanceConfig.hasLoadedNativeExtensions()) {
-                return false;
-            }
-
-            // Check for special shell characters [<>|] at the beginning
-            // and end of each command word and don't run in process if we find them.
-            for (int i = 0; i < args.length; i++) {
-                String c = args[i];
-                if (c.trim().length() == 0) continue;
-
-                char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
-                for (int j = 0; j < firstLast.length; j++) {
-                    switch (firstLast[j]) {
-                    case '<': case '>': case '|': case ';': case '(': case ')':
-                    case '~': case '&': case '$': case '"': case '`': case '\n':
-                    case '\\': case '\'':
-                        return false;
-                    case '2':
-                        if(c.length() > 1 && c.charAt(1) == '>') return false;
-                    }
-                }
-            }
-
-            String command = args[0];
-
-            if (Platform.IS_WINDOWS) command = command.toLowerCase();
-
-            // handle both slash types, \ and /.
-            String[] slashDelimitedTokens = command.split("[/\\\\]");
-            String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
-            boolean inProc = (finalToken.endsWith("ruby")
-                    || (Platform.IS_WINDOWS && finalToken.endsWith("ruby.exe"))
-                    || finalToken.endsWith(".rb")
-                    || finalToken.endsWith("irb"));
-
-            if (!inProc) return false;
-
-            // snip off ruby or jruby command from list of arguments
-            // leave alone if the command is the name of a script
-            int startIndex = command.endsWith(".rb") ? 0 : 1;
-            if (command.trim().endsWith("irb")) {
-                startIndex = 0;
-                args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
-            }
-
-            execArgs = new String[args.length - startIndex];
-            System.arraycopy(args, startIndex, execArgs, 0, execArgs.length);
-
-            return true;
+            return false;
         }
 
         /**
@@ -1177,8 +1173,10 @@ public class ShellLauncher {
 
         public void verifyExecutableForShell() {
             String cmdline = rawArgs[0].toString().trim();
-            if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
+            if (doExecutableSearch && args.length == rawArgs.length && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
+                // replace cmdline with found executable
+                cmdline = executableFile.getAbsolutePath();
             }
 
             // now, prepare the exec args
@@ -1186,13 +1184,7 @@ public class ShellLauncher {
             execArgs = new String[3];
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
-
-            if (Platform.IS_WINDOWS) {
-                // that's how MRI does it too
-                execArgs[2] = "\"" + cmdline + "\"";
-            } else {
-                execArgs[2] = cmdline;
-            }
+            execArgs[2] = cmdline;
         }
 
         public void verifyExecutableForDirect() {
@@ -1301,11 +1293,11 @@ public class ShellLauncher {
             return verifyPathExecutable;
         }
 
-        private Ruby runtime;
-        private boolean doExecutableSearch;
-        private IRubyObject[] rawArgs;
-        private String shell;
-        private String[] args;
+        private final Ruby runtime;
+        private final boolean doExecutableSearch;
+        private final IRubyObject[] rawArgs;
+        private final String shell;
+        private final String[] args;
         private String[] execArgs;
         private boolean cmdBuiltin = false;
 
@@ -1314,7 +1306,26 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
-        return run(runtime, rawArgs, doExecutableSearch, false);
+        RubyHash env = null;
+        RubyHash opts = null;
+        String dir = runtime.getCurrentDirectory();
+
+        if (rawArgs.length > 0 && rawArgs[0] instanceof RubyHash) {
+            // peel off env hash
+            env = (RubyHash) rawArgs[0];
+            rawArgs = Arrays.copyOfRange(rawArgs, 1, rawArgs.length);
+        }
+
+        if (rawArgs.length > 0 && rawArgs[rawArgs.length - 1] instanceof RubyHash) {
+            // use opts hash for chdir
+            opts = (RubyHash) rawArgs[rawArgs.length - 1];
+            rawArgs = Arrays.copyOfRange(rawArgs, 0, rawArgs.length - 1);
+
+            IRubyObject chdir = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), "chdir", opts);
+            if (!chdir.isNil()) dir = chdir.asJavaString();
+        }
+
+        return run(runtime, env, dir, rawArgs, doExecutableSearch, false);
     }
 
     private static boolean hasGlobCharacter(String word) {
@@ -1327,7 +1338,7 @@ public class ShellLauncher {
             if (hasGlobCharacter(originalArgs[i])) {
                 // FIXME: Encoding lost here
                 List<ByteList> globs = Dir.push_glob(runtime, runtime.getCurrentDirectory(),
-                        new ByteList(originalArgs[i].getBytes()), 0);
+                        new ByteList(originalArgs[i].getBytes()), 0, true);
 
                 for (ByteList glob: globs) {
                     expandedList.add(glob.toString());
@@ -1344,15 +1355,19 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
+        return run(runtime, Collections.EMPTY_MAP, runtime.getCurrentDirectory(), rawArgs, doExecutableSearch, forceExternalProcess);
+    }
+
+    public static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        File pwd = new File(runtime.getCurrentDirectory());
+        File pwd = new File(dir);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
-                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime), pwd);
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
                 ipScript.start();
                 return ipScript;
             } else {
@@ -1366,15 +1381,18 @@ public class ShellLauncher {
                     cfg.verifyExecutableForDirect();
                 }
                 String[] args = cfg.getExecArgs();
-                // only if we inside a jar and spawning org.jruby.Main we
-                // change to the current directory inside the jar
-                if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
-                        args[args.length - 1].contains("org.jruby.Main")) {
+                if (dir.startsWith("uri:classloader:")) {
+                    // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
-                    args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                            "org.jruby.Main -C " + runtime.getCurrentDirectory());
+
+                    // only if we inside a jar and spawning org.jruby.main.Main we
+                    // change to the current directory inside the jar
+                    if (args[args.length - 1].contains("org.jruby.main.Main")) {
+                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.main.Main",
+                                "org.jruby.main.Main -C " + dir);
+                    }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
@@ -1585,12 +1603,12 @@ public class ShellLauncher {
                 // can't make use of it, discard the argv[0] entry
                 args = new String[] { getPathEntry((RubyArray) rawArgs[0]) };
             } else {
-                synchronized (runtime.getLoadService()) {
-                    runtime.getLoadService().require("jruby/path_helper");
+                var loadService = Access.loadService(context);
+                synchronized (loadService) {
+                    loadService.require("jruby/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-                RubyArray parts = (RubyArray) Helpers.invoke(
-                        context, pathHelper, "smart_split_command", rawArgs);
+                RubyArray parts = (RubyArray) Helpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
                 args = new String[parts.getLength()];
                 for (int i = 0; i < parts.getLength(); i++) {
                     args[i] = parts.entry(i).toString();
@@ -1628,7 +1646,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
-        return RbConfigLibrary.jrubyShell();
+        return findPathExecutable(runtime, RbConfigLibrary.jrubyShell()).getAbsolutePath();
     }
 
     public static boolean shouldUseShell(String command) {
@@ -1649,25 +1667,5 @@ public class ShellLauncher {
         if (RubyInstanceConfig.DEBUG_LAUNCHING) {
             runtime.getErr().println("ShellLauncher: " + msg);
         }
-    }
-
-    @Deprecated
-    public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
-        return ChannelHelper.unwrapBufferedStream(filteredStream);
-    }
-
-    @Deprecated
-    public static InputStream unwrapBufferedStream(InputStream filteredStream) {
-        return ChannelHelper.unwrapBufferedStream(filteredStream);
-    }
-
-    @Deprecated
-    public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
-        return ChannelHelper.unwrapFilterOutputStream(filteredStream);
-    }
-
-    @Deprecated
-    public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
-        return ChannelHelper.unwrapFilterInputStream(filteredStream);
     }
 }

@@ -45,7 +45,7 @@ describe "A Ruby class generating a Java stub" do
           cls = generate("class Foo; def bar; end; end").classes[0]
 
           method = cls.methods[0]
-          method.should_not be nil
+          expect(method).to_not be nil
           method.name.should == "bar"
           method.constructor?.should == false
           method.java_signature.to_s.should == "Object bar()"

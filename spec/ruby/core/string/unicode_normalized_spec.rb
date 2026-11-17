@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 
 describe "String#unicode_normalized?" do
@@ -24,51 +25,51 @@ describe "String#unicode_normalized?" do
   end
 
   it "defaults to the nfc normalization form if no forms are specified" do
-    @nfc_normalized_str.unicode_normalized?.should == true
-    @nfd_normalized_str.unicode_normalized?.should == false
+    @nfc_normalized_str.should.unicode_normalized?
+    @nfd_normalized_str.should_not.unicode_normalized?
   end
 
   it "returns true if string is empty" do
-    "".unicode_normalized?.should == true
+    "".should.unicode_normalized?
   end
 
   it "returns true if string does not contain any unicode codepoints" do
-    "abc".unicode_normalized?.should == true
+    "abc".should.unicode_normalized?
   end
 
   it "raises an Encoding::CompatibilityError if the string is not in an unicode encoding" do
-    lambda { @nfc_normalized_str.force_encoding("ISO-8859-1").unicode_normalized? }.should raise_error(Encoding::CompatibilityError)
+    -> { @nfc_normalized_str.force_encoding("ISO-8859-1").unicode_normalized? }.should.raise(Encoding::CompatibilityError)
   end
 
   it "raises an ArgumentError if the specified form is invalid" do
-    lambda { @nfc_normalized_str.unicode_normalized?(:invalid_form) }.should raise_error(ArgumentError)
+    -> { @nfc_normalized_str.unicode_normalized?(:invalid_form) }.should.raise(ArgumentError)
   end
 
   it "returns true if str is in Unicode normalization form (nfc)" do
     str = "a\u0300"
-    str.unicode_normalized?(:nfc).should be_false
+    str.unicode_normalized?(:nfc).should == false
     str.unicode_normalize!(:nfc)
-    str.unicode_normalized?(:nfc).should be_true
+    str.unicode_normalized?(:nfc).should == true
   end
 
   it "returns true if str is in Unicode normalization form (nfd)" do
     str = "a\u00E0"
-    str.unicode_normalized?(:nfd).should be_false
+    str.unicode_normalized?(:nfd).should == false
     str.unicode_normalize!(:nfd)
-    str.unicode_normalized?(:nfd).should be_true
+    str.unicode_normalized?(:nfd).should == true
   end
 
   it "returns true if str is in Unicode normalization form (nfkc)" do
     str = "a\u0300"
-    str.unicode_normalized?(:nfkc).should be_false
+    str.unicode_normalized?(:nfkc).should == false
     str.unicode_normalize!(:nfkc)
-    str.unicode_normalized?(:nfkc).should be_true
+    str.unicode_normalized?(:nfkc).should == true
   end
 
   it "returns true if str is in Unicode normalization form (nfkd)" do
     str = "a\u00E0"
-    str.unicode_normalized?(:nfkd).should be_false
+    str.unicode_normalized?(:nfkd).should == false
     str.unicode_normalize!(:nfkd)
-    str.unicode_normalized?(:nfkd).should be_true
+    str.unicode_normalized?(:nfkd).should == true
   end
 end

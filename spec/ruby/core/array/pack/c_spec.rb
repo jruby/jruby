@@ -1,4 +1,4 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
@@ -45,8 +45,10 @@ describe :array_pack_8bit, shared: true do
     [1, 2, 3, 4, 5].pack(pack_format('*')).should == "\x01\x02\x03\x04\x05"
   end
 
-  it "ignores NULL bytes between directives" do
-    [1, 2, 3].pack(pack_format("\000", 2)).should == "\x01\x02"
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      [1, 2, 3].pack(pack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown pack directive/)
   end
 
   it "ignores spaces between directives" do

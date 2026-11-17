@@ -1,13 +1,15 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 
 import java.util.*;
 
@@ -22,23 +24,36 @@ public class LocalOptimizationPass extends CompilerPass {
         return "Local Opts";
     }
 
+    private record Result(boolean reexamineCFG, boolean changed) {
+    }
+
     @Override
-    public Object execute(IRScope s, Object... data) {
-        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
-            runLocalOptsOnBasicBlock(s, b);
+    public Object execute(FullInterpreterContext fic, Object... data) {
+        boolean reexamineCFG = false;
+        CFG cfg = fic.getCFG();
+
+        for (BasicBlock bb: cfg.getBasicBlocks()) {
+            boolean done = false;
+            while (!done) {
+                var result = runLocalOptsOnBasicBlock(fic, bb);
+                if (result.reexamineCFG) {
+                    reexamineCFG = true;
+                    cfg.fixupEdges(bb);
+                }
+                if (!result.changed) {
+                    done = true;
+                }
+            }
         }
 
-        // SSS FIXME: What is this about? 
-        // Why 'Only after running local opts'? Figure out and document.
-        //
-        // Only after running local opts, compute various execution scope flags.
-        s.computeScopeFlags();
+        // If we changed any edges we can potentially remove some whole BBs!
+        if (reexamineCFG) fic.getCFG().optimize();
 
         // LVA information is no longer valid after this pass
         // Currently, we don't run this after LVA, but just in case ...
         //
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
-        (new LiveVariableAnalysis()).invalidate(s);
+        (new LiveVariableAnalysis()).invalidate(fic);
 
         return null;
     }
@@ -60,11 +75,15 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static Instr optInstr(IRScope s, Instr instr, Map<Operand,Operand> valueMap, Map<Variable,List<Variable>> simplificationMap) {
+    public static Instr optInstr(FullInterpreterContext fic, Instr instr, Map<Operand,Operand> valueMap, Map<Variable,List<Variable>> simplificationMap) {
         // System.out.println("BEFORE: " + instr);
 
         // Simplify instruction and record mapping between target variable and simplified value
-        Operand val = instr.simplifyAndGetResult(s, valueMap);
+        Operand val = instr.simplifyOperands(fic.getScope(), valueMap);
+
+        // Simplification of operands may lead an instr to realize it can be something simpler.  For example,
+        // A branch may no longer need to be a branch (e.g. b_true(true, label) -> jump(label)).
+        instr = instr.simplifyInstr(fic.getScope().getManager());
 
         // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;
         // System.out.println("AFTER: " + instr + "; dst = " + dst + "; val = " + val);
@@ -86,7 +105,7 @@ public class LocalOptimizationPass extends CompilerPass {
 
             if (!instr.hasSideEffects()) {
                 if (instr instanceof CopyInstr) {
-                    if (res.equals(val) && instr.canBeDeletedFromScope(s)) {
+                    if (res.equals(val) && instr.canBeDeletedFromScope(fic)) {
                         instr.markDead();
                     }
                 } else {
@@ -110,13 +129,14 @@ public class LocalOptimizationPass extends CompilerPass {
         return newInstr;
     }
 
-    public static void runLocalOptsOnInstrArray(IRScope s, Instr[] instrs) {
+    // FIXME: Currently dead but why was this made dead?
+    public static void runLocalOptsOnInstrArray(FullInterpreterContext fic, Instr[] instrs) {
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
-            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            Instr newInstr = optInstr(fic, instr, valueMap, simplificationMap);
             if (newInstr != instr) {
                 instrs[i] = newInstr;
             }
@@ -142,17 +162,29 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static void runLocalOptsOnBasicBlock(IRScope s, BasicBlock b) {
+    public static Result runLocalOptsOnBasicBlock(FullInterpreterContext fic, BasicBlock b) {
+        boolean reexamineCFG = false;  // If we changed something which changes flow we need to update CFG.
+        boolean changed = false;
         ListIterator<Instr> instrs = b.getInstrs().listIterator();
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
         while (instrs.hasNext()) {
             Instr instr = instrs.next();
-            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            Instr newInstr = optInstr(fic, instr, valueMap, simplificationMap);
             if (newInstr.isDead()) {
+                if (newInstr != instr && instr.getOperation().endsBasicBlock()) {
+                    reexamineCFG = true;
+                } else {
+                    changed = true;
+                }
                 instrs.remove();
             } else if (newInstr != instr) {
+                if (instr.getOperation().endsBasicBlock()) {
+                    reexamineCFG = true;
+                } else {
+                    changed = true;
+                }
                 instrs.set(newInstr);
             }
 
@@ -170,10 +202,13 @@ public class LocalOptimizationPass extends CompilerPass {
             //
             // This information is present in instruction flags on CallBase. Use it!
             Operation iop = instr.getOperation();
-            if (iop.isCall() && !instr.isDead()) {
+            // TracePoint hooks can change locals
+            if ((iop.isCall() || iop == Operation.TRACE) && !instr.isDead()) {
                 valueMap = new HashMap<>();
                 simplificationMap = new HashMap<>();
             }
         }
+
+        return new Result(reexamineCFG, changed);
     }
 }

@@ -7,21 +7,21 @@ import java.util.List;
 
 // This class is currently only used during CFG building and is hence made private.
 // A scope's CFG exception regions are currently not exposed anywhere after the CFG is built.
-// If in future, it is useful somewhere else, this class can be made public and a scope's
+// If in the future, it is useful somewhere else, this class can be made public and a scope's
 // exception regions can be exposed as well.
 class ExceptionRegion {
-    private Label firstRescueBlockLabel; // Label of the first rescue block
+    private final Label firstRescueBlockLabel; // Label of the first rescue block
 
-    private List<BasicBlock> exclusiveBBs;  // Basic blocks exclusively contained within this region
-    private List<ExceptionRegion> nestedRegions; // Rescue regions nested within this one
-    private BasicBlock startBB;       // First BB of the rescued region
+    private final List<BasicBlock> exclusiveBBs;  // Basic blocks exclusively contained within this region
+    private final List<ExceptionRegion> nestedRegions; // Rescue regions nested within this one
+    private final BasicBlock startBB;       // First BB of the rescued region
     private BasicBlock endBB;         // Last BB of the rescued region
 
     public ExceptionRegion(Label firstRescueBlockLabel, BasicBlock startBB) {
         this.firstRescueBlockLabel = firstRescueBlockLabel;
         this.startBB = startBB;
-        exclusiveBBs = new ArrayList<BasicBlock>();
-        nestedRegions = new ArrayList<ExceptionRegion>();
+        exclusiveBBs = new ArrayList<>();
+        nestedRegions = new ArrayList<>();
     }
 
     public void setEndBB(BasicBlock bb) {

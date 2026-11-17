@@ -15,11 +15,11 @@ describe "Thread#initialize" do
     end
 
     it "raises a ThreadError" do
-      lambda {
+      -> {
         @t.instance_eval do
           initialize {}
         end
-      }.should raise_error(ThreadError)
+      }.should.raise(ThreadError)
     end
 
   end

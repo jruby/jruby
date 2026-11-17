@@ -10,6 +10,16 @@ describe "Struct#dig" do
     @instance.dig(:a, :a).should == { b: [1, 2, 3] }
   end
 
+  it "accepts String keys" do
+    @instance.dig('a', 'a').should == { b: [1, 2, 3] }
+  end
+
+  it "returns the value by the index" do
+    instance = Struct.new(:a, :b).new(:one, :two)
+    instance.dig(0).should == :one
+    instance.dig(1).should == :two
+  end
+
   it "returns the nested value specified if the sequence includes an index" do
     @instance.dig(:a, :a, :b, 0).should == 1
   end
@@ -20,13 +30,13 @@ describe "Struct#dig" do
 
   it "raises a TypeError if any intermediate step does not respond to #dig" do
     instance = @klass.new(1)
-    lambda {
+    -> {
       instance.dig(:a, 3)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises an ArgumentError if no arguments provided" do
-    lambda { @instance.dig }.should raise_error(ArgumentError)
+    -> { @instance.dig }.should.raise(ArgumentError)
   end
 
   it "calls #dig on any intermediate step with the rest of the sequence as arguments" do

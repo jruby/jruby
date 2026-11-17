@@ -28,33 +28,35 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.StopIteration;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
-import java.util.Arrays;
-import java.util.NoSuchElementException;
 import java.util.Spliterator;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Access.enumeratorClass;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -77,49 +79,76 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /** args to each method */
     private IRubyObject[] methodArgs;
 
+    /** args contains a keywords argument */
+    private boolean methodArgsHasKeywords;
+
     /** A value or proc to provide the size of the Enumerator contents*/
     private IRubyObject size;
 
     /** Function object for lazily computing size (used for internally created enumerators) */
     private SizeFn sizeFn;
 
-    private IRubyObject feedValue;
+    private FeedValue feedValue;
 
-    public static void defineEnumerator(Ruby runtime) {
-        final RubyModule Enumerable = runtime.getModule("Enumerable");
+    public static RubyClass defineEnumerator(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        RubyClass Enumerator = defineClass(context, "Enumerator", Object, RubyEnumerator::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyEnumerator.class);
 
-        final RubyClass Enumerator;
-        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
+        Enumerator.defineClassUnder(context, "FeedValue", Object, NOT_ALLOCATABLE_ALLOCATOR).defineMethods(context, FeedValue.class);
+        Enumerator.setConstantVisibility(context, "FeedValue", true);
 
-        Enumerator.includeModule(Enumerable);
-        Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
-        runtime.setEnumerator(Enumerator);
-
-        RubyGenerator.createGeneratorClass(runtime);
-        RubyYielder.createYielderClass(runtime);
+        return Enumerator;
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyEnumerator(runtime, klass);
+    /**
+     * Internal Enumerator::FeedValue class to be shared between enumerator and its next-er Fiber.
+     * In essence, a `Struct.new(:value)` like container but for finer control implemented as native.
+     */
+    public static class FeedValue extends RubyObject {
+
+        private volatile IRubyObject value;
+
+        private FeedValue(ThreadContext context, RubyClass type) {
+            super(context.runtime, type);
+            value = context.nil;
         }
-    };
+
+        @Deprecated(since = "10.0.0.0")
+        FeedValue(Ruby runtime) {
+            this(runtime.getCurrentContext());
+        }
+
+        FeedValue(ThreadContext context) {
+            this(context, (RubyClass) enumeratorClass(context).getConstantAt(context, "FeedValue", true));
+        }
+
+        @JRubyMethod
+        public IRubyObject value() { return value; }
+
+        @JRubyMethod(name = "value=")
+        public IRubyObject set_value(IRubyObject value) {
+            return this.value = value;
+        }
+
+        @JRubyMethod
+        public IRubyObject use_value(ThreadContext context) {
+            IRubyObject value = this.value;
+            this.value = context.nil;
+            return value;
+        }
+
+    }
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        object = runtime.getNil();
-        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
+        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), NULL_ARRAY);
     }
 
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, IRubyObject size) {
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, RubySymbol method, IRubyObject[] args,
+                           IRubyObject size, SizeFn sizeFn, boolean keywords) {
         super(runtime, type);
-        initialize(runtime, object, method, args, size, null);
-    }
-
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, SizeFn sizeFn) {
-        super(runtime, type);
-        initialize(runtime, object, method, args, null, sizeFn);
+        initialize(runtime, object, method, args, size, sizeFn, keywords);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args) {
@@ -130,34 +159,55 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /**
      * Transform object into an Enumerator with the given size
      */
-    public static IRubyObject enumeratorizeWithSize(ThreadContext context, final IRubyObject object, String method, IRubyObject[] args, SizeFn sizeFn) {
+    public static <T extends IRubyObject> RubyEnumerator enumWithSize(ThreadContext context, final T object, String method, IRubyObject[] args, SizeFn<T> sizeFn) {
         Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, sizeFn);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, sizeFn, false);
     }
 
-    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, SizeFn sizeFn) {
+    public static <T extends IRubyObject> IRubyObject enumeratorizeWithSize(ThreadContext context, final T object, String method, IRubyObject[] args, SizeFn<T> sizeFn, boolean keywords) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, sizeFn, keywords);
+    }
+
+    public static <T extends IRubyObject> IRubyObject enumeratorizeWithSize(ThreadContext context, final T object, String method, IRubyObject[] args, SizeFn<T> sizeFn) {
+        return enumeratorizeWithSize(context, object, method, args, sizeFn, false);
+    }
+
+    public static <T extends IRubyObject> IRubyObject enumeratorizeWithSize(ThreadContext context, T object, String method, SizeFn<T> sizeFn) {
         return enumeratorizeWithSize(context, object, method, NULL_ARRAY, sizeFn);
     }
 
-    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+    public static <T extends IRubyObject> RubyEnumerator enumWithSize(ThreadContext context, T object, String method, SizeFn<T> sizeFn) {
+        return enumWithSize(context, object, method, NULL_ARRAY, sizeFn);
+    }
+
+    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, IRubyObject arg, IRubyObject size) {
         Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size, null, false);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), NULL_ARRAY);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject arg) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] {arg});
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg });
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject... args) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args);
+    }
+
+    /**
+     * Like {@link #enumeratorize(Ruby, IRubyObject, String, IRubyObject...)}, but if keywords is true the last
+     * element of args is passed back to the method as keywords.
+     */
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[] args, boolean keywords) {
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, null, keywords);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method) {
-        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
+        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), NULL_ARRAY);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method, IRubyObject arg) {
@@ -165,7 +215,43 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method, IRubyObject[] args) {
-        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
+        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), args);
+    }
+
+    // used internally to create lazy without block (from Enumerator/Enumerable)
+    // and used internally to create enum from Enumerator::Lazy#eager
+    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, checkArity = false, visibility = PRIVATE, keywords = true)
+    public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
+
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
+        // Lazy.__from(enum, method, *args, size)
+        IRubyObject object = args[0];
+        IRubyObject method = args[1];
+        IRubyObject[] methodArgs;
+        IRubyObject size = null; SizeFn sizeFn = null;
+        if (argc > 2) {
+            methodArgs = ((RubyArray) args[2]).toJavaArrayMaybeUnsafe();
+            if (argc > 3) size = args[3];
+        } else {
+            methodArgs = NULL_ARRAY;
+        }
+
+        RubyEnumerator instance = (RubyEnumerator) ((RubyClass) klass).allocate(context);
+
+        if (size == null) {
+            sizeFn = RubyEnumerable::size;
+        }
+
+        instance.initialize(context.runtime, object, method, methodArgs, size, sizeFn, keywords);
+        // set: @receiver = obj.object, @method = obj.method || :each, *@args = obj.args || []
+        // (for Lazy#inspect)
+        instance.setInstanceVariable("@receiver", object);
+        instance.setInstanceVariable("@method", method);
+        instance.setInstanceVariable("@args", RubyArray.newArrayNoCopyLight(context.runtime, methodArgs));
+
+        return instance;
     }
 
     @Override
@@ -175,139 +261,68 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        return initialize(context, NULL_ARRAY, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, Block block) {
-        return initialize(context, block);
+        return initializeWithSize(context, null, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, Block block) {
-        return initialize(context, new IRubyObject[]{ object }, block);
+    public IRubyObject initialize(ThreadContext context, IRubyObject size, Block block) {
+        return initializeWithSize(context, size, block);
     }
 
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, Block block) {
-        return initialize(context, object, block);
-    }
-
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        IRubyObject object;
-        IRubyObject method = runtime.newSymbol("each");
-        IRubyObject size = null;
-
-        if (block.isGiven()) {
-            Arity.checkArgumentCount(runtime, args, 0, 1);
-            if (args.length > 0) {
-                size = args[0];
-                args = Arrays.copyOfRange(args, 1, args.length);
-
-                if ( ! (size.isNil() || size.respondsTo("call")) &&
-                     ! (runtime.getFloat().isInstance(size) && ((RubyFloat) size).getDoubleValue() == Float.POSITIVE_INFINITY) &&
-                     ! (size instanceof RubyInteger) ) {
-                    throw runtime.newTypeError(size, runtime.getInteger());
-                }
-            }
-            object = runtime.getGenerator().newInstance(context, IRubyObject.NULL_ARRAY, block);
-
-        } else {
-            Arity.checkArgumentCount(runtime, args, 1, -1);
-            // TODO need a deprecation WARN here, but can't add it until ruby/jruby/kernel20/enumerable.rb is deleted or stops calling this without a block
-            object = args[0];
-            args = Arrays.copyOfRange(args, 1, args.length);
-            if (args.length > 0) {
-                method = args[0];
-                args = Arrays.copyOfRange(args, 1, args.length);
-            }
+    private static void checkSize(ThreadContext context, IRubyObject size) {
+        if (size != null &&
+                !(size.isNil() || size.respondsTo("call")) &&
+                !(size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
+                !(size instanceof RubyInteger)) {
+            throw typeError(context, size, "Integer");
         }
-
-        return initialize(runtime, object, method, args, size, null);
     }
 
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize(context, args, block);
-    }
+    private IRubyObject initializeWithSize(ThreadContext context, IRubyObject size, Block block) {
+        checkSize(context, size);
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(2, 1);
-        }
-        return initialize(context.runtime, object, method, NULL_ARRAY);
-    }
+        IRubyObject object = context.runtime.getGenerator().newInstance(context, NULL_ARRAY, block);
+        IRubyObject method = asSymbol(context, "each");
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
-        return initialize(context, object, method, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
-    }
-
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(3, 1);
-        }
-        return initialize(context.runtime, object, method, new IRubyObject[] { methodArg });
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
-        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize(context, object, method, methodArg, block);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        return initialize(context, args, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize(context, args, block);
+        return initialize(context.runtime, object, method, NULL_ARRAY, size, null, false);
     }
 
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
-        return initialize(runtime, object, method, methodArgs, null, null);
+        return initialize(runtime, object, method, methodArgs, null, null, false);
     }
 
-    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
+    /**
+     * The args as kept for the Ruby side of Enumerator, which calls the method with them splatted
+     * in #next and #peek. Keywords are passed as a copy flagged as a ruby2_keywords hash, so the
+     * splat passes them on as keywords instead of as a positional Hash.
+     */
+    private static RubyArray argsForSplat(Ruby runtime, IRubyObject[] methodArgs, boolean keywords) {
+        int last = methodArgs.length - 1;
+        if (keywords && last >= 0 && methodArgs[last] instanceof RubyHash hash) {
+            IRubyObject[] args = methodArgs.clone();
+            RubyHash flagged = (RubyHash) hash.dup();
+            flagged.setRuby2KeywordHash(true);
+            args[last] = flagged;
+            return RubyArray.newArrayNoCopy(runtime, args);
+        }
+        return RubyArray.newArrayMayCopy(runtime, methodArgs);
+    }
+
+    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs,
+                                   IRubyObject size, SizeFn sizeFn, boolean keywords) {
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
+        this.methodArgsHasKeywords = keywords;
         this.size = size;
         this.sizeFn = sizeFn;
-        this.feedValue = runtime.getNil();
+
         setInstanceVariable(OBJECT, object);
         setInstanceVariable(METHOD, method);
-        setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
+        setInstanceVariable(ARGS, argsForSplat(runtime, methodArgs, keywords));
         setInstanceVariable(GENERATOR, runtime.getNil());
-        setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime));
-        setInstanceVariable(FEEDVALUE, runtime.getNil());
+        setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime, 4));
+        setInstanceVariable(FEEDVALUE, this.feedValue = new FeedValue(runtime));
 
         return this;
     }
@@ -320,9 +335,11 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         copy.object     = this.object;
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
+        copy.methodArgsHasKeywords = this.methodArgsHasKeywords;
         copy.size       = this.size;
         copy.sizeFn     = this.sizeFn;
-        copy.feedValue  = getRuntime().getNil();
+        copy.feedValue  = new FeedValue(getRuntime());
+
         return copy;
     }
 
@@ -333,29 +350,43 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
      */
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
-        if (!block.isGiven()) {
-            return this;
-        }
+        if (!block.isGiven()) return this;
+        return __each__(context, block);
+    }
 
-        return object.callMethod(context, method, methodArgs, block);
+    private IRubyObject __each__(ThreadContext context, final Block block) {
+        if (methodArgsHasKeywords) context.callInfo = CALL_KEYWORD;
+        return object.callMethod(context, method, methodArgs,
+                CallBlock.newCallClosure(context, this, block.getSignature(), (ctx, args, blk) -> {
+                    IRubyObject ret;
+
+                    if (args.length == 1) {
+                        ret = block.yield(ctx, args[0]);
+                    } else {
+                        ret = block.yieldValues(ctx, args);
+                    }
+
+                    IRubyObject val = feedValue.use_value(ctx);
+                    return val.isNil() ? ret : val;
+                })
+        );
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            return each(context, block);
-        }
+        if (args.length == 0) return each(context, block);
 
         final int mlen = methodArgs.length;
         IRubyObject[] newArgs = new IRubyObject[mlen + args.length];
         ArraySupport.copy(methodArgs, newArgs, 0, mlen);
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
-        return new RubyEnumerator(context.runtime, getType(), object, context.runtime.newSymbol("each"), newArgs);
+        return new RubyEnumerator(context.runtime, getType(), object, asSymbol(context, method), newArgs,
+                null, null, methodArgsHasKeywords).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect19(ThreadContext context) {
+    public IRubyObject inspect(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (runtime.isInspecting(this)) return inspect(context, true);
 
@@ -368,63 +399,53 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     private IRubyObject inspect(ThreadContext context, boolean recurse) {
-        Ruby runtime = context.runtime;
-        ByteList bytes = new ByteList();
-        bytes.append((byte)'#').append((byte)'<');
-        bytes.append(getMetaClass().getName().getBytes());
+        ByteList bytes = new ByteList(new byte[] {'#', '<'});
+        bytes.append(getMetaClass().getName(context).getBytes());
         bytes.append((byte)':').append((byte)' ');
+        RubyString result = RubyString.newStringNoCopy(context.runtime, bytes);
 
         if (recurse) {
-            bytes.append("...>".getBytes());
-            return RubyString.newStringNoCopy(runtime, bytes).taint(context);
+            return result.catString("...>");
         } else {
-            boolean tainted = isTaint();
-            bytes.append(RubyObject.inspect(context, object).getByteList());
-            bytes.append((byte)':');
-            bytes.append(method.getBytes());
+            result.catWithCodeRange(RubyObject.inspect(context, object));
+            result.cat(':');
+            result.catWithCodeRange(getMethod().asString());
             if (methodArgs.length > 0) {
-                bytes.append((byte)'(');
+                result.cat('(');
                 for (int i= 0; i < methodArgs.length; i++) {
-                    bytes.append(RubyObject.inspect(context, methodArgs[i]).getByteList());
+                    if (methodArgsHasKeywords && i == 0) break;
+                    result.catWithCodeRange(RubyObject.inspect(context, methodArgs[i]));
                     if (i < methodArgs.length - 1) {
-                        bytes.append((byte)',').append((byte)' ');
+                        result.catString(", ");
                     } else {
-                        bytes.append((byte)')');
+                        result.cat(')');
                     }
-                    if (methodArgs[i].isTaint()) tainted = true;
                 }
             }
-            bytes.append((byte)'>');
-            RubyString result = RubyString.newStringNoCopy(runtime, bytes);
-            if (tainted) result.setTaint(true);
+            result.cat('>');
             return result;
         }
     }
 
-    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), arg, runtime.newSymbol("each"), IRubyObject.NULL_ARRAY);
-    }
-
-    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), arg1, arg2, IRubyObject.NULL_ARRAY);
-    }
-
-    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), arg1, arg2, new IRubyObject[]{arg3});
-    }
-
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
-                enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, enumSizeFn(context));
+                enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, RubyEnumerator::size);
     }
 
     @JRubyMethod
     public IRubyObject with_object(ThreadContext context, final IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, enumSizeFn(context));
+        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, RubyEnumerator::size);
+    }
+
+    @JRubyMethod()
+    public IRubyObject each_entry(ThreadContext context, final Block block) {
+        return block.isGiven() ? RubyEnumerable.each_entryCommon(context, this, NULL_ARRAY, block) : enumeratorize(context.runtime, getType(), this, "each_entry", NULL_ARRAY);
+    }
+
+    @JRubyMethod()
+    public IRubyObject each_entry(ThreadContext context, final IRubyObject arg0, final Block block) {
+        return block.isGiven() ? RubyEnumerable.each_entryCommon(context, this, arg0, block) : enumeratorize(context.runtime, getType(), this, "each_entry", arrayOf(arg0));
     }
 
     @JRubyMethod(rest = true)
@@ -432,80 +453,59 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return block.isGiven() ? RubyEnumerable.each_entryCommon(context, this, args, block) : enumeratorize(context.runtime, getType(), this, "each_entry", args);
     }
 
-    @Deprecated
-    public IRubyObject each_slice19(ThreadContext context, IRubyObject arg, final Block block) {
-        return each_slice(context, arg, block);
-    }
-
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        int size = toInt(context, arg);
+        if (size <= 0) throw argumentError(context, "invalid size");
 
-        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
-    }
-
-    @Deprecated
-    public IRubyObject each_cons19(ThreadContext context, IRubyObject arg, final Block block) {
-        return each_cons(context, arg, block);
+        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
+                enumeratorize(context.runtime, getType(), this, "each_slice", arg);
     }
 
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
-        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
+        int size = toInt(context, arg);
+        if (size <= 0) throw argumentError(context, "invalid size");
+        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
+                enumeratorize(context.runtime, getType(), this, "each_cons", arg);
     }
 
     @JRubyMethod
     public final IRubyObject size(ThreadContext context) {
-        if (sizeFn != null) {
-            return sizeFn.size(methodArgs);
-        }
+        if (sizeFn != null) return sizeFn.size(context, object, methodArgs);
 
         IRubyObject size = this.size;
         if (size != null) {
-            if (size.respondsTo("call")) {
-                if (context == null) context = getRuntime().getCurrentContext();
-                return size.callMethod(context, "call");
-            }
-
-            return size;
+            return size.respondsTo("call") ? size.callMethod(context, "call") : size;
         }
-
-        if (context == null) context = getRuntime().getCurrentContext();
 
         return context.nil;
     }
 
     public long size() {
-        final IRubyObject size = size(null);
-        if ( size instanceof RubyNumeric ) {
-            return ((RubyNumeric) size).getLongValue();
-        }
-        return -1;
+        var context = getRuntime().getCurrentContext();
+        final IRubyObject size = size(context);
+        return size instanceof RubyNumeric numeric ? numeric.asLong(context) : -1;
     }
 
-    private SizeFn enumSizeFn(final ThreadContext context) {
-        final RubyEnumerator self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.size(context);
-            }
-        };
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext context, RubyEnumerator recv, IRubyObject[] args) {
+        return recv.size(context);
     }
 
     private IRubyObject with_index_common(ThreadContext context, final Block block, final String rubyMethodName, IRubyObject arg) {
-        final Ruby runtime = context.runtime;
-        final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
-        if ( ! block.isGiven() ) {
+        final int index = arg.isNil() ? 0 : toInt(context, arg);
+        if (!block.isGiven()) {
             return arg.isNil() ?
-                    enumeratorizeWithSize(context, this, rubyMethodName, enumSizeFn(context)) :
-                        enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, enumSizeFn(context));
+                    enumeratorizeWithSize(context, this, rubyMethodName, RubyEnumerator::size) :
+                    enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{asFixnum(context, index)}, RubyEnumerator::size);
         }
 
-        return RubyEnumerable.callEach(runtime, context, this, new RubyEnumerable.EachWithIndex(block, index));
+        return RubyEnumerable.callEach(context, sites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));
     }
 
     @JRubyMethod
@@ -518,26 +518,16 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return with_index_common(context, block, "with_index", context.nil);
     }
 
-    @Deprecated
-    public IRubyObject with_index19(ThreadContext context, final Block block) {
-        return with_index(context, block);
-    }
-
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
         return with_index_common(context, block, "with_index", arg);
-    }
-
-    @Deprecated
-    public IRubyObject with_index19(ThreadContext context, IRubyObject arg, final Block block) {
-        return with_index(context, arg, block);
     }
 
     // java.util.Iterator :
 
     @Override
     public synchronized boolean hasNext() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         try {
             // We don't care about the result, just whether it succeeds.
             sites(context).peek.call(context, this, this);
@@ -547,13 +537,13 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         }
     }
 
-    private IRubyObject getGenerator() {
-        return getInstanceVariable(GENERATOR);
+    private IRubyObject getMethod() {
+        return getInstanceVariable(METHOD);
     }
 
     @Override
     public Object next() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return sites(context).next.call(context, this, this).toJava(java.lang.Object.class);
     }
 
@@ -589,13 +579,64 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
      * SizeFn#size are kept in sync with the size of the created enum (i.e. if the object underlying an enumerator
      * changes, calls to SizeFn#size should reflect that change).
      *
-     * TODO (CON): fix this to receive context and state to we're not reallocating it all the time
+     * @param <T> the enumerated object's type
      */
-    public interface SizeFn {
-        IRubyObject size(IRubyObject[] args);
+    public interface SizeFn<T extends IRubyObject> {
+        IRubyObject size(ThreadContext context, T self, IRubyObject[] args);
     }
 
     private static JavaSites.FiberSites sites(ThreadContext context) {
         return context.sites.Fiber;
+    }
+
+    @CRuby(value = "enumerator_s_produce", file = "enumerator.c")
+    @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
+    public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        IRubyObject size = UNDEF;
+        int argc = args.length;
+
+        if (hasKeywords(resetCallInfo(context))) {
+            argc--;
+            IRubyObject maybeSize = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "size");
+            if (maybeSize != null) {
+                size = maybeSize;
+            }
+        }
+
+        size = size == UNDEF ?
+                context.runtime.getFloat().getConstant("INFINITY") :
+                convertToFeasibleSizeValue(context, size);
+
+        Arity.checkArgumentCount(context, argc, 0, 1);
+
+        if (!block.isGiven()) throw argumentError(context, "no block given");
+
+        IRubyObject init = argc == 0 ? null : args[0];
+        RubyProducer producer = RubyProducer.newProducer(context, init, block, size);
+        return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
+    }
+
+    private static IRubyObject convertToFeasibleSizeValue(ThreadContext context, IRubyObject obj) {
+        if (obj.isNil()) {
+            return obj;
+        } else if (obj.respondsTo("call")) {
+            return obj;
+        } else if (obj instanceof RubyFloat flote && flote.value == Double.POSITIVE_INFINITY) {
+            return obj;
+        } else {
+            return toInteger(context, obj);
+        }
+    }
+
+    @Deprecated(since = "9.4.3.0")
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject size = Arity.checkArgumentCount(context, args, 0, 1) == 1 ? args[0] : null;
+
+        return initializeWithSize(context, size, block);
+    }
+
+    @Deprecated(since = "9.4.3.0")
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        return initialize(context, args, Block.NULL_BLOCK);
     }
 }

@@ -1,16 +1,13 @@
 require_relative '../../spec_helper'
-require_relative 'shared/select'
 
-ruby_version_is "2.6" do
-  describe "Array#filter" do
-    it_behaves_like :array_select, :filter
+describe "Array#filter" do
+  it "is an alias of Array#select" do
+    Array.instance_method(:filter).should == Array.instance_method(:select)
   end
+end
 
-  describe "Array#filter!" do
-    it "returns nil if no changes were made in the array" do
-      [1, 2, 3].filter! { true }.should be_nil
-    end
-
-    it_behaves_like :keep_if, :filter!
+describe "Array#filter!" do
+  it "is an alias of Array#select!" do
+    Array.instance_method(:filter!).should == Array.instance_method(:select!)
   end
 end

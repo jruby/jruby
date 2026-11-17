@@ -12,12 +12,12 @@ describe "StringIO#readlines when passed [separator]" do
 
   it "updates self's position based on the number of read bytes" do
     @io.readlines(">")
-    @io.pos.should eql(18)
+    @io.pos.should.eql?(18)
   end
 
   it "updates self's lineno based on the number of read lines" do
     @io.readlines(">")
-    @io.lineno.should eql(4)
+    @io.lineno.should.eql?(4)
   end
 
   it "does not change $_" do
@@ -51,21 +51,22 @@ describe "StringIO#readlines when passed no argument" do
 
   it "returns an Array containing lines based on $/" do
     begin
-      old_sep, $/ = $/, " "
+      old_sep = $/;
+      suppress_warning {$/ = " "}
       @io.readlines.should == ["this ", "is\nan ", "example\nfor ", "StringIO#readlines"]
     ensure
-      $/ = old_sep
+      suppress_warning {$/ = old_sep}
     end
   end
 
   it "updates self's position based on the number of read bytes" do
     @io.readlines
-    @io.pos.should eql(41)
+    @io.pos.should.eql?(41)
   end
 
   it "updates self's lineno based on the number of read lines" do
     @io.readlines
-    @io.lineno.should eql(3)
+    @io.lineno.should.eql?(3)
   end
 
   it "does not change $_" do
@@ -82,12 +83,12 @@ end
 
 describe "StringIO#readlines when in write-only mode" do
   it "raises an IOError" do
-    io = StringIO.new("xyz", "w")
-    lambda { io.readlines }.should raise_error(IOError)
+    io = StringIO.new(+"xyz", "w")
+    -> { io.readlines }.should.raise(IOError)
 
     io = StringIO.new("xyz")
     io.close_read
-    lambda { io.readlines }.should raise_error(IOError)
+    -> { io.readlines }.should.raise(IOError)
   end
 end
 
@@ -95,5 +96,27 @@ describe "StringIO#readlines when passed [chomp]" do
   it "returns the data read without a trailing newline character" do
     io = StringIO.new("this>is\nan>example\r\n")
     io.readlines(chomp: true).should == ["this>is", "an>example"]
+  end
+end
+
+describe "StringIO#readlines when passed [limit]" do
+  before :each do
+    @io = StringIO.new("a b c d e\n1 2 3 4 5")
+  end
+
+  it "returns the data read until the limit is met" do
+    @io.readlines(4).should == ["a b ", "c d ", "e\n", "1 2 ", "3 4 ", "5"]
+  end
+
+  it "does not split a multi-byte character" do
+    StringIO.new("ééé").readlines(3).should == ["éé", "é"]
+  end
+
+  it "raises ArgumentError when limit is 0" do
+    -> { @io.readlines(0) }.should.raise(ArgumentError)
+  end
+
+  it "ignores it when the limit is negative" do
+    @io.readlines(-4).should == ["a b c d e\n", "1 2 3 4 5"]
   end
 end

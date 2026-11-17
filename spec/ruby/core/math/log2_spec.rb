@@ -15,24 +15,24 @@ describe "Math.log2" do
     Math.log2((2**301+45677544234809571)).should == 301.0
   end
 
-  it "raises an Errno::EDOM if the argument is less than 0" do
-    lambda { Math.log2(-1e-15) }.should raise_error( Math::DomainError)
+  it "raises Math::DomainError if the argument is less than 0" do
+    -> { Math.log2(-1e-15) }.should.raise( Math::DomainError)
   end
 
   it "raises a TypeError if the argument cannot be coerced with Float()" do
-    lambda { Math.log2("test") }.should raise_error(TypeError)
+    -> { Math.log2("test") }.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed a numerical argument as a string" do
-    lambda { Math.log2("1.0") }.should raise_error(TypeError)
+    -> { Math.log2("1.0") }.should.raise(TypeError)
   end
 
   it "returns NaN given NaN" do
-    Math.log2(nan_value).nan?.should be_true
+    Math.log2(nan_value).nan?.should == true
   end
 
   it "raises a TypeError if the argument is nil" do
-    lambda { Math.log2(nil) }.should raise_error(TypeError)
+    -> { Math.log2(nil) }.should.raise(TypeError)
   end
 
   it "accepts any argument that can be coerced with Float()" do

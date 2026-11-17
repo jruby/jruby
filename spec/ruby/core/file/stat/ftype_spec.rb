@@ -8,7 +8,7 @@ describe "File::Stat#ftype" do
 
   it "returns a String" do
     FileSpecs.normal_file do |file|
-      File.lstat(file).ftype.should be_kind_of(String)
+      File.lstat(file).ftype.should.is_a?(String)
     end
   end
 
@@ -55,10 +55,6 @@ describe "File::Stat#ftype" do
       end
     end
 
-    # This will silently not execute the block if no socket
-    # can be found. However, if you are running X, there is
-    # a good chance that if nothing else, at least the X
-    # Server socket exists.
     it "returns 'socket' when the file is a socket" do
       FileSpecs.socket do |socket|
         File.lstat(socket).ftype.should == 'socket'

@@ -2,7 +2,7 @@ require_relative '../../spec_helper'
 
 describe "Array#max" do
   it "is defined on Array" do
-    [1].method(:max).owner.should equal Array
+    [1].method(:max).owner.should.equal? Array
   end
 
   it "returns nil with no values" do
@@ -68,18 +68,18 @@ describe "Array#max" do
   end
 
   it "raises a NoMethodError for elements without #<=>" do
-    lambda do
+    -> do
       [BasicObject.new, BasicObject.new].max
-    end.should raise_error(NoMethodError)
+    end.should.raise(NoMethodError)
   end
 
   it "raises an ArgumentError for incomparable elements" do
-    lambda do
+    -> do
       [11,"22"].max
-    end.should raise_error(ArgumentError)
-    lambda do
+    end.should.raise(ArgumentError)
+    -> do
       [11,12,22,33].max{|a, b| nil}
-    end.should raise_error(ArgumentError)
+    end.should.raise(ArgumentError)
   end
 
   it "returns the maximum element (with block)" do

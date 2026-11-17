@@ -2,20 +2,18 @@ require_relative '../../spec_helper'
 require 'bigdecimal'
 
 describe "BigDecimal constants" do
-  ruby_version_is "2.5" do
-    it "defines a VERSION value" do
-      BigDecimal.const_defined?(:VERSION).should be_true
-    end
+  it "defines a VERSION value" do
+    BigDecimal.const_defined?(:VERSION).should == true
   end
 
   it "has a BASE value" do
     # The actual one is decided based on HAVE_INT64_T in MRI,
     # which is hard to check here.
-    [10000, 1000000000].should include(BigDecimal::BASE)
+    [10000, 1000000000].should.include?(BigDecimal::BASE)
   end
 
   it "has a NaN value" do
-    BigDecimal::NAN.nan?.should be_true
+    BigDecimal::NAN.nan?.should == true
   end
 
   it "has an INFINITY value" do

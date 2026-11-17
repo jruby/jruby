@@ -1,1 +1,0 @@
-fails:ARGF.lines with a separator yields each separated section of all streams

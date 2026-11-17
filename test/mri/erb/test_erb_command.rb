@@ -4,15 +4,17 @@ require 'test/unit'
 
 class TestErbCommand < Test::Unit::TestCase
   def test_var
-    assert_in_out_err(["-w",
-                       File.expand_path("../../../bin/erb", __FILE__),
+    pend if RUBY_ENGINE == 'truffleruby'
+    assert_in_out_err(["-I#{File.expand_path('../../lib', __dir__)}",
+                       File.expand_path("../../libexec/erb", __dir__),
                        "var=hoge"],
                       "<%=var%>", ["hoge"])
   end
 
   def test_template_file_encoding
-    assert_in_out_err(["-w",
-                       File.expand_path("../../../bin/erb", __FILE__)],
+    pend if RUBY_ENGINE == 'truffleruby'
+    assert_in_out_err(["-I#{File.expand_path('../../lib', __dir__)}",
+                       File.expand_path("../../libexec/erb", __dir__)],
                       "<%=''.encoding.to_s%>", ["UTF-8"])
   end
 end

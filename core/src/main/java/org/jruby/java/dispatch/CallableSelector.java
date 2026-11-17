@@ -16,14 +16,18 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.JavaCallable;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
+
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.javasupport.Java.getFunctionalInterfaceMethod;
@@ -190,11 +194,11 @@ public class CallableSelector {
 
                     final boolean lastArgProc = procArity != Integer.MIN_VALUE;
                     final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
-                    if ( moreSpecific == Boolean.TRUE ) {
+                    if (Boolean.TRUE.equals(moreSpecific)) {
                         mostSpecific = candidate; msTypes = cTypes;
                         ambiguous = false; continue /* OUTER */;
                     }
-                    else { // if ( (Object) moreSpecific == Boolean.FALSE ) {
+                    else {
                         // none more specific; check for ambiguities
                         for ( int i = 0; i < msTypes.length; i++ ) {
                             // TODO if lastArgProc (and we're not dealing with RubyProc.class)
@@ -280,14 +284,16 @@ public class CallableSelector {
                 method = mostSpecific;
 
                 if ( ambiguous ) {
+                    var context = runtime.getCurrentContext();
+
                     if (Options.JI_AMBIGUOUS_CALLS_DEBUG.load()) {
-                        runtime.newRuntimeError(
+                        runtimeError(context,
                                 "multiple Java methods found, dumping backtrace and choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
                                         + prettyParams(msTypes)
                         ).printStackTrace(runtime.getErr());
                     } else {
-                        runtime.getWarnings().warn(
+                        warn(context,
                                 "multiple Java methods found, use -X" + Options.JI_AMBIGUOUS_CALLS_DEBUG.propertyName() + " for backtrace. Choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
                                         + prettyParams(msTypes));
@@ -354,10 +360,7 @@ public class CallableSelector {
             if (method == null) {
                 method = findCallable(methods, AssignableOrDuckable, args);
                 if (method == null) {
-                    method = findCallable(methods, AssignableOrDuckable, args);
-                    if (method == null) {
-                        method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
-                    }
+                    method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
                 }
             }
         }
@@ -606,7 +609,7 @@ public class CallableSelector {
     }
 
     private static boolean assignable(Class<?> type, final IRubyObject arg) {
-        return JavaClass.assignable(type, getJavaClass(arg)) ||
+        return ClassUtils.assignable(type, getJavaClass(arg)) ||
                 // handle 'native' signatures e.g. method with a (org.jruby.RubyArray arg)
                 ( arg != null && type.isAssignableFrom(arg.getClass()) );
     }
@@ -706,6 +709,10 @@ public class CallableSelector {
             if ( CharSequence.class.isAssignableFrom(type) ) return 7;
             if ( type == Character.class ) return 1;
         }
+        else if ( arg instanceof RubySymbol ) {
+            if ( type == String.class ) return 10;
+            if ( CharSequence.class.isAssignableFrom(type) ) return 7;
+        }
         else if ( arg instanceof RubyBoolean ) {
             if ( type == Boolean.class ) return 10;
             //if ( type == Byte.class ) return 2;
@@ -738,7 +745,7 @@ public class CallableSelector {
                 javaClassOrProcHashCode(a3);
     }
 
-    private static int argsHashCode(final IRubyObject[] args) {
+    public static int argsHashCode(final IRubyObject[] args) {
         final int last = args.length - 1;
         if ( last == -1 ) return 0;
 
@@ -776,87 +783,6 @@ public class CallableSelector {
         T getSignature(int signatureCode) ;
         void putSignature(int signatureCode, T callable) ;
 
-    }
-
-    /**
-     * Internal helper to allocate a callable map to cache argument method matches.
-     * @param <T> the callable type
-     * @return cache usable with {@link CallableSelector}
-     */
-    @Deprecated
-    public static <T extends ParameterTypes> IntHashMap<T> newCallableCache() {
-        return new IntHashMap<T>(8);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args) {
-        final int signatureCode = argsHashCode(args);
-        ParameterTypes method = (ParameterTypes) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
-    // when there's already a cached match. Do not condense them into a single
-    // method.
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args) {
-        final int signatureCode = argsHashCode(args);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    @Deprecated
-    public static JavaCallable matchingCallableArityOne(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0) {
-        final int signatureCode = argsHashCode(arg0);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    @Deprecated
-    public static JavaCallable matchingCallableArityTwo(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
-        final int signatureCode = argsHashCode(arg0, arg1);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    @Deprecated
-    public static JavaCallable matchingCallableArityThree(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        final int signatureCode = argsHashCode(arg0, arg1, arg2);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    @Deprecated
-    public static JavaCallable matchingCallableArityFour(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
     }
 
 }

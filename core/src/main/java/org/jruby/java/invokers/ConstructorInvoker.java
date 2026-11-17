@@ -2,7 +2,8 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
-import java.util.List;
+import java.util.function.Supplier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -16,16 +17,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
 public final class ConstructorInvoker extends RubyToJavaInvoker {
-
-    private static final Constructor[] EMPTY_ARRAY = new Constructor[0];
-
-    public ConstructorInvoker(RubyModule host, List<Constructor> ctors, String name) {
-        super(host, setAccessible(ctors.toArray(EMPTY_ARRAY)), name);
+    public ConstructorInvoker(RubyModule host, Supplier<Constructor[]> ctors, String name) {
+        super(host, () -> setAccessible(ctors.get()), name);
     }
 
     @Override
     protected JavaCallable createCallable(Ruby ruby, Member member) {
-        return JavaConstructor.create(ruby, (Constructor)member);
+        return JavaConstructor.wrap((Constructor) member);
     }
 
     @Override
@@ -46,12 +44,6 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
     @Override
     protected Class[] getMemberParameterTypes(Member member) {
         return ((Constructor) member).getParameterTypes();
-    }
-
-    @Override
-    @Deprecated
-    protected boolean isMemberVarArgs(Member member) {
-        return ((Constructor) member).isVarArgs();
     }
 
     @Override
@@ -125,7 +117,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
 
             final int len = args.length;
 
-            IRubyObject[] newArgs = ArraySupport.newCopy(args, RubyProc.newProc(context.runtime, block, block.type));
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, Java.newBlockToInterfaceProc(context.runtime, block));
             JavaConstructor constructor = (JavaConstructor) findCallable(self, name, newArgs, len + 1);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
 
@@ -146,7 +138,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityOne(self, name, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = proc.toJava(paramTypes[0]);
@@ -163,7 +155,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityTwo(self, name, arg0, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -181,7 +173,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityThree(self, name, arg0, arg1, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -200,7 +192,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityFour(self, name, arg0, arg1, arg2, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -215,7 +207,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         return call(context, self, clazz, name, arg0, arg1, arg2);
     }
 
-    private void setAndCacheProxyObject(ThreadContext context, RubyModule clazz, JavaProxy proxy, Object object) {
+    private static void setAndCacheProxyObject(ThreadContext context, RubyModule clazz, JavaProxy proxy, Object object) {
         proxy.setObject(object);
 
         if (Java.OBJECT_PROXY_CACHE || clazz.getCacheProxy()) {

@@ -22,6 +22,8 @@ import java.util.List;
  * fastest code, but it is very simple.  It would be really nice to make this
  * side-effect free as well, but this is difficult without adding a level of
  * indirection or pre-caching each value we encounter during construction.
+ *
+ * @param <T> type of immutable literal
  */
 public abstract class ImmutableLiteral<T> extends Operand {
     private T cachedObject = null;

@@ -1,25 +1,7 @@
 require_relative '../../spec_helper'
 
 describe "ENV.update" do
-
-  it "adds the parameter hash to ENV" do
-    ENV["foo"].should == nil
-    ENV.update "foo" => "bar"
-    ENV["foo"].should == "bar"
-    ENV.delete "foo"
+  it "is an alias of ENV.merge!" do
+    ENV.method(:update).should == ENV.method(:merge!)
   end
-
-  it "yields key, the old value and the new value when replacing entries" do
-    ENV.update "foo" => "bar"
-    ENV["foo"].should == "bar"
-    ENV.update("foo" => "boo") do |key, old, new|
-      key.should == "foo"
-      old.should == "bar"
-      new.should == "boo"
-      "rab"
-    end
-    ENV["foo"].should == "rab"
-    ENV.delete "foo"
-  end
-
 end

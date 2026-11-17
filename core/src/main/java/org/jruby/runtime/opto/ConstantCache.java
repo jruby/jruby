@@ -31,11 +31,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A tuple representing the data needed to verify a cached constant:
- * 
+ * <ul>
  * <li>The value of the constant</li>
  * <li>The generation of the constant's invalidator at the time of caching</li>
  * <li>The constant's invalidator</li>
  * <li>(Optional) the hashcode of the module form which the constant was cache</li>
+ * </ul>
  */
 public class ConstantCache {
     public final IRubyObject value;

@@ -1,7 +1,3 @@
-#!/usr/bin/env ruby
-
-$:.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
-
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/script'
@@ -14,7 +10,7 @@ class MSpecRun < MSpecScript
     config[:files] = []
   end
 
-  def options(argv=ARGV)
+  def options(argv = ARGV)
     options = MSpecOptions.new "mspec run [options] (FILE|DIRECTORY|GLOB)+", 30, config
 
     options.doc " Ask yourself:"
@@ -32,10 +28,12 @@ class MSpecRun < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
+    options.env
     options.randomize
     options.repeat
     options.pretend
     options.interrupt
+    options.timeout
 
     options.doc "\n How to modify the guard behavior"
     options.unguarded
@@ -50,6 +48,9 @@ class MSpecRun < MSpecScript
 
     options.doc "\n When to perform it"
     options.action_filters
+
+    options.doc "\n Launchable"
+    options.launchable
 
     options.doc "\n Help!"
     options.debug

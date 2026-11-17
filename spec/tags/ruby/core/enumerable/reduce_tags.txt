@@ -1,0 +1,2 @@
+fails:Enumerable#reduce raises TypeError when the second argument is not Symbol or String and it cannot be converted to String if two arguments
+fails:Enumerable#reduce raises TypeError when passed not Symbol or String method name argument and it cannot be converted to String

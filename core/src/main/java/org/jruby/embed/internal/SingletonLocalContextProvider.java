@@ -39,7 +39,7 @@ import org.jruby.embed.LocalVariableBehavior;
  * As of JRuby 1.5.0 Ruby runtime returned from the getRuntime() method is a
  * classloader-global runtime.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
 
@@ -61,24 +61,6 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     private LocalContext sharedLocalContext() {
         if (localContext == null) initLocalContext(behavior, lazy);
         return localContext;
-    }
-
-    @Deprecated // no longer used
-    public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
-        if (localContext == null) {
-            synchronized( SingletonLocalContextProvider.class ) {
-                if (localContext == null) {
-                    localContext = new LocalContext(config, behavior, lazy);
-                }
-            }
-        }
-        return localContext;
-    }
-
-    @Deprecated // no longer used
-    public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
-        if (localContext == null) return null;
-        return localContext.getLocalVariableBehavior();
     }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior) {

@@ -48,10 +48,13 @@ import org.jruby.embed.variable.TransientLocalVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.internal.runtime.GlobalVariable;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.objectClass;
+
 /**
  * A collection of JSR223 specific utility methods.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class Utils {
     /**
@@ -62,10 +65,7 @@ public class Utils {
      */
     static int getLineNumber(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
-        if (obj instanceof Integer) {
-            return (Integer) obj;
-        }
-        return 0;
+        return obj instanceof Integer ? (Integer) obj : 0;
     }
 
     /**
@@ -79,13 +79,17 @@ public class Utils {
     }
 
     static String getFilename(ScriptContext context) {
+        return getFilename(context, "<script>");
+    }
+
+    static String getFilename(ScriptContext context, String defaultName) {
         Object filename = context.getAttribute(ScriptEngine.FILENAME);
-        return filename != null ? (String)filename : "<script>";
+        return filename != null ? (String) filename : defaultName;
     }
 
     static boolean isTerminationOn(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.TERMINATION.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+        if (obj instanceof Boolean && ((Boolean) obj).booleanValue()) {
             return true;
         }
         return false;
@@ -93,7 +97,7 @@ public class Utils {
     
     static boolean isClearVariablesOn(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.CLEAR_VARAIBLES.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+        if (obj instanceof Boolean && ((Boolean) obj).booleanValue()) {
             return true;
         }
         return false;
@@ -138,12 +142,12 @@ public class Utils {
         }
         map.put(AttributeName.WRITER, writer);
         
-        Ruby runtime = container.getProvider().getRuntime();
-        RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDOUT", io);
-        runtime.getGlobalVariables().alias("$>", "$stdout");
-        runtime.getGlobalVariables().alias("$defout", "$stdout");
+        var context = container.getProvider().getRuntime().getCurrentContext();
+        RubyIO io = getRubyIO(context.runtime, writer);
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDOUT", io);
+        globalVariables(context).alias("$>", "$stdout");
+        globalVariables(context).alias("$defout", "$stdout");
     }
     
     private static void setStdErr(ScriptingContainer container, Writer writer) {
@@ -159,11 +163,11 @@ public class Utils {
         }
         map.put(AttributeName.ERROR_WRITER, writer);
         
-        Ruby runtime = container.getProvider().getRuntime();
-        RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDERR", io);
-        runtime.getGlobalVariables().alias("$deferr", "$stderr");
+        var context = container.getProvider().getRuntime().getCurrentContext();
+        RubyIO io = getRubyIO(context.runtime, writer);
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDERR", io);
+        globalVariables(context).alias("$deferr", "$stderr");
     }
     
     private static RubyIO getRubyIO(Ruby runtime, Writer writer) {
@@ -217,7 +221,7 @@ public class Utils {
         if (Utils.isRubyVariable(container, adjustedKey)) {
             boolean sharing_variables = true;
             Object obj = context.getAttribute(AttributeName.SHARING_VARIABLES.toString(), ScriptContext.ENGINE_SCOPE);
-            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+            if (obj instanceof Boolean && ((Boolean) obj) == false) {
                 sharing_variables = false;
             }
             if (sharing_variables || "ARGV".equals(adjustedKey)) {

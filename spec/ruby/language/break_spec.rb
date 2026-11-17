@@ -52,29 +52,29 @@ describe "The break statement in a captured block" do
 
   describe "when the invocation of the scope creating the block is still active" do
     it "raises a LocalJumpError when invoking the block from the scope creating the block" do
-      lambda { @program.break_in_method }.should raise_error(LocalJumpError)
+      -> { @program.break_in_method }.should.raise(LocalJumpError)
       ScratchPad.recorded.should == [:a, :xa, :d, :b]
     end
 
     it "raises a LocalJumpError when invoking the block from a method" do
-      lambda { @program.break_in_nested_method }.should raise_error(LocalJumpError)
+      -> { @program.break_in_nested_method }.should.raise(LocalJumpError)
       ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
     end
 
     it "raises a LocalJumpError when yielding to the block" do
-      lambda { @program.break_in_yielding_method }.should raise_error(LocalJumpError)
+      -> { @program.break_in_yielding_method }.should.raise(LocalJumpError)
       ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
     end
   end
 
   describe "from a scope that has returned" do
     it "raises a LocalJumpError when calling the block from a method" do
-      lambda { @program.break_in_method_captured }.should raise_error(LocalJumpError)
+      -> { @program.break_in_method_captured }.should.raise(LocalJumpError)
       ScratchPad.recorded.should == [:a, :za, :xa, :zd, :zb]
     end
 
     it "raises a LocalJumpError when yielding to the block" do
-      lambda { @program.break_in_yield_captured }.should raise_error(LocalJumpError)
+      -> { @program.break_in_yield_captured }.should.raise(LocalJumpError)
       ScratchPad.recorded.should == [:a, :za, :xa, :zd, :aa, :zb]
     end
   end
@@ -88,7 +88,7 @@ describe "The break statement in a captured block" do
           e
         end
       end
-      thread_with_break.value.should be_an_instance_of(LocalJumpError)
+      thread_with_break.value.should.instance_of?(LocalJumpError)
     end
   end
 end
@@ -100,7 +100,7 @@ describe "The break statement in a lambda" do
   end
 
   it "returns from the lambda" do
-    l = lambda {
+    l = -> {
       ScratchPad << :before
       break :foo
       ScratchPad << :after
@@ -111,7 +111,7 @@ describe "The break statement in a lambda" do
 
   it "returns from the call site if the lambda is passed as a block" do
     def mid(&b)
-      lambda {
+      -> {
         ScratchPad << :before
         b.call
         ScratchPad << :unreachable1
@@ -208,7 +208,7 @@ describe "Break inside a while loop" do
 
     it "passes the value returned by a method with omitted parenthesis and passed block" do
       obj = BreakSpecs::Block.new
-      lambda { break obj.method :value do |x| x end }.call.should == :value
+      -> { break obj.method :value do |x| x end }.call.should == :value
     end
   end
 
@@ -252,6 +252,25 @@ describe "Break inside a while loop" do
   end
 end
 
+describe "The break statement in a method" do
+  it "is invalid and raises a SyntaxError" do
+    -> {
+      eval("def m; break; end")
+    }.should.raise(SyntaxError)
+  end
+end
+
+describe "The break statement in a module literal" do
+  it "is invalid and raises a SyntaxError" do
+    code = <<~RUBY
+      module BreakSpecs:ModuleWithBreak
+        break
+      end
+    RUBY
+
+    -> { eval(code) }.should.raise(SyntaxError)
+  end
+end
 
 # TODO: Rewrite all the specs from here to the end of the file in the style
 # above.
@@ -361,5 +380,23 @@ describe "Executing break from within a block" do
     bt2 = BreakTest2.new
     bt2.three
     ScratchPad.recorded.should == [:two_ensure, :three_post, :three_ensure]
+  end
+
+  it "works when passing through a super call" do
+    cls1 = Class.new { def foo; yield; end }
+    cls2 = Class.new(cls1) { def foo; super { break 1 }; end }
+
+    -> do
+      cls2.new.foo.should == 1
+    end.should_not.raise
+  end
+
+  it "raises LocalJumpError when converted into a proc during a super call" do
+    cls1 = Class.new { def foo(&b); b; end }
+    cls2 = Class.new(cls1) { def foo; super { break 1 }.call; end }
+
+    -> do
+      cls2.new.foo
+    end.should.raise(LocalJumpError)
   end
 end

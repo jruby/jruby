@@ -15,11 +15,6 @@ public abstract class ContextAwareBlockBody extends BlockBody {
         this.scope = scope;
     }
 
-    @Deprecated
-    public ContextAwareBlockBody(StaticScope scope, Arity arity, int argumentType) {
-        this(scope, Signature.from(arity));
-    }
-
     protected Frame pre(ThreadContext context, Block block) {
         return context.preYieldSpecificBlock(block.getBinding(), scope);
     }

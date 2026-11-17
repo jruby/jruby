@@ -29,15 +29,31 @@ describe "IO#syswrite on a file" do
     end
   end
 
+  it "writes all of a large string's bytes" do
+    data = "x" * (10 * 1024 * 1024)
+    @file.syswrite(data).should == data.bytesize
+    File.size(@filename).should == data.bytesize
+  end
+
+  it "does not modify the passed argument" do
+    File.open(@filename, "w") do |f|
+      f.set_encoding(Encoding::IBM437)
+      # A character whose codepoint differs between UTF-8 and IBM437
+      f.syswrite("ƒ".freeze)
+    end
+
+    File.binread(@filename).bytes.should == [198, 146]
+  end
+
   it "warns if called immediately after a buffered IO#write" do
     @file.write("abcde")
-    lambda { @file.syswrite("fghij") }.should complain(/syswrite/)
+    -> { @file.syswrite("fghij") }.should complain(/syswrite/)
   end
 
   it "does not warn if called after IO#write with intervening IO#sysread" do
     @file.syswrite("abcde")
     @file.sysread(5)
-    lambda { @file.syswrite("fghij") }.should_not complain
+    -> { @file.syswrite("fghij") }.should_not complain
   end
 
   it "writes to the actual file position when called after buffered IO#read" do
@@ -50,22 +66,26 @@ describe "IO#syswrite on a file" do
 end
 
 describe "IO#syswrite on a pipe" do
-  it "returns the written bytes if the fd is in nonblock mode and write would block" do
+  before do
     require 'io/nonblock'
-    r, w = IO.pipe
-    begin
-      w.nonblock = true
-      larger_than_pipe_capacity = 2 * 1024 * 1024
-      written = w.syswrite("a"*larger_than_pipe_capacity)
-      written.should > 0
-      written.should < larger_than_pipe_capacity
-    ensure
-      w.close
-      r.close
-    end
+    @read, @write = IO.pipe
+  end
+
+  after do
+    @read.close
+    @write.close
+  end
+
+  it "returns the written bytes if the fd is in nonblock mode and write would block" do
+    @write.nonblock = true
+    larger_than_pipe_capacity = 2 * 1024 * 1024
+    written = @write.syswrite("a"*larger_than_pipe_capacity)
+    written.should > 0
+    written.should < larger_than_pipe_capacity
   end
 end
 
 describe "IO#syswrite" do
   it_behaves_like :io_write, :syswrite
+  it_behaves_like :io_write_no_transcode, :syswrite
 end

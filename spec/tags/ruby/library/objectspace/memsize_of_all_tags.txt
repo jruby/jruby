@@ -1,0 +1,3 @@
+fails:ObjectSpace.memsize_of_all returns a non-zero Integer for all objects
+fails:ObjectSpace.memsize_of_all returns a non-zero Integer for Class
+fails:ObjectSpace.memsize_of_all increases when a new object is allocated

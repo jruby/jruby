@@ -15,7 +15,11 @@ describe "Literal Regexps" do
   end
 
   it "yields a Regexp" do
-    /Hello/.should be_kind_of(Regexp)
+    /Hello/.should.is_a?(Regexp)
+  end
+
+  it "is frozen" do
+    /Hello/.should.frozen?
   end
 
   it "caches the Regexp object" do
@@ -23,11 +27,11 @@ describe "Literal Regexps" do
     2.times do |i|
       rs << /foo/
     end
-    rs[0].should equal(rs[1])
+    rs[0].should.equal?(rs[1])
   end
 
   it "throws SyntaxError for malformed literals" do
-    lambda { eval('/(/') }.should raise_error(SyntaxError)
+    -> { eval('/(/') }.should.raise(SyntaxError)
   end
 
   #############################################################################
@@ -54,22 +58,22 @@ describe "Literal Regexps" do
 
   it "disallows first part of paired delimiters to be used as non-paired delimiters" do
     LanguageSpecs.paired_delimiters.each do |p0, p1|
-      lambda { eval("%r#{p0} foo #{p0}") }.should raise_error(SyntaxError)
+      -> { eval("%r#{p0} foo #{p0}") }.should.raise(SyntaxError)
     end
   end
 
-  it "supports non-paired delimiters delimiters with %r" do
+  it "supports non-paired delimiters with %r" do
     LanguageSpecs.non_paired_delimiters.each do |c|
       eval("%r#{c} foo #{c}").should == / foo /
     end
   end
 
   it "disallows alphabets as non-paired delimiter with %r" do
-    lambda { eval('%ra foo a') }.should raise_error(SyntaxError)
+    -> { eval('%ra foo a') }.should.raise(SyntaxError)
   end
 
   it "disallows spaces after %r and delimiter" do
-    lambda { eval('%r !foo!') }.should raise_error(SyntaxError)
+    -> { eval('%r !foo!') }.should.raise(SyntaxError)
   end
 
   it "allows unescaped / to be used with %r" do
@@ -85,11 +89,10 @@ describe "Literal Regexps" do
     # Basic matching
     /./.match("foo").to_a.should == ["f"]
     # Basic non-matching
-    /./.match("").should be_nil
-    /./.match("\n").should be_nil
+    /./.match("").should == nil
+    /./.match("\n").should == nil
     /./.match("\0").to_a.should == ["\0"]
   end
-
 
   it "supports | (alternations)" do
     /a|b/.match("a").to_a.should == ["a"]
@@ -97,7 +100,7 @@ describe "Literal Regexps" do
 
   it "supports (?> ) (embedded subexpression)" do
     /(?>foo)(?>bar)/.match("foobar").to_a.should == ["foobar"]
-    /(?>foo*)obar/.match("foooooooobar").should be_nil # it is possessive
+    /(?>foo*)obar/.match("foooooooobar").should == nil # it is possessive
   end
 
   it "supports (?# )" do
@@ -107,6 +110,13 @@ describe "Literal Regexps" do
 
   it "supports (?<= ) (positive lookbehind)" do
     /foo.(?<=\d)/.match("fooA foo1").to_a.should == ["foo1"]
+  end
+
+  ruby_bug "#13671", ""..."4.0" do # https://bugs.ruby-lang.org/issues/13671
+    it "handles a lookbehind with ss characters" do
+      r =  Regexp.new("(?<!dss)", Regexp::IGNORECASE)
+      r.should =~ "✨"
+    end
   end
 
   it "supports (?<! ) (negative lookbehind)" do
@@ -125,9 +135,9 @@ describe "Literal Regexps" do
   it "supports possessive quantifiers" do
     /fooA++bar/.match("fooAAAbar").to_a.should == ["fooAAAbar"]
 
-    /fooA++Abar/.match("fooAAAbar").should be_nil
-    /fooA?+Abar/.match("fooAAAbar").should be_nil
-    /fooA*+Abar/.match("fooAAAbar").should be_nil
+    /fooA++Abar/.match("fooAAAbar").should == nil
+    /fooA?+Abar/.match("fooAAAbar").should == nil
+    /fooA*+Abar/.match("fooAAAbar").should == nil
   end
 
   it "supports conditional regular expressions with positional capture groups" do
@@ -146,26 +156,6 @@ describe "Literal Regexps" do
     pattern.should =~ 'F'
     pattern.should_not =~ 'fooF'
     pattern.should_not =~ 'T'
-  end
-
-  escapable_terminators =  ['!', '"', '#', '%', '&', "'", ',', '-', ':', ';', '@', '_', '`']
-
-  it "supports escaping characters when used as a terminator" do
-    escapable_terminators.each do |c|
-      ref = "(?-mix:#{c})"
-      pattern = eval("%r" + c + "\\" + c + c)
-      pattern.to_s.should == ref
-    end
-  end
-
-  it "treats an escaped non-escapable character normally when used as a terminator" do
-    all_terminators = [*("!".."/"), *(":".."@"), *("[".."`"), *("{".."~")]
-    special_cases = ['(', '{', '[', '<', '\\', '=', '~']
-    (all_terminators - special_cases - escapable_terminators).each do |c|
-      ref = "(?-mix:\\#{c})"
-      pattern = eval("%r" + c + "\\" + c + c)
-      pattern.to_s.should == ref
-    end
   end
 
   it "support handling unicode 9.0 characters with POSIX bracket expressions" do

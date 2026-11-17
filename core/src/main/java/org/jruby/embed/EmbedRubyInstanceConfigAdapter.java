@@ -45,7 +45,7 @@ import org.jruby.util.KCode;
  *
  * @since JRuby 1.5.0
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface EmbedRubyInstanceConfigAdapter {
     /**
@@ -446,10 +446,4 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion();
-
-    @Deprecated
-    public org.jruby.CompatVersion getCompatVersion();
-
-    @Deprecated
-    public void setCompatVersion(org.jruby.CompatVersion version);
 }

@@ -1,1 +1,0 @@
-fails:Net::HTTP#started? returns false when self has been stopped again

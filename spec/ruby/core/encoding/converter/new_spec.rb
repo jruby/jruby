@@ -1,4 +1,4 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 
 describe "Encoding::Converter.new" do
@@ -23,9 +23,9 @@ describe "Encoding::Converter.new" do
   end
 
   it "raises an Encoding::ConverterNotFoundError if both encodings are the same" do
-    lambda do
+    -> do
       Encoding::Converter.new "utf-8", "utf-8"
-    end.should raise_error(Encoding::ConverterNotFoundError)
+    end.should.raise(Encoding::ConverterNotFoundError)
   end
 
   it "calls #to_str to convert the source encoding argument to an encoding name" do
@@ -47,10 +47,10 @@ describe "Encoding::Converter.new" do
     conv.replacement.should == "fubar"
   end
 
-  it "calls #to_hash to convert the options argument to a Hash if not a Fixnum" do
+  it "calls #to_hash to convert the options argument to a Hash if not an Integer" do
     opts = mock("encoding converter options")
     opts.should_receive(:to_hash).and_return({ replace: "fubar" })
-    conv = Encoding::Converter.new("us-ascii", "utf-8", opts)
+    conv = Encoding::Converter.new("us-ascii", "utf-8", **opts)
     conv.replacement.should == "fubar"
   end
 
@@ -65,27 +65,27 @@ describe "Encoding::Converter.new" do
     obj = mock("encoding converter replacement")
     obj.should_receive(:to_str).and_return(1)
 
-    lambda do
+    -> do
       Encoding::Converter.new("us-ascii", "utf-8", replace: obj)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed true for the replacement object" do
-    lambda do
+    -> do
       Encoding::Converter.new("us-ascii", "utf-8", replace: true)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed false for the replacement object" do
-    lambda do
+    -> do
       Encoding::Converter.new("us-ascii", "utf-8", replace: false)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
-  it "raises a TypeError if passed a Fixnum for the replacement object" do
-    lambda do
+  it "raises a TypeError if passed an Integer for the replacement object" do
+    -> do
       Encoding::Converter.new("us-ascii", "utf-8", replace: 1)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "accepts an empty String for the replacement object" do
@@ -96,18 +96,18 @@ describe "Encoding::Converter.new" do
   describe "when passed nil for the replacement object" do
     describe "when the destination encoding is not UTF-8" do
       it "sets the replacement String to '?'" do
-        conv = Encoding::Converter.new("us-ascii", "ascii-8bit", replace: nil)
+        conv = Encoding::Converter.new("us-ascii", "binary", replace: nil)
         conv.replacement.should == "?"
       end
 
       it "sets the replacement String encoding to US-ASCII" do
-        conv = Encoding::Converter.new("us-ascii", "ascii-8bit", replace: nil)
+        conv = Encoding::Converter.new("us-ascii", "binary", replace: nil)
         conv.replacement.encoding.should == Encoding::US_ASCII
       end
 
       it "sets the replacement String to '\\uFFFD'" do
         conv = Encoding::Converter.new("us-ascii", "utf-8", replace: nil)
-        conv.replacement.should == "\u{fffd}".force_encoding("utf-8")
+        conv.replacement.should == "\u{fffd}".dup.force_encoding("utf-8")
       end
 
       it "sets the replacement String encoding to UTF-8" do

@@ -5,6 +5,8 @@ import org.jruby.Ruby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.test.MockRubyObject;
 
+import static org.jruby.api.Access.stringClass;
+
 /**
  * @author Andre Kullmann
  */
@@ -17,7 +19,7 @@ public class ProfileMethodsTest extends TestCase {
     public void testSimplePutAndGetWorks() {
 
         Ruby runtime = Ruby.getGlobalRuntime();
-        DynamicMethod method = runtime.getString().getMethods().values().iterator().next();
+        DynamicMethod method = stringClass(runtime.getCurrentContext()).getMethods().values().iterator().next();
         ProfiledMethods methods = new ProfiledMethods( runtime );
         methods.addProfiledMethod( "doSomething", method );
 
@@ -31,7 +33,7 @@ public class ProfileMethodsTest extends TestCase {
     public void testNothingFoundReturnsNull() {
 
         Ruby runtime = Ruby.getGlobalRuntime();
-        DynamicMethod method = runtime.getString().getMethods().values().iterator().next();
+        DynamicMethod method = stringClass(runtime.getCurrentContext()).getMethods().values().iterator().next();
         ProfiledMethods methods = new ProfiledMethods( runtime );
         methods.addProfiledMethod( "doSomething", method );
 

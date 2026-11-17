@@ -30,9 +30,15 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
+
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
+
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -45,22 +51,21 @@ public class RubySystemExit extends RubyException {
 
     IRubyObject status;
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubySystemExit(runtime, klass);
-
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, ALLOCATOR);
-
-        systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
-
-        return systemExitClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SystemExit", Exception, RubySystemExit::new).
+                defineMethods(context, RubySystemExit.class);
     }
 
+    @Deprecated(since = "10.0.0.0")
     public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
-        final RubyClass klass = runtime.getSystemExit();
-        final IRubyObject[] args = new IRubyObject[] {
-            runtime.newFixnum(status), runtime.newString(message)
-        };
-        return (RubySystemExit) klass.newInstance(runtime.getCurrentContext(), args, Block.NULL_BLOCK);
+        return newInstance(runtime.getCurrentContext(), status, message);
+    }
+
+    public static RubySystemExit newInstance(ThreadContext context, int status, String message) {
+        final RubyClass klass = context.runtime.getSystemExit();
+        final IRubyObject[] args = new IRubyObject[] { asFixnum(context, status), newString(context, message) };
+
+        return (RubySystemExit) klass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     protected RubySystemExit(Ruby runtime, RubyClass exceptionClass) {
@@ -73,27 +78,30 @@ public class RubySystemExit extends RubyException {
         return new SystemExit(message, this);
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @Deprecated(since = "10.0.0.0")
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 0) {
+        return initialize(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
+        if (argc > 0) {
             final IRubyObject arg = args[0];
             if (arg instanceof RubyFixnum) {
                 this.status = arg;
-                if (args.length > 1) this.message = args[1]; // (status, message)
-            }
-            else if (arg instanceof RubyBoolean) {
-                final Ruby runtime = getRuntime();
-                this.status = runtime.newFixnum( arg == runtime.getTrue() ? 0 : 1 );
-                if (args.length > 1) this.message = args[1]; // (status, message)
-            }
-            else {
+                if (argc > 1) this.message = args[1]; // (status, message)
+            } else if (arg instanceof RubyBoolean) {
+                this.status = asFixnum(context, arg == context.tru ? 0 : 1 );
+                if (argc > 1) this.message = args[1]; // (status, message)
+            } else {
                 this.message = arg;
-                this.status = RubyFixnum.zero(getRuntime());
+                this.status = RubyFixnum.zero(context.runtime);
             }
-        }
-        else {
-            this.status = RubyFixnum.zero(getRuntime());
+        } else {
+            this.status = RubyFixnum.zero(context.runtime);
         }
         super.initialize(NULL_ARRAY, block);
         return this;
@@ -114,4 +122,10 @@ public class RubySystemExit extends RubyException {
         return runtime.getFalse();
     }
 
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubySystemExit exception = (RubySystemExit)clone;
+        exception.status = status;
+    }
 }

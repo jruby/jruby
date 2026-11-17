@@ -2,7 +2,7 @@ require_relative '../../../spec_helper'
 require 'zlib'
 require 'stringio'
 
-describe 'GzipReader#gets' do
+describe 'Zlib::GzipReader#gets' do
   describe 'with "" separator' do
     it 'reads paragraphs skipping newlines' do
       # gz contains "\n\n\n\n\n123\n45\n\n\n\n\nabc\nde\n\n\n\n\n"
@@ -16,7 +16,7 @@ describe 'GzipReader#gets' do
 
       gz.gets('').should == "123\n45\n\n"
       gz.gets('').should == "abc\nde\n\n"
-      gz.eof?.should be_true
+      gz.eof?.should == true
     end
   end
 end

@@ -34,10 +34,12 @@ module SocketSpecs
 
   def self.socket_path
     path = tmp("unix.sock", false)
-    # Check for too long unix socket path (max 108 bytes including \0 => 107)
+    # Check for too long unix socket path (max 104 bytes on macOS)
     # Note that Linux accepts not null-terminated paths but the man page advises against it.
-    if path.bytesize > 107
-      path = "/tmp/unix_server_spec.socket"
+    if path.bytesize > 104
+      # rm_r in spec/mspec/lib/mspec/helpers/fs.rb fails against
+      # "/tmp/unix_server_spec.socket"
+      skip "too long unix socket path: #{path}"
     end
     rm_socket(path)
     path
@@ -111,7 +113,7 @@ module SocketSpecs
       begin
         data = socket.recv(1024)
 
-        return if data.empty?
+        return if data.nil? || data.empty?
         log "SpecTCPServer received: #{data.inspect}"
 
         return if data == "QUIT"
@@ -130,6 +132,35 @@ module SocketSpecs
 
     def log(message)
       @logger.puts message if @logger
+    end
+  end
+
+  # We need to find a free port for Socket.tcp_server_loop and Socket.udp_server_loop,
+  # and the only reliable way to do that is to pass 0 as the port, but then we need to
+  # find out which one was chosen and the API doesn't let us find what it is. So we
+  # intercept one of the public API methods called by these methods.
+  class ServerLoopPortFinder < Socket
+    def self.tcp_server_sockets(*args)
+      super(*args) { |sockets|
+        @port = sockets.first.local_address.ip_port
+        yield(sockets)
+      }
+    end
+
+    def self.udp_server_sockets(*args, &block)
+      super(*args) { |sockets|
+        @port = sockets.first.local_address.ip_port
+        yield(sockets)
+      }
+    end
+
+    def self.cleanup
+      @port = nil
+    end
+
+    def self.port
+      sleep 0.001 until @port
+      @port
     end
   end
 end

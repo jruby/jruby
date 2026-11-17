@@ -7,17 +7,14 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.ext.JavaLang;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
+import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.ProductionState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -53,11 +50,11 @@ public abstract class LexingCommon {
         this.src = src;
     }
 
+    private LexContext lexContext = new LexContext();
     protected int braceNest = 0;
     public boolean commandStart;
     protected StackState conditionState = new StackState();
     protected StackState cmdArgumentState = new StackState();
-    private ByteList current_arg;
     private Encoding current_enc;
     protected boolean __end__seen = false;
     public boolean eofp = false;
@@ -65,10 +62,9 @@ public abstract class LexingCommon {
     protected int heredoc_end = 0;
     protected int heredoc_indent = 0;
     protected int heredoc_line_indent = 0;
-    public boolean inKwarg = false;
     protected int last_cr_line;
     protected int last_state;
-    private int leftParenBegin = 0;
+    private int leftParenBegin = -1;
     public ByteList lexb = null;
     public ByteList lex_lastline = null;
     protected ByteList lex_nextline = null;
@@ -84,67 +80,106 @@ public abstract class LexingCommon {
     protected int token;                      // Last token read via yylex().
     private int tokenCR;
     protected boolean tokenSeen = false;
-    public ISourcePosition tokline;
+    public int tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
+    public long start = 0;
+    public long end = 0;
 
-    public final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCII_ENCODING);
-    public final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCII_ENCODING);
-    public final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCII_ENCODING);
-    protected ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCII_ENCODING);
-    protected ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCII_ENCODING);
-    protected ByteList EQ = new ByteList(new byte[] {'='}, USASCII_ENCODING);
+    private ByteList id;
+
+    public static final ByteList AND_KEYWORD = new ByteList(new byte[] {'a', 'n', 'd'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ = new ByteList(new byte[] {'='}, USASCIIEncoding.INSTANCE);
     public static final ByteList AMPERSAND_AMPERSAND = CommonByteLists.AMPERSAND_AMPERSAND;
-    protected ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCII_ENCODING);
-    public ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCII_ENCODING);
-    public final ByteList BANG = new ByteList(new byte[] {'!'}, USASCII_ENCODING);
-    protected ByteList BANG_EQ = new ByteList(new byte[] {'!', '='}, USASCII_ENCODING);
-    protected ByteList BANG_TILDE = new ByteList(new byte[] {'!', '~'}, USASCII_ENCODING);
-    protected ByteList CARET = new ByteList(new byte[] {'^'}, USASCII_ENCODING);
-    protected ByteList COLON_COLON = new ByteList(new byte[] {':', ':'}, USASCII_ENCODING);
-    protected ByteList COLON = new ByteList(new byte[] {':'}, USASCII_ENCODING);
-    protected ByteList COMMA = new ByteList(new byte[] {','}, USASCII_ENCODING);
-    protected ByteList DOT_DOT_DOT = new ByteList(new byte[] {'.', '.', '.'}, USASCII_ENCODING);
-    protected ByteList DOT_DOT = new ByteList(new byte[] {'.', '.'}, USASCII_ENCODING);
-    public ByteList DOT = new ByteList(new byte[] {'.'}, USASCII_ENCODING);
-    protected ByteList GT_EQ = new ByteList(new byte[] {'>', '='}, USASCII_ENCODING);
-    protected ByteList GT_GT = new ByteList(new byte[] {'>', '>'}, USASCII_ENCODING);
-    protected ByteList GT = new ByteList(new byte[] {'>'}, USASCII_ENCODING);
-    protected ByteList LBRACKET_RBRACKET_EQ = new ByteList(new byte[] {'[', ']', '='}, USASCII_ENCODING);
-    public static ByteList LBRACKET_RBRACKET = new ByteList(new byte[] {'[', ']'}, USASCIIEncoding.INSTANCE);
-    protected ByteList LBRACKET = new ByteList(new byte[] {'['}, USASCII_ENCODING);
-    protected ByteList LCURLY = new ByteList(new byte[] {'{'}, USASCII_ENCODING);
-    protected ByteList LT_EQ_RT = new ByteList(new byte[] {'<', '=', '>'}, USASCII_ENCODING);
-    protected ByteList LT_EQ = new ByteList(new byte[] {'<', '='}, USASCII_ENCODING);
-    protected ByteList LT_LT = new ByteList(new byte[] {'<', '<'}, USASCII_ENCODING);
-    protected ByteList LT = new ByteList(new byte[] {'<'}, USASCII_ENCODING);
-    protected ByteList MINUS_AT = new ByteList(new byte[] {'-', '@'}, USASCII_ENCODING);
-    protected ByteList MINUS = new ByteList(new byte[] {'-'}, USASCII_ENCODING);
-    protected ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCII_ENCODING);
-    protected ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCII_ENCODING);
+    public static final ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG = new ByteList(new byte[] {'!'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG_EQ = new ByteList(new byte[] {'!', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG_TILDE = new ByteList(new byte[] {'!', '~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList CARET = new ByteList(new byte[] {'^'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COLON = new ByteList(new byte[] {':'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COMMA = new ByteList(new byte[] {','}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT_DOT_DOT = new ByteList(new byte[] {'.', '.', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT_DOT = new ByteList(new byte[] {'.', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT = new ByteList(new byte[] {'.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT_EQ = new ByteList(new byte[] {'>', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT_GT = new ByteList(new byte[] {'>', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT = new ByteList(new byte[] {'>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET_RBRACKET_EQ = new ByteList(new byte[] {'[', ']', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET_RBRACKET = new ByteList(new byte[] {'[', ']'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET = new ByteList(new byte[] {'['}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LCURLY = new ByteList(new byte[] {'{'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_EQ_RT = new ByteList(new byte[] {'<', '=', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_EQ = new ByteList(new byte[] {'<', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_LT = new ByteList(new byte[] {'<', '<'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT = new ByteList(new byte[] {'<'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS_AT = new ByteList(new byte[] {'-', '@'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS = new ByteList(new byte[] {'-'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCIIEncoding.INSTANCE);
     public static final ByteList OR_OR = CommonByteLists.OR_OR;
-    protected ByteList OR = new ByteList(new byte[] {'|'}, USASCII_ENCODING);
-    protected ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCII_ENCODING);
-    protected ByteList PLUS = new ByteList(new byte[] {'+'}, USASCII_ENCODING);
-    protected ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCII_ENCODING);
-    protected ByteList RBRACKET = new ByteList(new byte[] {']'}, USASCII_ENCODING);
-    protected ByteList RCURLY = new ByteList(new byte[] {'}'}, USASCII_ENCODING);
-    protected ByteList RPAREN = new ByteList(new byte[] {')'}, USASCII_ENCODING);
-    protected ByteList Q = new ByteList(new byte[] {'\''}, USASCII_ENCODING);
-    protected ByteList SLASH = new ByteList(new byte[] {'/'}, USASCII_ENCODING);
-    protected ByteList STAR = new ByteList(new byte[] {'*'}, USASCII_ENCODING);
-    protected ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCII_ENCODING);
-    protected ByteList TILDE = new ByteList(new byte[] {'~'}, USASCII_ENCODING);
-    protected ByteList QQ = new ByteList(new byte[] {'"'}, USASCII_ENCODING);
-    protected ByteList SEMICOLON = new ByteList(new byte[] {';'}, USASCII_ENCODING);
-    protected ByteList BACKSLASH = new ByteList(new byte[] {'\\'}, USASCII_ENCODING);
+    public static final ByteList OR = new ByteList(new byte[] {'|'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList OR_KEYWORD = new ByteList(new byte[] {'o', 'r'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PLUS = new ByteList(new byte[] {'+'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RBRACKET = new ByteList(new byte[] {']'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RCURLY = new ByteList(new byte[] {'}'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RPAREN = new ByteList(new byte[] {')'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList Q = new ByteList(new byte[] {'\''}, USASCIIEncoding.INSTANCE);
+    public static final ByteList SLASH = new ByteList(new byte[] {'/'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList STAR = new ByteList(new byte[] {'*'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList TILDE = new ByteList(new byte[] {'~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList QQ = new ByteList(new byte[] {'"'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList SEMICOLON = new ByteList(new byte[] {';'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BACKSLASH = new ByteList(new byte[] {'\\'}, USASCIIEncoding.INSTANCE);
     public static final ByteList CALL = new ByteList(new byte[] {'c', 'a', 'l', 'l'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_BANG = new ByteList(new byte[] {'$', '!'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_UNDERSCORE = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_DOT = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
 
+    public static final ByteList KWNOREST = new ByteList(new byte[] {'n', 'i', 'l'});
+
     public int column() {
         return tokp - lex_pbeg;
+    }
+
+    protected void set_yylval_id(ByteList id) {
+        this.id = id;
+    }
+
+    protected void set_yylval_name(ByteList name) {
+        this.id = name;
+    }
+
+    public ByteList id() {
+        return id;
+    }
+
+    protected void updateTokenPosition() {
+        int start_column = this.tokp - lex_pbeg;
+        int end_column = this.lex_p - lex_pbeg;
+
+        this.start = ProductionState.pack(ruby_sourceline, start_column);
+        this.end = ProductionState.pack(ruby_sourceline, end_column);
+    }
+
+    protected void updateStartPosition(int column) {
+        this.start = ProductionState.pack(ruby_sourceline, column);
+    }
+
+    // similar to compile_error where yyloc passes in NULL.
+    public void compile_error_pos(String message) {
+        updateTokenPosition();
+        compile_error(message);
     }
 
     protected boolean comment_at_top() {
@@ -170,27 +205,36 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), true);
     }
 
+    /**
+     * @param start how many bytes of the current token to leave off its front, such as the ? of a
+     * character literal
+     * @return the rest of the current token
+     */
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp, getEncoding(), false);
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp + start, lex_p - tokp - start, getEncoding(), false);
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start);
     }
 
-    public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
+    @SuppressWarnings({"DefaultCharset", "ReferenceEquality"})
+    public String createAsEncodedString(byte[] bytes, int start, int length) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
+        Charset charset;
         try {
-            Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
-            if (charset != null) {
-                if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, start, length);
-                } else {
-                    return new String(bytes, start, length, charset);
-                }
-            }
-        } catch (UnsupportedCharsetException e) {}
+            charset = EncodingUtils.charsetForEncoding(getEncoding());
+        } catch (UnsupportedCharsetException e) {
+            charset = null; // fallback to platform's default charset
+        }
 
+        if (charset == RubyEncoding.UTF8) { // common path first
+            return RubyEncoding.decodeUTF8(bytes, start, length);
+        }
+
+        if (charset != null) {
+            return new String(bytes, start, length, charset);
+        }
         return new String(bytes, start, length);
     }
 
@@ -221,8 +265,16 @@ public abstract class LexingCommon {
         return i;
     }
 
-    protected void flush() {
+    public void flush() {
         tokp = lex_p;
+    }
+
+    public LexContext getLexContext() {
+        return lexContext;
+    }
+
+    public void setLexContext(LexContext context) {
+        lexContext = context;
     }
 
     public int getBraceNest() {
@@ -235,10 +287,6 @@ public abstract class LexingCommon {
 
     public StackState getConditionState() {
         return conditionState;
-    }
-
-    public ByteList getCurrentArg() {
-        return current_arg;
     }
 
     public String getCurrentLine() {
@@ -265,9 +313,8 @@ public abstract class LexingCommon {
         return leftParenBegin;
     }
 
-    public ISourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
+    protected boolean isLambdaBeginning() {
+        return getLeftParenBegin() == parenNest;
     }
 
     public int getLineOffset() {
@@ -282,6 +329,10 @@ public abstract class LexingCommon {
         return tokenCR;
     }
 
+    public int getParenNest() {
+        return parenNest;
+    }
+
     public int incrementParenNest() {
         parenNest++;
 
@@ -292,12 +343,24 @@ public abstract class LexingCommon {
         return __end__seen;
     }
 
+    public boolean isLookingAtEOL() {
+        for (int i = lex_p; i < lex_pend; i++) {
+            int c = lexb.get(i);
+            boolean eol = c == '\n' || c == '#';
+            if (eol || !isSpace(c)) {
+                return eol;
+            }
+        }
+
+        return true;
+    }
+
     // mri: parser_isascii
     public boolean isASCII() {
         return Encoding.isMbcAscii((byte) lexb.get(lex_p - 1));
     }
 
-    public boolean isASCII(int c) {
+    public static boolean isASCII(int c) {
         return Encoding.isMbcAscii((byte) c);
     }
 
@@ -391,7 +454,7 @@ public abstract class LexingCommon {
      *
      * mri: is_identchar
      */
-    public boolean isIdentifierChar(int c) {
+    public static boolean isIdentifierChar(int c) {
         return c != EOF && (Character.isLetterOrDigit(c) || c == '_' || !isASCII(c));
     }
 
@@ -401,6 +464,14 @@ public abstract class LexingCommon {
 
     public int lineno() {
         return ruby_sourceline + src.getLineOffset();
+    }
+
+    /**
+     * The last line read so far. Unlike lineno(), this is past a heredoc that ends the source: lineno() is still on
+     * the line the heredoc started on, until the lexer reads the next line.
+     */
+    public int lastLineno() {
+        return Math.max(ruby_sourceline, heredoc_end) + src.getLineOffset();
     }
 
     protected void magicCommentEncoding(ByteList encoding) {
@@ -414,43 +485,53 @@ public abstract class LexingCommon {
     // In most cases this does not matter much but for ripper or a place where
     // we remove actual source characters (like extra '"') then this acts differently.
     public void newtok(boolean unreadOnce) {
-        tokline = getPosition();
+        tokline = ruby_sourceline;
         // We assume all idents are 7BIT until they aren't.
         tokenCR = StringSupport.CR_7BIT;
 
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
 
-    protected int numberLiteralSuffix(int mask) throws IOException {
-        int c = nextc();
+    protected int numberLiteralSuffix(int mask) {
+        int c;
+        int result = 0;
+        int last = lex_p;
 
-        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
-
-        if (c == 'r') {
-            int result = 0;
-            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
-
-            if (peek('i') && (mask & SUFFIX_I) != 0) {
-                c = nextc();
+        while((c = nextc()) != EOF) {
+            if ((mask & SUFFIX_I) != 0 && c == 'i') {
                 result |= (mask & SUFFIX_I);
+                mask &= ~SUFFIX_R; // 'r' cannot come after an 'i'.
+                continue;
             }
 
-            return result;
-        }
-        if (c == '.') {
-            int c2 = nextc();
-            if (Character.isDigit(c2)) {
-                compile_error("unexpected fraction part after numeric literal");
-                do { // Ripper does not stop so we follow MRI here and read over next word...
-                    c2 = nextc();
-                } while (isIdentifierChar(c2));
-            } else {
-                pushback(c2);
+            if ((mask & SUFFIX_R) != 0 && c == 'r') {
+                result |= (mask & SUFFIX_R);
+                mask &= ~SUFFIX_R;
+                continue;
             }
-        }
-        pushback(c);
 
-        return 0;
+            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') {
+                lex_p = last;
+                return 0;
+            }
+
+            if (c == '.') {
+                int c2 = nextc();
+                if (Character.isDigit(c2)) {
+                    compile_error("unexpected fraction part after numeric literal");
+                    do { // Ripper does not stop so we follow MRI here and read over next word...
+                        c2 = nextc();
+                    } while (isIdentifierChar(c2));
+                } else {
+                    pushback(c2);
+                }
+            }
+            pushback(c);
+
+            break;
+        }
+
+        return result;
     }
 
     public void parser_prepare() {
@@ -482,6 +563,10 @@ public abstract class LexingCommon {
 
     public boolean peek(int c) {
         return peek(c, 0);
+    }
+
+    public int peekAt(int n) {
+        return lex_p+n < lex_pend ?  p(lex_p+n) : EOF;
     }
 
     protected boolean peek(int c, int n) {
@@ -552,10 +637,6 @@ public abstract class LexingCommon {
         }
 
         return value;
-    }
-
-    public void setCurrentArg(ByteList current_arg) {
-        this.current_arg = current_arg;
     }
 
     // FIXME: This is icky.  Ripper is setting encoding immediately but in Parsers lexer we are not.
@@ -780,36 +861,6 @@ public abstract class LexingCommon {
         }
     }
 
-    @Deprecated
-    public void validateFormalIdentifier(String identifier) {
-        char first = identifier.charAt(0);
-
-        if (Character.isUpperCase(first)) {
-            compile_error("formal argument cannot be a constant");
-        }
-
-        switch(first) {
-            case '@':
-                if (identifier.charAt(1) == '@') {
-                    compile_error("formal argument cannot be a class variable");
-                } else {
-                    compile_error("formal argument cannot be an instance variable");
-                }
-                break;
-            case '$':
-                compile_error("formal argument cannot be a global variable");
-                break;
-            default:
-                // This mechanism feels a tad dicey but at this point we are dealing with a valid
-                // method name at least so we should not need to check the entire string...
-                char last = identifier.charAt(identifier.length() - 1);
-
-                if (last == '=' || last == '?' || last == '!') {
-                    compile_error("formal argument must be local variable");
-                }
-        }
-    }
-
     /**
      * Value of last token (if it is a token which has a value).
      *
@@ -819,10 +870,12 @@ public abstract class LexingCommon {
         return yaccValue;
     }
 
-    protected void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
-        if (!isLexState(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN) && spaceSeen && !Character.isWhitespace(c)) {
+    protected int warn_balanced(int c, boolean spaceSeen, int token, String op, String syn) {
+        if (!IS_lex_state(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN) && spaceSeen && !Character.isWhitespace(c)) {
             ambiguousOperator(op, syn);
         }
+
+        return token;
     }
 
     public boolean was_bol() {
@@ -853,6 +906,7 @@ public abstract class LexingCommon {
 
     protected abstract void ambiguousOperator(String op, String syn);
     public abstract void compile_error(String message);
+    public abstract void parse_error(String message);
     public abstract int nextc();
     protected abstract void setCompileOptionFlag(String name, ByteList value);
     protected abstract void setEncoding(ByteList name);
@@ -906,36 +960,44 @@ public abstract class LexingCommon {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
-    public static boolean isLexState(int state, int mask) {
+    public static boolean IS_lex_state(int state, int mask) {
         return (mask & state) != 0;
     }
 
-    protected boolean isLexStateAll(int state, int mask) {
+    protected boolean IS_lex_state_all(int state, int mask) {
         return (mask & state) == mask;
     }
 
-    protected boolean isARG() {
-        return isLexState(lex_state, EXPR_ARG_ANY);
+    protected static boolean ISSPACE(int c) {
+        return Character.isWhitespace(c);
     }
 
-    protected boolean isBEG() {
-        return isLexState(lex_state, EXPR_BEG_ANY) || isLexStateAll(lex_state, EXPR_ARG|EXPR_LABELED);
+    protected boolean IS_ARG() {
+        return IS_lex_state(lex_state, EXPR_ARG_ANY);
     }
 
-    protected boolean isEND() {
-        return isLexState(lex_state, EXPR_END_ANY);
+    protected boolean IS_END() {
+        return IS_lex_state(lex_state, EXPR_END_ANY);
     }
 
-    protected boolean isLabelPossible(boolean commandState) {
-        return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
+    protected boolean IS_BEG() {
+        return IS_lex_state(lex_state, EXPR_BEG_ANY) || IS_lex_state_all(lex_state, EXPR_ARG|EXPR_LABELED);
     }
 
-    public boolean isLabelSuffix() {
+    protected boolean IS_SPCARG(int c, boolean spaceSeen) {
+        return IS_ARG() && spaceSeen && !ISSPACE(c);
+    }
+
+    protected boolean IS_LABEL_POSSIBLE(boolean commandState) {
+        return (IS_lex_state(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || IS_ARG();
+    }
+
+    public boolean IS_LABEL_SUFFIX() {
         return peek(':') && !peek(':', 1);
     }
 
-    protected boolean isAfterOperator() {
-        return isLexState(lex_state, EXPR_FNAME|EXPR_DOT);
+    protected boolean IS_AFTER_OPERATOR() {
+        return IS_lex_state(lex_state, EXPR_FNAME|EXPR_DOT);
     }
 
     protected boolean isNext_identchar() throws IOException {
@@ -957,14 +1019,10 @@ public abstract class LexingCommon {
         return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
-    protected boolean isSpaceArg(int c, boolean spaceSeen) {
-        return isARG() && spaceSeen && !Character.isWhitespace(c);
-    }
-
-    /* MRI: magic_comment_marker */
     /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
      * and once in parseMagicComment.
      */
+    @CRuby(value = "magic_comment_marker", file = "parse.y")
     public static int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
         int len = str.length();
@@ -1174,6 +1232,7 @@ public abstract class LexingCommon {
 
     protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
 
+    @SuppressWarnings("ReferenceEquality")
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
         Encoding optionsEncoding = options.setup(runtime);
@@ -1190,26 +1249,236 @@ public abstract class LexingCommon {
                 mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(ASCII8BIT_ENCODING);
-        } else if (getEncoding() == USASCII_ENCODING) {
+        } else if (getEncoding() == USASCIIEncoding.INSTANCE) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(USASCII_ENCODING); // This will raise later
+                value.setEncoding(USASCIIEncoding.INSTANCE); // This will raise later
             } else {
                 value.setEncoding(ASCII8BIT_ENCODING);
             }
         }
     }
 
-    private boolean is7BitASCII(ByteList value) {
-      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    private static boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
 
+    @SuppressWarnings("ReferenceEquality")
     // TODO: Put somewhere more consolidated (similiar
     protected char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == USASCII_ENCODING) return 'n';
+        if (optionEncoding == USASCIIEncoding.INSTANCE) return 'n';
         if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
         if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
         if (optionEncoding == UTF8_ENCODING) return 'u';
 
         return ' ';
+    }
+
+    /**
+     * Read up to count hexadecimal digits.  If strict is provided then count number of hex
+     * digits must be present. If no digits can be read a syntax exception will be thrown.
+     */
+    protected int scanHex(int count, boolean strict, String errorMessage) {
+        int i = 0;
+        int hexValue = 0;
+
+        if (!strict) {
+            for (int c = nextc(); Character.isWhitespace((c)); c = nextc()) {
+                // do nothing
+            }
+            pushback(0);
+        }
+
+        for (; i < count; i++) {
+            int h1 = nextc();
+
+            if (!isHexChar(h1)) {
+                pushback(h1);
+                break;
+            }
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (strict && count != i) parse_error(errorMessage);
+
+        if (i == 0) { // No hex digits read.
+            if (peek('}')) { // \ u { } empty case
+                return -1;
+            } else { // \ u { {gargbage} case
+                updateStartPosition(lex_p);
+                parse_error(errorMessage);
+                flush();
+            }
+        }
+
+        return hexValue;
+    }
+
+    public int readEscape() throws IOException {
+        int c = nextc();
+
+        switch (c) {
+            case '\\' : // backslash
+                return c;
+            case 'n' : // newline
+                return '\n';
+            case 't' : // horizontal tab
+                return '\t';
+            case 'r' : // carriage return
+                return '\r';
+            case 'f' : // form feed
+                return '\f';
+            case 'v' : // vertical tab
+                return '\u000B';
+            case 'a' : // alarm(bell)
+                return '\u0007';
+            case 'e' : // escape
+                return '\u001B';
+            case '0' : case '1' : case '2' : case '3' : // octal constant
+            case '4' : case '5' : case '6' : case '7' :
+                pushback(c);
+                return scanOct(3);
+            case 'x' : // hex constant
+                return tokHex(2, "invalid hex escape");
+            case 'b' : // backspace
+                return '\010';
+            case 's' : // space
+                return ' ';
+            case 'M' :
+                if ((c = nextc()) != '-') {
+                    compile_error_pos("Invalid escape character syntax");
+                } else if ((c = nextc()) == '\\') {
+                    return (char) (readEscape() | 0x80);
+                } else if (c == EOF) {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+                return (char) ((c & 0xff) | 0x80);
+            case 'C' :
+                if (nextc() != '-') {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+            case 'c' :
+                if ((c = nextc()) == '\\') {
+                    c = readEscape();
+                } else if (c == '?') {
+                    return '\177';
+                } else if (c == EOF) {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+                return (char) (c & 0x9f);
+            case EOF :
+                parse_error("Invalid escape character syntax");
+            default :
+                return c;
+        }
+    }
+
+    /**
+     * Read up to count hexadecimal digits and store those digits in a token numberBuffer.  If strict is
+     * provided then count number of hex digits must be present. If no digits can be read a syntax
+     * exception will be thrown.  This will also return the codepoint as a value so codepoint
+     * ranges can be checked.
+     */
+    protected int scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage) {
+        assert count >= 1 && count <= 8 : "unexpected count: " + count;
+        int i = 0;
+        int hexValue = '\0';
+
+        for (; i < count; i++) {
+            int h1 = nextc();
+
+            if (!isHexChar(h1)) {
+                pushback(h1);
+                break;
+            }
+
+            buffer.append(h1);
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt(String.valueOf((char) h1), 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (strict && count != i) {
+            compile_error(errorMessage);
+        }
+
+        return hexValue;
+    }
+
+    protected int tokHex(int count, String errorMessage) {
+        return scanHex(count, false, errorMessage);
+    }
+
+    @SuppressWarnings("ReferenceEquality")
+    protected void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
+        if (codepoint >= 0x80) {
+            if (encodingDetermined[0] && buffer.getEncoding() != UTF8Encoding.INSTANCE) {
+                compile_error("UTF-8 mixed within " + buffer.getEncoding() + " source");
+            }
+            buffer.setEncoding(UTF8_ENCODING);
+            encodingDetermined[0] = true;
+            if (stringLiteral) tokaddmbc(codepoint, buffer);
+        } else if (stringLiteral) {
+            buffer.append((char) codepoint);
+        }
+    }
+
+    // FIXME: This could be refactored into something cleaner
+    // MRI: parser_tokadd_utf8 sans regexp literal parsing
+    public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
+        int codepoint;
+        int c;
+
+        if (peek('{')) { // handle \\u{...}
+            do {
+                nextc(); // Eat curly or whitespace
+                codepoint = scanHex(6, false, "invalid Unicode escape");
+                if (codepoint == -1 && peek('}')) {
+                    nextc();
+                    return 0;
+                }
+                if (codepoint > 0x10ffff) {
+                    parse_error("invalid Unicode codepoint (too large)");
+                }
+                if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
+            } while (peek(' ') || peek('\t'));
+
+            c = nextc();
+            if (c != '}') {
+                updateStartPosition(lex_p - 1);
+                parse_error("unterminated Unicode escape");
+            }
+        } else { // handle \\uxxxx
+            codepoint = scanHex(4, true, "Invalid Unicode escape");
+            if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
+        }
+
+        return codepoint;
+    }
+
+    // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
+    // called when string_literal and regexp_literal.
+    public void readUTFEscapeRegexpLiteral(ByteList buffer) {
+        buffer.append('\\');
+        buffer.append('u');
+
+        if (peek('{')) { // handle \\u{...}
+            do {
+                buffer.append(nextc());
+                if (scanHexLiteral(buffer, 6, false, "invalid Unicode escape") > 0x10ffff) {
+                    compile_error("invalid Unicode codepoint (too large)");
+                }
+            } while (peek(' ') || peek('\t'));
+
+            int c = nextc();
+            if (c != '}') compile_error("unterminated Unicode escape");
+
+            buffer.append((char) c);
+        } else { // handle \\uxxxx
+            scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
+        }
     }
 }

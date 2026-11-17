@@ -36,18 +36,18 @@ describe "Enumerable#max" do
   end
 
   it "raises a NoMethodError for elements without #<=>" do
-    lambda do
+    -> do
       EnumerableSpecs::EachDefiner.new(BasicObject.new, BasicObject.new).max
-    end.should raise_error(NoMethodError)
+    end.should.raise(NoMethodError)
   end
 
   it "raises an ArgumentError for incomparable elements" do
-    lambda do
+    -> do
       EnumerableSpecs::EachDefiner.new(11,"22").max
-    end.should raise_error(ArgumentError)
-    lambda do
+    end.should.raise(ArgumentError)
+    -> do
       EnumerableSpecs::EachDefiner.new(11,12,22,33).max{|a, b| nil}
-    end.should raise_error(ArgumentError)
+    end.should.raise(ArgumentError)
   end
 
   context "when passed a block" do
@@ -106,7 +106,7 @@ describe "Enumerable#max" do
 
     context "that is negative" do
       it "raises an ArgumentError" do
-        lambda { @e_ints.max(-1) }.should raise_error(ArgumentError)
+        -> { @e_ints.max(-1) }.should.raise(ArgumentError)
       end
     end
   end

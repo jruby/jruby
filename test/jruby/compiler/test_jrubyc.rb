@@ -2,6 +2,8 @@ require 'test/unit'
 require 'stringio'
 require 'tempfile'
 require 'fileutils'
+require 'test/jruby/test_helper'
+require 'pathname'
 
 class TestJRubyc < Test::Unit::TestCase
 
@@ -24,6 +26,9 @@ class TestJRubyc < Test::Unit::TestCase
     $stdout.reopen(@old_stdout) if @old_stdout
     $stderr.reopen(@old_stderr) if @old_stderr
 
+    @tempfile_stdout.close! rescue nil
+    @tempfile_stderr.close! rescue nil
+
     $compile_test = nil; $encoding = nil
   end
 
@@ -41,15 +46,17 @@ class TestJRubyc < Test::Unit::TestCase
   end
 
   def test_target
+
     tempdir = File.dirname(@tempfile_stdout.path)
-    class_file = File.join(tempdir, __FILE__.sub('.rb', '.class'))
+    relative_path = Pathname.new(File.absolute_path(__FILE__)).relative_path_from(Dir.pwd) 
+    class_file = File.join(tempdir, relative_path.sub('.rb', '.class'))
 
     JRuby::Compiler::compile_argv ["--verbose", "--target", tempdir, __FILE__]
 
     output = File.read(@tempfile_stdout.path)
     assert_equal "Compiling #{__FILE__}\n", output
 
-    assert File.exist?(class_file)
+    assert File.exist?(class_file), "#{class_file} does not exists"
   ensure
     ( class_file && FileUtils.rm_rf(class_file) ) rescue nil
   end
@@ -121,6 +128,36 @@ class TestJRubyc < Test::Unit::TestCase
       File.delete("test_file2.rb") rescue nil
       File.delete("C.java") rescue nil
       File.delete("C.class") rescue nil
+    end
+
+    # encode/decode ends up correcting depth for real static scopes.  Some mixture of nesting
+    # here to sample various counting scenarios.
+    def test_for
+      $compile_test = nil
+      File.open("test_for1.rb", "w") { |file| file.write(<<-RUBY
+      def npe_when_compiled(arr)
+        x = []
+        for j in 0..1
+          o = "o"
+          1.times do |g|
+            for i in 0..1
+              arr.collect { |e| x << e << o}
+            end
+          end
+        end
+        x.join('')
+      end
+
+      $compile_test = npe_when_compiled(["x"])
+      RUBY
+      )}
+
+      JRuby::Compiler::compile_argv(["--verbose", "test_for1.rb"])
+      assert_nothing_raised { require 'test_for1' }
+      assert_equal("xoxoxoxo", $compile_test)
+    ensure
+      File.delete("test_for1.rb") rescue nil
+      File.delete("test_for1.class") rescue nil
     end
 
   end

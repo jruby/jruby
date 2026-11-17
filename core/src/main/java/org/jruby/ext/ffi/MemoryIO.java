@@ -49,7 +49,7 @@ abstract public class MemoryIO {
     /**
      * Checks if the memory area is NULL.
      * 
-     * @return <tt>true</tt> if the memory area is invalid.
+     * @return <code>true</code> if the memory area is invalid.
      */
     public final boolean isNull() {
         return address == 0L;
@@ -58,7 +58,7 @@ abstract public class MemoryIO {
     /**
      * Checks if the memory area is a native memory pointer.
      *
-     * @return <tt>true</tt> if the memory area is a native pointer.
+     * @return <code>true</code> if the memory area is a native pointer.
      */
     public final boolean isDirect() {
         return isDirect;
@@ -87,28 +87,28 @@ abstract public class MemoryIO {
 
     /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this
-     * <tt>MemoryIO</tt>.
+     * <code>MemoryIO</code>.
      * @param offset The offset within the existing memory area to start the
-     * new <tt>MemoryIO</tt> at.
-     * @return A <tt>MemoryIO</tt> instance.
+     * new <code>MemoryIO</code> at.
+     * @return A <code>MemoryIO</code> instance.
      */
     abstract public MemoryIO slice(long offset);
 
     /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this
-     * <tt>MemoryIO</tt>.
+     * <code>MemoryIO</code>.
      * @param offset The offset within the existing memory area to start the
-     * new <tt>MemoryIO</tt> at.
+     * new <code>MemoryIO</code> at.
      * @param size The size of the new slice.
      *
-     * @return A <tt>MemoryIO</tt> instance.
+     * @return A <code>MemoryIO</code> instance.
      */
     abstract public MemoryIO slice(long offset, long size);
 
     /**
-     * Duplicates this <tt>MemoryIO</tt>, including its contents.
+     * Duplicates this <code>MemoryIO</code>, including its contents.
      * 
-     * @return A <tt>MemoryIO</tt> instance.
+     * @return A <code>MemoryIO</code> instance.
      */
     abstract public MemoryIO dup();
 
@@ -123,7 +123,7 @@ abstract public class MemoryIO {
      * Reads an 8 bit integer value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The 8 bit integer value read from <tt>offset</tt>
+     * @return The 8 bit integer value read from <code>offset</code>
      */
     abstract public byte getByte(long offset);
     
@@ -131,7 +131,7 @@ abstract public class MemoryIO {
      * Reads a 16 bit integer value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The 16 bit integer value read from <tt>offset</tt>
+     * @return The 16 bit integer value read from <code>offset</code>
      */
     abstract public short getShort(long offset);
     
@@ -139,7 +139,7 @@ abstract public class MemoryIO {
      * Reads a 32 bit integer value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The 32 bit integer value read from <tt>offset</tt>
+     * @return The 32 bit integer value read from <code>offset</code>
      */
     abstract public int getInt(long offset);
     
@@ -147,7 +147,7 @@ abstract public class MemoryIO {
      * Reads a 64 bit integer value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The 64 bit integer value read from <tt>offset</tt>
+     * @return The 64 bit integer value read from <code>offset</code>
      */
     abstract public long getLong(long offset);
     
@@ -163,7 +163,7 @@ abstract public class MemoryIO {
      * systems, and a 64bit value on 64bit systems.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The native long value read from <tt>offset</tt>
+     * @return The native long value read from <code>offset</code>
      */
     abstract public long getNativeLong(long offset);
     
@@ -171,7 +171,7 @@ abstract public class MemoryIO {
      * Reads a float value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The float value read from <tt>offset</tt>
+     * @return The float value read from <code>offset</code>
      */
     abstract public float getFloat(long offset);
     
@@ -179,7 +179,7 @@ abstract public class MemoryIO {
      * Reads a double value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return The double value read from <tt>offset</tt>
+     * @return The double value read from <code>offset</code>
      */
     abstract public double getDouble(long offset);
 
@@ -187,7 +187,7 @@ abstract public class MemoryIO {
      * Reads a pointer value at the specified offset within the memory area.
      *
      * @param offset The offset within the memory area to read the value.
-     * @return A <tt>long</tt> value that represents the address.
+     * @return A <code>long</code> value that represents the address.
      */
      abstract public long getAddress(long offset);
 
@@ -196,7 +196,7 @@ abstract public class MemoryIO {
      * wraps it in an abstract memory accessor.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return A <tt>DirectMemoryIO</tt> accessor that can be used to access the memory
+     * @return A <code>DirectMemoryIO</code> accessor that can be used to access the memory
      * pointed to by the address.
      */
     abstract public MemoryIO getMemoryIO(long offset);
@@ -445,7 +445,7 @@ abstract public class MemoryIO {
      * @param offset The offset within the memory area of the start of the string.
      * @param bytes The byte array to write to the memory.
      * @param off The offset with the byte array to start copying.
-     * @param maxlen The number of bytes of the byte array to write to the memory area. (not including zero byte)
+     * @param len The number of bytes of the byte array to write to the memory area. (not including zero byte)
      */
     abstract public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len);
 }

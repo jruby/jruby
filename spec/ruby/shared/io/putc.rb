@@ -1,4 +1,4 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 describe :io_putc, shared: true do
   after :each do
     @io.close if @io && !@io.closed?
@@ -6,7 +6,7 @@ describe :io_putc, shared: true do
     rm_r @name
   end
 
-  describe "with a Fixnum argument" do
+  describe "with an Integer argument" do
     it "writes one character as a String" do
       @io.should_receive(:write).with("A")
       @io_object.send(@method, 65).should == 65
@@ -40,18 +40,18 @@ describe :io_putc, shared: true do
 
   it "raises IOError on a closed stream" do
     @io.close
-    lambda { @io_object.send(@method, "a") }.should raise_error(IOError)
+    -> { @io_object.send(@method, "a") }.should.raise(IOError)
   end
 
   it "raises a TypeError when passed nil" do
-    lambda { @io_object.send(@method, nil) }.should raise_error(TypeError)
+    -> { @io_object.send(@method, nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when passed false" do
-    lambda { @io_object.send(@method, false) }.should raise_error(TypeError)
+    -> { @io_object.send(@method, false) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when passed true" do
-    lambda { @io_object.send(@method, true) }.should raise_error(TypeError)
+    -> { @io_object.send(@method, true) }.should.raise(TypeError)
   end
 end

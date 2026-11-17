@@ -5,6 +5,7 @@
 # Damian Steer (pldms@mac.com)
 
 require 'jruby'
+require 'readline'
 require 'irb'
 require 'irb/completion'
 

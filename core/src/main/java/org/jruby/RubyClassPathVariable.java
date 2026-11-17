@@ -38,31 +38,27 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+
 public class RubyClassPathVariable extends RubyObject {
-    public static void createClassPathVariable(Ruby runtime) {
-        RubyClassPathVariable self = new RubyClassPathVariable(runtime);
-        runtime.getEnumerable().extend_object(self);
-        runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
-        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
+    public static void createClassPathVariable(ThreadContext context, RubyModule Enumerable, RubyClass Object) {
+        RubyClassPathVariable self = new RubyClassPathVariable(context, Object);
+        Enumerable.extend_object(context, self);
+        context.runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
+        self.getMetaClass().defineMethods(context, RubyClassPathVariable.class);
     }
 
-    private RubyClassPathVariable(Ruby runtime) {
-        super(runtime, runtime.getObject());
+    private RubyClassPathVariable(ThreadContext context, RubyClass Object) {
+        super(context.runtime, Object);
     }
     
-    @Deprecated
-    public IRubyObject append(IRubyObject obj) {
-        return append(obj.getRuntime().getCurrentContext(), obj);
-    }
-
-    @JRubyMethod(name = {"append", "<<"}, required = 1)
+    @JRubyMethod(name = {"append", "<<"})
     public IRubyObject append(ThreadContext context, IRubyObject obj) {
         IRubyObject[] paths;
         if (obj.respondsTo("to_a")) {
-            paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArrayMaybeUnsafe();
+            paths = ((RubyArray<?>) obj.callMethod(context, "to_a")).toJavaArrayMaybeUnsafe();
         } else {
             paths = new IRubyObject[] { obj };
         }
@@ -76,7 +72,7 @@ public class RubyClassPathVariable extends RubyObject {
                 }
                 context.runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException mue) {
-                throw context.runtime.newArgumentError(mue.getLocalizedMessage());
+                throw argumentError(context, mue.getLocalizedMessage());
             }
         }
         return this;
@@ -99,31 +95,32 @@ public class RubyClassPathVariable extends RubyObject {
     }
 
     @JRubyMethod(name = {"size", "length"})
+    public IRubyObject size(ThreadContext context) {
+        return asFixnum(context, context.runtime.getJRubyClassLoader().getURLs().length);
+    }
     public IRubyObject size() {
-        return getRuntime().newFixnum(getRuntime().getJRubyClassLoader().getURLs().length);
+        return size(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod
     public IRubyObject each(Block block) {
         final ThreadContext context = getRuntime().getCurrentContext();
         URL[] urls = context.runtime.getJRubyClassLoader().getURLs();
-        for(int i=0,j=urls.length;i<j;i++) {
-            block.yield(context, context.runtime.newString(urls[i].toString()));
+        for (URL url: urls) {
+            block.yield(context, newString(context, url.toString()));
         }
         return context.nil;
     }
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject to_s(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "to_s");
     }
 
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "inspect");
     }
 }// RubyClassPathVariable

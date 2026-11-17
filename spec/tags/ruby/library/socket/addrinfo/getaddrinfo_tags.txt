@@ -1,1 +1,0 @@
-fails:Addrinfo.getaddrinfo sets a custom socket protocol of the Addrinfo instances

@@ -14,7 +14,7 @@ describe "Module#alias_method" do
     @object.double(12).should == @object.public_two(12)
   end
 
-  it "creates methods that are == to eachother" do
+  it "creates methods that are == to each other" do
     @class.make_alias :uno, :public_one
     @object.method(:uno).should == @object.method(:public_one)
   end
@@ -28,12 +28,12 @@ describe "Module#alias_method" do
 
   it "retains method visibility" do
     @class.make_alias :private_ichi, :private_one
-    lambda { @object.private_one  }.should raise_error(NameError)
-    lambda { @object.private_ichi }.should raise_error(NameError)
+    -> { @object.private_one  }.should.raise(NameError)
+    -> { @object.private_ichi }.should.raise(NameError)
     @class.make_alias :public_ichi, :public_one
     @object.public_ichi.should == @object.public_one
     @class.make_alias :protected_ichi, :protected_one
-    lambda { @object.protected_ichi }.should raise_error(NameError)
+    -> { @object.protected_ichi }.should.raise(NameError)
   end
 
   it "handles aliasing a stub that changes visibility" do
@@ -42,16 +42,28 @@ describe "Module#alias_method" do
     @object.was_private_one.should == 1
   end
 
+  it "handles aliasing a method only present in a refinement" do
+    c = @class
+    Module.new do
+      refine c do
+        def uno_refined_method
+        end
+        alias_method :double_refined_method, :uno_refined_method
+        instance_method(:uno_refined_method).should == instance_method(:double_refined_method)
+      end
+    end
+  end
+
   it "fails if origin method not found" do
-    lambda { @class.make_alias :ni, :san }.should raise_error(NameError) { |e|
+    -> { @class.make_alias :ni, :san }.should.raise(NameError) { |e|
       # a NameError and not a NoMethodError
       e.class.should == NameError
     }
   end
 
-  it "raises #{frozen_error_class} if frozen" do
+  it "raises FrozenError if frozen" do
     @class.freeze
-    lambda { @class.make_alias :uno, :public_one }.should raise_error(frozen_error_class)
+    -> { @class.make_alias :uno, :public_one }.should.raise(FrozenError)
   end
 
   it "converts the names using #to_str" do
@@ -65,23 +77,38 @@ describe "Module#alias_method" do
     @class.make_alias "cinq", name
   end
 
+  it "raises an EncodingError for a String name containing invalid bytes" do
+    invalid_utf8 = (+"\xFF").force_encoding(Encoding::UTF_8)
+    -> {
+      @class.make_alias invalid_utf8, :public_one
+    }.should.raise(EncodingError, 'invalid symbol in encoding UTF-8 :"\xFF"')
+
+    name = Object.new
+    name.define_singleton_method(:to_str) { invalid_utf8 }
+    -> {
+      @class.make_alias name, :public_one
+    }.should.raise(EncodingError, 'invalid symbol in encoding UTF-8 :"\xFF"')
+  end
+
   it "raises a TypeError when the given name can't be converted using to_str" do
-    lambda { @class.make_alias mock('x'), :public_one }.should raise_error(TypeError)
+    -> { @class.make_alias mock('x'), :public_one }.should.raise(TypeError)
   end
 
-  ruby_version_is ''...'2.5' do
-    it "is a private method" do
-      lambda { @class.alias_method :ichi, :public_one }.should raise_error(NoMethodError)
-    end
-  end
-  ruby_version_is '2.5' do
-    it "is a public method" do
-      Module.should have_public_instance_method(:alias_method, false)
-    end
+  it "raises a NoMethodError if the given name raises a NoMethodError during type coercion using to_str" do
+    obj = mock("mock-name")
+    obj.should_receive(:to_str).and_raise(NoMethodError)
+    -> { @class.make_alias obj, :public_one }.should.raise(NoMethodError)
   end
 
-  it "returns self" do
-    @class.send(:alias_method, :checking_return_value, :public_one).should equal(@class)
+  it "is a public method" do
+    Module.public_instance_methods(false).should.include?(:alias_method)
+  end
+
+  describe "returned value" do
+    it "returns symbol of the defined method name" do
+      @class.send(:alias_method, :checking_return_value, :public_one).should.equal?(:checking_return_value)
+      @class.send(:alias_method, 'checking_return_value', :public_one).should.equal?(:checking_return_value)
+    end
   end
 
   it "works in module" do
@@ -90,14 +117,16 @@ describe "Module#alias_method" do
 
   it "works on private module methods in a module that has been reopened" do
     ModuleSpecs::ReopeningModule.foo.should == true
-    lambda { ModuleSpecs::ReopeningModule.foo2 }.should_not raise_error(NoMethodError)
+    -> { ModuleSpecs::ReopeningModule.foo2 }.should_not.raise(NoMethodError)
   end
 
-  it "accesses a method defined on Object from Kernel" do
-    Kernel.should_not have_public_instance_method(:module_specs_public_method_on_object)
+  ruby_version_is ""..."4.2" do
+    it "accesses a method defined on Object from Kernel" do
+      Kernel.public_instance_methods(true).should_not.include?(:module_specs_public_method_on_object)
 
-    Kernel.should have_public_instance_method(:module_specs_alias_on_kernel)
-    Object.should have_public_instance_method(:module_specs_alias_on_kernel)
+      Kernel.public_instance_methods(false).should.include?(:module_specs_alias_on_kernel)
+      Object.public_instance_methods(true).should.include?(:module_specs_alias_on_kernel)
+    end
   end
 
   it "can call a method with super aliased twice" do
@@ -108,6 +137,37 @@ describe "Module#alias_method" do
     ModuleSpecs::AliasingSuper::RedefineAfterAlias.new.alias_super_call(1).should == 1
   end
 
+  it "does not warn when overwriting an alias of a method that was later redefined" do
+    -> {
+      Class.new do
+        def foo; end
+        alias_method :bar, :foo
+        def foo; end
+        alias_method :bar, :foo
+      end
+    }.should_not complain(verbose: true)
+  end
+
+  it "does not warn when overwriting an existing method with an alias of it" do
+    -> {
+      Class.new do
+        def foo; end
+        alias_method :bar, :foo
+        alias_method :bar, :foo
+      end
+    }.should_not complain(verbose: true)
+  end
+
+  it "warns when overwriting an unrelated existing method" do
+    -> {
+      Class.new do
+        def foo; end
+        def bar; end
+        alias_method :bar, :foo
+      end
+    }.should complain(/discarding old bar/, verbose: true)
+  end
+
   describe "aliasing special methods" do
     before :all do
       @class = ModuleSpecs::Aliasing
@@ -116,42 +176,42 @@ describe "Module#alias_method" do
 
     it "keeps initialize private when aliasing" do
       @class.make_alias(:initialize, :public_one)
-      @class.private_instance_methods.include?(:initialize).should be_true
+      @class.private_instance_methods.include?(:initialize).should == true
 
       @subclass.make_alias(:initialize, :public_one)
-      @subclass.private_instance_methods.include?(:initialize).should be_true
+      @subclass.private_instance_methods.include?(:initialize).should == true
     end
 
     it "keeps initialize_copy private when aliasing" do
       @class.make_alias(:initialize_copy, :public_one)
-      @class.private_instance_methods.include?(:initialize_copy).should be_true
+      @class.private_instance_methods.include?(:initialize_copy).should == true
 
       @subclass.make_alias(:initialize_copy, :public_one)
-      @subclass.private_instance_methods.include?(:initialize_copy).should be_true
+      @subclass.private_instance_methods.include?(:initialize_copy).should == true
     end
 
     it "keeps initialize_clone private when aliasing" do
       @class.make_alias(:initialize_clone, :public_one)
-      @class.private_instance_methods.include?(:initialize_clone).should be_true
+      @class.private_instance_methods.include?(:initialize_clone).should == true
 
       @subclass.make_alias(:initialize_clone, :public_one)
-      @subclass.private_instance_methods.include?(:initialize_clone).should be_true
+      @subclass.private_instance_methods.include?(:initialize_clone).should == true
     end
 
     it "keeps initialize_dup private when aliasing" do
       @class.make_alias(:initialize_dup, :public_one)
-      @class.private_instance_methods.include?(:initialize_dup).should be_true
+      @class.private_instance_methods.include?(:initialize_dup).should == true
 
       @subclass.make_alias(:initialize_dup, :public_one)
-      @subclass.private_instance_methods.include?(:initialize_dup).should be_true
+      @subclass.private_instance_methods.include?(:initialize_dup).should == true
     end
 
     it "keeps respond_to_missing? private when aliasing" do
       @class.make_alias(:respond_to_missing?, :public_one)
-      @class.private_instance_methods.include?(:respond_to_missing?).should be_true
+      @class.private_instance_methods.include?(:respond_to_missing?).should == true
 
       @subclass.make_alias(:respond_to_missing?, :public_one)
-      @subclass.private_instance_methods.include?(:respond_to_missing?).should be_true
+      @subclass.private_instance_methods.include?(:respond_to_missing?).should == true
     end
   end
 end

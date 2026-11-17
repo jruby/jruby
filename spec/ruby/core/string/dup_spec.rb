@@ -21,7 +21,7 @@ describe "String#dup" do
   it "does not copy singleton methods" do
     def @obj.special() :the_one end
     dup = @obj.dup
-    lambda { dup.special }.should raise_error(NameError)
+    -> { dup.special }.should.raise(NameError)
   end
 
   it "does not copy modules included in the singleton class" do
@@ -30,7 +30,7 @@ describe "String#dup" do
     end
 
     dup = @obj.dup
-    lambda { dup.repr }.should raise_error(NameError)
+    -> { dup.repr }.should.raise(NameError)
   end
 
   it "does not copy constants defined in the singleton class" do
@@ -39,7 +39,7 @@ describe "String#dup" do
     end
 
     dup = @obj.dup
-    lambda { class << dup; CLONE; end }.should raise_error(NameError)
+    -> { class << dup; CLONE; end }.should.raise(NameError)
   end
 
   it "does not modify the original string when changing dupped string" do
@@ -48,5 +48,18 @@ describe "String#dup" do
     orig[0] = 'x'
     orig.should == "xtring"
     dup.should == "string"
+  end
+
+  it "does not modify the original setbyte-mutated string when changing dupped string" do
+    orig = +"a"
+    orig.setbyte 0, "b".ord
+    copy = orig.dup
+    orig.setbyte 0, "c".ord
+    orig.should == "c"
+    copy.should == "b"
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hello".encode("US-ASCII").dup.encoding.should == Encoding::US_ASCII
   end
 end

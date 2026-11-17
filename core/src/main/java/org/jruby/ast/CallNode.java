@@ -38,32 +38,28 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A method or operator call.
  */
-public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
+public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode, CanRaise {
     private final Node receiverNode;
     private Node argsNode;
     protected Node iterNode;
     private RubySymbol name;
     private final boolean isLazy;
 
-    public CallNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode,
+    public CallNode(int line, Node receiverNode, RubySymbol name, Node argsNode,
                     Node iterNode, boolean isLazy) {
-        super(position, receiverNode.containsVariableAssignment() ||
+        super(line, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
-
-        assert receiverNode != null : "receiverNode is not null";
 
         this.name = name;
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
         this.isLazy = isLazy;
-        setNewline();
     }
 
     public NodeType getNodeType() {
@@ -126,12 +122,56 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     }
 
     /**
-     * Is this call lazily execute because it was on right hand side of the lonely (&.) operator?
+     * Is this call lazily execute because it was on right hand side of the lonely (&amp;.) operator?
      *
      * @return true if so.
      */
     public boolean isLazy() {
         return isLazy;
+    }
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // the call keeps the span of the production that created it, which a block attached by an enclosing
+        // production then extends (see getEndLine)
+        if (!hasSourceSpan()) super.setAutoSourceSpan(start, end);
+    }
+
+    // As in MRI, a call ends with its block, if it has one written out.
+    @Override
+    public int getEndLine() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndLine() : super.getEndLine();
+    }
+
+    @Override
+    public int getEndColumn() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndColumn() : super.getEndColumn();
+    }
+
+    /**
+     * Where the branch of a safe-navigation call ends (see RubyParserBase#safe_navigation_end).
+     */
+    public void setSafeNavigationEnd(long end) {
+        setSourceDetail(SourcePosition.of(end));
+    }
+
+    // null unless this is a safe navigation and positions are recorded
+    private SourcePosition safeNavigationEnd() {
+        return (SourcePosition) getSourceDetail();
+    }
+
+    public boolean hasSafeNavigationEnd() {
+        return safeNavigationEnd() != null;
+    }
+
+    public int getSafeNavigationEndLine() {
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.line();
+    }
+
+    public int getSafeNavigationEndColumn() {
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.column();
     }
     
     public List<Node> childNodes() {

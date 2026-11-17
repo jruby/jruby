@@ -1,0 +1,2 @@
+fails(not implemented, jruby/jruby#6149):TracePoint#parameters returns the parameters of block
+fails(not implemented, jruby/jruby#6149):TracePoint#parameters returns the parameters of lambda block

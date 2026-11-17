@@ -10,7 +10,6 @@ class MSpecEnv
 end
 
 module MSpec
-
   @exit    = nil
   @abort   = nil
   @start   = nil
@@ -20,26 +19,35 @@ module MSpec
   @after   = nil
   @leave   = nil
   @finish  = nil
-  @exclude = nil
-  @include = nil
+  @exclude = []
+  @include = []
   @leave   = nil
   @load    = nil
   @unload  = nil
   @tagged  = nil
   @current = nil
+  @passed = nil
   @example = nil
   @modes   = []
   @shared  = {}
   @guarded = []
   @features     = {}
   @exception    = nil
-  @randomize    = nil
-  @repeat       = nil
+  @randomize    = false
+  @repeat       = 1
   @expectation  = nil
   @expectations = false
+  @skips = []
+  @subprocesses = []
 
-  def self.describe(mod, options=nil, &block)
-    state = ContextState.new mod, options
+  class << self
+    attr_reader :file, :include, :exclude, :skips, :subprocesses
+    attr_writer :repeat, :randomize
+    attr_accessor :formatter
+  end
+
+  def self.describe(description, options = nil, &block)
+    state = ContextState.new description, options
     state.parent = current
 
     MSpec.register_current state
@@ -55,6 +63,10 @@ module MSpec
     actions :start
     files
     actions :finish
+  end
+
+  def self.files_array
+    @files
   end
 
   def self.each_file(&block)
@@ -74,7 +86,7 @@ module MSpec
       # The parent closed the connection without QUIT
       abort "the parent did not send QUIT"
     else
-      return unless files = retrieve(:files)
+      return unless files = @files
       shuffle files if randomize?
       files.each(&block)
     end
@@ -83,10 +95,11 @@ module MSpec
   def self.files
     each_file do |file|
       setup_env
-      store :file, file
+      @file = file
       actions :load
       protect("loading #{file}") { Kernel.load file }
       actions :unload
+      raise "#{file} was executed but did not reset the current example: #{@current}" if @current
     end
   end
 
@@ -101,11 +114,14 @@ module MSpec
 
   def self.protect(location, &block)
     begin
-      @env.instance_eval(&block)
+      @env.instance_exec(&block)
       return true
     rescue SystemExit => e
       raise e
-    rescue Exception => exc
+    rescue SkippedSpecError => e
+      @skips << [e, block]
+      return false
+    rescue Object => exc
       register_exit 1
       actions :exception, ExceptionState.new(current && current.state, location, exc)
       return false
@@ -128,22 +144,24 @@ module MSpec
 
   # Sets the toplevel ContextState to +state+.
   def self.register_current(state)
-    store :current, state
+    @current = state
   end
 
   # Sets the toplevel ContextState to +nil+.
   def self.clear_current
-    store :current, nil
+    @current = nil
   end
 
   # Returns the toplevel ContextState.
   def self.current
-    retrieve :current
+    @current
   end
 
   # Stores the shared ContextState keyed by description.
   def self.register_shared(state)
-    @shared[state.to_s] = state
+    name = state.to_s
+    raise "duplicated shared #describe: #{name}" if @shared.key?(name)
+    @shared[name] = state
   end
 
   # Returns the shared ContextState matching description.
@@ -153,17 +171,17 @@ module MSpec
 
   # Stores the exit code used by the runner scripts.
   def self.register_exit(code)
-    store :exit, code
+    @exit = code
   end
 
   # Retrieves the stored exit code.
   def self.exit_code
-    retrieve(:exit).to_i
+    @exit.to_i
   end
 
   # Stores the list of files to be evaluated.
   def self.register_files(files)
-    store :files, files
+    @files = files
   end
 
   # Stores one or more substitution patterns for transforming
@@ -174,7 +192,7 @@ module MSpec
   #
   # See also +tags_file+.
   def self.register_tags_patterns(patterns)
-    store :tags_patterns, patterns
+    @tags_patterns = patterns
   end
 
   # Registers an operating mode. Modes recognized by MSpec:
@@ -185,30 +203,30 @@ module MSpec
   #   :report - specs that are guarded are reported
   #   :unguarded - all guards are forced off
   def self.register_mode(mode)
-    modes = retrieve :modes
+    modes = @modes
     modes << mode unless modes.include? mode
   end
 
   # Clears all registered modes.
   def self.clear_modes
-    store :modes, []
+    @modes = []
   end
 
   # Returns +true+ if +mode+ is registered.
   def self.mode?(mode)
-    retrieve(:modes).include? mode
+    @modes.include? mode
   end
 
   def self.enable_feature(feature)
-    retrieve(:features)[feature] = true
+    @features[feature] = true
   end
 
   def self.disable_feature(feature)
-    retrieve(:features)[feature] = false
+    @features[feature] = false
   end
 
   def self.feature_enabled?(feature)
-    retrieve(:features)[feature] || false
+    @features[feature] || false
   end
 
   def self.retrieve(symbol)
@@ -227,6 +245,7 @@ module MSpec
   #   :before       before a single spec is run
   #   :add          while a describe block is adding examples to run later
   #   :expectation  before a 'should', 'should_receive', etc.
+  #   :passed       after an example block is run and passes, passed the block, run before :example action
   #   :example      after an example block is run, passed the block
   #   :exception    after an exception is rescued
   #   :after        after a single spec is run
@@ -257,21 +276,17 @@ module MSpec
     end
   end
 
-  def self.randomize(flag=true)
-    @randomize = flag
-  end
-
   def self.randomize?
-    @randomize == true
-  end
-
-  def self.repeat=(times)
-    @repeat = times
+    @randomize
   end
 
   def self.repeat
-    (@repeat || 1).times do
+    if @repeat == 1
       yield
+    else
+      @repeat.times do
+        yield
+      end
     end
   end
 
@@ -287,17 +302,17 @@ module MSpec
 
   # Records that an expectation has been encountered in an example.
   def self.expectation
-    store :expectations, true
+    @expectations = true
   end
 
   # Returns true if an expectation has been encountered
   def self.expectation?
-    retrieve :expectations
+    @expectations
   end
 
   # Resets the flag that an expectation has been encountered in an example.
   def self.clear_expectations
-    store :expectations, false
+    @expectations = false
   end
 
   # Transforms a spec filename into a tags filename by applying each
@@ -311,9 +326,9 @@ module MSpec
   #
   # See also +register_tags_patterns+.
   def self.tags_file
-    patterns = retrieve(:tags_patterns) ||
+    patterns = @tags_patterns ||
                [[%r(spec/), 'spec/tags/'], [/_spec.rb$/, '_tags.txt']]
-    patterns.inject(retrieve(:file).dup) do |file, pattern|
+    patterns.inject(@file.dup) do |file, pattern|
       file.gsub(*pattern)
     end
   end
@@ -350,6 +365,7 @@ module MSpec
   # Writes each tag in +tags+ to the tag file. Overwrites the
   # tag file if it exists.
   def self.write_tags(tags)
+    return delete_tags if tags.empty?
     file = tags_file
     make_tag_dir(file)
     File.open(file, "w:utf-8") do |f|
@@ -381,7 +397,7 @@ module MSpec
     desc = tag.escape(tag.description)
     file = tags_file
     if File.exist? file
-      lines = IO.readlines(file)
+      lines = File.readlines(file)
       File.open(file, "w:utf-8") do |f|
         lines.each do |line|
           line = line.chomp

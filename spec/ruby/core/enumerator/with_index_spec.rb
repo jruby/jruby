@@ -1,5 +1,5 @@
 require_relative '../../spec_helper'
-require_relative '../../shared/enumerator/with_index'
+require_relative 'shared/with_index'
 require_relative '../enumerable/shared/enumeratorized'
 
 describe "Enumerator#with_index" do
@@ -9,20 +9,20 @@ describe "Enumerator#with_index" do
   it "returns a new Enumerator when no block is given" do
     enum1 = [1,2,3].select
     enum2 = enum1.with_index
-    enum2.should be_an_instance_of(Enumerator)
+    enum2.should.instance_of?(Enumerator)
     enum1.should_not === enum2
   end
 
   it "accepts an optional argument when given a block" do
-    lambda do
+    -> do
       @enum.with_index(1) { |f| f}
-    end.should_not raise_error(ArgumentError)
+    end.should_not.raise(ArgumentError)
   end
 
   it "accepts an optional argument when not given a block" do
-    lambda do
+    -> do
       @enum.with_index(1)
-    end.should_not raise_error(ArgumentError)
+    end.should_not.raise(ArgumentError)
   end
 
   it "numbers indices from the given index when given an offset but no block" do
@@ -36,9 +36,9 @@ describe "Enumerator#with_index" do
   end
 
   it "raises a TypeError when the argument cannot be converted to numeric" do
-    lambda do
+    -> do
       @enum.with_index('1') {|*i| i}
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "converts non-numeric arguments to Integer via #to_int" do
@@ -68,5 +68,22 @@ describe "Enumerator#with_index" do
     res = []
     @enum.with_index(-1) { |*x| res << x}
     res.should == [[1,-1], [2,0], [3,1], [4,2]]
+  end
+
+  it "passes on the given block's return value" do
+    arr = [1,2,3]
+    arr.delete_if.with_index { |a,b| false }
+    arr.should == [1,2,3]
+
+    arr.delete_if.with_index { |a,b| true }
+    arr.should == []
+  end
+
+  it "returns the iterator's return value" do
+    @enum.select.with_index { |a,b| false }.should == []
+  end
+
+  it "returns the correct value if chained with itself" do
+    [:a].each.with_index.with_index.to_a.should == [[[:a,0],0]]
   end
 end

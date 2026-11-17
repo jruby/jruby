@@ -19,11 +19,5 @@ with_feature :readline do
       end
       result.should == ["1", "2", "3"]
     end
-
-    it "yields tainted Objects" do
-      Readline::HISTORY.each do |x|
-        x.tainted?.should be_true
-      end
-    end
   end
 end

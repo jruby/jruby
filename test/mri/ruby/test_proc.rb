@@ -4,7 +4,6 @@ require 'test/unit'
 class TestProc < Test::Unit::TestCase
   def setup
     @verbose = $VERBOSE
-    $VERBOSE = nil
   end
 
   def teardown
@@ -53,10 +52,14 @@ class TestProc < Test::Unit::TestCase
     assert_equal(5, x)
   end
 
-  def assert_arity(n)
+  def assert_arity(n, &block)
     meta = class << self; self; end
-    meta.class_eval {define_method(:foo, Proc.new)}
-    assert_equal(n, method(:foo).arity)
+    b = Proc.new(&block)
+    meta.class_eval {
+      remove_method(:foo_arity) if method_defined?(:foo_arity)
+      define_method(:foo_arity, b)
+    }
+    assert_equal(n, method(:foo_arity).arity)
   end
 
   def test_arity
@@ -133,6 +136,14 @@ class TestProc < Test::Unit::TestCase
     lambda { x }
   end
 
+  def m_nest0(&block)
+    block
+  end
+
+  def m_nest(&block)
+    [m_nest0(&block), m_nest0(&block)]
+  end
+
   def test_eq
     a = m(1)
     b = m(2)
@@ -144,42 +155,74 @@ class TestProc < Test::Unit::TestCase
     a = lambda {|x| lambda {} }.call(1)
     b = lambda {}
     assert_not_equal(a, b, "[ruby-dev:22601]")
+
+    assert_equal(*m_nest{}, "[ruby-core:84583] Feature #14627")
+  end
+
+  def test_hash_equal
+    # iseq backed proc
+    p1 = proc {}
+    p2 = p1.dup
+
+    assert_equal p1.hash, p2.hash
+
+    # ifunc backed proc
+    p1 = {}.to_proc
+    p2 = p1.dup
+
+    assert_equal p1.hash, p2.hash
+
+    # symbol backed proc
+    p1 = :hello.to_proc
+    p2 = :hello.to_proc
+
+    assert_equal p1.hash, p2.hash
+  end
+
+  def test_hash_uniqueness
+    def self.capture(&block)
+      block
+    end
+
+    procs = Array.new(1000){capture{:foo }}
+    assert_operator(procs.map(&:hash).uniq.size, :>=, 500)
+
+    # iseq backed proc
+    unique_hashes = 1000.times.map { proc {}.hash }.uniq
+    assert_operator(unique_hashes.size, :>=, 500)
+
+    # ifunc backed proc
+    unique_hashes = 1000.times.map { {}.to_proc.hash }.uniq
+    assert_operator(unique_hashes.size, :>=, 500)
+
+    # symbol backed proc
+    unique_hashes = 1000.times.map { |i| :"test#{i}".to_proc.hash }.uniq
+    assert_operator(unique_hashes.size, :>=, 500)
+  end
+
+  def test_hash_does_not_change_after_compaction
+    omit "compaction is not supported on this platform" unless GC.respond_to?(:compact)
+
+    # [Bug #20853]
+    [
+      "proc {}", # iseq backed proc
+      "{}.to_proc", # ifunc backed proc
+      ":hello.to_proc", # symbol backed proc
+    ].each do |proc|
+      assert_separately([], <<~RUBY)
+        p1 = #{proc}
+        hash = p1.hash
+
+        GC.verify_compaction_references(expand_heap: true, toward: :empty)
+
+        assert_equal(hash, p1.hash, "proc is `#{proc}`")
+      RUBY
+    end
   end
 
   def test_block_par
     assert_equal(10, Proc.new{|&b| b.call(10)}.call {|x| x})
     assert_equal(12, Proc.new{|a,&b| b.call(a)}.call(12) {|x| x})
-  end
-
-  def test_safe
-    safe = $SAFE
-    c = Class.new
-    x = c.new
-
-    p = proc {
-      $SAFE += 1
-      proc {$SAFE}
-    }.call
-    assert_equal(safe, $SAFE)
-    assert_equal(safe + 1, p.call)
-    assert_equal(safe, $SAFE)
-
-    c.class_eval {define_method(:safe, p)}
-    assert_equal(safe, x.safe)
-    assert_equal(safe, x.method(:safe).call)
-    assert_equal(safe, x.method(:safe).to_proc.call)
-
-    p = proc {$SAFE += 1}
-    assert_equal(safe + 1, p.call)
-    assert_equal(safe, $SAFE)
-
-    c.class_eval {define_method(:inc, p)}
-    assert_equal(safe + 1, proc {x.inc; $SAFE}.call)
-    assert_equal(safe, $SAFE)
-    assert_equal(safe + 1, proc {x.method(:inc).call; $SAFE}.call)
-    assert_equal(safe, $SAFE)
-    assert_equal(safe + 1, proc {x.method(:inc).to_proc.call; $SAFE}.call)
-    assert_equal(safe, $SAFE)
   end
 
   def m2
@@ -216,18 +259,24 @@ class TestProc < Test::Unit::TestCase
   end
 
   def test_block_given_method
+    verbose_bak, $VERBOSE = $VERBOSE, nil
     m = method(:m_block_given?)
     assert(!m.call, "without block")
     assert(m.call {}, "with block")
     assert(!m.call, "without block second")
+  ensure
+    $VERBOSE = verbose_bak
   end
 
   def test_block_given_method_to_proc
+    verbose_bak, $VERBOSE = $VERBOSE, nil
     bug8341 = '[Bug #8341]'
     m = method(:m_block_given?).to_proc
     assert(!m.call, "#{bug8341} without block")
     assert(m.call {}, "#{bug8341} with block")
     assert(!m.call, "#{bug8341} without block second")
+  ensure
+    $VERBOSE = verbose_bak
   end
 
   def test_block_persist_between_calls
@@ -288,7 +337,7 @@ class TestProc < Test::Unit::TestCase
 
   def test_curry_given_blocks
     b = lambda {|x, y, &blk| blk.call(x + y) }.curry
-    b = b.call(2) { raise }
+    b = assert_warning(/given block not used/) {b.call(2) { raise }}
     b = b.call(3) {|x| x + 4 }
     assert_equal(9, b)
   end
@@ -298,7 +347,6 @@ class TestProc < Test::Unit::TestCase
     assert_equal(false, l.lambda?)
     assert_equal(false, l.curry.lambda?, '[ruby-core:24127]')
     assert_equal(false, proc(&l).lambda?)
-    assert_equal(false, lambda(&l).lambda?)
     assert_equal(false, Proc.new(&l).lambda?)
     l = lambda {}
     assert_equal(true, l.lambda?)
@@ -306,6 +354,23 @@ class TestProc < Test::Unit::TestCase
     assert_equal(true, proc(&l).lambda?)
     assert_equal(true, lambda(&l).lambda?)
     assert_equal(true, Proc.new(&l).lambda?)
+  end
+
+  def helper_test_warn_lambda_with_passed_block &b
+    lambda(&b)
+  end
+
+  def test_lambda_warning_pass_proc
+    assert_raise(ArgumentError) do
+      b = proc{}
+      lambda(&b)
+    end
+  end
+
+  def test_lambda_warning_pass_block
+    assert_raise(ArgumentError) do
+      helper_test_warn_lambda_with_passed_block{}
+    end
   end
 
   def test_curry_ski_fib
@@ -363,7 +428,20 @@ class TestProc < Test::Unit::TestCase
     assert_raise(ArgumentError) { ->(a, b=42){}.curry(3) }
   end
 
+  def test_curry_arity_to_int
+    bug22284 = '[Bug #22284]'
+    assert_equal(42, proc {|x, *y| x }.curry(1r)[42], bug22284)
+    assert_equal(42, lambda {|x, *y| x }.curry(1r)[42], bug22284)
+
+    called = 0
+    arity = Object.new
+    arity.define_singleton_method(:to_int) { called += 1; 2 }
+    assert_equal(3, proc {|x, y| x + y }.curry(arity)[1][2], bug22284)
+    assert_equal(1, called, bug22284)
+  end
+
   def test_dup_clone
+    # iseq backed proc
     b = proc {|x| x + "bar" }
     class << b; attr_accessor :foo; end
 
@@ -376,6 +454,50 @@ class TestProc < Test::Unit::TestCase
     assert_equal("foobar", bc.call("foo"))
     bc.foo = :foo
     assert_equal(:foo, bc.foo)
+
+    # ifunc backed proc
+    b = {foo: "bar"}.to_proc
+
+    bd = b.dup
+    assert_equal("bar", bd.call(:foo))
+
+    bc = b.clone
+    assert_equal("bar", bc.call(:foo))
+
+    # symbol backed proc
+    b = :to_s.to_proc
+
+    bd = b.dup
+    assert_equal("testing", bd.call(:testing))
+
+    bc = b.clone
+    assert_equal("testing", bc.call(:testing))
+  end
+
+  def test_dup_subclass
+    c1 = Class.new(Proc)
+    assert_equal c1, c1.new{}.dup.class, '[Bug #17545]'
+    c1 = Class.new(Proc) {def initialize_dup(*) throw :initialize_dup; end}
+    assert_throw(:initialize_dup) {c1.new{}.dup}
+  end
+
+  def test_dup_ifunc_proc_bug_20950
+    assert_normal_exit(<<~RUBY, "[Bug #20950]")
+      p = { a: 1 }.to_proc
+      100.times do
+        p = p.dup
+        GC.start
+        p.call
+      rescue ArgumentError
+      end
+    RUBY
+  end
+
+  def test_clone_subclass
+    c1 = Class.new(Proc)
+    assert_equal c1, c1.new{}.clone.class, '[Bug #17545]'
+    c1 = Class.new(Proc) {def initialize_clone(*) throw :initialize_clone; end}
+    assert_throw(:initialize_clone) {c1.new{}.clone}
   end
 
   def test_binding
@@ -397,9 +519,23 @@ class TestProc < Test::Unit::TestCase
     assert_equal([1, 2, 3], b.eval("[x, y, z]"))
   end
 
+  def test_binding_source_location
+    b, expected_location = binding, [__FILE__, __LINE__]
+    assert_equal(expected_location, b.source_location)
+
+    file, lineno = method(:source_location_test).to_proc.binding.source_location
+    assert_match(/^#{ Regexp.quote(__FILE__) }$/, file)
+    assert_equal(@@line_of_source_location_test, lineno, 'Bug #2427')
+  end
+
+  def test_binding_error_unless_ruby_frame
+    define_singleton_method :binding_from_c!, method(:binding).to_proc >> ->(bndg) {bndg}
+    assert_raise(RuntimeError) { binding_from_c! }
+  end
+
   def test_proc_lambda
     assert_raise(ArgumentError) { proc }
-    assert_raise(ArgumentError) { lambda }
+    assert_raise(ArgumentError) { assert_warn(/deprecated/) {lambda} }
 
     o = Object.new
     def o.foo
@@ -407,14 +543,18 @@ class TestProc < Test::Unit::TestCase
       1.times { b = lambda }
       b
     end
-    assert_equal(:foo, o.foo { :foo }.call)
+    assert_raise(ArgumentError) do
+      assert_deprecated_warning {o.foo { :foo }}.call
+    end
 
-    def o.foo(&b)
+    def o.bar(&b)
       b = nil
       1.times { b = lambda }
       b
     end
-    assert_equal(:foo, o.foo { :foo }.call)
+    assert_raise(ArgumentError) do
+      assert_deprecated_warning {o.bar { :foo }}.call
+    end
   end
 
   def test_arity2
@@ -800,6 +940,115 @@ class TestProc < Test::Unit::TestCase
     assert_equal [[1, 2], Proc, :x], (pr.call(1, 2){|x| x})
   end
 
+  def test_proc_args_single_kw_no_autosplat
+    pr = proc {|c, a: 1| [c, a] }
+    assert_equal [nil, 1], pr.call()
+    assert_equal [1, 1], pr.call(1)
+    assert_equal [[1], 1], pr.call([1])
+    assert_equal [1, 1], pr.call(1,2)
+    assert_equal [[1, 2], 1], pr.call([1,2])
+
+    assert_equal [nil, 3], pr.call(a: 3)
+    assert_equal [1, 3], pr.call(1, a: 3)
+    assert_equal [[1], 3], pr.call([1], a: 3)
+    assert_equal [1, 3], pr.call(1,2, a: 3)
+    assert_equal [[1, 2], 3], pr.call([1,2], a: 3)
+  end
+
+  def test_proc_args_single_kwsplat_no_autosplat
+    pr = proc {|c, **kw| [c, kw] }
+    assert_equal [nil, {}], pr.call()
+    assert_equal [1, {}], pr.call(1)
+    assert_equal [[1], {}], pr.call([1])
+    assert_equal [1, {}], pr.call(1,2)
+    assert_equal [[1, 2], {}], pr.call([1,2])
+
+    assert_equal [nil, {a: 3}], pr.call(a: 3)
+    assert_equal [1, {a: 3}], pr.call(1, a: 3)
+    assert_equal [[1], {a: 3}], pr.call([1], a: 3)
+    assert_equal [1, {a: 3}], pr.call(1,2, a: 3)
+    assert_equal [[1, 2], {a: 3}], pr.call([1,2], a: 3)
+  end
+
+  def test_proc_args_multiple_kw_autosplat
+    pr = proc {|c, b, a: 1| [c, b, a] }
+    assert_equal [1, 2, 1], pr.call([1,2])
+
+    pr = proc {|c=nil, b=nil, a: 1| [c, b, a] }
+    assert_equal [nil, nil, 1], pr.call([])
+    assert_equal [1, nil, 1], pr.call([1])
+    assert_equal [1, 2, 1], pr.call([1,2])
+
+    pr = proc {|c, b=nil, a: 1| [c, b, a] }
+    assert_equal [1, nil, 1], pr.call([1])
+    assert_equal [1, 2, 1], pr.call([1,2])
+
+    pr = proc {|c=nil, b, a: 1| [c, b, a] }
+    assert_equal [nil, 1, 1], pr.call([1])
+    assert_equal [1, 2, 1], pr.call([1,2])
+
+    pr = proc {|c, *b, a: 1| [c, b, a] }
+    assert_equal [1, [], 1], pr.call([1])
+    assert_equal [1, [2], 1], pr.call([1,2])
+
+    pr = proc {|*c, b, a: 1| [c, b, a] }
+    assert_equal [[], 1, 1], pr.call([1])
+    assert_equal [[1], 2, 1], pr.call([1,2])
+  end
+
+  def test_proc_args_multiple_kwsplat_autosplat
+    pr = proc {|c, b, **kw| [c, b, kw] }
+    assert_equal [1, 2, {}], pr.call([1,2])
+
+    pr = proc {|c=nil, b=nil, **kw| [c, b, kw] }
+    assert_equal [nil, nil, {}], pr.call([])
+    assert_equal [1, nil, {}], pr.call([1])
+    assert_equal [1, 2, {}], pr.call([1,2])
+
+    pr = proc {|c, b=nil, **kw| [c, b, kw] }
+    assert_equal [1, nil, {}], pr.call([1])
+    assert_equal [1, 2, {}], pr.call([1,2])
+
+    pr = proc {|c=nil, b, **kw| [c, b, kw] }
+    assert_equal [nil, 1, {}], pr.call([1])
+    assert_equal [1, 2, {}], pr.call([1,2])
+
+    pr = proc {|c, *b, **kw| [c, b, kw] }
+    assert_equal [1, [], {}], pr.call([1])
+    assert_equal [1, [2], {}], pr.call([1,2])
+
+    pr = proc {|*c, b, **kw| [c, b, kw] }
+    assert_equal [[], 1, {}], pr.call([1])
+    assert_equal [[1], 2, {}], pr.call([1,2])
+  end
+
+  def test_proc_args_only_rest
+    pr = proc {|*c| c }
+    assert_equal [], pr.call()
+    assert_equal [1], pr.call(1)
+    assert_equal [[1]], pr.call([1])
+    assert_equal [1, 2], pr.call(1,2)
+    assert_equal [[1, 2]], pr.call([1,2])
+  end
+
+  def test_proc_args_rest_kw
+    pr = proc {|*c, a: 1| [c, a] }
+    assert_equal [[], 1], pr.call()
+    assert_equal [[1], 1], pr.call(1)
+    assert_equal [[[1]], 1], pr.call([1])
+    assert_equal [[1, 2], 1], pr.call(1,2)
+    assert_equal [[[1, 2]], 1], pr.call([1,2])
+  end
+
+  def test_proc_args_rest_kwsplat
+    pr = proc {|*c, **kw| [c, kw] }
+    assert_equal [[], {}], pr.call()
+    assert_equal [[1], {}], pr.call(1)
+    assert_equal [[[1]], {}], pr.call([1])
+    assert_equal [[1, 2], {}], pr.call(1,2)
+    assert_equal [[[1, 2]], {}], pr.call([1,2])
+  end
+
   def test_proc_args_pos_rest_post_block
     pr = proc {|a,b,*c,d,e,&f|
       [a, b, c, d, e, f.class, f&&f.call(:x)]
@@ -1103,6 +1352,36 @@ class TestProc < Test::Unit::TestCase
     assert_equal([1,2,[3],4,5], r, "[ruby-core:19485]")
   end
 
+  def test_proc_autosplat
+    def self.a(arg, kw)
+      yield arg
+      yield arg, **kw
+      yield arg, kw
+    end
+
+    arr = []
+    a([1,2,3], {}) do |arg1, arg2=0|
+      arr << [arg1, arg2]
+    end
+    assert_equal([[1, 2], [[1, 2, 3], 0], [[1, 2, 3], {}]], arr)
+
+    arr = []
+    a([1,2,3], a: 1) do |arg1, arg2=0|
+      arr << [arg1, arg2]
+    end
+    assert_equal([[1, 2], [[1, 2, 3], {a: 1}], [[1, 2, 3], {a: 1}]], arr)
+  end
+
+  def test_proc_single_arg_with_keywords_accepted_and_yielded
+    def self.a
+      yield [], **{a: 1}
+    end
+    res = a do |arg, **opts|
+      [arg, opts]
+    end
+    assert_equal([[], {a: 1}], res)
+  end
+
   def test_parameters
     assert_equal([], proc {}.parameters)
     assert_equal([], proc {||}.parameters)
@@ -1115,11 +1394,68 @@ class TestProc < Test::Unit::TestCase
     assert_equal([[:opt, :a], [:rest, :b], [:opt, :c]], proc {|a, *b, c|}.parameters)
     assert_equal([[:opt, :a], [:rest, :b], [:opt, :c], [:block, :d]], proc {|a, *b, c, &d|}.parameters)
     assert_equal([[:opt, :a], [:opt, :b], [:rest, :c], [:opt, :d], [:block, :e]], proc {|a, b=:b, *c, d, &e|}.parameters)
-    assert_equal([[:opt, nil], [:block, :b]], proc {|(a), &b|a}.parameters)
+    assert_equal([[:opt], [:block, :b]], proc {|(a), &b|a}.parameters)
+    assert_equal([[:opt], [:rest, :_], [:opt]], proc {|(a_), *_, (b_)|}.parameters)
     assert_equal([[:opt, :a], [:opt, :b], [:opt, :c], [:opt, :d], [:rest, :e], [:opt, :f], [:opt, :g], [:block, :h]], proc {|a,b,c=:c,d=:d,*e,f,g,&h|}.parameters)
 
     assert_equal([[:req]], method(:putc).parameters)
     assert_equal([[:rest]], method(:p).parameters)
+
+    pr = eval("proc{|"+"(_),"*30+"|}")
+    assert_empty(pr.parameters.map{|_,n|n}.compact)
+
+    assert_equal([[:opt]], proc { it }.parameters)
+  end
+
+  def test_proc_autosplat_with_multiple_args_with_ruby2_keywords_splat_bug_19759
+    def self.yielder_ab(splat)
+      yield([:a, :b], *splat)
+    end
+
+    res = yielder_ab([[:aa, :bb], Hash.ruby2_keywords_hash({k: :k})]) do |a, b, k:|
+      [a, b, k]
+    end
+    assert_equal([[:a, :b], [:aa, :bb], :k], res)
+
+    def self.yielder(splat)
+      yield(*splat)
+    end
+    res = yielder([ [:a, :b] ]){|a, b, **| [a, b]}
+    assert_equal([:a, :b], res)
+
+    res = yielder([ [:a, :b], Hash.ruby2_keywords_hash({}) ]){|a, b, **| [a, b]}
+    assert_equal([[:a, :b], nil], res)
+
+    res = yielder([ [:a, :b], Hash.ruby2_keywords_hash({c: 1}) ]){|a, b, **| [a, b]}
+    assert_equal([[:a, :b], nil], res)
+
+    res = yielder([ [:a, :b], Hash.ruby2_keywords_hash({}) ]){|a, b, **nil| [a, b]}
+    assert_equal([[:a, :b], nil], res)
+  end
+
+  def test_parameters_lambda
+    assert_equal([], proc {}.parameters(lambda: true))
+    assert_equal([], proc {||}.parameters(lambda: true))
+    assert_equal([[:req, :a]], proc {|a|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:req, :b]], proc {|a, b|}.parameters(lambda: true))
+    assert_equal([[:opt, :a], [:block, :b]], proc {|a=:a, &b|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:opt, :b]], proc {|a, b=:b|}.parameters(lambda: true))
+    assert_equal([[:rest, :a]], proc {|*a|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:rest, :b], [:block, :c]], proc {|a, *b, &c|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c]], proc {|a, *b, c|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], proc {|a, *b, c, &d|}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], proc {|a, b=:b, *c, d, &e|}.parameters(lambda: true))
+    assert_equal([[:req], [:block, :b]], proc {|(a), &b|a}.parameters(lambda: true))
+    assert_equal([[:req, :a], [:req, :b], [:opt, :c], [:opt, :d], [:rest, :e], [:req, :f], [:req, :g], [:block, :h]], proc {|a,b,c=:c,d=:d,*e,f,g,&h|}.parameters(lambda: true))
+
+    pr = eval("proc{|"+"(_),"*30+"|}")
+    assert_empty(pr.parameters(lambda: true).map{|_,n|n}.compact)
+
+    assert_equal([[:opt, :a]], lambda {|a|}.parameters(lambda: false))
+    assert_equal([[:opt, :a], [:opt, :b], [:opt, :c], [:opt, :d], [:rest, :e], [:opt, :f], [:opt, :g], [:block, :h]], lambda {|a,b,c=:c,d=:d,*e,f,g,&h|}.parameters(lambda: false))
+
+    assert_equal([[:req]], proc { it }.parameters(lambda: true))
+    assert_equal([[:opt]], lambda { it }.parameters(lambda: false))
   end
 
   def pm0() end
@@ -1154,7 +1490,7 @@ class TestProc < Test::Unit::TestCase
     assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], method(:pmo6).to_proc.parameters)
     assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], method(:pmo7).to_proc.parameters)
     assert_equal([[:req], [:block, :b]], method(:pma1).to_proc.parameters)
-    assert_equal([[:keyrest]], method(:pmk1).to_proc.parameters)
+    assert_equal([[:keyrest, :**]], method(:pmk1).to_proc.parameters)
     assert_equal([[:keyrest, :o]], method(:pmk2).to_proc.parameters)
     assert_equal([[:req, :a], [:keyrest, :o]], method(:pmk3).to_proc.parameters)
     assert_equal([[:opt, :a], [:keyrest, :o]], method(:pmk4).to_proc.parameters)
@@ -1168,12 +1504,9 @@ class TestProc < Test::Unit::TestCase
   end
 
   def test_to_s
-    assert_match(/^#<Proc:0x\h+@#{ Regexp.quote(__FILE__) }:\d+>$/, proc {}.to_s)
-    assert_match(/^#<Proc:0x\h+@#{ Regexp.quote(__FILE__) }:\d+ \(lambda\)>$/, lambda {}.to_s)
+    assert_match(/^#<Proc:0x\h+ #{ Regexp.quote(__FILE__) }:\d+>$/, proc {}.to_s)
+    assert_match(/^#<Proc:0x\h+ #{ Regexp.quote(__FILE__) }:\d+ \(lambda\)>$/, lambda {}.to_s)
     assert_match(/^#<Proc:0x\h+ \(lambda\)>$/, method(:p).to_proc.to_s)
-    x = proc {}
-    x.taint
-    assert_predicate(x.to_s, :tainted?)
     name = "Proc\u{1f37b}"
     assert_include(EnvUtil.labeled_class(name, Proc).new {}.to_s, name)
   end
@@ -1282,7 +1615,7 @@ class TestProc < Test::Unit::TestCase
   def test_local_variables
     b = get_binding
     assert_equal(%i'if case when begin end a', b.local_variables)
-    a = tap {|;x, y| x = y; break binding.local_variables}
+    a = tap {|;x, y| x = y = x; break binding.local_variables}
     assert_equal(%i[a b x y], a.sort)
   end
 
@@ -1312,6 +1645,10 @@ class TestProc < Test::Unit::TestCase
     assert_equal(3, b.local_variable_get(:when))
     assert_equal(4, b.local_variable_get(:begin))
     assert_equal(5, b.local_variable_get(:end))
+
+    assert_raise_with_message(NameError, /local variable \Wdefault\W/) {
+      binding.local_variable_get(:default)
+    }
   end
 
   def test_local_variable_set
@@ -1324,8 +1661,276 @@ class TestProc < Test::Unit::TestCase
     assert_equal(20, b.eval("b"))
   end
 
+  def test_numparam_is_not_local_variables
+    "foo".tap do
+      _9 and flunk
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:_9) }
+      assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+      assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+      "bar".tap do
+        assert_equal([], binding.local_variables)
+        assert_raise(NameError) { binding.local_variable_get(:_9) }
+        assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+        assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+      end
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:_9) }
+      assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+      assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+    end
+
+    "foo".tap do
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:_9) }
+      assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+      assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+      "bar".tap do
+        _9 and flunk
+        assert_equal([], binding.local_variables)
+        assert_raise(NameError) { binding.local_variable_get(:_9) }
+        assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+        assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+      end
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:_9) }
+      assert_raise(NameError) { binding.local_variable_set(:_9, 1) }
+      assert_raise(NameError) { binding.local_variable_defined?(:_9) }
+    end
+  end
+
+  def test_implicit_parameters_for_numparams
+    x = x = 1
+    assert_raise(NameError) { binding.implicit_parameter_get(:x) }
+    assert_raise(NameError) { binding.implicit_parameter_defined?(:x) }
+
+    "foo".tap do
+      _5 and flunk
+      assert_equal([:_1, :_2, :_3, :_4, :_5], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:_1))
+      assert_equal(nil, binding.implicit_parameter_get(:_5))
+      assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+      assert_equal(true, binding.implicit_parameter_defined?(:_1))
+      assert_equal(true, binding.implicit_parameter_defined?(:_5))
+      assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+      "bar".tap do
+        assert_equal([], binding.implicit_parameters)
+        assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+        assert_equal(false, binding.implicit_parameter_defined?(:_1))
+        assert_equal(false, binding.implicit_parameter_defined?(:_6))
+        assert_equal(false, binding.implicit_parameter_defined?(:it))
+      end
+      assert_equal([:_1, :_2, :_3, :_4, :_5], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:_1))
+      assert_equal(nil, binding.implicit_parameter_get(:_5))
+      assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+      assert_equal(true, binding.implicit_parameter_defined?(:_1))
+      assert_equal(true, binding.implicit_parameter_defined?(:_5))
+      assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+    end
+
+    "foo".tap do
+      assert_equal([], binding.implicit_parameters)
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+      "bar".tap do
+        _5 and flunk
+        assert_equal([:_1, :_2, :_3, :_4, :_5], binding.implicit_parameters)
+        assert_equal("bar", binding.implicit_parameter_get(:_1))
+        assert_equal(nil, binding.implicit_parameter_get(:_5))
+        assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+        assert_equal(true, binding.implicit_parameter_defined?(:_1))
+        assert_equal(true, binding.implicit_parameter_defined?(:_5))
+        assert_equal(false, binding.implicit_parameter_defined?(:_6))
+        assert_equal(false, binding.implicit_parameter_defined?(:it))
+      end
+      assert_equal([], binding.implicit_parameters)
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+    end
+  end
+
+  def test_it_is_not_local_variable
+    "foo".tap do
+      it
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+      "bar".tap do
+        assert_equal([], binding.local_variables)
+        assert_raise(NameError) { binding.local_variable_get(:it) }
+        assert_equal(false, binding.local_variable_defined?(:it))
+      end
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+      "bar".tap do
+        it
+        assert_equal([], binding.local_variables)
+        assert_raise(NameError) { binding.local_variable_get(:it) }
+        assert_equal(false, binding.local_variable_defined?(:it))
+      end
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+    end
+
+    "foo".tap do
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+      "bar".tap do
+        it
+        assert_equal([], binding.local_variables)
+        assert_raise(NameError) { binding.local_variable_get(:it) }
+        assert_equal(false, binding.local_variable_defined?(:it))
+      end
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+    end
+  end
+
+  def test_implicit_parameters_for_it
+    "foo".tap do
+      it or flunk
+      assert_equal([:it], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:it))
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_equal(true, binding.implicit_parameter_defined?(:it))
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      "bar".tap do
+        assert_equal([], binding.implicit_parameters)
+        assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+        assert_equal(false, binding.implicit_parameter_defined?(:it))
+        assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      end
+      assert_equal([:it], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:it))
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_equal(true, binding.implicit_parameter_defined?(:it))
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+    end
+
+    "foo".tap do
+      assert_equal([], binding.implicit_parameters)
+      assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      "bar".tap do
+        it or flunk
+        assert_equal([:it], binding.implicit_parameters)
+        assert_equal("bar", binding.implicit_parameter_get(:it))
+        assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+        assert_equal(true, binding.implicit_parameter_defined?(:it))
+        assert_equal(false, binding.implicit_parameter_defined?(:_1))
+      end
+      assert_equal([], binding.implicit_parameters)
+      assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+      assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+      assert_equal(false, binding.implicit_parameter_defined?(:_1))
+    end
+  end
+
+  def test_implicit_parameters_for_it_complex
+    "foo".tap do
+      it = it = "bar"
+
+      assert_equal([], binding.implicit_parameters)
+      assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+      assert_equal(false, binding.implicit_parameter_defined?(:it))
+
+      assert_equal([:it], binding.local_variables)
+      assert_equal("bar", binding.local_variable_get(:it))
+      assert_equal(true, binding.local_variable_defined?(:it))
+    end
+
+    "foo".tap do
+      it or flunk
+
+      assert_equal([:it], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:it))
+      assert_equal(true, binding.implicit_parameter_defined?(:it))
+
+      assert_equal([], binding.local_variables)
+      assert_raise(NameError) { binding.local_variable_get(:it) }
+      assert_equal(false, binding.local_variable_defined?(:it))
+    end
+
+    "foo".tap do
+      it or flunk
+      it = it = "bar"
+
+      assert_equal([:it], binding.implicit_parameters)
+      assert_equal("foo", binding.implicit_parameter_get(:it))
+      assert_equal(true, binding.implicit_parameter_defined?(:it))
+
+      assert_equal([:it], binding.local_variables)
+      assert_equal("bar", binding.local_variable_get(:it))
+      assert_equal(true, binding.local_variable_defined?(:it))
+    end
+  end
+
+  def test_implicit_parameters_for_it_and_numparams
+    "foo".tap do
+      it or flunk
+      "bar".tap do
+        _5 and flunk
+        assert_equal([:_1, :_2, :_3, :_4, :_5], binding.implicit_parameters)
+        assert_raise(NameError) { binding.implicit_parameter_get(:it) }
+        assert_equal("bar", binding.implicit_parameter_get(:_1))
+        assert_equal(nil, binding.implicit_parameter_get(:_5))
+        assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+        assert_equal(false, binding.implicit_parameter_defined?(:it))
+        assert_equal(true, binding.implicit_parameter_defined?(:_1))
+        assert_equal(true, binding.implicit_parameter_defined?(:_5))
+        assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      end
+    end
+
+    "foo".tap do
+      _5 and flunk
+      "bar".tap do
+        it or flunk
+        assert_equal([:it], binding.implicit_parameters)
+        assert_equal("bar", binding.implicit_parameter_get(:it))
+        assert_raise(NameError) { binding.implicit_parameter_get(:_1) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:_5) }
+        assert_raise(NameError) { binding.implicit_parameter_get(:_6) }
+        assert_equal(true, binding.implicit_parameter_defined?(:it))
+        assert_equal(false, binding.implicit_parameter_defined?(:_1))
+        assert_equal(false, binding.implicit_parameter_defined?(:_5))
+        assert_equal(false, binding.implicit_parameter_defined?(:_6))
+      end
+    end
+  end
+
+  def test_implicit_parameter_invalid_name
+    message_pattern = /is not an implicit parameter/
+    assert_raise_with_message(NameError, message_pattern) { binding.implicit_parameter_defined?(:foo) }
+    assert_raise_with_message(NameError, message_pattern) { binding.implicit_parameter_get(:foo) }
+    assert_raise_with_message(NameError, message_pattern) { binding.implicit_parameter_defined?("wrong_implicit_parameter_name_#{rand(10000)}") }
+    assert_raise_with_message(NameError, message_pattern) { binding.implicit_parameter_get("wrong_implicit_parameter_name_#{rand(10000)}") }
+  end
+
   def test_local_variable_set_wb
-    assert_ruby_status([], <<-'end;', '[Bug #13605]', timeout: 15)
+    assert_ruby_status([], <<-'end;', '[Bug #13605]', timeout: 30)
       b = binding
       n = 20_000
 
@@ -1372,5 +1977,251 @@ class TestProc < Test::Unit::TestCase
       e = g
       e.each {}
     EOS
+  end
+
+  def test_prepended_call
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", ["call"])
+    begin;
+      Proc.prepend Module.new {def call() puts "call"; super; end}
+      def m(&blk) blk.call; end
+      m {}
+    end;
+  end
+
+  def test_refined_call
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", ["call"])
+    begin;
+      using Module.new {refine(Proc) {def call() puts "call"; super; end}}
+      def m(&blk) blk.call; end
+      m {}
+    end;
+  end
+
+  def test_compose
+    f = proc {|x| x * 2}
+    g = proc {|x| x + 1}
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(6, (g >> f).call(2))
+  end
+
+  def test_compose_with_multiple_args
+    f = proc {|x| x * 2}
+    g = proc {|x, y| x + y}
+
+    assert_equal(6, (f << g).call(1, 2))
+    assert_equal(6, (g >> f).call(1, 2))
+  end
+
+  def test_compose_with_block
+    f = proc {|x| x * 2}
+    g = proc {|&blk| blk.call(1) }
+
+    assert_equal(8, (f << g).call { |x| x + 3 })
+    assert_equal(8, (g >> f).call { |x| x + 3 })
+  end
+
+  def test_compose_with_lambda
+    f = lambda {|x| x * 2}
+    g = lambda {|x| x}
+    not_lambda = proc {|x| x}
+
+    assert_predicate((f << g), :lambda?)
+    assert_predicate((g >> f), :lambda?)
+    assert_predicate((not_lambda << f), :lambda?)
+    assert_not_predicate((f << not_lambda), :lambda?)
+    assert_not_predicate((not_lambda >> f), :lambda?)
+  end
+
+  def test_compose_with_method
+    f = proc {|x| x * 2}
+    c = Class.new {
+      def g(x) x + 1 end
+    }
+    g = c.new.method(:g)
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(5, (f >> g).call(2))
+    assert_predicate((f << g), :lambda?)
+  end
+
+  def test_compose_with_callable
+    f = proc {|x| x * 2}
+    c = Class.new {
+      def call(x) x + 1 end
+    }
+    g = c.new
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(5, (f >> g).call(2))
+    assert_predicate((f << g), :lambda?)
+  end
+
+  def test_compose_with_noncallable
+    f = proc {|x| x * 2}
+
+    assert_raise(TypeError) {
+      (f << 5).call(2)
+    }
+    assert_raise(TypeError) {
+      (f >> 5).call(2)
+    }
+  end
+
+  def test_orphan_return
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1 { return 42 } end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { return 42 }.call end }.m2)
+    assert_raise(LocalJumpError) { Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { return 42 } end }.m2.call }
+  end
+
+  def test_orphan_break
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1 { break 42 } end }.m2 )
+    assert_raise(LocalJumpError) { Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { break 42 }.call end }.m2 }
+    assert_raise(LocalJumpError) { Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { break 42 } end }.m2.call }
+  end
+
+  def test_not_orphan_next
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b.call end; def m2(); m1 { next 42 } end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { next 42 }.call end }.m2)
+    assert_equal(42, Module.new { extend self
+      def m1(&b) b end; def m2(); m1 { next 42 } end }.m2.call)
+  end
+
+  def test_isolate
+    assert_raise_with_message ArgumentError, /\(a\)/ do
+      a = :a
+      Proc.new{p a}.isolate
+    end
+
+    assert_raise_with_message ArgumentError, /\(a\)/ do
+      a = :a
+      1.times{
+        Proc.new{p a}.isolate
+      }
+    end
+
+    assert_raise_with_message ArgumentError, /yield/ do
+      Proc.new{yield}.isolate
+    end
+
+
+    name = "\u{2603 26a1}"
+    assert_raise_with_message(ArgumentError, /\(#{name}\)/) do
+      eval("#{name} = :#{name}; Proc.new {p #{name}}").isolate
+    end
+
+    # binding
+
+    :a.tap{|a|
+      :b.tap{|b|
+        Proc.new{
+          :c.tap{|c|
+            assert_equal :c, eval('c')
+
+            assert_raise_with_message SyntaxError, /\`a\'/ do
+              eval('p a')
+            end
+
+            assert_raise_with_message SyntaxError, /\`b\'/ do
+              eval('p b')
+            end
+
+            assert_raise_with_message SyntaxError, /can not yield from isolated Proc/ do
+              eval('p yield')
+            end
+
+            assert_equal :c, binding.local_variable_get(:c)
+
+            assert_raise_with_message NameError, /local variable \`a\' is not defined/ do
+              binding.local_variable_get(:a)
+            end
+
+            assert_equal [:c], local_variables
+            assert_equal [:c], binding.local_variables
+          }
+        }.isolate.call
+      }
+    }
+  end if proc{}.respond_to? :isolate
+end
+
+class TestProcKeywords < Test::Unit::TestCase
+  def test_compose_keywords
+    f = ->(**kw) { kw.merge(:a=>1) }
+    g = ->(kw) { kw.merge(:a=>2) }
+
+    assert_equal(2, (f >> g).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (f << g).call(a: 3)[:a] }
+    assert_equal(2, (f >> g).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (f << g).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f >> g).call({a: 3})[:a] }
+    assert_equal(2, (g << f).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (g >> f).call(a: 3)[:a] }
+    assert_raise(ArgumentError) { (g << f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (g >> f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f << g).call(**{})[:a] }
+    assert_equal(2, (f >> g).call(**{})[:a])
+  end
+
+  def test_compose_keywords_method
+    f = ->(**kw) { kw.merge(:a=>1) }.method(:call)
+    g = ->(kw) { kw.merge(:a=>2) }.method(:call)
+
+    assert_raise(ArgumentError) { (f << g).call(a: 3)[:a] }
+    assert_equal(2, (f >> g).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (f << g).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f >> g).call({a: 3})[:a] }
+    assert_equal(2, (g << f).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (g >> f).call(a: 3)[:a] }
+    assert_raise(ArgumentError) { (g << f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (g >> f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f << g).call(**{})[:a] }
+    assert_equal(2, (f >> g).call(**{})[:a])
+  end
+
+  def test_compose_keywords_non_proc
+    f = ->(**kw) { kw.merge(:a=>1) }
+    g = Object.new
+    def g.call(kw) kw.merge(:a=>2) end
+    def g.to_proc; method(:call).to_proc; end
+    def g.<<(f) to_proc << f end
+    def g.>>(f) to_proc >> f end
+
+    assert_raise(ArgumentError) { (f << g).call(a: 3)[:a] }
+    assert_equal(2, (f >> g).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (f << g).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f >> g).call({a: 3})[:a] }
+    assert_equal(2, (g << f).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (g >> f).call(a: 3)[:a] }
+    assert_raise(ArgumentError) { (g << f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (g >> f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f << g).call(**{})[:a] }
+    assert_equal(2, (f >> g).call(**{})[:a])
+
+    f = ->(kw) { kw.merge(:a=>1) }
+    g = Object.new
+    def g.call(**kw) kw.merge(:a=>2) end
+    def g.to_proc; method(:call).to_proc; end
+    def g.<<(f) to_proc << f end
+    def g.>>(f) to_proc >> f end
+
+    assert_equal(1, (f << g).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (f >> g).call(a: 3)[:a] }
+    assert_raise(ArgumentError) { (f << g).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (f >> g).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (g << f).call(a: 3)[:a] }
+    assert_equal(1, (g >> f).call(a: 3)[:a])
+    assert_raise(ArgumentError) { (g << f).call({a: 3})[:a] }
+    assert_raise(ArgumentError) { (g >> f).call({a: 3})[:a] }
+    assert_equal(1, (f << g).call(**{})[:a])
+    assert_raise(ArgumentError) { (f >> g).call(**{})[:a] }
   end
 end

@@ -1,0 +1,1 @@
+fails:ObjectSpace.undefine_finalizer should raise when removing finalizers for a frozen object

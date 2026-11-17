@@ -25,7 +25,7 @@ class TestUndef < Test::Unit::TestCase
     y = Undef1.new
     assert_equal "bar", y.bar
     z = Undef2.new
-    assert_raise(NoMethodError) { z.foo }
+    assert_raise(NoMethodError) { z.bar }
   end
 
   def test_special_const_undef
@@ -34,5 +34,21 @@ class TestUndef < Test::Unit::TestCase
         undef to_s
       end
     end
+  end
+
+  def test_singleton_undef
+    klass = Class.new do
+      def foo
+        :ok
+      end
+    end
+
+    klass.new.foo
+
+    klass.new.instance_eval do
+      undef foo
+    end
+
+    klass.new.foo
   end
 end

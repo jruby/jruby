@@ -8,8 +8,11 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -20,13 +23,13 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.parser.StaticScope;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.Integer;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,55 +41,47 @@ import org.jruby.util.ByteList;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
-/**
- *
- * @author enebo
- */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
-    private IRManager manager;
-    private final List<IRScope> scopes = new ArrayList<>();
-    private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
+    private final IRManager manager;
+    private final List<IRScope> scopes;
+    private IRScope currentScope; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */
-    private final ByteList filename;
+    private final String filename;
+    private RubySymbol[] constantPool;
 
-    public IRReaderStream(IRManager manager, InputStream stream, ByteList filename) {
-        ByteBuffer buf = readIntoBuffer(stream);
-        this.manager = manager;
-        this.buf = buf;
-        this.filename = filename;
+    public IRReaderStream(IRManager manager, byte[] bytes, String filename) {
+        this(ByteBuffer.wrap(bytes), manager, new ArrayList<>(), null, filename, null);
     }
 
-    public IRReaderStream(IRManager manager, File file, ByteList filename) {
-        this.manager = manager;
-        ByteBuffer buf = null;
-        try (FileInputStream fis = new FileInputStream(file)){
-            buf = readIntoBuffer(fis);
-        } catch (IOException ex) {
-            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        this.buf = buf;
-        this.filename = filename;
+    public IRReaderStream(IRManager manager, File file, String filename) {
+        this(readingIntoBuffer(file), manager, new ArrayList<>(), null, filename, null);
     }
 
-    private ByteBuffer readIntoBuffer(InputStream stream) {
-        ByteBuffer buf = null;
+    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, String filename, RubySymbol[] constantPool) {
+        this.buf = buf;
+        this.manager = manager;
+        this.scopes = scopes;
+        this.currentScope = currentScope;
+        this.filename = filename;
+        this.constantPool = constantPool;
+    }
+
+    public IRReaderDecoder dup() {
+        return new IRReaderStream(buf.duplicate(), manager, new ArrayList(scopes), currentScope, filename, constantPool);
+    }
+
+    private static ByteBuffer readingIntoBuffer(File file) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] bytes = new byte[8192];
-            int r;
-            while ((r = stream.read(bytes)) > 0) baos.write(bytes, 0, r);
-            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READ IN " + baos.size() + " BYTES OF DATA FROM");
-            buf = ByteBuffer.wrap(baos.toByteArray());
-        } catch (IOException ex) {
-            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
+            return ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
+        } catch (IOException e) {
+            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, e);
         }
-        return buf;
+        return null;
     }
 
     @Override
-    public ByteList getFilename() {
+    public String getFilename() {
         return filename;
     }
 
@@ -105,8 +100,18 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public Encoding decodeEncoding() {
-        byte[] encodingName = decodeByteArray();
-        return EncodingDB.getEncodings().get(encodingName).getEncoding();
+        int size = decodeInt();
+
+        if (size == USASCII) {
+            return USASCIIEncoding.INSTANCE;
+        } else if (size == UTF8) {
+            return UTF8Encoding.INSTANCE;
+        } else {
+            // FIXME: Since we are looking up on byte[] we can avoid alloc by keeping temp array around (this is very uncommon though)
+            byte[] encodingName = new byte[size];
+            buf.get(encodingName);
+            return EncodingDB.getEncodings().get(encodingName).getEncoding();
+        }
     }
 
     @Override
@@ -130,8 +135,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         return RubyEvent.fromOrdinal(decodeInt());
     }
 
-    @Override
-    public RubySymbol decodeSymbol() {
+    private RubySymbol decodeSymbolFromConstantPool() {
         int strLength = decodeInt();
 
         if (strLength == NULL_STRING) return null;
@@ -141,7 +145,15 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         Encoding encoding = decodeEncoding();
 
-        return currentScope.getManager().getRuntime().newSymbol(new ByteList(bytes, encoding, false));
+        return manager.getRuntime().newSymbol(new ByteList(bytes, encoding, false));
+    }
+
+    @Override
+    public RubySymbol decodeSymbol() {
+        int poolIndex = decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("INDEX: " + poolIndex);
+
+        return constantPool[poolIndex];
     }
 
     @Override
@@ -193,13 +205,27 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     private Map<String, Operand> vars = null;
 
+    // Labels use this to make sure they share the same instances
     @Override
     public Map<String, Operand> getVars() {
         return vars;
     }
 
+    private void decodeConstantPool(int offset) {
+        positionBuffer(buf, offset);
+        int size = decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING " + size + " symbols");
+
+        constantPool = new RubySymbol[size];
+        for (int i = 0; i < size; i++) {
+            constantPool[i] = decodeSymbolFromConstantPool();
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("SYM: " + constantPool[i]);
+        }
+    }
+
     @Override
-    public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int offset) {
+        decodeConstantPool(poolOffset);
         currentScope = scope;
         vars = new HashMap<>();
         positionBuffer(buf, offset);
@@ -213,8 +239,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
 
-            // FIXME: It would be nice to not run this and just record flag state at encode time
-            decodedInstr.computeScopeFlags(scope);
             instrs.add(decodedInstr);
         }
 
@@ -226,11 +250,12 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         switch (operation) {
             case ALIAS: return AliasInstr.decode(this);
-            case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
             case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
+            case AS_FIXNUM: return AsFixnumInstr.decode(this);
             case AS_STRING: return AsStringInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
+            case B_INT: return BIntInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
             case B_SWITCH: return BSwitchInstr.decode(this);
             case B_TRUE: return BTrueInstr.decode(this);
@@ -238,12 +263,14 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BINDING_LOAD: return LoadLocalVarInstr.decode(this);
             case BINDING_STORE: return StoreLocalVarInstr.decode(this);
             case BLOCK_GIVEN: return BlockGivenInstr.decode(this);
+            case BLOCK_GIVEN_CALL: return BlockGivenCallInstr.decode(this);
             case BNE: return BNEInstr.decode(this);
             case BREAK: return BreakInstr.decode(this);
             case BUILD_BACKREF: return BuildBackrefInstr.decode(this);
             case BUILD_COMPOUND_ARRAY: return BuildCompoundArrayInstr.decode(this);
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(this);
             case BUILD_DREGEXP: return BuildDynRegExpInstr.decode(this);
+            case BUILD_NTHREF: return BuildNthRefInstr.decode(this);
             case BUILD_RANGE: return BuildRangeInstr.decode(this);
             case BUILD_SPLAT: return BuildSplatInstr.decode(this);
             case CALL_1F:
@@ -258,7 +285,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case CHECK_FOR_LJE: return CheckForLJEInstr.decode(this);
             case CLASS_SUPER: return ClassSuperInstr.decode(this);
             case CLASS_VAR_MODULE: return GetClassVarContainerModuleInstr.decode(this);
-            case CONST_MISSING: return ConstMissingInstr.decode(this);
             case COPY: return CopyInstr.decode(this);
             case DEF_CLASS: return DefineClassInstr.decode(this);
             case DEF_CLASS_METH: return DefineClassMethodInstr.decode(this);
@@ -268,6 +294,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case EQQ: return EQQInstr.decode(this);
             case EXC_REGION_END: return new ExceptionRegionEndMarkerInstr();
             case EXC_REGION_START: return ExceptionRegionStartMarkerInstr.decode(this);
+            case FRAME_NAME_CALL: return FrameNameCallInstr.decode(this);
             case GET_CVAR: return GetClassVariableInstr.decode(this);
             case GET_ENCODING: return GetEncodingInstr.decode(this);
             case GET_ERROR_INFO: return GetErrorInfoInstr.decode(this);
@@ -276,11 +303,13 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case GVAR_ALIAS: return GVarAliasInstr.decode(this);
             case INHERITANCE_SEARCH_CONST: return InheritanceSearchConstInstr.decode(this);
             case INSTANCE_SUPER: return InstanceSuperInstr.decode(this);
+            case INT_MATH: return IntegerMathInstr.decode(this);
             case JUMP: return JumpInstr.decode(this);
             case LABEL: return LabelInstr.decode(this);
             case LAMBDA: return BuildLambdaInstr.decode(this);
             case LEXICAL_SEARCH_CONST: return LexicalSearchConstInstr.decode(this);
             case LOAD_FRAME_CLOSURE: return LoadFrameClosureInstr.decode(this);
+            case LOAD_BLOCK_IMPLICIT_CLOSURE: return LoadBlockImplicitClosureInstr.decode(this);
             case LOAD_IMPLICIT_CLOSURE: return LoadImplicitClosureInstr.decode(this);
             case LINE_NUM: return LineNumberInstr.decode(this);
             case MASGN_OPT: return OptArgMultipleAsgnInstr.decode(this);
@@ -306,6 +335,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case REIFY_CLOSURE: return ReifyClosureInstr.decode(this);
             case RECV_RUBY_EXC: return ReceiveRubyExceptionInstr.decode(this);
             case RECV_JRUBY_EXC: return ReceiveJRubyExceptionInstr.decode(this);
+            case RECV_KW: return ReceiveKeywordsInstr.decode(this);
             case RECV_KW_ARG: return ReceiveKeywordArgInstr.decode(this);
             case RECV_KW_REST_ARG: return ReceiveKeywordRestArgInstr.decode(this);
             case RECV_OPT_ARG: return ReceiveOptArgInstr.decode(this);
@@ -317,6 +347,9 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RESTORE_ERROR_INFO: return RestoreErrorInfoInstr.decode(this);
             case RETURN: return ReturnInstr.decode(this);
             case RETURN_OR_RETHROW_SAVED_EXC: return ReturnOrRethrowSavedExcInstr.decode(this);
+            case RECV_METHOD_COVERAGE: return ReceiveMethodCoverageInstr.decode(this);
+            case COVER_METHOD: return CoverMethodInstr.decode(this);
+            case COVER_BRANCH: return CoverBranchInstr.decode(this);
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SEARCH_MODULE_FOR_CONST: return SearchModuleForConstInstr.decode(this);
@@ -332,7 +365,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ZSUPER: return ZSuperInstr.decode(this);
         }
 
-        throw new IllegalArgumentException("Unhandled operation: " + operation);
+        illegalArgument("Unhandled operation: " + operation);
+        return null; /* not reached */
     }    
 
     @Override
@@ -412,7 +446,9 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         if (value == TRUE) return true;
         if (value == FALSE) return false;
 
-        throw new IllegalArgumentException("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean.");
+
+        illegalArgument("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean. " + getFilename() + ", " + getCurrentScope());
+        return false; /* not reached */
     }
 
     @Override
@@ -463,6 +499,19 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public EnumSet<IRFlags> decodeIRFlags() {
+        EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
+        IRFlags[] values = IRFlags.values();
+
+        for (int value = decodeInt(); value != 0; value ^= Integer.lowestOneBit(value)) {
+            int index = Integer.numberOfTrailingZeros(value);
+            flags.add(values[index]);
+        }
+
+        return flags;
+    }
+
+    @Override
     public void seek(int headersOffset) {
         positionBuffer(buf, headersOffset);
     }
@@ -474,6 +523,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ARRAY: return Array.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
+            case BUILTIN_CLASS: return BuiltinClass.decode(this);
+            case CHILLED_STRING: return ChilledString.decode(this);
             case COMPLEX: return Complex.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);
@@ -484,19 +535,19 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case GLOBAL_VARIABLE: return GlobalVariable.decode(this);
             case HASH: return Hash.decode(this);
             case IR_EXCEPTION: return IRException.decode(this);
+            case INTEGER: return org.jruby.ir.operands.Integer.decode(this);
             case LABEL: return Label.decode(this);
             case LOCAL_VARIABLE: return LocalVariable.decode(this);
             case NIL: return manager.getNil();
-            case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
-            case OBJECT_CLASS: return new ObjectClass();
+            case RANGE: return Range.decode(this);
             case RATIONAL: return Rational.decode(this);
             case REGEXP: return Regexp.decode(this);
             case SCOPE_MODULE: return ScopeModule.decode(this);
             case SELF: return Self.SELF;
             case SPLAT: return Splat.decode(this);
             case STANDARD_ERROR: return new StandardError();
-            case STRING_LITERAL: return StringLiteral.decode(this);
+            case STRING_LITERAL: return MutableString.decode(this);
             case SVALUE: return SValue.decode(this);
             case SYMBOL: return Symbol.decode(this);
             case SYMBOL_PROC: return SymbolProc.decode(this);
@@ -509,6 +560,10 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case WRAPPED_IR_CLOSURE: return WrappedIRClosure.decode(this);
         }
 
-        return null;
+        throw new RuntimeException("failed to deserialize operand of type: " + type);
+    }
+
+    private void illegalArgument(String message) {
+        throw new IllegalArgumentException(message + "\nfile: " + getFilename() + "\nscope: " + getCurrentScope());
     }
 }

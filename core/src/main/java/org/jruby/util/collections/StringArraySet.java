@@ -33,16 +33,20 @@ import java.util.HashSet;
 import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
+
 /**
  * An RubyArray that maintains an O(1) Set for fast include? operations.
  */
-public class StringArraySet extends RubyArray {
+public class StringArraySet extends RubyArrayNative {
 
     private final Set<String> set;
 
@@ -54,27 +58,27 @@ public class StringArraySet extends RubyArray {
     public final void appendString(Ruby runtime, String element) {
         final RubyString item = runtime.newString(element);
         synchronized (this) {
-            super.append(item);
+            super.append(runtime.getCurrentContext(), item);
             set.add(element);
         }
     }
 
     @Override
-    public synchronized RubyArray append(IRubyObject item) {
-        RubyArray result = super.append(item);
+    public synchronized RubyArray append(ThreadContext context, IRubyObject item) {
+        RubyArray result = super.append(context, item);
         set.add(convertToString(item));
         return result;
     }
 
     @Override
-    public synchronized IRubyObject rb_clear() {
-        IRubyObject res = super.rb_clear();
+    public synchronized IRubyObject rb_clear(ThreadContext context) {
+        IRubyObject res = super.rb_clear(context);
         set.clear();
         return res;
     }
 
     public final void deleteString(ThreadContext context, String element) {
-        final RubyString item = context.runtime.newString(element);
+        final RubyString item = newString(context, element);
         synchronized (this) {
             super.delete(context, item, Block.NULL_BLOCK);
             set.remove(element); // assuming no array duplicities
@@ -97,33 +101,33 @@ public class StringArraySet extends RubyArray {
 
     @Override
     public final RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return context.runtime.newBoolean(containsString(convertToString(item)));
+        return asBoolean(context, containsString(convertToString(item)));
     }
 
     @Override
-    public synchronized IRubyObject replace(IRubyObject orig) {
-        IRubyObject result = super.replace(orig);
+    public synchronized IRubyObject replace(ThreadContext context, IRubyObject orig) {
+        IRubyObject result = super.replace(context, orig);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject result = super.aset(arg0, arg1);
+    public synchronized IRubyObject aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject result = super.aset(context, arg0, arg1);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject result = super.aset(arg0, arg1, arg2);
+    public synchronized IRubyObject aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject result = super.aset(context, arg0, arg1, arg2);
         rehash();
         return result;
     }
 
     @Override
     public synchronized RubyArray collectBang(ThreadContext context, Block block) {
-        RubyArray result = super.collectBang(context, block);
+        var result = super.collectBang(context, block);
         rehash();
         return result;
     }
@@ -145,8 +149,8 @@ public class StringArraySet extends RubyArray {
     //}
 
     @Override
-    public synchronized IRubyObject compact_bang() {
-        IRubyObject result = super.compact_bang();
+    public synchronized IRubyObject compact_bang(ThreadContext context) {
+        IRubyObject result = super.compact_bang(context);
         rehash();
         return result;
     }
@@ -187,22 +191,22 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject insert(IRubyObject arg) {
-        IRubyObject result = super.insert(arg);
+    public synchronized IRubyObject insert(ThreadContext context, IRubyObject arg) {
+        IRubyObject result = super.insert(context, arg);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject result = super.insert(arg1, arg2);
+    public synchronized IRubyObject insert(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject result = super.insert(context, arg1, arg2);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject insert(IRubyObject[] args) {
-        IRubyObject result = super.insert(args);
+    public synchronized IRubyObject insert(ThreadContext context, IRubyObject[] args) {
+        IRubyObject result = super.insert(context, args);
         rehash();
         return result;
     }
@@ -222,15 +226,15 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized RubyArray push(IRubyObject item) {
-        RubyArray result = super.push(item);
+    public synchronized RubyArray push(ThreadContext context, IRubyObject item) {
+        var result = super.push(context, item);
         add(item);
         return result;
     }
 
     @Override
-    public synchronized RubyArray push(IRubyObject[] items) {
-        RubyArray result = super.push(items);
+    public synchronized RubyArray push(ThreadContext context, IRubyObject[] items) {
+        var result = super.push(context, items);
         addAll(items);
         return result;
     }
@@ -272,36 +276,36 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject slice_bang(IRubyObject arg0) {
-        IRubyObject result = super.slice_bang(arg0);
+    public synchronized IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
+        IRubyObject result = super.slice_bang(context, arg0);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject slice_bang(IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject result = super.slice_bang(arg0, arg1);
+    public synchronized IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject result = super.slice_bang(context, arg0, arg1);
         rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject unshift() {
-        IRubyObject result = super.unshift();
+    public synchronized IRubyObject unshift(ThreadContext context) {
+        IRubyObject result = super.unshift(context);
         // rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject unshift(IRubyObject item) {
-        IRubyObject result = super.unshift(item);
+    public synchronized IRubyObject unshift(ThreadContext context, IRubyObject item) {
+        IRubyObject result = super.unshift(context, item);
         add(item);
         return result;
     }
 
     @Override
-    public synchronized IRubyObject unshift(IRubyObject[] items) {
-        IRubyObject result = super.unshift(items);
+    public synchronized IRubyObject unshift(ThreadContext context, IRubyObject[] items) {
+        IRubyObject result = super.unshift(context, items);
         addAll(items);
         return result;
     }

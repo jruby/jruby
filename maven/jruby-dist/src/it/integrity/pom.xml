@@ -58,7 +58,7 @@
 	      <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>gem</argument>
 		<argument>list</argument>
@@ -75,7 +75,7 @@
 	      <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rake</argument>
 		<argument>--version</argument>
@@ -92,7 +92,7 @@
 	      <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rdoc</argument>
 		<argument>--version</argument>
@@ -109,7 +109,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>p JRuby.runtime.jruby_home</argument>
               </arguments>
@@ -125,7 +125,7 @@
 	      <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>
 		  require 'stringio'
@@ -152,7 +152,7 @@
               <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>
@@ -174,7 +174,7 @@
               <arguments>
 		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
 		<argument>-Djruby.home=${jruby.home}</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>

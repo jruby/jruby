@@ -53,7 +53,7 @@ public class CFGInliner {
             if (b.isEntryBB() || b.isExitBB()) continue;
 
             BasicBlock rb = ii.getRenamedBB(b);
-            for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
+            for (Edge<BasicBlock, CFG.EdgeType> e : cfg.getOutgoingEdges(b)) {
                 BasicBlock destination = e.getDestination().getData();
                 if (!destination.isExitBB()) selfClone.addEdge(rb, ii.getRenamedBB(destination), e.getType());
             }
@@ -68,7 +68,7 @@ public class CFGInliner {
 
     // Use receivers variable if it is one.  Otherwise make a new temp for one.
     private Variable getReceiverVariable(Operand receiver) {
-        return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
+        return receiver instanceof Variable ? (Variable) receiver : hostScope.getFullInterpreterContext().createTemporaryVariable();
     }
 
     public BasicBlock findCallsiteBB(CallBase call) {
@@ -92,8 +92,8 @@ public class CFGInliner {
         LOG.info("---------------------------------- PROLOGUE (start) --------");
         LOG.info("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
         printInlineCFG(cfg, "host of inline");
-        LOG.info("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
-        LOG.info("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
+        LOG.info("method to inline cfg:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringGraph());
+        LOG.info("method to inline instrs:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringInstrs());
         LOG.info("---------------------------------- PROLOGUE (end) -----------");
     }
 
@@ -166,7 +166,7 @@ public class CFGInliner {
         InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scopeToInline);
 
         // Inlinee method data init
-        CFG methodToInline = scopeToInline.getCFG();
+        CFG methodToInline = scopeToInline.getFullInterpreterContext().getCFG();
         List<BasicBlock> methodBBs = new ArrayList<>(methodToInline.getBasicBlocks());
 
         if (isRecursiveInline(scopeToInline)) {
@@ -178,7 +178,7 @@ public class CFGInliner {
             // SSS: FIXME: We need a swallow-graph api method in cfg and graph
             for (BasicBlock b : selfClone.getBasicBlocks()) {
                 cfg.addBasicBlock(b);
-                for (Edge<BasicBlock> e : selfClone.getOutgoingEdges(b)) {
+                for (Edge<BasicBlock, CFG.EdgeType> e : selfClone.getOutgoingEdges(b)) {
                     cfg.addEdge(b, e.getDestination().getData(), e.getType());
                 }
             }
@@ -191,7 +191,7 @@ public class CFGInliner {
                 if (x.isEntryBB() || x.isExitBB()) continue;
 
                 BasicBlock rx = ii.getRenamedBB(x);
-                for (Edge<BasicBlock> e : methodToInline.getOutgoingEdges(x)) {
+                for (Edge<BasicBlock, CFG.EdgeType> e : methodToInline.getOutgoingEdges(x)) {
                     BasicBlock b = e.getDestination().getData();
                     if (!b.isExitBB()) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
                 }
@@ -230,7 +230,7 @@ public class CFGInliner {
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : methodToInline.getIncomingEdges(methodToInline.getExitBB())) {
+        for (Edge<BasicBlock, CFG.EdgeType> e : methodToInline.getIncomingEdges(methodToInline.getExitBB())) {
             BasicBlock source = e.getSource().getData();
             if (source.isEntryBB()) continue;
 
@@ -285,30 +285,32 @@ public class CFGInliner {
         failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
         call.blockInlining();
 
+        // We made a new BB with a call which can always raise an exception so add exception edge.
+        cfg.addEdge(failurePathBB, callBB.exceptionBB(), EdgeType.EXCEPTION);
+        cfg.setRescuerBB(failurePathBB, callBB.exceptionBB());
+
         cfg.addEdge(beforeInlineBB, failurePathBB, CFG.EdgeType.REGULAR);
         cfg.addEdge(failurePathBB, afterInlineBB, CFG.EdgeType.REGULAR);
 
         // Inline any closure argument passed into the call.
-        Operand closureArg = call.getClosureArg(null);
-        List yieldSites = ii.getYieldSites();
+        Operand closureArg = call.getClosureArg(NullBlock.INSTANCE);
+        List<Tuple<BasicBlock, YieldInstr>> yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
-            // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
-            // if we inline the closure at all those yield sites!
-
-            // currently we will only inline a single block into a single yield.
-            if (yieldSites.size() > 1) return "cannot inline a scope with two or more yields";
+            // FIXME: Do we care if we have too many yields?
 
             if (!(closureArg instanceof WrappedIRClosure)) {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
-            Tuple t = (Tuple) yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            for (Tuple<BasicBlock, YieldInstr> t: yieldSites) {
+                inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), t.a, t.b);
+            }
         }
 
         // Optimize cfg by merging straight-line bbs (just one piece of what CFG.optimize does)
         //cfg.collapseStraightLineBBs();
 
+        /*
         // FIXME: This probably is too much work here. Decide between this and just collapsing straight line BBs
         // FIXME: If we do keep this we should maybe internalize calculating these in CFG itself.
         List<BasicBlock> returnBBs = new ArrayList<>();
@@ -317,7 +319,8 @@ public class CFGInliner {
                 if (instr.getOperation().isReturn()) returnBBs.add(basicBlock);
             }
         }
-        cfg.optimize(returnBBs);
+        cfg.optimize(returnBBs);*/
+        cfg.optimize();
 
         addMissingJumps();
 
@@ -336,7 +339,7 @@ public class CFGInliner {
             boolean fallThrough = false;
             Label jumpLabel = null;
 
-            for (Edge<BasicBlock> edge : cfg.getOutgoingEdges(bb)) {
+            for (Edge<BasicBlock, CFG.EdgeType> edge : cfg.getOutgoingEdges(bb)) {
                 if (edge.getType() == EdgeType.FALL_THROUGH) {           // Assume next BB will be correct
                     fallThrough = true;
                 } else if (edge.getType() == EdgeType.REGULAR || edge.getType() == EdgeType.EXIT) {         // Not sure if we can have regular and fallthrough but only add regular if no fallthrough
@@ -359,7 +362,7 @@ public class CFGInliner {
     // a new BB after the original BB and remove those from the original BB (beforeInlineBB).
     private void connectOuterEdges(BasicBlock beforeInlineBB, BasicBlock afterInlineBB) {
         cfg.addBasicBlock(afterInlineBB);
-        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(beforeInlineBB)) {
+        for (Edge<BasicBlock, CFG.EdgeType> e : cfg.getOutgoingEdges(beforeInlineBB)) {
             cfg.addEdge(afterInlineBB, e.getDestination().getData(), e.getType());
         }
         cfg.removeAllOutgoingEdgesForBB(beforeInlineBB);
@@ -377,7 +380,7 @@ public class CFGInliner {
         ii.setupYieldArgsAndYieldResult(yield, beforeInlineBB, cl.getBlockBody().getSignature().arityValue());
 
         // 2. Merge closure cfg into the current cfg
-        CFG closureCFG = cl.getCFG();
+        CFG closureCFG = cl.getFullInterpreterContext().getCFG();
 
         BasicBlock closureGEB = closureCFG.getGlobalEnsureBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
@@ -388,14 +391,14 @@ public class CFGInliner {
             if (b.isEntryBB() || b.isExitBB()) continue;
 
             BasicBlock bClone = ii.getRenamedBB(b);
-            for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(b)) {
+            for (Edge<BasicBlock, CFG.EdgeType> e : closureCFG.getOutgoingEdges(b)) {
                 BasicBlock edst = e.getDestination().getData();
                 if (!edst.isExitBB() && edst != closureGEB) cfg.addEdge(bClone, ii.getRenamedBB(edst), e.getType());
             }
         }
 
         // Hook up entry edges
-        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(closureCFG.getEntryBB())) {
+        for (Edge<BasicBlock, CFG.EdgeType> e : closureCFG.getOutgoingEdges(closureCFG.getEntryBB())) {
             BasicBlock destination = e.getDestination().getData();
             if (!destination.isExitBB() && destination != closureGEB) {
                 cfg.addEdge(beforeInlineBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
@@ -403,7 +406,7 @@ public class CFGInliner {
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(closureCFG.getExitBB())) {
+        for (Edge<BasicBlock, CFG.EdgeType> e : closureCFG.getIncomingEdges(closureCFG.getExitBB())) {
             BasicBlock source = e.getSource().getData();
             if (source.isEntryBB()) continue;
 

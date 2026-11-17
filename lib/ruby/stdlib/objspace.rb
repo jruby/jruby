@@ -1,3 +1,5 @@
+require "jruby"
+
 module ObjectSpace
   def count_symbols
     JRuby.runtime.symbol_table.size

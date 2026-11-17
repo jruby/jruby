@@ -8,11 +8,11 @@ describe "Vector#normalize" do
   end
 
   it "raises an error for zero vectors" do
-    lambda {
+    -> {
       Vector[].normalize
-    }.should raise_error(Vector::ZeroVectorError)
-    lambda {
+    }.should.raise(Vector::ZeroVectorError)
+    -> {
       Vector[0, 0, 0].normalize
-    }.should raise_error(Vector::ZeroVectorError)
+    }.should.raise(Vector::ZeroVectorError)
   end
 end

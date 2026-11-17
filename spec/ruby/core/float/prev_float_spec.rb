@@ -9,7 +9,7 @@ describe "Float#prev_float" do
     barely_negative.should > barely_negative.prev_float
 
     midpoint = barely_negative / 2
-    [0.0, barely_negative].should include midpoint
+    [0.0, barely_negative].should.include? midpoint
   end
 
   it "returns -Float::INFINITY for -Float::INFINITY" do
@@ -44,6 +44,6 @@ describe "Float#prev_float" do
   end
 
   it "returns NAN if NAN was the receiver" do
-    Float::NAN.prev_float.nan?.should == true
+    Float::NAN.prev_float.should.nan?
   end
 end

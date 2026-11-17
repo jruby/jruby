@@ -1,15 +1,7 @@
 require_relative '../../spec_helper'
 
 describe "Process.waitpid" do
-  it "needs to be reviewed for spec completeness"
-
-  it "returns nil when the process has not yet completed and WNOHANG is specified" do
-    pid = spawn("sleep 5")
-    begin
-      Process.waitpid(pid, Process::WNOHANG).should == nil
-      Process.kill("KILL", pid)
-    ensure
-      Process.wait(pid)
-    end
+  it "is an alias of Process.wait" do
+    Process.method(:waitpid).should == Process.method(:wait)
   end
 end

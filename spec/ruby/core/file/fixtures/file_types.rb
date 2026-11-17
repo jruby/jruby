@@ -9,7 +9,8 @@ module FileSpecs
 
     platform_is_not :windows do
       @block  = `find /dev /devices -type b 2>/dev/null`.split("\n").first
-      @char   = `{ tty || find /dev /devices -type c; } 2>/dev/null`.split("\n").last
+      @char   = "/dev/null" if File.lstat("/dev/null").chardev?
+      @char ||= `{ test -t 0 && tty || find /dev /devices -type c; } 2>/dev/null`.split("\n").last
     end
 
     @configured = true
@@ -52,9 +53,9 @@ module FileSpecs
   end
 
   def self.socket
-    require 'socket'
-    name = tmp("ftype_socket.socket")
-    rm_r name
+    require_relative '../../../library/socket/fixtures/classes.rb'
+
+    name = SocketSpecs.socket_path
     socket = UNIXServer.new name
     begin
       yield name

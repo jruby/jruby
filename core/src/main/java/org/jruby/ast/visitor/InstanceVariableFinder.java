@@ -4,11 +4,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ModuleNode;
+import org.jruby.ast.NilRestArgNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -26,7 +28,10 @@ import org.jruby.ast.PreExeNode;
  * node.accept(finder);
  * System.out.println("found: " + finder.getFoundVariables);
  * </code>
+ *
+ * @deprecated See {@link RubyModule#discoverInstanceVariables()} for the working version
  */
+@Deprecated(since = "10.0.3.0")
 public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
 
     @Override
@@ -110,6 +115,11 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      */
     @Override
     public Void visitModuleNode(ModuleNode iVisited) {
+        return null;
+    }
+
+    @Override
+    public Void visitNilRestArgNode(NilRestArgNode iVisited) {
         return null;
     }
 

@@ -9,18 +9,18 @@ import java.util.function.Consumer;
 /**
  * Lazy Java class extensions initialization.
  *
- * @note Internal API
+ * <p>Note: Internal API</p>
  * @author kares
  */
 public class JavaExtensions {
 
-    private static final boolean LAZY = Options.JI_LOAD_LAZY.load();;
+    private static final boolean LAZY = Options.JI_LOAD_LAZY.load();
 
     private JavaExtensions() { /* hidden */ }
 
     static void put(final Ruby runtime, Class javaClass, Consumer<RubyModule> proxyClass) {
         if (!LAZY) {
-            proxyClass.accept( org.jruby.javasupport.Java.getProxyClass(runtime, javaClass) );
+            proxyClass.accept( org.jruby.javasupport.Java.getProxyClass(runtime.getCurrentContext(), javaClass) );
             return;
         }
         Object previous = runtime.getJavaExtensionDefinitions().put(javaClass, proxyClass);

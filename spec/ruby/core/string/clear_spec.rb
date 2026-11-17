@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 
 describe "String#clear" do
@@ -13,7 +14,7 @@ describe "String#clear" do
   it "returns self after emptying it" do
     cleared = @s.clear
     cleared.should == ""
-    cleared.should equal @s
+    cleared.should.equal? @s
   end
 
   it "preserves its encoding" do
@@ -29,9 +30,9 @@ describe "String#clear" do
     s.should == ""
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
+  it "raises a FrozenError if self is frozen" do
     @s.freeze
-    lambda { @s.clear        }.should raise_error(frozen_error_class)
-    lambda { "".freeze.clear }.should raise_error(frozen_error_class)
+    -> { @s.clear        }.should.raise(FrozenError)
+    -> { "".freeze.clear }.should.raise(FrozenError)
   end
 end

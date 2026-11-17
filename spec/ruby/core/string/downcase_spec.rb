@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
@@ -6,6 +7,14 @@ describe "String#downcase" do
   it "returns a copy of self with all uppercase letters downcased" do
     "hELLO".downcase.should == "hello"
     "hello".downcase.should == "hello"
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hELLO".encode("US-ASCII").downcase.encoding.should == Encoding::US_ASCII
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.downcase.should == "ab\xE4\xC4\0cd".b
   end
 
   describe "full Unicode case mapping" do
@@ -19,13 +28,29 @@ describe "String#downcase" do
       downcased.should == "king"
       downcased.size.should == 4
       downcased.bytesize.should == 4
-      downcased.ascii_only?.should be_true
+      downcased.ascii_only?.should == true
     end
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).downcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).downcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).downcase(:ascii).should == "\x83Aab".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
     it "does not downcase non-ASCII characters" do
       "CÅR".downcase(:ascii).should == "cÅr"
+    end
+
+    it "works with substrings" do
+      "prefix TÉ"[-2..-1].downcase(:ascii).should == "tÉ"
     end
   end
 
@@ -39,7 +64,7 @@ describe "String#downcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "İ".downcase(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { "İ".downcase(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -53,7 +78,7 @@ describe "String#downcase" do
     end
 
     it "does not allow any other additional option" do
-      lambda { "İS".downcase(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { "İS".downcase(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -62,28 +87,33 @@ describe "String#downcase" do
       "ß".downcase.should == "ß"
       "ß".downcase(:fold).should == "ss"
     end
+
+    it "case folds ASCII letters" do
+      "ABC".downcase(:fold).should == "abc"
+      "aB\xE4".b.downcase(:fold).should == "ab\xE4".b
+    end
   end
 
   it "does not allow invalid options" do
-    lambda { "ABC".downcase(:invalid_option) }.should raise_error(ArgumentError)
+    -> { "ABC".downcase(:invalid_option) }.should.raise(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "".taint.downcase.tainted?.should == true
-    "x".taint.downcase.tainted?.should == true
-    "X".taint.downcase.tainted?.should == true
-  end
-
-  it "returns a subclass instance for subclasses" do
-    StringSpecs::MyString.new("FOObar").downcase.should be_an_instance_of(StringSpecs::MyString)
+  it "returns a String instance for subclasses" do
+    StringSpecs::MyString.new("FOObar").downcase.should.instance_of?(String)
   end
 end
 
 describe "String#downcase!" do
   it "modifies self in place" do
     a = "HeLlO"
-    a.downcase!.should equal(a)
+    a.downcase!.should.equal?(a)
     a.should == "hello"
+  end
+
+  it "modifies self in place for non-ascii-compatible encodings" do
+    a = "HeLlO".encode("utf-16le")
+    a.downcase!
+    a.should == "hello".encode("utf-16le")
   end
 
   describe "full Unicode case mapping" do
@@ -100,7 +130,7 @@ describe "String#downcase!" do
       downcased.should == "king"
       downcased.size.should == 4
       downcased.bytesize.should == 4
-      downcased.ascii_only?.should be_true
+      downcased.ascii_only?.should == true
     end
   end
 
@@ -109,6 +139,12 @@ describe "String#downcase!" do
       a = "CÅR"
       a.downcase!(:ascii)
       a.should == "cÅr"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "ABC".encode("utf-16le")
+      a.downcase!(:ascii)
+      a.should == "abc".encode("utf-16le")
     end
   end
 
@@ -126,7 +162,7 @@ describe "String#downcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "İ"; a.downcase!(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "İ"; a.downcase!(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -144,7 +180,7 @@ describe "String#downcase!" do
     end
 
     it "does not allow any other additional option" do
-      lambda { a = "İS"; a.downcase!(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "İS"; a.downcase!(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -157,10 +193,35 @@ describe "String#downcase!" do
       a.downcase!(:fold)
       a.should == "ss"
     end
+
+    it "case folds ASCII letters" do
+      a = "aB\xE4".b
+      a.downcase!(:fold).should.equal?(a)
+      a.should == "ab\xE4".b
+    end
   end
 
   it "does not allow invalid options" do
-    lambda { a = "ABC"; a.downcase!(:invalid_option) }.should raise_error(ArgumentError)
+    -> { a = "ABC"; a.downcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.downcase!.should.equal?(a)
+    a.should == "ab\xE4\xC4\0cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.downcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.downcase!
+    slice.should == "abcd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do
@@ -169,12 +230,12 @@ describe "String#downcase!" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
-    lambda { "HeLlo".freeze.downcase! }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.downcase! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError when self is frozen" do
+    -> { "HeLlo".freeze.downcase! }.should.raise(FrozenError)
+    -> { "hello".freeze.downcase! }.should.raise(FrozenError)
   end
 
   it "sets the result String encoding to the source String encoding" do
-    "ABC".downcase.encoding.should equal(Encoding::UTF_8)
+    "ABC".downcase.encoding.should.equal?(Encoding::UTF_8)
   end
 end

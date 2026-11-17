@@ -15,19 +15,24 @@ import static org.jruby.util.RegularFileResource.mapFileNotFoundOnGetChannel;
  * Represents a the NUL: device on Windows, which is not a normal file.
  */
 final class NullDeviceResource implements FileResource {
-
-    private static final JRubyFile file = new JRubyFile("NUL:");
+    private static final String NUL_DEVICE = "NUL:";
+    private static final JRubyFile file = new JRubyFile(NUL_DEVICE);
 
     NullDeviceResource() { /* no-op */ }
 
     @Override
     public String absolutePath() {
-        return "NUL:";
+        return NUL_DEVICE;
     }
 
     @Override
     public String canonicalPath() {
-        return "NUL:";
+        return NUL_DEVICE;
+    }
+
+    @Override
+    public String path() {
+        return NUL_DEVICE;
     }
 
     @Override

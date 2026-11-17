@@ -1,5 +1,6 @@
+require_relative '../../spec_helper'
+
 platform_is_not :windows do
-  require_relative '../../spec_helper'
   require 'expect'
 
   describe "IO#expect" do
@@ -37,16 +38,16 @@ platform_is_not :windows do
       @write << "prompt> hello"
       @read.close
 
-      lambda {
+      -> {
         @read.expect("hello")
-      }.should raise_error(IOError)
+      }.should.raise(IOError)
     end
 
     it "returns nil if eof is hit" do
       @write << "pro"
       @write.close
 
-      @read.expect("prompt").should be_nil
+      @read.expect("prompt").should == nil
     end
 
     it "yields the result if a block is given" do

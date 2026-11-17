@@ -54,7 +54,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
     }
 
     /**
-     * Creates a new <tt>FileDescriptorByteChannel</tt>.
+     * Creates a new <code>FileDescriptorByteChannel</code>.
      *
      * @param fd The native unix fd to read/write.
      */
@@ -65,7 +65,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
 
     /**
      * Reads data from the native unix file descriptor.
-     * @param dst The destination <tt>ByteBuffer</tt> to place read bytes in.
+     * @param dst The destination <code>ByteBuffer</code> to place read bytes in.
      * @return The number of bytes read.
      *
      * @throws java.io.IOException If an error occurred during reading.
@@ -86,7 +86,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
     /**
      * Writes data to the native unix file descriptor.
      *
-     * @param src The source <tt>ByteBuffer</tt> to write to the file descriptor.
+     * @param src The source <code>ByteBuffer</code> to write to the file descriptor.
      * @return The number of bytes written.
      *
      * @throws java.io.IOException If an error occurred during writing.
@@ -105,13 +105,13 @@ public class FileDescriptorByteChannel implements ByteChannel {
     /**
      * Tests if the ByteChannel is open.
      *
-     * @return <tt>true</tt> if the Channel is still open
+     * @return <code>true</code> if the Channel is still open
      */
     public boolean isOpen() {
         return isOpen;
     }
     /**
-     * Closes the <tt>Channel</tt>.
+     * Closes the <code>Channel</code>.
      * <p>
      * This closes the underlying native file descriptor.
      * </p>

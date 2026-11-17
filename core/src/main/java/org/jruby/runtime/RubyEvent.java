@@ -18,25 +18,28 @@ public enum RubyEvent {
     END      ("end", false),
     CALL     ("call"),
     RETURN   ("return"),
-    C_CALL   ("c-call"),
-    C_RETURN ("c-return"),
-    B_CALL   ("b-call"),
-    B_RETURN ("b-return"),
-    THREAD_BEGIN   ("thread-begin"),
-    THREAD_END ("thread-end"),
-    RAISE    ("raise"),
+    C_CALL   ("c_call"),
+    C_RETURN ("c_return"),
+    B_CALL   ("b_call"),
+    B_RETURN ("b_return"),
+    THREAD_BEGIN   ("thread_begin", false),
+    THREAD_END ("thread_end", false),
+    FIBER_SWITCH ("fiber_switch", false),
+    RAISE    ("raise", false),
     COVERAGE ("coverage"),
     // A_CALL is CALL + B_CALL + C_CALL
-    A_CALL   ("a-call"),
+    A_CALL   ("a_call"),
     // A_RETURN is RETURN + B_RETURN + C_RETURN
-    A_RETURN ("a-return");
+    A_RETURN ("a_return"),
+    RESCUE ("rescue", false);
 
-    public static Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
+    public static final Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
+    public static final EnumSet ALL_EVENTS_ENUMSET = EnumSet.copyOf(RubyEvent.ALL_EVENTS);
 
     private final String event_name;
     private final boolean requiresDebug;
 
-    private static final Map<String, RubyEvent> fromName = new HashMap<>();
+    private static final Map<String, RubyEvent> fromName = new HashMap<>(RubyEvent.values().length);
     static {
         for (RubyEvent event : RubyEvent.values()) {
             fromName.put(event.getName(), event);
@@ -51,11 +54,7 @@ public enum RubyEvent {
         this.event_name = event_name;
         this.requiresDebug = requiresDebug;
     }
-	
-    public int getLineNumberOffset(){
-        return 1;
-    }
-	
+
     public String getName(){
         return event_name;
     }

@@ -2,6 +2,7 @@ require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 require_relative 'shared/enumeratorize'
 require_relative 'shared/delete_if'
+require_relative 'shared/iterable_and_tolerating_size_increasing'
 require_relative '../enumerable/shared/enumeratorized'
 
 describe "Array#delete_if" do
@@ -16,7 +17,7 @@ describe "Array#delete_if" do
   end
 
   it "returns self" do
-    @a.delete_if{ true }.equal?(@a).should be_true
+    @a.delete_if{ true }.equal?(@a).should == true
   end
 
   it_behaves_like :enumeratorize, :delete_if
@@ -24,43 +25,58 @@ describe "Array#delete_if" do
   it "returns self when called on an Array emptied with #shift" do
     array = [1]
     array.shift
-    array.delete_if { |x| true }.should equal(array)
+    array.delete_if { |x| true }.should.equal?(array)
   end
 
   it "returns an Enumerator if no block given, and the enumerator can modify the original array" do
     enum = @a.delete_if
-    enum.should be_an_instance_of(Enumerator)
-    @a.should_not be_empty
+    enum.should.instance_of?(Enumerator)
+    @a.should_not.empty?
     enum.each { true }
-    @a.should be_empty
+    @a.should.empty?
   end
 
   it "returns an Enumerator if no block given, and the array is frozen" do
-    @a.freeze.delete_if.should be_an_instance_of(Enumerator)
+    @a.freeze.delete_if.should.instance_of?(Enumerator)
   end
 
-  it "raises a #{frozen_error_class} on a frozen array" do
-    lambda { ArraySpecs.frozen_array.delete_if {} }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.delete_if {} }.should.raise(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.delete_if {} }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on an empty frozen array" do
+    -> { ArraySpecs.empty_frozen_array.delete_if {} }.should.raise(FrozenError)
   end
 
-  it "keeps tainted status" do
-    @a.taint
-    @a.tainted?.should be_true
-    @a.delete_if{ true }
-    @a.tainted?.should be_true
+  it "does not truncate the array is the block raises an exception" do
+    a = [1, 2, 3]
+    begin
+      a.delete_if { raise StandardError, 'Oops' }
+    rescue
+    end
+
+    a.should == [1, 2, 3]
   end
 
-  it "keeps untrusted status" do
-    @a.untrust
-    @a.untrusted?.should be_true
-    @a.delete_if{ true }
-    @a.untrusted?.should be_true
+  it "only removes elements for which the block returns true, keeping the element which raised an error." do
+    a = [1, 2, 3, 4]
+    begin
+      a.delete_if do |e|
+        case e
+        when 2 then true
+        when 3 then raise StandardError, 'Oops'
+        else false
+        end
+      end
+    rescue StandardError
+    end
+
+    a.should == [1, 3, 4]
   end
 
   it_behaves_like :enumeratorized_with_origin_size, :delete_if, [1,2,3]
   it_behaves_like :delete_if, :delete_if
+
+  @value_to_return = -> _ { false }
+  it_behaves_like :array_iterable_and_tolerating_size_increasing, :delete_if
 end

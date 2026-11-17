@@ -5,21 +5,25 @@ describe "The defined? keyword for literals" do
   it "returns 'self' for self" do
     ret = defined?(self)
     ret.should == "self"
+    ret.frozen?.should == true
   end
 
   it "returns 'nil' for nil" do
     ret = defined?(nil)
     ret.should == "nil"
+    ret.frozen?.should == true
   end
 
   it "returns 'true' for true" do
     ret = defined?(true)
     ret.should == "true"
+    ret.frozen?.should == true
   end
 
   it "returns 'false' for false" do
     ret = defined?(false)
     ret.should == "false"
+    ret.frozen?.should == true
   end
 
   describe "for a literal Array" do
@@ -27,6 +31,7 @@ describe "The defined? keyword for literals" do
     it "returns 'expression' if each element is defined" do
       ret = defined?([Object, Array])
       ret.should == "expression"
+      ret.frozen?.should == true
     end
 
     it "returns nil if one element is not defined" do
@@ -43,13 +48,36 @@ describe "The defined? keyword for literals" do
 end
 
 describe "The defined? keyword when called with a method name" do
+  before :each do
+    ScratchPad.clear
+  end
+
+  it "does not call the method" do
+    defined?(DefinedSpecs.side_effects).should == "method"
+    ScratchPad.recorded.should != :defined_specs_side_effects
+  end
+
+  it "does not execute the arguments" do
+    defined?(DefinedSpecs.any_args(DefinedSpecs.side_effects)).should == "method"
+    ScratchPad.recorded.should != :defined_specs_side_effects
+  end
+
   describe "without a receiver" do
     it "returns 'method' if the method is defined" do
-      defined?(puts).should == "method"
+      ret = defined?(puts)
+      ret.should == "method"
+      ret.frozen?.should == true
     end
 
     it "returns nil if the method is not defined" do
-      defined?(defined_specs_undefined_method).should be_nil
+      defined?(defined_specs_undefined_method).should == nil
+    end
+
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns nil if the method is not implemented on this platform" do
+        defined?(syscall).should == nil
+        defined?(syscall(0)).should == nil
+      end
     end
 
     it "returns 'method' if the method is defined and private" do
@@ -69,23 +97,29 @@ describe "The defined? keyword when called with a method name" do
     end
 
     it "returns nil if the method is private" do
-      defined?(Object.print).should be_nil
+      defined?(Object.print).should == nil
     end
 
     it "returns nil if the method is protected" do
-      defined?(DefinedSpecs::Basic.new.protected_method).should be_nil
+      defined?(DefinedSpecs::Basic.new.protected_method).should == nil
     end
 
     it "returns nil if the method is not defined" do
-      defined?(Kernel.defined_specs_undefined_method).should be_nil
+      defined?(Kernel.defined_specs_undefined_method).should == nil
+    end
+
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns 'method' if the method is not implemented on this platform" do
+        defined?(Kernel.syscall).should == "method"
+      end
     end
 
     it "returns nil if the class is not defined" do
-      defined?(DefinedSpecsUndefined.puts).should be_nil
+      defined?(DefinedSpecsUndefined.puts).should == nil
     end
 
     it "returns nil if the subclass is not defined" do
-      defined?(DefinedSpecs::Undefined.puts).should be_nil
+      defined?(DefinedSpecs::Undefined.puts).should == nil
     end
   end
 
@@ -95,19 +129,78 @@ describe "The defined? keyword when called with a method name" do
       defined?(obj.a_defined_method).should == "method"
     end
 
+    it "returns 'method' for []=" do
+      a = []
+      defined?(a[0] = 1).should == "method"
+    end
+
     it "returns nil if the method is not defined" do
       obj = DefinedSpecs::Basic.new
-      defined?(obj.an_undefined_method).should be_nil
+      defined?(obj.an_undefined_method).should == nil
     end
 
     it "returns nil if the variable does not exist" do
-      defined?(nonexistent_local_variable.some_method).should be_nil
+      defined?(nonexistent_local_variable.some_method).should == nil
     end
 
     it "calls #respond_to_missing?" do
       obj = mock("respond_to_missing object")
       obj.should_receive(:respond_to_missing?).and_return(true)
       defined?(obj.something_undefined).should == "method"
+    end
+
+    it "does not call #respond_to_missing? if #respond_to?(:respond_to_missing?) returns false" do
+      obj = DefinedSpecs::RespondToFalse.new
+      defined?(obj.an_undefined_method).should == nil
+      ScratchPad.recorded.should == nil
+    end
+
+    it "calls #respond_to_missing? if #respond_to?(:respond_to_missing?) returns true" do
+      obj = DefinedSpecs::RespondToTrue.new
+      defined?(obj.an_undefined_method).should == "method"
+      ScratchPad.recorded.should == :defined_specs_respond_to_missing
+    end
+
+    it "warns if #respond_to? takes one parameter" do
+      obj = DefinedSpecs::RespondToOneParameter.new
+
+      deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = true
+        -> { defined?(obj.an_undefined_method) }.should complain(
+          /respond_to\?\(:respond_to_missing\?\) uses the deprecated method signature.*\n.*respond_to\? is defined here/)
+      ensure
+        Warning[:deprecated] = deprecated
+      end
+    end
+
+    it "does not call the receiver's #to_s for a one parameter #respond_to? if Warning[:deprecated] is false" do
+      obj = DefinedSpecs::RespondToRecordingToS.new
+      def obj.respond_to?(name)
+        false
+      end
+
+      deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        defined?(obj.an_undefined_method).should == nil
+      ensure
+        Warning[:deprecated] = deprecated
+      end
+
+      ScratchPad.recorded.should == nil
+    end
+
+    it "does not warn about a one parameter #respond_to? if Warning[:deprecated] is false" do
+      obj = DefinedSpecs::RespondToOneParameter.new
+
+      deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        -> { defined?(obj.an_undefined_method) }.should_not complain
+      ensure
+        Warning[:deprecated] = deprecated
+      end
     end
   end
 
@@ -119,11 +212,11 @@ describe "The defined? keyword when called with a method name" do
 
     it "returns nil if the method is not defined" do
       @defined_specs_obj = DefinedSpecs::Basic.new
-      defined?(@defined_specs_obj.an_undefined_method).should be_nil
+      defined?(@defined_specs_obj.an_undefined_method).should == nil
     end
 
     it "returns nil if the variable does not exist" do
-      defined?(@nonexistent_instance_variable.some_method).should be_nil
+      defined?(@nonexistent_instance_variable.some_method).should == nil
     end
   end
 
@@ -135,28 +228,70 @@ describe "The defined? keyword when called with a method name" do
 
     it "returns nil if the method is not defined" do
       $defined_specs_obj = DefinedSpecs::Basic.new
-      defined?($defined_specs_obj.an_undefined_method).should be_nil
+      defined?($defined_specs_obj.an_undefined_method).should == nil
     end
 
     it "returns nil if the variable does not exist" do
-      defined?($nonexistent_global_variable.some_method).should be_nil
+      defined?($nonexistent_global_variable.some_method).should == nil
     end
   end
 
   describe "having a method call as a receiver" do
     it "returns nil if evaluating the receiver raises an exception" do
-      defined?(DefinedSpecs.exception_method / 2).should be_nil
+      defined?(DefinedSpecs.exception_method / 2).should == nil
       ScratchPad.recorded.should == :defined_specs_exception
     end
 
     it "returns nil if the method is not defined on the object the receiver returns" do
-      defined?(DefinedSpecs.side_effects / 2).should be_nil
+      defined?(DefinedSpecs.side_effects / 2).should == nil
       ScratchPad.recorded.should == :defined_specs_side_effects
     end
 
     it "returns 'method' if the method is defined on the object the receiver returns" do
       defined?(DefinedSpecs.fixnum_method / 2).should == "method"
       ScratchPad.recorded.should == :defined_specs_fixnum_method
+    end
+  end
+
+  describe "having a throw in the receiver" do
+    it "escapes defined? and performs the throw semantics as normal" do
+      defined_returned = false
+      catch(:out) {
+        # NOTE: defined? behaves differently if it is called in a void context, see below
+        defined?(throw(:out, 42).foo).should == :unreachable
+        defined_returned = true
+      }.should == 42
+      defined_returned.should == false
+    end
+  end
+
+  describe "in a void context" do
+    it "does not execute the receiver" do
+      ScratchPad.record :not_executed
+      defined?(DefinedSpecs.side_effects / 2)
+      ScratchPad.recorded.should == :not_executed
+    end
+
+    it "warns about the void context when parsing it" do
+      -> {
+        eval "defined?(DefinedSpecs.side_effects / 2); 42"
+      }.should complain(/warning: possibly useless use of defined\? in void context/, verbose: true)
+    end
+  end
+
+  describe "for a protected method" do
+    it "returns 'method' when the receiver is a subclass instance" do
+      DefinedSpecs::ProtectedBase.new.defined_on(DefinedSpecs::ProtectedSubclass.new).should == "method"
+    end
+
+    it "returns 'method' when the receiver is the base class instance" do
+      DefinedSpecs::ProtectedSubclass.new.defined_on(DefinedSpecs::ProtectedBase.new).should == "method"
+    end
+
+    ruby_bug "#22076", ""..."4.1" do
+      it "returns 'method' when the receiver is a sibling class instance via a shared included module" do
+        DefinedSpecs::ProtectedIncluderA.new.defined_on(DefinedSpecs::ProtectedIncluderB.new).should == "method"
+      end
     end
   end
 end
@@ -167,7 +302,9 @@ describe "The defined? keyword for an expression" do
   end
 
   it "returns 'assignment' for assigning a local variable" do
-    defined?(x = 2).should == "assignment"
+    ret = defined?(x = 2)
+    ret.should == "assignment"
+    ret.frozen?.should == true
   end
 
   it "returns 'assignment' for assigning an instance variable" do
@@ -180,6 +317,14 @@ describe "The defined? keyword for an expression" do
 
   it "returns 'assignment' for assigning a class variable" do
     defined?(@@defined_specs_x = 2).should == "assignment"
+  end
+
+  it "returns 'assignment' for assigning a constant" do
+    defined?(A = 2).should == "assignment"
+  end
+
+  it "returns 'assignment' for assigning a fully qualified constant" do
+    defined?(Object::A = 2).should == "assignment"
   end
 
   it "returns 'assignment' for assigning multiple variables" do
@@ -199,7 +344,27 @@ describe "The defined? keyword for an expression" do
   end
 
   it "returns 'assignment' for an expression with '+='" do
-    defined?(x += 2).should == "assignment"
+    defined?(a += 1).should == "assignment"
+    defined?(@a += 1).should == "assignment"
+    defined?(@@a += 1).should == "assignment"
+    defined?($a += 1).should == "assignment"
+    defined?(A += 1).should == "assignment"
+    # fully qualified constant check is moved out into a separate test case
+    defined?(a.b += 1).should == "assignment"
+    defined?(a[:b] += 1).should == "assignment"
+  end
+
+  # https://bugs.ruby-lang.org/issues/20111
+  ruby_version_is ""..."3.4" do
+    it "returns 'expression' for an assigning a fully qualified constant with '+='" do
+      defined?(Object::A += 1).should == "expression"
+    end
+  end
+
+  ruby_version_is "3.4" do
+    it "returns 'assignment' for an assigning a fully qualified constant with '+='" do
+      defined?(Object::A += 1).should == "assignment"
+    end
   end
 
   it "returns 'assignment' for an expression with '*='" do
@@ -230,12 +395,90 @@ describe "The defined? keyword for an expression" do
     defined?(x >>= 2).should == "assignment"
   end
 
-  it "returns 'assignment' for an expression with '||='" do
-    defined?(x ||= 2).should == "assignment"
+  context "||=" do
+    it "returns 'assignment' for assigning a local variable with '||='" do
+      defined?(a ||= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning an instance variable with '||='" do
+      defined?(@a ||= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a class variable with '||='" do
+      defined?(@@a ||= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a global variable with '||='" do
+      defined?($a ||= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a constant with '||='" do
+      defined?(A ||= true).should == "assignment"
+    end
+
+    # https://bugs.ruby-lang.org/issues/20111
+    ruby_version_is ""..."3.4" do
+      it "returns 'expression' for assigning a fully qualified constant with '||='" do
+        defined?(Object::A ||= true).should == "expression"
+      end
+    end
+
+    ruby_version_is "3.4" do
+      it "returns 'assignment' for assigning a fully qualified constant with '||='" do
+        defined?(Object::A ||= true).should == "assignment"
+      end
+    end
+
+    it "returns 'assignment' for assigning an attribute with '||='" do
+      defined?(a.b ||= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a referenced element with '||='" do
+      defined?(a[:b] ||= true).should == "assignment"
+    end
   end
 
-  it "returns 'assignment' for an expression with '&&='" do
-    defined?(x &&= 2).should == "assignment"
+  context "&&=" do
+    it "returns 'assignment' for assigning a local variable with '&&='" do
+      defined?(a &&= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning an instance variable with '&&='" do
+      defined?(@a &&= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a class variable with '&&='" do
+      defined?(@@a &&= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a global variable with '&&='" do
+      defined?($a &&= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a constant with '&&='" do
+      defined?(A &&= true).should == "assignment"
+    end
+
+    # https://bugs.ruby-lang.org/issues/20111
+    ruby_version_is ""..."3.4" do
+      it "returns 'expression' for assigning a fully qualified constant with '&&='" do
+        defined?(Object::A &&= true).should == "expression"
+      end
+    end
+
+    ruby_version_is "3.4" do
+      it "returns 'assignment' for assigning a fully qualified constant with '&&='" do
+        defined?(Object::A &&= true).should == "assignment"
+      end
+    end
+
+    it "returns 'assignment' for assigning an attribute with '&&='" do
+      defined?(a.b &&= true).should == "assignment"
+    end
+
+    it "returns 'assignment' for assigning a referenced element with '&&='" do
+      defined?(a[:b] &&= true).should == "assignment"
+    end
   end
 
   it "returns 'assignment' for an expression with '**='" do
@@ -243,15 +486,15 @@ describe "The defined? keyword for an expression" do
   end
 
   it "returns nil for an expression with == and an undefined method" do
-    defined?(defined_specs_undefined_method == 2).should be_nil
+    defined?(defined_specs_undefined_method == 2).should == nil
   end
 
   it "returns nil for an expression with != and an undefined method" do
-    defined?(defined_specs_undefined_method != 2).should be_nil
+    defined?(defined_specs_undefined_method != 2).should == nil
   end
 
   it "returns nil for an expression with !~ and an undefined method" do
-    defined?(defined_specs_undefined_method !~ 2).should be_nil
+    defined?(defined_specs_undefined_method !~ 2).should == nil
   end
 
   it "returns 'method' for an expression with '=='" do
@@ -271,29 +514,25 @@ describe "The defined? keyword for an expression" do
 
   describe "with logical connectives" do
     it "returns nil for an expression with '!' and an undefined method" do
-      defined?(!defined_specs_undefined_method).should be_nil
+      defined?(!defined_specs_undefined_method).should == nil
     end
 
     it "returns nil for an expression with '!' and an unset class variable" do
-      -> {
-        @result = defined?(!@@defined_specs_undefined_class_variable)
-      }.should complain(/class variable access from toplevel/)
-      @result.should be_nil
+      @result = eval("class singleton_class::A; defined?(!@@doesnt_exist) end", binding, __FILE__, __LINE__)
+      @result.should == nil
     end
 
     it "returns nil for an expression with 'not' and an undefined method" do
-      defined?(not defined_specs_undefined_method).should be_nil
+      defined?(not defined_specs_undefined_method).should == nil
     end
 
     it "returns nil for an expression with 'not' and an unset class variable" do
-      -> {
-        @result = defined?(not @@defined_specs_undefined_class_variable)
-      }.should complain(/class variable access from toplevel/)
-      @result.should be_nil
+      @result = eval("class singleton_class::A; defined?(not @@doesnt_exist) end", binding, __FILE__, __LINE__)
+      @result.should == nil
     end
 
     it "does not propagate an exception raised by a method in a 'not' expression" do
-      defined?(not DefinedSpecs.exception_method).should be_nil
+      defined?(not DefinedSpecs.exception_method).should == nil
       ScratchPad.recorded.should == :defined_specs_exception
     end
 
@@ -332,11 +571,11 @@ describe "The defined? keyword for an expression" do
     end
 
     it "returns nil for an expression with '!' and an unset global variable" do
-      defined?(!$defined_specs_undefined_global_variable).should be_nil
+      defined?(!$defined_specs_undefined_global_variable).should == nil
     end
 
     it "returns nil for an expression with '!' and an unset instance variable" do
-      defined?(!@defined_specs_undefined_instance_variable).should be_nil
+      defined?(!@defined_specs_undefined_instance_variable).should == nil
     end
 
     it "returns 'method' for a 'not' expression with a method" do
@@ -349,11 +588,11 @@ describe "The defined? keyword for an expression" do
     end
 
     it "returns nil for an expression with 'not' and an unset global variable" do
-      defined?(not $defined_specs_undefined_global_variable).should be_nil
+      defined?(not $defined_specs_undefined_global_variable).should == nil
     end
 
     it "returns nil for an expression with 'not' and an unset instance variable" do
-      defined?(not @defined_specs_undefined_instance_variable).should be_nil
+      defined?(not @defined_specs_undefined_instance_variable).should == nil
     end
 
     it "returns 'expression' for an expression with '&&/and' and an undefined method" do
@@ -368,12 +607,12 @@ describe "The defined? keyword for an expression" do
 
     it "does not call a method in an '&&' expression and returns 'expression'" do
       defined?(DefinedSpecs.side_effects && true).should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
 
     it "does not call a method in an 'and' expression and returns 'expression'" do
       defined?(DefinedSpecs.side_effects and true).should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
 
     it "returns 'expression' for an expression with '||/or' and an undefined method" do
@@ -388,12 +627,12 @@ describe "The defined? keyword for an expression" do
 
     it "does not call a method in an '||' expression and returns 'expression'" do
       defined?(DefinedSpecs.side_effects || true).should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
 
     it "does not call a method in an 'or' expression and returns 'expression'" do
       defined?(DefinedSpecs.side_effects or true).should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
   end
 
@@ -416,7 +655,7 @@ describe "The defined? keyword for an expression" do
 
     it "does not call the method in the String" do
       defined?("garble #{DefinedSpecs.dynamic_string}").should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
   end
 
@@ -435,7 +674,7 @@ describe "The defined? keyword for an expression" do
 
     it "does not call the method in the Regexp" do
       defined?(/garble #{DefinedSpecs.dynamic_string}/).should == "expression"
-      ScratchPad.recorded.should be_nil
+      ScratchPad.recorded.should == nil
     end
   end
 
@@ -474,7 +713,9 @@ end
 
 describe "The defined? keyword for variables" do
   it "returns 'local-variable' when called with the name of a local variable" do
-    DefinedSpecs::Basic.new.local_variable_defined.should == "local-variable"
+    ret = DefinedSpecs::Basic.new.local_variable_defined
+    ret.should == "local-variable"
+    ret.frozen?.should == true
   end
 
   it "returns 'local-variable' when called with the name of a local variable assigned to nil" do
@@ -482,15 +723,17 @@ describe "The defined? keyword for variables" do
   end
 
   it "returns nil for an instance variable that has not been read" do
-    DefinedSpecs::Basic.new.instance_variable_undefined.should be_nil
+    DefinedSpecs::Basic.new.instance_variable_undefined.should == nil
   end
 
   it "returns nil for an instance variable that has been read but not assigned to" do
-    DefinedSpecs::Basic.new.instance_variable_read.should be_nil
+    DefinedSpecs::Basic.new.instance_variable_read.should == nil
   end
 
   it "returns 'instance-variable' for an instance variable that has been assigned" do
-    DefinedSpecs::Basic.new.instance_variable_defined.should == "instance-variable"
+    ret = DefinedSpecs::Basic.new.instance_variable_defined
+    ret.should == "instance-variable"
+    ret.frozen?.should == true
   end
 
   it "returns 'instance-variable' for an instance variable that has been assigned to nil" do
@@ -498,15 +741,17 @@ describe "The defined? keyword for variables" do
   end
 
   it "returns nil for a global variable that has not been read" do
-    DefinedSpecs::Basic.new.global_variable_undefined.should be_nil
+    DefinedSpecs::Basic.new.global_variable_undefined.should == nil
   end
 
   it "returns nil for a global variable that has been read but not assigned to" do
-    DefinedSpecs::Basic.new.global_variable_read.should be_nil
+    DefinedSpecs::Basic.new.global_variable_read.should == nil
   end
 
   it "returns 'global-variable' for a global variable that has been assigned nil" do
-    DefinedSpecs::Basic.new.global_variable_defined_as_nil.should == "global-variable"
+    ret = DefinedSpecs::Basic.new.global_variable_defined_as_nil
+    ret.should == "global-variable"
+    ret.frozen?.should == true
   end
 
   # MRI appears to special case defined? for $! and $~ in that it returns
@@ -532,27 +777,27 @@ describe "The defined? keyword for variables" do
     end
 
     it "returns nil for $&" do
-      defined?($&).should be_nil
+      defined?($&).should == nil
     end
 
     it "returns nil for $`" do
-      defined?($`).should be_nil
+      defined?($`).should == nil
     end
 
     it "returns nil for $'" do
-      defined?($').should be_nil
+      defined?($').should == nil
     end
 
     it "returns nil for $+" do
-      defined?($+).should be_nil
+      defined?($+).should == nil
     end
 
     it "returns nil for any last match global" do
-      defined?($1).should be_nil
-      defined?($4).should be_nil
-      defined?($7).should be_nil
-      defined?($10).should be_nil
-      defined?($200).should be_nil
+      defined?($1).should == nil
+      defined?($4).should == nil
+      defined?($7).should == nil
+      defined?($10).should == nil
+      defined?($200).should == nil
     end
   end
 
@@ -587,10 +832,10 @@ describe "The defined? keyword for variables" do
     end
 
     it "returns nil for non-captures" do
-      defined?($4).should be_nil
-      defined?($7).should be_nil
-      defined?($10).should be_nil
-      defined?($200).should be_nil
+      defined?($4).should == nil
+      defined?($7).should == nil
+      defined?($10).should == nil
+      defined?($200).should == nil
     end
   end
 
@@ -604,27 +849,27 @@ describe "The defined? keyword for variables" do
     end
 
     it "returns nil for $&" do
-      defined?($&).should be_nil
+      defined?($&).should == nil
     end
 
     it "returns nil for $`" do
-      defined?($`).should be_nil
+      defined?($`).should == nil
     end
 
     it "returns nil for $'" do
-      defined?($').should be_nil
+      defined?($').should == nil
     end
 
     it "returns nil for $+" do
-      defined?($+).should be_nil
+      defined?($+).should == nil
     end
 
     it "returns nil for any last match global" do
-      defined?($1).should be_nil
-      defined?($4).should be_nil
-      defined?($7).should be_nil
-      defined?($10).should be_nil
-      defined?($200).should be_nil
+      defined?($1).should == nil
+      defined?($4).should == nil
+      defined?($7).should == nil
+      defined?($10).should == nil
+      defined?($200).should == nil
     end
   end
 
@@ -659,10 +904,10 @@ describe "The defined? keyword for variables" do
     end
 
     it "returns nil for non-captures" do
-      defined?($4).should be_nil
-      defined?($7).should be_nil
-      defined?($10).should be_nil
-      defined?($200).should be_nil
+      defined?($4).should == nil
+      defined?($7).should == nil
+      defined?($10).should == nil
+      defined?($200).should == nil
     end
   end
   it "returns 'global-variable' for a global variable that has been assigned" do
@@ -670,7 +915,7 @@ describe "The defined? keyword for variables" do
   end
 
   it "returns nil for a class variable that has not been read" do
-    DefinedSpecs::Basic.new.class_variable_undefined.should be_nil
+    DefinedSpecs::Basic.new.class_variable_undefined.should == nil
   end
 
   # There is no spec for a class variable that is read before being assigned
@@ -678,7 +923,9 @@ describe "The defined? keyword for variables" do
   # get to the defined? call so it really has nothing to do with 'defined?'.
 
   it "returns 'class variable' when called with the name of a class variable" do
-    DefinedSpecs::Basic.new.class_variable_defined.should == "class variable"
+    ret = DefinedSpecs::Basic.new.class_variable_defined
+    ret.should == "class variable"
+    ret.frozen?.should == true
   end
 
   it "returns 'local-variable' when called with the name of a block local" do
@@ -689,16 +936,18 @@ end
 
 describe "The defined? keyword for a simple constant" do
   it "returns 'constant' when the constant is defined" do
-    defined?(DefinedSpecs).should == "constant"
+    ret = defined?(DefinedSpecs)
+    ret.should == "constant"
+    ret.frozen?.should == true
   end
 
   it "returns nil when the constant is not defined" do
-    defined?(DefinedSpecsUndefined).should be_nil
+    defined?(DefinedSpecsUndefined).should == nil
   end
 
   it "does not call Object.const_missing if the constant is not defined" do
     Object.should_not_receive(:const_missing)
-    defined?(DefinedSpecsUndefined).should be_nil
+    defined?(DefinedSpecsUndefined).should == nil
   end
 
   it "returns 'constant' for an included module" do
@@ -716,12 +965,12 @@ describe "The defined? keyword for a top-level constant" do
   end
 
   it "returns nil if the constant is not defined" do
-    defined?(::DefinedSpecsUndefined).should be_nil
+    defined?(::DefinedSpecsUndefined).should == nil
   end
 
   it "does not call Object.const_missing if the constant is not defined" do
     Object.should_not_receive(:const_missing)
-    defined?(::DefinedSpecsUndefined).should be_nil
+    defined?(::DefinedSpecsUndefined).should == nil
   end
 end
 
@@ -731,41 +980,37 @@ describe "The defined? keyword for a scoped constant" do
   end
 
   it "returns nil when the scoped constant is not defined" do
-    defined?(DefinedSpecs::Undefined).should be_nil
+    defined?(DefinedSpecs::Undefined).should == nil
+  end
+
+  it "returns nil when the constant is not defined and the outer module implements .const_missing" do
+    defined?(DefinedSpecs::ModuleWithConstMissing::Undefined).should == nil
   end
 
   it "does not call .const_missing if the constant is not defined" do
     DefinedSpecs.should_not_receive(:const_missing)
-    defined?(DefinedSpecs::UnknownChild).should be_nil
+    defined?(DefinedSpecs::UnknownChild).should == nil
   end
 
   it "returns nil when an undefined constant is scoped to a defined constant" do
-    defined?(DefinedSpecs::Child::Undefined).should be_nil
+    defined?(DefinedSpecs::Child::Undefined).should == nil
   end
 
   it "returns nil when a constant is scoped to an undefined constant" do
     Object.should_not_receive(:const_missing)
-    defined?(Undefined::Object).should be_nil
+    defined?(Undefined::Object).should == nil
   end
 
   it "returns nil when the undefined constant is scoped to an undefined constant" do
-    defined?(DefinedSpecs::Undefined::Undefined).should be_nil
+    defined?(DefinedSpecs::Undefined::Undefined).should == nil
   end
 
   it "returns nil when a constant is defined on top-level but not on the module" do
-    defined?(DefinedSpecs::String).should be_nil
+    defined?(DefinedSpecs::String).should == nil
   end
 
-  ruby_version_is ""..."2.5" do
-    it "returns 'constant' when a constant is defined on top-level but not on the class" do
-      defined?(DefinedSpecs::Basic::String).should == 'constant'
-    end
-  end
-
-  ruby_version_is "2.5" do
-    it "returns nil when a constant is defined on top-level but not on the class" do
-      defined?(DefinedSpecs::Basic::String).should be_nil
-    end
+  it "returns nil when a constant is defined on top-level but not on the class" do
+    defined?(DefinedSpecs::Basic::String).should == nil
   end
 
   it "returns 'constant' if the scoped-scoped constant is defined" do
@@ -779,15 +1024,15 @@ describe "The defined? keyword for a top-level scoped constant" do
   end
 
   it "returns nil when the scoped constant is not defined" do
-    defined?(::DefinedSpecs::Undefined).should be_nil
+    defined?(::DefinedSpecs::Undefined).should == nil
   end
 
   it "returns nil when an undefined constant is scoped to a defined constant" do
-    defined?(::DefinedSpecs::Child::Undefined).should be_nil
+    defined?(::DefinedSpecs::Child::Undefined).should == nil
   end
 
   it "returns nil when the undefined constant is scoped to an undefined constant" do
-    defined?(::DefinedSpecs::Undefined::Undefined).should be_nil
+    defined?(::DefinedSpecs::Undefined::Undefined).should == nil
   end
 
   it "returns 'constant' if the scoped-scoped constant is defined" do
@@ -797,7 +1042,7 @@ end
 
 describe "The defined? keyword for a self-send method call scoped constant" do
   it "returns nil if the constant is not defined in the scope of the method's value" do
-    defined?(defined_specs_method::Undefined).should be_nil
+    defined?(defined_specs_method::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant is defined in the scope of the method's value" do
@@ -805,11 +1050,11 @@ describe "The defined? keyword for a self-send method call scoped constant" do
   end
 
   it "returns nil if the last constant is not defined in the scope chain" do
-    defined?(defined_specs_method::Basic::Undefined).should be_nil
+    defined?(defined_specs_method::Basic::Undefined).should == nil
   end
 
   it "returns nil if the middle constant is not defined in the scope chain" do
-    defined?(defined_specs_method::Undefined::Undefined).should be_nil
+    defined?(defined_specs_method::Undefined::Undefined).should == nil
   end
 
   it "returns 'constant' if all the constants in the scope chain are defined" do
@@ -819,7 +1064,7 @@ end
 
 describe "The defined? keyword for a receiver method call scoped constant" do
   it "returns nil if the constant is not defined in the scope of the method's value" do
-    defined?(defined_specs_receiver.defined_method::Undefined).should be_nil
+    defined?(defined_specs_receiver.defined_method::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant is defined in the scope of the method's value" do
@@ -827,11 +1072,11 @@ describe "The defined? keyword for a receiver method call scoped constant" do
   end
 
   it "returns nil if the last constant is not defined in the scope chain" do
-    defined?(defined_specs_receiver.defined_method::Basic::Undefined).should be_nil
+    defined?(defined_specs_receiver.defined_method::Basic::Undefined).should == nil
   end
 
   it "returns nil if the middle constant is not defined in the scope chain" do
-    defined?(defined_specs_receiver.defined_method::Undefined::Undefined).should be_nil
+    defined?(defined_specs_receiver.defined_method::Undefined::Undefined).should == nil
   end
 
   it "returns 'constant' if all the constants in the scope chain are defined" do
@@ -841,7 +1086,7 @@ end
 
 describe "The defined? keyword for a module method call scoped constant" do
   it "returns nil if the constant is not defined in the scope of the method's value" do
-    defined?(DefinedSpecs.defined_method::Undefined).should be_nil
+    defined?(DefinedSpecs.defined_method::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant scoped by the method's value is defined" do
@@ -849,11 +1094,11 @@ describe "The defined? keyword for a module method call scoped constant" do
   end
 
   it "returns nil if the last constant in the scope chain is not defined" do
-    defined?(DefinedSpecs.defined_method::Basic::Undefined).should be_nil
+    defined?(DefinedSpecs.defined_method::Basic::Undefined).should == nil
   end
 
   it "returns nil if the middle constant in the scope chain is not defined" do
-    defined?(DefinedSpecs.defined_method::Undefined::Undefined).should be_nil
+    defined?(DefinedSpecs.defined_method::Undefined::Undefined).should == nil
   end
 
   it "returns 'constant' if all the constants in the scope chain are defined" do
@@ -861,11 +1106,11 @@ describe "The defined? keyword for a module method call scoped constant" do
   end
 
   it "returns nil if the outer scope constant in the receiver is not defined" do
-    defined?(Undefined::DefinedSpecs.defined_method::Basic).should be_nil
+    defined?(Undefined::DefinedSpecs.defined_method::Basic).should == nil
   end
 
   it "returns nil if the scoped constant in the receiver is not defined" do
-    defined?(DefinedSpecs::Undefined.defined_method::Basic).should be_nil
+    defined?(DefinedSpecs::Undefined.defined_method::Basic).should == nil
   end
 
   it "returns 'constant' if all the constants in the receiver are defined" do
@@ -886,7 +1131,7 @@ describe "The defined? keyword for a variable scoped constant" do
 
   it "returns nil if the instance scoped constant is not defined" do
     @defined_specs_obj = DefinedSpecs::Basic
-    defined?(@defined_specs_obj::Undefined).should be_nil
+    defined?(@defined_specs_obj::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant is defined in the scope of the instance variable" do
@@ -896,7 +1141,7 @@ describe "The defined? keyword for a variable scoped constant" do
 
   it "returns nil if the global scoped constant is not defined" do
     $defined_specs_obj = DefinedSpecs::Basic
-    defined?($defined_specs_obj::Undefined).should be_nil
+    defined?($defined_specs_obj::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant is defined in the scope of the global variable" do
@@ -905,22 +1150,26 @@ describe "The defined? keyword for a variable scoped constant" do
   end
 
   it "returns nil if the class scoped constant is not defined" do
-    -> {
-      @@defined_specs_obj = DefinedSpecs::Basic
-      defined?(@@defined_specs_obj::Undefined).should be_nil
-    }.should complain(/class variable access from toplevel/)
+    eval(<<-END, binding, __FILE__, __LINE__)
+      class singleton_class::A
+        @@defined_specs_obj = DefinedSpecs::Basic
+        defined?(@@defined_specs_obj::Undefined).should == nil
+      end
+    END
   end
 
   it "returns 'constant' if the constant is defined in the scope of the class variable" do
-    -> {
-      @@defined_specs_obj = DefinedSpecs::Basic
-      defined?(@@defined_specs_obj::A).should == "constant"
-    }.should complain(/class variable access from toplevel/)
+    eval(<<-END, binding, __FILE__, __LINE__)
+      class singleton_class::A
+        @@defined_specs_obj = DefinedSpecs::Basic
+        defined?(@@defined_specs_obj::A).should == "constant"
+      end
+    END
   end
 
   it "returns nil if the local scoped constant is not defined" do
     defined_specs_obj = DefinedSpecs::Basic
-    defined?(defined_specs_obj::Undefined).should be_nil
+    defined?(defined_specs_obj::Undefined).should == nil
   end
 
   it "returns 'constant' if the constant is defined in the scope of the local variable" do
@@ -941,46 +1190,73 @@ end
 
 describe "The defined? keyword for yield" do
   it "returns nil if no block is passed to a method not taking a block parameter" do
-    DefinedSpecs::Basic.new.no_yield_block.should be_nil
+    DefinedSpecs::Basic.new.no_yield_block.should == nil
   end
 
   it "returns nil if no block is passed to a method taking a block parameter" do
-    DefinedSpecs::Basic.new.no_yield_block_parameter.should be_nil
+    DefinedSpecs::Basic.new.no_yield_block_parameter.should == nil
   end
 
   it "returns 'yield' if a block is passed to a method not taking a block parameter" do
-    DefinedSpecs::Basic.new.yield_block.should == "yield"
+    ret = DefinedSpecs::Basic.new.yield_block
+    ret.should == "yield"
+    ret.frozen?.should == true
   end
 
   it "returns 'yield' if a block is passed to a method taking a block parameter" do
     DefinedSpecs::Basic.new.yield_block_parameter.should == "yield"
   end
+
+  it "returns 'yield' when called within a block" do
+    def yielder
+      yield
+    end
+
+    def call_defined
+      yielder { defined?(yield) }
+    end
+
+    call_defined() { }.should == "yield"
+  end
 end
 
 describe "The defined? keyword for super" do
   it "returns nil when a superclass undef's the method" do
-    DefinedSpecs::ClassWithoutMethod.new.test.should be_nil
+    DefinedSpecs::ClassWithoutMethod.new.test.should == nil
+  end
+
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns nil when the superclass method is not implemented on this platform" do
+      mod = Module.new do
+        def syscall(*)
+          defined?(super)
+        end
+      end
+      Object.new.extend(mod).syscall.should == nil
+    end
   end
 
   describe "for a method taking no arguments" do
     it "returns nil when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_method_no_args.should be_nil
+      DefinedSpecs::Super.new.no_super_method_no_args.should == nil
     end
 
     it "returns nil from a block when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_method_block_no_args.should be_nil
+      DefinedSpecs::Super.new.no_super_method_block_no_args.should == nil
     end
 
     it "returns nil from a #define_method when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_define_method_no_args.should be_nil
+      DefinedSpecs::Super.new.no_super_define_method_no_args.should == nil
     end
 
     it "returns nil from a block in a #define_method when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_define_method_block_no_args.should be_nil
+      DefinedSpecs::Super.new.no_super_define_method_block_no_args.should == nil
     end
 
     it "returns 'super' when a superclass method exists" do
-      DefinedSpecs::Super.new.method_no_args.should == "super"
+      ret = DefinedSpecs::Super.new.method_no_args
+      ret.should == "super"
+      ret.frozen?.should == true
     end
 
     it "returns 'super' from a block when a superclass method exists" do
@@ -1002,19 +1278,19 @@ describe "The defined? keyword for super" do
 
   describe "for a method taking arguments" do
     it "returns nil when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_method_args.should be_nil
+      DefinedSpecs::Super.new.no_super_method_args.should == nil
     end
 
     it "returns nil from a block when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_method_block_args.should be_nil
+      DefinedSpecs::Super.new.no_super_method_block_args.should == nil
     end
 
     it "returns nil from a #define_method when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_define_method_args.should be_nil
+      DefinedSpecs::Super.new.no_super_define_method_args.should == nil
     end
 
     it "returns nil from a block in a #define_method when no superclass method exists" do
-      DefinedSpecs::Super.new.no_super_define_method_block_args.should be_nil
+      DefinedSpecs::Super.new.no_super_define_method_block_args.should == nil
     end
 
     it "returns 'super' when a superclass method exists" do
@@ -1049,7 +1325,7 @@ describe "The defined? keyword for instance variables" do
   end
 
   it "returns nil if not assigned" do
-    defined?(@unassigned_ivar).should be_nil
+    defined?(@unassigned_ivar).should == nil
   end
 end
 

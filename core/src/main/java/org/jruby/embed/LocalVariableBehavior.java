@@ -29,10 +29,6 @@
  */
 package org.jruby.embed;
 
-/**
- *
- * @author Yoko Harada <yokolet@gmail.com>
- */
 public enum LocalVariableBehavior {
     /**
      * Specifies that a sharing variable works like JSR 223 reference implementation.

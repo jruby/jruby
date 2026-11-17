@@ -47,7 +47,7 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + module.getName(), "expected_version: " + expectedVersion};
+        return new String[] { "name: " + module.getName(module.getRuntime().getCurrentContext()), "expected_version: " + expectedVersion};
     }
 
     @Override
@@ -63,7 +63,14 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
-        return (receiver.getMetaClass().getGeneration() == getExpectedVersion());
+        boolean matches = receiver.getMetaClass().getGeneration() == getExpectedVersion();
+
+        if (!matches) {
+            //System.out.println("GUARD: " + (receiver.getMetaClass().getGeneration() == getExpectedVersion()) + ", OBJ: " +
+            //        receiver + ", VERS: " + receiver.getMetaClass().getGeneration() + ", EVERSE: " + getExpectedVersion());
+        }
+
+        return matches;
     }
 
     @Override

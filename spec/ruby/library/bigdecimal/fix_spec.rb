@@ -2,20 +2,20 @@ require_relative '../../spec_helper'
 require 'bigdecimal'
 
 describe "BigDecimal#fix" do
-    before :each do
-      @zero = BigDecimal("0")
-      @mixed = BigDecimal("1.23456789")
-      @pos_int = BigDecimal("2E5555")
-      @neg_int = BigDecimal("-2E5555")
-      @pos_frac = BigDecimal("2E-9999")
-      @neg_frac = BigDecimal("-2E-9999")
+  before :each do
+    @zero = BigDecimal("0")
+    @mixed = BigDecimal("1.23456789")
+    @pos_int = BigDecimal("2E5555")
+    @neg_int = BigDecimal("-2E5555")
+    @pos_frac = BigDecimal("2E-9999")
+    @neg_frac = BigDecimal("-2E-9999")
 
-      @infinity = BigDecimal("Infinity")
-      @infinity_neg = BigDecimal("-Infinity")
-      @nan = BigDecimal("NaN")
-      @zero_pos = BigDecimal("+0")
-      @zero_neg = BigDecimal("-0")
-    end
+    @infinity = BigDecimal("Infinity")
+    @infinity_neg = BigDecimal("-Infinity")
+    @nan = BigDecimal("NaN")
+    @zero_pos = BigDecimal("+0")
+    @zero_neg = BigDecimal("-0")
+  end
 
   it "returns a BigDecimal" do
     BigDecimal("2E100000000").fix.kind_of?(BigDecimal).should == true
@@ -34,7 +34,7 @@ describe "BigDecimal#fix" do
   it "correctly handles special values" do
     @infinity.fix.should == @infinity
     @infinity_neg.fix.should == @infinity_neg
-    @nan.fix.nan?.should == true
+    @nan.fix.should.nan?
   end
 
   it "returns 0 if the absolute value is < 1" do
@@ -49,9 +49,9 @@ describe "BigDecimal#fix" do
   end
 
   it "does not allow any arguments" do
-    lambda {
+    -> {
       @mixed.fix(10)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
 end

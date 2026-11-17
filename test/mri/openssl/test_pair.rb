@@ -1,8 +1,8 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require_relative 'utils'
 require_relative 'ut_eof'
 
-if defined?(OpenSSL)
+if defined?(OpenSSL::SSL)
 
 module OpenSSL::SSLPairM
   def setup
@@ -10,7 +10,7 @@ module OpenSSL::SSLPairM
     ee_exts = [
       ["keyUsage", "keyEncipherment,digitalSignature", true],
     ]
-    @svr_key = OpenSSL::TestUtils::Fixtures.pkey("rsa1024")
+    @svr_key = OpenSSL::TestUtils::Fixtures.pkey("rsa-1")
     @svr_cert = issue_cert(svr_dn, @svr_key, 1, ee_exts, nil, nil)
   end
 
@@ -23,7 +23,6 @@ module OpenSSL::SSLPairM
       sctx = OpenSSL::SSL::SSLContext.new
       sctx.cert = @svr_cert
       sctx.key = @svr_key
-      sctx.tmp_dh_callback = proc { OpenSSL::TestUtils::Fixtures.pkey_dh("dh1024") }
       sctx.options |= OpenSSL::SSL::OP_NO_COMPRESSION
       ssls = OpenSSL::SSL::SSLServer.new(tcps, sctx)
       ns = ssls.accept
@@ -102,6 +101,27 @@ module OpenSSL::TestPairM
     }
   end
 
+  def test_getbyte
+    ssl_pair {|s1, s2|
+      s1 << "a"
+      assert_equal(97, s2.getbyte)
+    }
+  end
+
+  def test_readbyte
+    ssl_pair {|s1, s2|
+      s1 << "b"
+      assert_equal(98, s2.readbyte)
+    }
+  end
+
+  def test_readbyte_eof
+    ssl_pair {|s1, s2|
+      s2.close
+      assert_raise(EOFError) { s1.readbyte }
+    }
+  end
+
   def test_gets
     ssl_pair {|s1, s2|
       s1 << "abc\n\n$def123ghi"
@@ -113,6 +133,17 @@ module OpenSSL::TestPairM
       assert_equal "def123", s2.gets(/\d+/)
       assert_equal "ghi", s2.gets
       assert_equal nil, s2.gets
+    }
+  end
+
+  def test_gets_chomp
+    ssl_pair {|s1, s2|
+      s1 << "line1\r\nline2\r\nline3\r\n"
+      s1.close
+
+      assert_equal("line1", s2.gets("\r\n", chomp: true))
+      assert_equal("line2\r\n", s2.gets("\r\n", chomp: false))
+      assert_equal("line3", s2.gets(chomp: true))
     }
   end
 
@@ -128,11 +159,11 @@ module OpenSSL::TestPairM
     ssl_pair {|s1, s2|
       s2.write "a\nbcd"
       assert_equal("a\n", s1.gets)
-      result = ""
+      result = String.new
       result << s1.readpartial(10) until result.length == 3
       assert_equal("bcd", result)
       s2.write "efg"
-      result = ""
+      result = String.new
       result << s1.readpartial(10) until result.length == 3
       assert_equal("efg", result)
       s2.close
@@ -153,20 +184,6 @@ module OpenSSL::TestPairM
     ssl_pair {|s1, s2|
       s2.close
       assert_raise(EOFError) { s1.readline }
-    }
-  end
-
-  def test_puts_meta
-    ssl_pair {|s1, s2|
-      begin
-        old = $/
-        $/ = '*'
-        s1.puts 'a'
-      ensure
-        $/ = old
-      end
-      s1.close
-      assert_equal("a\n", s2.read)
     }
   end
 
@@ -242,24 +259,29 @@ module OpenSSL::TestPairM
   def test_read_with_outbuf
     ssl_pair { |s1, s2|
       s1.write("abc\n")
-      buf = ""
+      buf = String.new
       ret = s2.read(2, buf)
       assert_same ret, buf
       assert_equal "ab", ret
 
-      buf = "garbage"
+      buf = +"garbage"
       ret = s2.read(2, buf)
       assert_same ret, buf
       assert_equal "c\n", ret
 
-      buf = "garbage"
+      buf = +"garbage"
       assert_equal :wait_readable, s2.read_nonblock(100, buf, exception: false)
-      assert_equal "", buf
+      assert_equal "garbage", buf
 
       s1.close
-      buf = "garbage"
-      assert_equal nil, s2.read(100, buf)
+      buf = +"garbage"
+      assert_nil s2.read(100, buf)
       assert_equal "", buf
+
+      buf = +"garbage"
+      ret = s2.read(0, buf)
+      assert_same buf, ret
+      assert_equal "", ret
     }
   end
 
@@ -397,7 +419,6 @@ module OpenSSL::TestPairM
     ctx2 = OpenSSL::SSL::SSLContext.new
     ctx2.cert = @svr_cert
     ctx2.key = @svr_key
-    ctx2.tmp_dh_callback = proc { OpenSSL::TestUtils::Fixtures.pkey_dh("dh1024") }
 
     sock1, sock2 = tcp_pair
 
@@ -442,54 +463,46 @@ module OpenSSL::TestPairM
   end
 
   def test_connect_accept_nonblock
-    ctx = OpenSSL::SSL::SSLContext.new()
+    ctx = OpenSSL::SSL::SSLContext.new
     ctx.cert = @svr_cert
     ctx.key = @svr_key
-    ctx.tmp_dh_callback = proc { OpenSSL::TestUtils::Fixtures.pkey_dh("dh1024") }
 
     sock1, sock2 = tcp_pair
 
     th = Thread.new {
       s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx)
-      s2.sync_close = true
-      begin
+      5.times {
+        begin
+          break s2.accept_nonblock
+        rescue IO::WaitReadable
+          IO.select([s2], nil, nil, 1)
+        rescue IO::WaitWritable
+          IO.select(nil, [s2], nil, 1)
+        end
         sleep 0.2
-        s2.accept_nonblock
-      rescue IO::WaitReadable
-        IO.select([s2])
-        retry
-      rescue IO::WaitWritable
-        IO.select(nil, [s2])
-        retry
-      end
-      s2
+      }
     }
 
-    sleep 0.1
-    ctx = OpenSSL::SSL::SSLContext.new()
-    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx)
-    begin
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1)
+    5.times {
+      begin
+        break s1.connect_nonblock
+      rescue IO::WaitReadable
+        IO.select([s1], nil, nil, 1)
+      rescue IO::WaitWritable
+        IO.select(nil, [s1], nil, 1)
+      end
       sleep 0.2
-      s1.connect_nonblock
-    rescue IO::WaitReadable
-      IO.select([s1])
-      retry
-    rescue IO::WaitWritable
-      IO.select(nil, [s1])
-      retry
-    end
-    s1.sync_close = true
+    }
 
     s2 = th.value
 
     s1.print "a\ndef"
     assert_equal("a\n", s2.gets)
   ensure
-    th.join if th
-    s1.close if s1 && !s1.closed?
-    s2.close if s2 && !s2.closed?
-    sock1.close if sock1 && !sock1.closed?
-    sock2.close if sock2 && !sock2.closed?
+    sock1&.close
+    sock2&.close
+    th&.join
   end
 end
 

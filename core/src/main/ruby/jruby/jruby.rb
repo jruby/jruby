@@ -46,7 +46,7 @@ module JRuby
   end
 
   # NOTE: This is not a public API and is subject to change at our whim.
-  # @private no longer used - to be removed
+  # This is used by our AST tool.
   module IR
     def self.debug=(value)
       org.jruby.RubyInstanceConfig.IR_DEBUG = !!value
@@ -62,14 +62,6 @@ module JRuby
 
     def self.compiler_debug
       org.jruby.RubyInstanceConfig.IR_COMPILER_DEBUG
-    end
-
-    def self.visualize=(value)
-      org.jruby.RubyInstanceConfig.IR_VISUALIZER = !!value
-    end
-
-    def self.visualize
-      org.jruby.RubyInstanceConfig.IR_VISUALIZER
     end
   end
   deprecate_constant :IR

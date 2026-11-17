@@ -54,7 +54,7 @@ public class StoreLocalVarInstr extends TwoOperandInstr implements FixedArityIns
      * depth/offset.
      */
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+    protected void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         setOperand1(getValue().getSimplifiedOperand(valueMap, force));
     }
 

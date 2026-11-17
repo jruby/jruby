@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
 require "stringio"
 require_relative 'shared/read'
+require_relative 'shared/sysread'
 
 describe "StringIO#sysread when passed length, buffer" do
   it_behaves_like :stringio_read, :sysread
@@ -32,6 +33,10 @@ describe "StringIO#sysread when passed nil" do
   end
 end
 
+describe "StringIO#sysread when passed length" do
+  it_behaves_like :stringio_sysread_length, :sysread
+end
+
 describe "StringIO#sysread when passed [length]" do
   before :each do
     @io = StringIO.new("example")
@@ -39,7 +44,7 @@ describe "StringIO#sysread when passed [length]" do
 
   it "raises an EOFError when self's position is at the end" do
     @io.pos = 7
-    lambda { @io.sysread(10) }.should raise_error(EOFError)
+    -> { @io.sysread(10) }.should.raise(EOFError)
   end
 
   it "returns an empty String when length is 0" do

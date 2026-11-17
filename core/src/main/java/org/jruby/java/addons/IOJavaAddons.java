@@ -9,6 +9,8 @@ import org.jruby.util.IOChannel;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 
+import static org.jruby.api.Error.typeError;
+
 public class IOJavaAddons {
     // FIXME This whole thing could probably be implemented as a module and
     // mixed into appropriate classes, especially if it uses either
@@ -67,7 +69,7 @@ public class IOJavaAddons {
                 if (self.respondsTo("write") || self.respondsTo("<<")) {
                     channel = new IOChannel.IOWritableByteChannel(self);
                 } else {
-                    throw context.runtime.newTypeError(self.inspect().toString() + " does not respond to any of read, write, or <<");
+                    throw typeError(context, self.inspect(context) + " does not respond to any of read, write, or <<");
                 }
             }
             return JavaUtil.convertJavaToUsableRubyObject(context.runtime, channel);

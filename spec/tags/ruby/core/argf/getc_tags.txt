@@ -1,1 +1,0 @@
-windows:ARGF.getc reads each char of files

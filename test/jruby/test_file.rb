@@ -92,16 +92,25 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-3849
   def test_expand_path_encoding; require 'pathname'
-    assert_equal(Encoding.find('UTF-8'), File.expand_path('/'.force_encoding('UTF-8')).encoding)
-    assert_equal(Encoding.find('US-ASCII'), File.expand_path('/'.force_encoding('US-ASCII')).encoding)
-    assert_equal(Encoding.find('UTF-8'), File.expand_path(Pathname.new('/'.force_encoding('UTF-8'))).encoding)
-    assert_equal(Encoding.find('US-ASCII'), File.expand_path(Pathname.new('/'.force_encoding('US-ASCII'))).encoding)
+    assert_equal(Encoding.find('UTF-8'), File.expand_path((+'/').force_encoding('UTF-8')).encoding)
+    assert_equal(Encoding.find('US-ASCII'), File.expand_path((+'/').force_encoding('US-ASCII')).encoding)
+    assert_equal(Encoding.find('UTF-8'), File.expand_path(Pathname.new((+'/').force_encoding('UTF-8'))).encoding)
+    assert_equal(Encoding.find('US-ASCII'), File.expand_path(Pathname.new((+'/').force_encoding('US-ASCII'))).encoding)
   end
 
   def test_expand_path_nil
     assert_raise(TypeError) { File.expand_path(nil) }
     assert_raise(TypeError) { File.expand_path(nil, "/") }
     assert_raise(TypeError) { File.expand_path(nil, nil) }
+  end
+
+  def test_copy_file_and_preserve
+    FileUtils.touch("original")
+    FileUtils.copy_file('original', 'copy', true)
+    assert(File.exist?('original'))
+    assert(File.exist?('copy'))
+  ensure
+    FileUtils.rm_rf %w[ original copy ]
   end
 
   # JRUBY-1116: these are currently broken on windows
@@ -341,13 +350,9 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_uri_classloader_prefix
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar")
       assert_equal "uri:classloader:/bar", File.expand_path("uri:classloader:/foo/../bar")
-      # uri:classloader:// and uri:classloader:/ are treated as equivalent as
-      # there is an internal normalization going on path which replace all // with /
-      assert_equal "uri:classloader://foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
+      assert_equal "uri:classloader:/foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar", "uri:classloader:/baz/quux")
-      # uri:classloader:// and uri:classloader:/ are treated as equivalent as
-      # there is an internal normalization going on path which replace all // with /
-      assert_equal "uri:classloader://foo/bar", File.expand_path("../../foo/bar", "uri:classloader:/baz/quux")
+      assert_equal "uri:classloader:/foo/bar", File.expand_path("../../foo/bar", "uri:classloader:/baz/quux")
       assert_equal "uri:classloader:/foo/bar", File.expand_path("../../../foo/bar", "uri:classloader:/baz/quux")
     end if IS_JRUBY
 
@@ -367,8 +372,8 @@ class TestFile < Test::Unit::TestCase
     # GH-3176
     def test_expand_path_with_relative_reference_and_inside_uri_classloader
       Dir.chdir( 'uri:classloader:/') do
-        assert_equal 'uri:classloader://something/foo', File.expand_path('foo', 'something')
-        assert_equal 'uri:classloader://foo', File.expand_path('foo', '.')
+        assert_equal 'uri:classloader:/something/foo', File.expand_path('foo', 'something')
+        assert_equal 'uri:classloader:/foo', File.expand_path('foo', '.')
       end
     end if IS_JRUBY
 
@@ -484,8 +489,10 @@ class TestFile < Test::Unit::TestCase
     assert_equal("", File.extname("."))
     assert_equal("", File.extname("/."))
     assert_equal("", File.extname(".."))
-    assert_equal("", File.extname(".foo."))
-    assert_equal("", File.extname("foo."))
+    # like CRuby, a trailing dot is ignored on Windows, as NTFS does
+    trailing_dot = WINDOWS ? "" : "."
+    assert_equal(trailing_dot, File.extname(".foo."))
+    assert_equal(trailing_dot, File.extname("foo."))
   end
 
   def test_fnmatch
@@ -643,10 +650,17 @@ class TestFile < Test::Unit::TestCase
       assert(File.directory?("dir_tmp"))
       assert(! File.directory?("test/jruby/test_file.rb"))
       assert(! File.directory?("dir_not_tmp"))
-      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false')
+      result = jruby("-e \"print File.directory?('dir_not_tmp');print File.directory?('dir_tmp');print File.directory?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false')
       assert_equal(result, 'falsetruefalse')
     ensure
-      Dir.rmdir("dir_tmp")
+      Dir.rmdir("dir_tmp") rescue nil
+    end
+  end
+
+  # ensure that uri:file: and file: URIs are treated the same by File.directory?
+  def test_uri_file_directory_query
+    ["uri:file://", "uri:file:/#{Dir.pwd}"].each do |uri|
+      assert(File.directory?(uri), uri)
     end
   end
 
@@ -654,16 +668,16 @@ class TestFile < Test::Unit::TestCase
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
     assert(! File.file?('test_not'))
-    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert_equal(result, 'falsefalsetrue')
+    result = jruby("-e \"print File.file?('test_not');print File.file?('test');print File.file?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+    assert_equal('falsefalsetrue', result)
   end
 
   def test_readable_query # - readable?
     assert(File.readable?('test/jruby/test_file.rb'))
     assert(File.readable?('test'))
     assert(! File.readable?('test_not'))
-    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert_equal(result, 'falsetruetrue')
+    result = jruby("-e \"print File.readable?('test_not');print File.readable?('test');print File.readable?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+    assert_equal('falsetruetrue', result)
   end
 
   [ :executable?, :executable_real? ].each do |method|
@@ -677,15 +691,15 @@ class TestFile < Test::Unit::TestCase
       assert(!File.send(method, 'test/test_file.rb'))
       assert(File.send(method, 'test'))
       assert(!File.send(method, 'test_not'))
-      result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-      assert_equal(result, 'truefalsetruefalse')
+      result = jruby("-e \"print File.#{method}('#{exec_file}');print File.#{method}('test_not');print File.#{method}('test');print File.#{method}('test/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+      assert_equal('truefalsetruefalse', result)
     end
   end
 
   def test_file_exist_query
     assert(File.exist?('test'))
     assert(! File.exist?('test_not'))
-    assert(jruby("-e 'print File.exists?(\"test_not\");print File.exists?(\"test\")'", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
+    assert(jruby("-e \"print File.exist?('test_not');print File.exist?('test')\"", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
   end
 
   def test_file_exist_in_jar_file
@@ -740,7 +754,7 @@ class TestFile < Test::Unit::TestCase
     end
     assert_equal "foobarx\n", val
 
-    values = ""
+    values = +""
     File.open("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/test_value.rb") do |f|
       f.each do |s|
         values << s
@@ -794,13 +808,13 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-2524
   def test_filetest_exists_uri_prefixes
-    assert(!FileTest.exists?("file:/!"))
+    assert(!FileTest.exist?("file:/!"))
   end if IS_JRUBY
 
   def test_file_exists_uri_prefixes
-    assert(File.exists?("file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
-    assert(File.exists?("jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
-    assert(File.exists?("jar:file:test/jruby/dir with spaces/./test_jar.jar!/abc/./foo/../foo.rb"))
+    assert(File.exist?("file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exist?("jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exist?("jar:file:test/jruby/dir with spaces/./test_jar.jar!/abc/./foo/../foo.rb"))
   end if IS_JRUBY
 
   # JRUBY-2524
@@ -1078,6 +1092,7 @@ class TestFile < Test::Unit::TestCase
 
   # http://jira.codehaus.org/browse/JRUBY-1023
   def test_file_reuse_fileno
+    pend 'TODO: STDIN.fileno (0) is NOT being re-used on Windows' if WINDOWS
     fh = File.new(STDIN.fileno, 'r')
     assert_equal(STDIN.fileno, fh.fileno)
   end
@@ -1105,11 +1120,11 @@ class TestFile < Test::Unit::TestCase
 
   def test_truncate_doesnt_create_file
     name = "___foo_bar___"
-    assert(!File.exists?(name))
+    assert(!File.exist?(name))
 
     assert_raises(Errno::ENOENT) { File.truncate(name, 100) }
 
-    assert(!File.exists?(name))
+    assert(!File.exist?(name))
   end
 
   # JRUBY-2340
@@ -1283,7 +1298,7 @@ class TestFile < Test::Unit::TestCase
     assert_raise(Errno::ENOENT) {
       File::Stat.new("file:" + File.expand_path("test/test_jar2.jar") + "!/foo_bar.rb").file?
     }
-  end
+  end unless WINDOWS
 
   # JRUBY-4859
   def test_file_delete_directory
@@ -1336,16 +1351,6 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-5286
-  def test_file_path_is_tainted
-    filename = 'test.txt'
-    io = File.new(filename, 'w')
-    assert io.path.tainted?
-  ensure
-    io.close
-    File.unlink(filename)
-  end
-
   # jruby/jruby#2331
   def test_classpath_realpath
     assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
@@ -1372,11 +1377,11 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_inspect
-    file = File.new('.')
-    assert_equal "#<File:.>", file.inspect
+    file = File.new('test/jruby/gem.jar')
+    assert_equal "#<File:test/jruby/gem.jar>", file.inspect
     file.define_singleton_method(:tty?) { true }
     def file.path; 'zzz' end
-    assert_equal "#<File:.>", file.inspect
+    assert_equal "#<File:test/jruby/gem.jar>", file.inspect
   end
 
 end

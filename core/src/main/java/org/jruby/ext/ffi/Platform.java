@@ -30,16 +30,17 @@ package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
-import org.jruby.Ruby;
+
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 
-/**
- *
- */
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+
 public class Platform {
 
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
@@ -62,13 +63,13 @@ public class Platform {
     protected final int addressSize, longSize;
     private final long addressMask;
     protected final Pattern libPattern;
-    private int javaVersionMajor = -1;
 
     public enum OS_TYPE {
         DARWIN,
         FREEBSD,
         NETBSD,
         OPENBSD,
+        DRAGONFLYBSD,
         LINUX,
         SOLARIS,
         AIX,
@@ -90,6 +91,8 @@ public class Platform {
         S390X,
         ARM,
         AARCH64,
+        LOONGARCH64,
+        RISCV64,
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(LOCALE); }
@@ -153,7 +156,11 @@ public class Platform {
             return CPU.ARM;
         } else if ("aarch64".equals(archString)) {
             return CPU.AARCH64;
-        } else if ("universal".equals(archString)) {
+        } else if ("loongarch64".equals(archString)) {
+            return CPU.LOONGARCH64;
+        } else if ("riscv64".equals(archString)) {
+            return CPU.RISCV64;
+	} else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
             String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
             if ("32".equals(bits)) {
@@ -212,6 +219,8 @@ public class Platform {
                 case SPARCV9:
                 case S390X:
                 case AARCH64:
+                case LOONGARCH64:
+                case RISCV64:
                     dataModel = 64;
                     break;
                 default:
@@ -244,7 +253,7 @@ public class Platform {
     }
 
     /**
-     * Gets the current <tt>Platform</tt>
+     * Gets the current <code>Platform</code>
      *
      * @return The current platform.
      */
@@ -255,7 +264,7 @@ public class Platform {
     /**
      * Gets the current Operating System.
      *
-     * @return A <tt>OS</tt> value representing the current Operating System.
+     * @return A <code>OS</code> value representing the current Operating System.
      */
     public final OS_TYPE getOS() {
         return OS;
@@ -264,43 +273,18 @@ public class Platform {
     /**
      * Gets the current processor architecture the JVM is running on.
      *
-     * @return A <tt>CPU</tt> value representing the current processor architecture.
+     * @return A <code>CPU</code> value representing the current processor architecture.
      */
     public final CPU_TYPE getCPU() {
         return CPU;
     }
 
-    /**
-     * Gets the version of the Java Virtual Machine (JVM) jffi is running on.
-     *
-     * @return A number representing the java version.  e.g. 8 for java 1.8, 9 for java 9
-     */
+    @Deprecated(since = "9.4.6.0")
     public final int getJavaMajorVersion() {
-        if (javaVersionMajor != -1) return javaVersionMajor;
-
-        int version = 5;
-        try {
-            String versionString = SafePropertyAccessor.getProperty("java.version");
-            if (versionString != null) {
-                // remove additional version identifiers, e.g. -ea
-                versionString = versionString.split("-|\\+")[0];
-                String[] v = versionString.split("\\.");
-                if (v[0].equals("1")) {
-                    // Pre Java 9, 1.x style
-                    version = Integer.valueOf(v[1]);
-                } else {
-                    // Java 9+, x.y.z style
-                    version = Integer.valueOf(v[0]);
-                }
-            }
-        } catch (Exception ex) {
-            version = 0;
-        }
-
-        return javaVersionMajor = version;
+        return org.jruby.platform.Platform.JAVA_VERSION;
     }
     public final boolean isBSD() {
-        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN;
+        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN || OS == OS.DRAGONFLYBSD;
     }
     public final boolean isUnix() {
         return OS != OS.WINDOWS;
@@ -310,54 +294,45 @@ public class Platform {
                 && CPU != CPU.UNKNOWN
                 && (addressSize == 32 || addressSize == 64);
     }
-    public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
-        RubyModule module = ffi.defineModuleUnder("Platform");
+    public static void createPlatformModule(ThreadContext context, RubyModule FFI) {
         Platform platform = Platform.getPlatform();
-        OS_TYPE os = platform.getOS();
-        module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
-        module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
-        module.defineConstant("OS", runtime.newString(OS.toString()));
-        module.defineConstant("ARCH", runtime.newString(platform.getCPU().toString()));
-        module.defineConstant("NAME", runtime.newString(platform.getName()));
-        module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
-        module.defineConstant("IS_BSD", runtime.newBoolean(platform.isBSD()));
-        module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
-        module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
-        module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
-        module.defineConstant("IS_LINUX", runtime.newBoolean(os == OS.LINUX));
-        module.defineConstant("IS_MAC", runtime.newBoolean(os == OS.DARWIN));
-        module.defineConstant("LIBC", runtime.newString(LIBC));
-        module.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
-        module.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
-        module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
-        module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
-        module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
-        module.defineAnnotatedMethods(Platform.class);
+        var module = FFI.defineModuleUnder(context, "Platform").
+                defineMethods(context, Platform.class).
+                defineConstant(context, "ADDRESS_SIZE", asFixnum(context, platform.addressSize)).
+                defineConstant(context, "LONG_SIZE", asFixnum(context, platform.longSize)).
+                defineConstant(context, "LONG_DOUBLE_SIZE", asFixnum(context, 128)).
+                defineConstant(context, "BYTE_ORDER", asFixnum(context, BYTE_ORDER)).
+                defineConstant(context, "BIG_ENDIAN", asFixnum(context, BIG_ENDIAN)).
+                defineConstant(context, "LITTLE_ENDIAN", asFixnum(context, LITTLE_ENDIAN));
+
+        if (OS == OS_TYPE.LINUX) module.defineConstant(context, "GNU_LIBC", newString(context, LIBC));
     }
+
     @JRubyMethod(name = "windows?", module=true)
     public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.WINDOWS);
+        return asBoolean(context, OS == OS.WINDOWS);
     }
     @JRubyMethod(name = "mac?", module=true)
     public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.DARWIN);
+        return asBoolean(context, OS == OS.DARWIN);
     }
     @JRubyMethod(name = "unix?", module=true)
     public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isUnix());
+        return asBoolean(context, Platform.getPlatform().isUnix());
     }
     @JRubyMethod(name = "bsd?", module=true)
     public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isBSD());
+        return asBoolean(context, Platform.getPlatform().isBSD());
     }
     @JRubyMethod(name = "linux?", module=true)
     public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.LINUX);
+        return asBoolean(context, OS == OS.LINUX);
     }
     @JRubyMethod(name = "solaris?", module=true)
     public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.SOLARIS);
+        return asBoolean(context, OS == OS.SOLARIS);
     }
+
     /**
      * An extension over <code>System.getProperty</code> method.
      * Handles security restrictions, and returns the default
@@ -402,7 +377,7 @@ public class Platform {
     }
 
     /**
-     * Gets the name of this <tt>Platform</tt>.
+     * Gets the name of this <code>Platform</code>.
      *
      * @return The name of this platform.
      */

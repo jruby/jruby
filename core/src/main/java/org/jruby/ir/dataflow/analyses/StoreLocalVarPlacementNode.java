@@ -6,6 +6,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -49,7 +50,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
             //       i,j are dirty inside the block, but not used outside
             if (bb.isExitBB()) {
-                LiveVariablesProblem lvp = problem.getScope().getLiveVariablesProblem();
+                LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
                 java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                 if (liveVars != null) {
                     inDirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -73,8 +74,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
     @Override
     public void applyTransferFunction(Instr i) {
-        IRScope scope = problem.getScope();
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().bindingHasEscaped();
 
         // Process closure accepting instrs specially -- these are the sites of binding stores!
         if (i instanceof ClosureAcceptingInstr) {
@@ -85,7 +85,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // independent of each other which means any variable that is used by the closure
                 // will get spilled into the binding. This is clearly conservative, but simplifies
                 // the analysis.
-                IRClosure cl = ((WrappedIRClosure) o).getClosure();
+                FullInterpreterContext clfic = ((WrappedIRClosure) o).getClosure().getFullInterpreterContext();
 
                 // If the call is a dataflow barrier, we have to spill everything here
                 boolean spillAllVars = scopeBindingHasEscaped;
@@ -98,7 +98,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 //   the call site.
                 Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
                 for (LocalVariable v : dirtyVars) {
-                    if (spillAllVars || cl.usesLocalVariable(v) || cl.definesLocalVariable(v)) {
+                    if (spillAllVars || clfic.usesLocalVariable(v) || clfic.definesLocalVariable(v)) {
                         newDirtyVars.remove(v);
                     }
                 }
@@ -131,7 +131,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
             if (!getBB().isExitBB()) {
-                LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
+                LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
                 java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                 if (liveVars != null) {
                     dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -177,11 +177,11 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
     }
 
     public boolean addStores(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
-        IRScope scope = problem.getScope();
+        FullInterpreterContext fic = problem.getFIC();
+        IRScope scope = fic.getScope();
 
         boolean addedStores            = false;
-        boolean isClosure              = scope instanceof IRClosure;
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = fic.bindingHasEscaped();
 
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
 
@@ -194,7 +194,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             if (i instanceof ClosureAcceptingInstr) {
                 Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
-                    IRClosure cl = ((WrappedIRClosure) o).getClosure();
+                    FullInterpreterContext clfic = ((WrappedIRClosure) o).getClosure().getFullInterpreterContext();
 
                     // Add before call -- hence instrs.previous & instrs.next
                     instrs.previous();
@@ -209,7 +209,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                         // We have to spill the var that is defined in the closure as well because the load var pass
                         // will attempt to load the var always.  So, if the call doesn't actually call the closure,
                         // we'll be in trouble in that scenario!
-                        if (spillAllVars || cl.usesLocalVariable(v) || cl.definesLocalVariable(v)) {
+                        if (spillAllVars || clfic.usesLocalVariable(v) || clfic.definesLocalVariable(v)) {
                             addedStores = true;
                             instrs.add(new StoreLocalVarInstr(scope, problem.getLocalVarReplacement(v, varRenameMap), v));
                             newDirtyVars.remove(v);
@@ -263,7 +263,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
                 if (!basicBlock.isExitBB()) {
-                    LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
+                    LiveVariablesProblem lvp = (LiveVariablesProblem) fic.getDataFlowProblems().get(LiveVariablesProblem.NAME);
                     java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                     if (liveVars != null) {
                         dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope

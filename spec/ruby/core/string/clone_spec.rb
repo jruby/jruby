@@ -43,8 +43,8 @@ describe "String#clone" do
   end
 
   it "copies frozen state" do
-    @obj.freeze.clone.frozen?.should be_true
-    "".freeze.clone.frozen?.should be_true
+    @obj.freeze.clone.frozen?.should == true
+    "".freeze.clone.frozen?.should == true
   end
 
   it "does not modify the original string when changing cloned string" do
@@ -53,5 +53,9 @@ describe "String#clone" do
     orig[0] = 'x'
     orig.should == "xtring"
     clone.should == "string"
+  end
+
+  it "returns a String in the same encoding as self" do
+    "a".encode("US-ASCII").clone.encoding.should == Encoding::US_ASCII
   end
 end

@@ -42,18 +42,34 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
+import org.jruby.api.Check;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.RubyNil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.integerClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.asInteger;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
 public class TypeConverter {
+    private static final String[] IMPLICIT_CONVERTED_METHODS = new String[] {
+            "to_int", "to_ary", "to_str", "to_sym", "to_hash", "to_proc", "to_io", "to_a", "to_s", "to_i", "to_r"
+    };
 
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
@@ -70,6 +86,14 @@ public class TypeConverter {
 
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         IRubyObject r = obj.checkCallMethod(context, convertMethod);
+        return r == null ? handleUncoercibleObject(context.runtime, obj, target, raise) : r;
+    }
+
+    // This is essentially convertToType but it is used when we already know the method we are going to call will exist
+    // (as much as we can due to possible race conditions all convert methods have).  This is used in places where we
+    // need to explicitly check for the method (e.g. to_ary) before we actually try and convert the value.
+    public static IRubyObject convertToTypeUnchecked(ThreadContext context, IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
+        IRubyObject r = obj.callMethod(context, convertMethod);
         return r == null ? handleUncoercibleObject(context.runtime, obj, target, raise) : r;
     }
 
@@ -99,7 +123,7 @@ public class TypeConverter {
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) throw newTypeError(obj.getRuntime(), obj, target, convertMethod, val);
+        if (!target.isInstance(val)) throw newTypeErrorMismatch(obj.getRuntime(), obj, target, convertMethod, val);
         return val;
 
     }
@@ -115,37 +139,18 @@ public class TypeConverter {
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(context, obj, target, sites, true);
-        if (!target.isInstance(val)) throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+        if (!target.isInstance(val)) throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         return val;
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        return convertToType(obj, target, convertMethod, raise);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites, boolean raise) {
-        return convertToType(context, obj, target, sites, raise);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
-        return convertToType(obj, target, convertMethod);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        return convertToType(context, obj, target, sites);
     }
 
     // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
     public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).convertToFloat();
-        }
-        if (obj instanceof RubyString || obj.isNil()) {
-            throw runtime.newTypeError(obj, "Float");
+        if (obj instanceof RubyNumeric) return obj.convertToFloat();
+        if (obj instanceof RubyString || obj.isNil()) throw typeError(runtime.getCurrentContext(), obj, "Float");
+
+        // Java types which can become floats pass to to_f logic and we don't try and match this error string.
+        if (!(obj instanceof JavaProxy) && !obj.getMetaClass().isKindOfModule(runtime.getNumeric())) {
+            throw typeError(runtime.getCurrentContext(), str(runtime, "can't convert ", types(runtime, obj.getMetaClass()), " into Float"));
         }
         return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
     }
@@ -156,43 +161,25 @@ public class TypeConverter {
      * @param obj the object to check
      * @return the converted value
      */
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject checkData(IRubyObject obj) {
         if (obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
         Ruby runtime = obj.getRuntime();
-        throw runtime.newTypeError(str(runtime, "wrong argument type ", typeAsString(obj), " (expected Data)"));
+        throw typeError(runtime.getCurrentContext(), str(runtime, "wrong argument type ", typeAsString(obj), " (expected Data)"));
     }
 
     public static RubyString typeAsString(IRubyObject obj) {
-        if (obj.isNil()) return obj.getRuntime().newString("nil");
-        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
+        var context = obj.getRuntime().getCurrentContext();
+        if (obj.isNil()) return newString(context, "nil");
+        if (obj instanceof RubyBoolean) return newString(context, obj.isTrue() ? "true" : "false");
 
-        return obj.getMetaClass().getRealClass().rubyName();
+        return obj.getMetaClass().getRealClass().rubyName(context);
     }
 
-
-
-    /**
-     * Convert the supplied object into an internal identifier String.  Basically, symbols
-     * are stored internally as raw bytes from whatever encoding they were originally sourced from.
-     * When methods are stored they must also get stored in this same raw fashion so that if we
-     * use symbols to look up methods or make symbols from these method names they will match up.
-     *
-     * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
-     */
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol checkID(IRubyObject obj) {
-        final Ruby runtime = obj.getRuntime();
-        if ( obj instanceof RubySymbol || obj instanceof RubyString ) {
-            return RubySymbol.newHardSymbol(runtime, obj);
-        }
-
-        final IRubyObject str = convertToTypeWithCheck(obj, runtime.getString(), "to_str");
-        if ( ! str.isNil() ) {
-            return RubySymbol.newHardSymbol(runtime, str);
-        }
-
-        final ThreadContext context = runtime.getCurrentContext();
-        throw runtime.newTypeError(obj.callMethod(context, "inspect") + " is not a symbol nor a string");
+        return Check.checkID(obj.getRuntime().getCurrentContext(), obj);
     }
 
     /**
@@ -203,6 +190,7 @@ public class TypeConverter {
      *
      * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol checkID(Ruby runtime, String name) {
         return RubySymbol.newHardSymbol(runtime, name.intern());
     }
@@ -221,7 +209,7 @@ public class TypeConverter {
         IRubyObject val = convertToType(obj, target, convertMethod, false);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(obj, target, convertMethod, val);
+            throw newTypeErrorMismatch(obj.getRuntime(), obj, target, convertMethod, val);
         }
         return val;
     }
@@ -240,19 +228,9 @@ public class TypeConverter {
         IRubyObject val = convertToType(context, obj, target, sites, false);
         if (val == context.nil) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+            throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         }
         return val;
-    }
-
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
-        return convertToTypeWithCheck(obj, target, convertMethod);
-    }
-
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        return convertToTypeWithCheck(context, obj, target, sites);
     }
 
     public static RaiseException newTypeError(IRubyObject obj, RubyClass target, String convertMethod, IRubyObject val) {
@@ -260,13 +238,38 @@ public class TypeConverter {
     }
 
     public static RaiseException newTypeError(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
-        IRubyObject className =  types(runtime, obj.getMetaClass());
-        return runtime.newTypeError(str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
-                className, '#' + methodName + " gives ", types(runtime, val.getMetaClass()), ")"));
+        IRubyObject className =  types(runtime, obj.getType());
+        String message = isImplicitTypeError(methodName) ? "no implicit conversion of" : "can't convert ";
+
+        return typeError(runtime.getCurrentContext(), str(runtime, message, className, " into ", types(runtime, target)));
     }
 
-    // rb_check_to_integer
+    public static RaiseException newTypeErrorMismatch(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
+        IRubyObject className =  types(runtime, obj.getType());
+
+        return typeError(runtime.getCurrentContext(), str(runtime, "can't convert ", className, " into ", types(runtime, target), " (",
+                className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
+    }
+
+    @CRuby(value = "rb_check_integer_type", file = "object.c")
     public static IRubyObject checkIntegerType(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyInteger) return obj;
+
+        TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToType(context, obj, context.runtime.getInteger(), sites.to_int_checked, false);
+        if (conv.isNil()) {
+            return context.nil;
+        }
+        if (!(conv instanceof RubyInteger)) {
+            throw newTypeErrorMismatch(context.runtime, obj, context.runtime.getInteger(), "to_int", conv);
+        }
+        return conv;
+    }
+
+    @CRuby(value = "rb_check_to_integer", file = "object.c")
+    @Deprecated(since = "10.0.0.0") // Use Convert.checkToInteger
+    public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
         TypeConverterSites sites = sites(context);
@@ -276,9 +279,10 @@ public class TypeConverter {
         return conv instanceof RubyInteger ? conv : context.nil;
     }
 
-    // rb_check_to_integer
-    public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
-        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
+    @CRuby(value = "rb_check_to_integer", file = "object.c")
+    @Deprecated(since = "10.0.0.0") // Use Convert.checkToInteger (and MRI uses not to_i so I do not think this signature is needed).
+    public static IRubyObject checkToInteger(Ruby runtime, IRubyObject obj, String method) {
+        if (method.equals("to_int")) return Convert.checkToInteger(runtime.getCurrentContext(), obj);
 
         if (obj instanceof RubyFixnum) return obj;
 
@@ -294,9 +298,10 @@ public class TypeConverter {
         return conv instanceof RubyInteger ? conv : runtime.getNil();
     }
 
-    // rb_check_to_float
+    @CRuby(value = "rb_check_to_float", file = "object.c")
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
+        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);
@@ -304,67 +309,70 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(context, obj, runtime.getFloat(), sites.to_f_checked);
     }
 
-    // rb_check_hash_type
+    @CRuby(value = "rb_check_hash_type", file = "hash.c")
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        return checkHashType(runtime, obj, true);
     }
 
-    // rb_check_hash_type
+    public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj, boolean raise) {
+        if (obj instanceof RubyHash) return obj;
+        if (raise) {
+            return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        } else {
+            return TypeConverter.convertToType(obj, runtime.getHash(), "to_hash", false);
+        }
+    }
+
+    @CRuby(value = "rb_check_hash_type", file = "hash.c")
     public static IRubyObject checkHashType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getHash(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, hashClass(context), sites);
     }
 
-    // rb_check_string_type
+    @CRuby(value = "rb_check_string_type", file = "string.c")
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyString) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
     }
 
-    // rb_check_string_type
+    @CRuby(value = "rb_check_string_type", file = "string.c")
     public static IRubyObject checkStringType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyString) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getString(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, stringClass(context), sites);
     }
 
-    // rb_check_string_type
+    @CRuby(value = "rb_check_string_type", file = "string.c")
     public static IRubyObject checkStringType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj, RubyClass target) {
         if (obj instanceof RubyString) return obj;
         return TypeConverter.convertToTypeWithCheck(context, obj, target, sites);
     }
 
-    // rb_check_array_type
+    @CRuby(value = "rb_check_array_type", file = "array.c")
     public static IRubyObject checkArrayType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyArray) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
     }
 
-    // rb_check_array_type
+    @CRuby(value = "rb_check_array_type", file = "array.c")
     public static IRubyObject checkArrayType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyArray) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getArray(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites);
     }
 
-    // rb_io_check_io
+    @CRuby(value = "rb_io_check_io", file = "io.c")
     public static IRubyObject ioCheckIO(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyIO) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getIO(), "to_io");
     }
 
-    // rb_io_get_io
+    @CRuby(value = "rb_io_get_io", file = "io.c")
     public static RubyIO ioGetIO(Ruby runtime, IRubyObject obj) {
         return (RubyIO)convertToType(obj, runtime.getIO(), "to_io");
     }
 
-    // MRI: rb_check_array_type
+    @CRuby(value = "rb_check_array_type", file = "array.c")
     public static IRubyObject checkArrayType(ThreadContext context, IRubyObject obj) {
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getArray(), sites(context).to_ary_checked);
-    }
-
-    @Deprecated // no longer used
-    public static IRubyObject checkArrayType(IRubyObject obj) {
-        return checkArrayType(obj.getRuntime().getCurrentContext(), obj);
+        return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites(context).to_ary_checked);
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
@@ -372,13 +380,8 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
-        if (raise) throw runtime.newTypeError(str(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
+        if (raise) throw typeError(runtime.getCurrentContext(), str(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
         return runtime.getNil();
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
-        return handleUncoercibleObject(obj.getRuntime(), obj, target, raise);
     }
 
     // rb_check_type and Check_Type
@@ -387,136 +390,111 @@ public class TypeConverter {
 
         ClassIndex xt = x.getMetaClass().getClassIndex();
 
-        // MISSING: special error for T_DATA of a certain type
-        if (xt != type.getClassIndex()) {
+        // MISSING: special error for T_DATA of a certain type (isInstance is attempt at similar behavior)
+        if (xt != type.getClassIndex() && !type.isInstance(x)) {
             Ruby runtime = context.runtime;
-            throw context.runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
+            throw typeError(context, str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
         }
     }
 
-    // rb_convert_to_integer
-    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
-        final Ruby runtime = context.runtime;
+    @CRuby(value = "rb_convert_to_integer", file = "object.c")
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base, boolean exception) {
+        if (base != 0) {
+            IRubyObject tmp = TypeConverter.checkStringType(context.runtime, val);
+
+            if (!tmp.isNil()) {
+                val = tmp;
+            } else if (!exception) {
+                return context.nil;
+            } else {
+                //raise
+                return raiseIntegerBaseError(context, true);
+            }
+        }
+
+        if (val instanceof RubyFloat f) {
+            if (!exception && !Double.isFinite(f.asDouble(context))) return context.nil;
+            return asInteger(context, f.getValue());
+        } else if (val instanceof RubyInteger) {
+            return val;
+        } else if (val instanceof RubyString str) {
+            return RubyNumeric.str2inum(context.runtime, str, base, true, exception);
+        } else if (val.isNil()) {
+            if (!exception) return context.nil;
+            throw typeError(context, "can't convert nil into Integer");
+        }
+
         IRubyObject tmp;
-
-        for (;;) {
-            switch (val.getMetaClass().getClassIndex()) {
-                case FLOAT:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
-                case INTEGER:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    return val;
-                case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
-                case NIL:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    throw context.runtime.newTypeError("can't convert nil into Integer");
-                default: // MRI checks String sub-classes
-                    if (val instanceof RubyString) {
-                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
-                    }
-            }
-
-            if (base != 0) {
-                tmp = TypeConverter.checkStringType(context.runtime, val);
-                if (tmp != context.nil) continue;
-                raiseIntegerBaseError(context);
-            }
-
-            break;
+        try {
+            tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
+            if (tmp instanceof RubyInteger) return tmp;
+        } catch (RaiseException re) {
+            context.clearErrorInfo();
         }
 
-        tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-        return (tmp != context.nil) ? tmp : TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
+        if (!(tmp = TypeConverter.checkStringType(context.runtime, val)).isNil()) {
+            return ConvertBytes.byteListToInum(context.runtime, ((RubyString) tmp).getByteList(), base, exception);
+        }
+
+        if (!exception) {
+            try {
+                IRubyObject ret = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_i_checked, false);
+                if (ret instanceof RubyInteger) return ret;
+            } catch (RaiseException re) {
+                /* exception == false */
+            }
+
+            return context.nil;
+        }
+
+        return val.convertToInteger("to_i");
     }
 
-    // MRI: rb_Array
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+        return convertToInteger(context, val, base, true);
+    }
+
+    @CRuby(value = "rb_Array", file = "object.c")
     public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
         IRubyObject tmp = checkArrayType(context, val); // to_ary
 
         if (tmp == context.nil) {
             TypeConverterSites sites = sites(context);
-            tmp = convertToTypeWithCheck(context, val, context.runtime.getArray(), sites.to_a_checked);
-            if (tmp == context.nil) {
-                return context.runtime.newArray(val);
-            }
+            tmp = convertToTypeWithCheck(context, val, arrayClass(context), sites.to_a_checked);
+            if (tmp == context.nil) return newArray(context, val);
         }
         return (RubyArray) tmp;
     }
 
-    // MRI: to_ary
+    @CRuby(value = "to_ary", file = "array.c")
     public static RubyArray to_ary(ThreadContext context, IRubyObject ary) {
-        return (RubyArray) convertToType(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
+        return (RubyArray) convertToType(context, ary, arrayClass(context), sites(context).to_ary_checked);
     }
 
-    private static void raiseIntegerBaseError(ThreadContext context) {
-        throw context.runtime.newArgumentError("base specified for non string value");
+    private static IRubyObject raiseIntegerBaseError(ThreadContext context, boolean exception) {
+        if (!exception) return context.nil;
+
+        throw argumentError(context, "base specified for non string value");
     }
 
-    private static TypeConverterSites sites(ThreadContext context) {
+    public static TypeConverterSites sites(ThreadContext context) {
         return context.sites.TypeConverter;
     }
 
-    @Deprecated
-    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
+    private static boolean isImplicitTypeError(String methodID) {
+        for (int i = 0; i < IMPLICIT_CONVERTED_METHODS.length; i++) {
+            if (IMPLICIT_CONVERTED_METHODS[i].equals(methodID)) return true;
+        }
 
-        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
+        return false;
     }
 
-    @Deprecated
-    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
-    }
+    @CRuby(value = "rb_bool_expected", file = "object.c")
+    public static boolean booleanExpected(ThreadContext context, IRubyObject object, String id) {
+        if (object == context.tru) return true;
+        if (object == context.fals) return false;
 
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
-    }
-
-    @Deprecated
-    public static String convertToIdentifier(IRubyObject obj) {
-        // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
-        // Assume all other objects cannot participate in providing raw bytes since we cannot
-        // grab it's string representation without calling a method which properly encodes
-        // the string.
-        if (obj instanceof RubyString) {
-            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
-        }
-        return obj.asJavaString().intern();
-    }
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param obj the object to convert
-     * @param target is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    @Deprecated // no longer used
-    public static IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
+        throw argumentError(context,
+                str(context.runtime, "true or false is expected as ", Convert.asSymbol(context, id), ": ", object));
     }
 }

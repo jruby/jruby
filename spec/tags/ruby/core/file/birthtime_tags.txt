@@ -1,2 +1,0 @@
-fails:File.birthtime raises an NotImplementedError
-fails:File#birthtime raises an NotImplementedError

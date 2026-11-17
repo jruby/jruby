@@ -71,7 +71,7 @@ describe "Proc.new with an associated block" do
     end
     res = some_method()
 
-    lambda { res.call }.should raise_error(LocalJumpError)
+    -> { res.call }.should.raise(LocalJumpError)
   end
 
   it "returns from within enclosing method when 'return' is used in the block" do
@@ -86,27 +86,13 @@ describe "Proc.new with an associated block" do
 
   it "returns a subclass of Proc" do
     obj = ProcSpecs::MyProc.new { }
-    obj.should be_kind_of(ProcSpecs::MyProc)
+    obj.should.is_a?(ProcSpecs::MyProc)
   end
 
   it "calls initialize on the Proc object" do
     obj = ProcSpecs::MyProc2.new(:a, 2) { }
     obj.first.should == :a
     obj.second.should == 2
-  end
-
-  ruby_version_is ""..."2.7" do
-    it "returns a new Proc instance from the block passed to the containing method" do
-      prc = ProcSpecs.new_proc_in_method { "hello" }
-      prc.should be_an_instance_of(Proc)
-      prc.call.should == "hello"
-    end
-
-    it "returns a new Proc instance from the block passed to the containing method" do
-      prc = ProcSpecs.new_proc_subclass_in_method { "hello" }
-      prc.should be_an_instance_of(ProcSpecs::ProcSubclass)
-      prc.call.should == "hello"
-    end
   end
 end
 
@@ -115,7 +101,7 @@ describe "Proc.new with a block argument" do
     passed_prc = Proc.new { "hello".size }
     prc = Proc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call.should == 5
   end
 
@@ -124,7 +110,7 @@ describe "Proc.new with a block argument" do
     passed_prc = Proc.new(&method)
     prc = Proc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call.should == 5
   end
 
@@ -132,7 +118,7 @@ describe "Proc.new with a block argument" do
     passed_prc = Proc.new(&:size)
     prc = Proc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call("hello").should == 5
   end
 end
@@ -143,7 +129,7 @@ describe "Proc.new with a block argument called indirectly from a subclass" do
     passed_prc.class.should == ProcSpecs::MyProc
     prc = ProcSpecs::MyProc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call.should == 5
   end
 
@@ -153,7 +139,7 @@ describe "Proc.new with a block argument called indirectly from a subclass" do
     passed_prc.class.should == ProcSpecs::MyProc
     prc = ProcSpecs::MyProc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call.should == 5
   end
 
@@ -162,65 +148,31 @@ describe "Proc.new with a block argument called indirectly from a subclass" do
     passed_prc.class.should == ProcSpecs::MyProc
     prc = ProcSpecs::MyProc.new(&passed_prc)
 
-    prc.should equal(passed_prc)
+    prc.should.equal?(passed_prc)
     prc.call("hello").should == 5
   end
 end
 
 describe "Proc.new without a block" do
   it "raises an ArgumentError" do
-    lambda { Proc.new }.should raise_error(ArgumentError)
+    -> { Proc.new }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError if invoked from within a method with no block" do
-    lambda { ProcSpecs.new_proc_in_method }.should raise_error(ArgumentError)
+    -> { ProcSpecs.new_proc_in_method }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError if invoked on a subclass from within a method with no block" do
-    lambda { ProcSpecs.new_proc_subclass_in_method }.should raise_error(ArgumentError)
+    -> { ProcSpecs.new_proc_subclass_in_method }.should.raise(ArgumentError)
   end
 
-  ruby_version_is ""..."2.7" do
-    it "uses the implicit block from an enclosing method" do
-      def some_method
-        Proc.new
-      end
-
-      prc = some_method { "hello" }
-
-      prc.call.should == "hello"
+  it "raises an ArgumentError when passed no block" do
+    def some_method
+      Proc.new
     end
 
-    it "uses the implicit block from an enclosing method when called inside a block" do
-      def some_method
-        proc do |&block|
-          Proc.new
-        end.call { "failing" }
-      end
-      prc = some_method { "hello" }
-
-      prc.call.should == "hello"
-    end
-  end
-
-  ruby_version_is "2.7" do
-    it "can be created if invoked from within a method with a block" do
-      lambda { ProcSpecs.new_proc_in_method { "hello" } }.should complain(/Capturing the given block using Proc.new is deprecated/)
-    end
-
-    it "can be created if invoked on a subclass from within a method with a block" do
-      lambda { ProcSpecs.new_proc_subclass_in_method { "hello" } }.should complain(/Capturing the given block using Proc.new is deprecated/)
-    end
-
-
-    it "can be create when called with no block" do
-      def some_method
-        Proc.new
-      end
-
-      -> {
-        some_method { "hello" }
-      }.should complain(/Capturing the given block using Proc.new is deprecated/)
-    end
+    -> { ProcSpecs.new_proc_in_method { "hello" } }.should.raise(ArgumentError, 'tried to create Proc object without a block')
+    -> { ProcSpecs.new_proc_subclass_in_method { "hello" } }.should.raise(ArgumentError, 'tried to create Proc object without a block')
+    -> { some_method { "hello" } }.should.raise(ArgumentError, 'tried to create Proc object without a block')
   end
 end

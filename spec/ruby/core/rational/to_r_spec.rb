@@ -1,11 +1,17 @@
-require_relative '../../shared/rational/to_r'
+require_relative "../../spec_helper"
 
 describe "Rational#to_r" do
-  it_behaves_like :rational_to_r, :to_r
+  it "returns self" do
+    a = Rational(3, 4)
+    a.to_r.should.equal?(a)
+
+    a = Rational(bignum_value, 4)
+    a.to_r.should.equal?(a)
+  end
 
   it "raises TypeError trying to convert BasicObject" do
     obj = BasicObject.new
-    lambda { Rational(obj) }.should raise_error(TypeError)
+    -> { Rational(obj) }.should.raise(TypeError)
   end
 
   it "works when a BasicObject has to_r" do
@@ -15,6 +21,6 @@ describe "Rational#to_r" do
 
   it "fails when a BasicObject's to_r does not return a Rational" do
     obj = BasicObject.new; def obj.to_r; 1 end
-    lambda { Rational(obj) }.should raise_error(TypeError)
+    -> { Rational(obj) }.should.raise(TypeError)
   end
 end

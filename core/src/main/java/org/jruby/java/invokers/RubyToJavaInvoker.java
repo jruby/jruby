@@ -33,8 +33,8 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.function.Supplier;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -43,159 +43,155 @@ import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
-    // implements CallableCache<T> {
-
     static final NonBlockingHashMapLong NULL_CACHE = new NullHashMapLong();
 
-    protected final T javaCallable; /* null if multiple callable members */
-    protected final T[][] javaCallables; /* != null if javaCallable == null */
-    protected final T[] javaVarargsCallables; /* != null if any var args callables */
+    protected T javaCallable; /* null if multiple callable members */
+    protected T[][] javaCallables; /* != null if javaCallable == null */
+    protected T[] javaVarargsCallables; /* != null if any var args callables */
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
-    final NonBlockingHashMapLong<T> cache;
+    NonBlockingHashMapLong<T> cache;
+
+    volatile boolean initialized;
 
     private final Ruby runtime;
+    private final Supplier<Member[]> members;
 
     @SuppressWarnings("unchecked") // NULL_CACHE
-    RubyToJavaInvoker(RubyModule host, Member member, String name) {
+    RubyToJavaInvoker(RubyModule host, Supplier<Member[]> members, String name) {
         super(host, Visibility.PUBLIC, name);
+
         this.runtime = host.getRuntime();
+        this.members = members;
 
-        final T callable;
-        T[] varargsCallables = null;
-        int minVarArgsArity = -1;
-
-        callable = createCallable(runtime, member);
-        int minArity = callable.getArity();
-        if ( callable.isVarArgs() ) { // TODO does it need to happen?
-            varargsCallables = createCallableArray(callable);
-            minVarArgsArity = getMemberArity(member) - 1;
-        }
-
-        cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
-
-        this.javaCallable = callable;
-        this.javaCallables = null;
-        this.javaVarargsCallables = varargsCallables;
-
-        setArity(minArity, minArity, minVarArgsArity);
-        setupNativeCall();
+        initialize();
     }
 
-    @SuppressWarnings("unchecked") // NULL_CACHE
-    RubyToJavaInvoker(RubyModule host, Member[] members, String name) {
-        super(host, Visibility.PUBLIC, name);
-        this.runtime = host.getRuntime();
+    void initialize() {
+        if (initialized) return;
 
-        // initialize all the callables for this method
-        final T callable;
-        final T[][] callables;
-        T[] varargsCallables = null;
-        int minVarArgsArity = -1; int maxArity, minArity;
+        synchronized (this) {
+            if (initialized) return;
 
-        final int length = members.length;
-        if ( length == 1 ) {
-            callable = createCallable(runtime, members[0]);
-            maxArity = minArity = callable.getArity();
-            if ( callable.isVarArgs() ) {
-                varargsCallables = createCallableArray(callable);
-                minVarArgsArity = getMemberArity(members[0]) - 1;
-            }
-            callables = null;
+            // initialize all the callables for this method
+            final T callable;
+            final T[][] callables;
+            T[] varargsCallables = null;
+            int minVarArgsArity = -1;
+            int maxArity, minArity;
 
-            cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
-        }
-        else {
-            callable = null; maxArity = -1; minArity = Integer.MAX_VALUE;
+            Member[] members = this.members.get();
 
-            IntHashMap<ArrayList<T>> arityMap = new IntHashMap<ArrayList<T>>(length, 1);
-
-            ArrayList<T> varArgs = null;
-            for ( int i = 0; i < length; i++ ) {
-                final Member method = members[i];
-                final int currentArity = getMemberArity(method);
-                maxArity = Math.max(currentArity, maxArity);
-                minArity = Math.min(currentArity, minArity);
-
-                final T javaMethod = createCallable(runtime, method);
-
-                ArrayList<T> methodsForArity = arityMap.get(currentArity);
-                if (methodsForArity == null) {
-                    // most calls have 2-3 callables length (a.k.a. overrides)
-                    // using capacity of length is a win-win here - will (likely)
-                    // use small internal [len] + no resizing even in worst case
-                    methodsForArity = new ArrayList<T>(length);
-                    arityMap.put(currentArity, methodsForArity);
+            final int length = members.length;
+            if (length == 1) {
+                callable = createCallable(runtime, members[0]);
+                maxArity = minArity = callable.getArity();
+                if (callable.isVarArgs()) {
+                    varargsCallables = createCallableArray(callable);
+                    minVarArgsArity = getMemberArity(members[0]) - 1;
                 }
-                methodsForArity.add(javaMethod);
+                callables = null;
 
-                if ( javaMethod.isVarArgs() ) {
-                    final int usableArity = currentArity - 1;
-                    // (String, Object...) has usable arity == 1 ... (String)
-                    if ((methodsForArity = arityMap.get(usableArity)) == null) {
+                cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+            } else {
+                callable = null;
+                maxArity = -1;
+                minArity = Integer.MAX_VALUE;
+
+                IntHashMap<ArrayList<T>> arityMap = new IntHashMap<>(length, 1);
+
+                ArrayList<T> varArgs = null;
+                for (int i = 0; i < length; i++) {
+                    final Member method = members[i];
+                    final int currentArity = getMemberArity(method);
+                    maxArity = Math.max(currentArity, maxArity);
+                    minArity = Math.min(currentArity, minArity);
+
+                    final T javaMethod = createCallable(runtime, method);
+
+                    ArrayList<T> methodsForArity = arityMap.get(currentArity);
+                    if (methodsForArity == null) {
+                        // most calls have 2-3 callables length (a.k.a. overrides)
+                        // using capacity of length is a win-win here - will (likely)
+                        // use small internal [len] + no resizing even in worst case
                         methodsForArity = new ArrayList<T>(length);
-                        arityMap.put(usableArity, methodsForArity);
+                        arityMap.put(currentArity, methodsForArity);
                     }
                     methodsForArity.add(javaMethod);
 
-                    if (varArgs == null) varArgs = new ArrayList<T>(length);
-                    varArgs.add(javaMethod);
+                    if (javaMethod.isVarArgs()) {
+                        final int usableArity = currentArity - 1;
+                        // (String, Object...) has usable arity == 1 ... (String)
+                        if ((methodsForArity = arityMap.get(usableArity)) == null) {
+                            methodsForArity = new ArrayList<T>(length);
+                            arityMap.put(usableArity, methodsForArity);
+                        }
+                        methodsForArity.add(javaMethod);
 
-                    if ( minVarArgsArity == -1 ) minVarArgsArity = Integer.MAX_VALUE;
-                    minVarArgsArity = Math.min(usableArity, minVarArgsArity);
+                        if (varArgs == null) varArgs = new ArrayList<T>(length);
+                        varArgs.add(javaMethod);
+
+                        if (minVarArgsArity == -1) minVarArgsArity = Integer.MAX_VALUE;
+                        minVarArgsArity = Math.min(usableArity, minVarArgsArity);
+                    }
                 }
+
+                callables = createCallableArrayArray(maxArity + 1);
+                for (IntHashMap.Entry<ArrayList<T>> entry : arityMap.entrySet()) {
+                    ArrayList<T> methodsForArity = entry.getValue();
+
+                    T[] methodsArray = methodsForArity.toArray(createCallableArray(methodsForArity.size()));
+                    callables[entry.getKey() /* int */] = methodsArray;
+                }
+
+                if (varArgs != null /* && varargsMethods.size() > 0 */) {
+                    varargsCallables = varArgs.toArray(createCallableArray(varArgs.size()));
+                }
+                // NOTE: tested (4, false); with opt_for_space: false but does not
+                // seem to give  the promised ~10% improvement in map's speed ...
+                cache = new NonBlockingHashMapLong<>(4, true); // 8 still uses MIN_SIZE_LOG == 4
             }
 
-            callables = createCallableArrayArray(maxArity + 1);
-            for (IntHashMap.Entry<ArrayList<T>> entry : arityMap.entrySet()) {
-                ArrayList<T> methodsForArity = entry.getValue();
+            this.javaCallable = callable;
+            this.javaCallables = callables;
+            this.javaVarargsCallables = varargsCallables;
 
-                T[] methodsArray = methodsForArity.toArray(createCallableArray(methodsForArity.size()));
-                callables[ entry.getKey() /* int */ ] = methodsArray;
-            }
+            setSignature(minArity, maxArity, minVarArgsArity);
+            setupNativeCall();
 
-            if (varArgs != null /* && varargsMethods.size() > 0 */) {
-                varargsCallables = (T[]) varArgs.toArray( createCallableArray(varArgs.size()) );
-            }
-            // NOTE: tested (4, false); with opt_for_space: false but does not
-            // seem to give  the promised ~10% improvement in map's speed ...
-            cache = new NonBlockingHashMapLong<>(4, true); // 8 still uses MIN_SIZE_LOG == 4
+            initialized = true;
         }
-
-        this.javaCallable = callable;
-        this.javaCallables = callables;
-        this.javaVarargsCallables = varargsCallables;
-
-        setArity(minArity, maxArity, minVarArgsArity);
-        setupNativeCall();
     }
 
-    private void setArity(final int minArity,  final int maxArity, final int minVarArgsArity) {
+    private void setSignature(final int minArity, final int maxArity, final int minVarArgsArity) {
         if ( minVarArgsArity == -1 ) { // no var-args
             if ( minArity == maxArity ) {
-                setArity( Arity.fixed(minArity) );
+                setSignature(Signature.from(minArity, 0, 0, 0, 0, Signature.Rest.NONE, -1));
             }
             else { // multiple overloads
-                setArity(Arity.required(minArity)); // but <= maxArity
+                setSignature(Signature.from(minArity, maxArity - minArity, 0, 0, 0, Signature.Rest.NONE, -1));
             }
         }
         else {
-            setArity( Arity.required(minVarArgsArity < minArity ? minVarArgsArity : minArity) );
+            setSignature(Signature.from(minVarArgsArity < minArity ? minVarArgsArity : minArity, 0, 0, 0, 0, Signature.Rest.NORM, -1));
         }
     }
 
@@ -254,9 +250,6 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     protected abstract Class[] getMemberParameterTypes(Member member);
 
-    @Deprecated // no longer used!
-    protected abstract boolean isMemberVarArgs(Member member);
-
     final int getMemberArity(Member member) {
         return getMemberParameterTypes(member).length;
     }
@@ -302,7 +295,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return javaArgs;
     }
 
-    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+    @SuppressWarnings("unchecked")
+    private static <T> Object convertVarArgumentsOnly(final Class<T> varArrayType,
         final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
@@ -317,8 +311,15 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        for ( int i = 0; i < varCount; i++ ) {
-            Array.set(varArgs, i, args[varStart + i].toJava(compType));
+        if (compType.isPrimitive()) {
+            for (int i = 0; i < varCount; i++) {
+                Array.set(varArgs, i, args[varStart + i].toJava(compType));
+            }
+        } else { // 10x speedup avoiding Array.set
+            T[] base = (T[]) varArgs;
+            for (int i = 0; i < varCount; i++) {
+                base[i] = (T) (args[varStart + i].toJava(compType));
+            }
         }
         return varArgs;
     }
@@ -339,23 +340,53 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static JavaProxy castJavaProxy(final IRubyObject self) {
-        assert self instanceof JavaProxy : "Java methods can only be invoked on Java objects";
+        assert self instanceof JavaProxy : "Java methods can only be invoked on Java objects; got: " + self;
         return (JavaProxy) self;
+    }
+
+    static Object unwrapIfJavaProxy(final IRubyObject object) {
+        if (object instanceof JavaProxy) {
+            return ((JavaProxy) object).getObject();
+        }
+        // special case when target is a plain-old Ruby object
+        // e.g. in case of a `class Ruby; include java.some.Interface end`
+        // Interface's default methods will be set up as InstanceMethodInvokers
+        return object;
     }
 
     static <T extends AccessibleObject & Member> T setAccessible(T accessible) {
         // TODO: Replace flag that's false on 9 with proper module checks
-        if (!accessible.isAccessible() &&
+        if (!Java.isAccessible(accessible) &&
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Modules.trySetAccessible(accessible); }
+            try { Java.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
             }
         }
         return accessible;
+    }
+
+    static <T extends AccessibleObject & Member> T[] setAccessible(T[] accessibles) {
+        // TODO: Replace flag that's false on 9 with proper module checks
+        if (!Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load()) {
+            try {
+                for (T accessible : accessibles) {
+                    if (Java.isAccessible(accessible)) continue;
+                    if (!(accessible instanceof Member)) continue;
+
+                    Java.trySetAccessible(accessible);
+                }
+            }
+            catch (SecurityException e) {}
+            catch (RuntimeException re) {
+                rethrowIfNotInaccessibleObject(re);
+            }
+        }
+        return accessibles;
     }
 
     private static void rethrowIfNotInaccessibleObject(RuntimeException re) {
@@ -368,32 +399,16 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
-        // TODO: Replace flag that's false on 9 with proper module checks
-        if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() &&
-                Options.JI_SETACCESSIBLE.load() &&
-                allAreMember(accessibles)) {
-            try { AccessibleObject.setAccessible(accessibles, true); }
-            catch (SecurityException e) {}
-            catch (RuntimeException re) {
-                rethrowIfNotInaccessibleObject(re);
-            }
-        }
-        return accessibles;
-    }
-
-    private static <T extends AccessibleObject> boolean allAreAccessible(T[] accessibles) {
-        for (T accessible : accessibles) if (!accessible.isAccessible()) return false;
-        return true;
-    }
-
-    private static <T extends AccessibleObject> boolean allAreMember(T[] accessibles) {
-        for (T accessible : accessibles) if (!(accessible instanceof Member)) return false;
-        return true;
-    }
-
-    protected T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
+    /**
+     * Find the matching callable object given the target proxy wrapper, method name, arguments, and actual arity.
+     *
+     * @param self the proxy wrapper
+     * @param name the method name
+     * @param args the arguments
+     * @param arity the actual arity
+     * @return a suitable callable, or else raises an argument or name error
+     */
+    public T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
         switch (arity) {
             case 0:
                 return findCallableArityZero(self, name);
@@ -439,7 +454,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 1 || (callablesForArity = javaCallables[1]) == null ) {
                 if ((callable = matchVarArgsCallableArityOne(self, arg0)) == null) {
-                    throw runtime.newArgumentError(1, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 1, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -462,7 +477,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 2 || (callablesForArity = javaCallables[2]) == null ) {
                 if ((callable = matchVarArgsCallableArityTwo(self, arg0, arg1)) == null ) {
-                    throw runtime.newArgumentError(2, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 2, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -485,7 +500,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 3 || (callablesForArity = javaCallables[3]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityThree(self, arg0, arg1, arg2) ) == null ) {
-                    throw runtime.newArgumentError(3, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 3, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -508,7 +523,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 4 || (callablesForArity = javaCallables[4]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityFour(self, arg0, arg1, arg2, arg3) ) == null ) {
-                    throw runtime.newArgumentError(4, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 4, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -530,7 +545,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( arity >= javaCallables.length || (callablesForArity = javaCallables[arity]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityN(self, args) ) == null ) {
-                    throw runtime.newArgumentError(args.length, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), args.length, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -621,7 +636,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     private void checkCallableArity(final T callable, final int expected) {
         final int arity = callable.getArity();
-        if ( arity != expected ) throw runtime.newArgumentError(expected, arity);
+        if ( arity != expected ) throw argumentError(runtime.getCurrentContext(), expected, arity);
     }
 
     private T someCallable() {
@@ -672,19 +687,21 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
 
         // TODO should have been ArgumentError - might break users to refactor at this point
-        return runtime.newNameError(error.toString(), null);
+        return nameError(runtime.getCurrentContext(), error.toString(), (String) null);
     }
 
     private RaiseException newErrorDueNoMatchingCallable(final IRubyObject receiver, final String name) {
         final StringBuilder error = new StringBuilder(48);
 
         error.append("no ");
-        if ( isConstructor() ) error.append("constructor");
-        else {
-            error.append("method '").append( name ).append("'");
+        if (isConstructor()) {
+            error.append("constructor");
+        } else {
+            error.append("method '").append(name).append("'");
         }
-        error.append(" (for zero arguments) on ").append( formatReceiver(receiver) );
-        return runtime.newArgumentError( error.toString() );
+        error.append(" (for zero arguments) on ").append(formatReceiver(receiver));
+
+        return argumentError(runtime.getCurrentContext(), error.toString());
     }
 
     private static Class<?> getClass(final IRubyObject object) {
@@ -697,10 +714,9 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     private static String formatReceiver(final IRubyObject object) {
-        if ( object instanceof RubyModule ) {
-            return ((RubyModule) object).getName();
-        }
-        return object.getMetaClass().getRealClass().getName();
+        var context = object.getRuntime().getCurrentContext();
+        return object instanceof RubyModule mod ?
+                mod.getName(context) : object.getMetaClass().getRealClass().getName(context);
     }
 
     private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {

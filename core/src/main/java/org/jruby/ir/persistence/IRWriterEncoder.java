@@ -2,6 +2,7 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -13,6 +14,8 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
+import java.util.EnumSet;
+
 /**
  * Names are tough to find.  Encodes values destined to be written to a persisted space.
  * This interface doubles for the encoder which actually writes the finished encoded file
@@ -20,10 +23,14 @@ import org.jruby.util.ByteList;
  * input the the encoder which writes the file.
  */
 public interface IRWriterEncoder {
+    IRScope getCurrentScope();
+
+    public boolean isAnalyzer();
 
     public void encode(ByteList bytelist);
     public void encode(Encoding encoding);
     public void encode(RubySymbol value);
+    void encodeRaw(RubySymbol value);
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);
@@ -45,6 +52,7 @@ public interface IRWriterEncoder {
     public void encode(long value);
     public void encode(double value);
     public void encode(float value);
+    void encode(EnumSet<IRFlags> value);
 
     // Demarcate sections in encoded file methods
 

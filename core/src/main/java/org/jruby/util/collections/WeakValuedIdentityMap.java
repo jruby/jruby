@@ -37,6 +37,8 @@ import java.util.Map;
 
 /**
  * Map-like that holds its values weakly and uses object identity for keys.
+ * @param <Key> key
+ * @param <Value> value
  */
 public class WeakValuedIdentityMap<Key, Value> extends WeakValuedMap<Key, Value> {
     @Override

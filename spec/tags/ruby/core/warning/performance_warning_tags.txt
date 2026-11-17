@@ -1,0 +1,1 @@
+windows:Performance warnings when redefined optimised methods emits performance warning for redefining Integer#+

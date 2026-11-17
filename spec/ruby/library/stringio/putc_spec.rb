@@ -3,7 +3,7 @@ require_relative 'fixtures/classes'
 
 describe "StringIO#putc when passed [String]" do
   before :each do
-    @io = StringIO.new('example')
+    @io = StringIO.new(+'example')
   end
 
   it "overwrites the character at the current position" do
@@ -22,7 +22,7 @@ describe "StringIO#putc when passed [String]" do
 
   it "returns the passed String" do
     str = "test"
-    @io.putc(str).should equal(str)
+    @io.putc(str).should.equal?(str)
   end
 
   it "correctly updates the current position" do
@@ -35,11 +35,26 @@ describe "StringIO#putc when passed [String]" do
     @io.putc("t")
     @io.pos.should == 3
   end
+
+  it "handles concurrent writes correctly" do
+    @io = StringIO.new
+    n = 8
+    go = false
+    threads = n.times.map { |i|
+      Thread.new {
+        Thread.pass until go
+        @io.putc i.to_s
+      }
+    }
+    go = true
+    threads.each(&:join)
+    @io.string.size.should == n
+  end
 end
 
 describe "StringIO#putc when passed [Object]" do
   before :each do
-    @io = StringIO.new('example')
+    @io = StringIO.new(+'example')
   end
 
   it "it writes the passed Integer % 256 to self" do
@@ -64,13 +79,13 @@ describe "StringIO#putc when passed [Object]" do
   end
 
   it "raises a TypeError when the passed argument can't be coerced to Integer" do
-    lambda { @io.putc(Object.new) }.should raise_error(TypeError)
+    -> { @io.putc(Object.new) }.should.raise(TypeError)
   end
 end
 
 describe "StringIO#putc when in append mode" do
   it "appends to the end of self" do
-    io = StringIO.new("test", "a")
+    io = StringIO.new(+"test", "a")
     io.putc(?t)
     io.string.should == "testt"
   end
@@ -78,11 +93,11 @@ end
 
 describe "StringIO#putc when self is not writable" do
   it "raises an IOError" do
-    io = StringIO.new("test", "r")
-    lambda { io.putc(?a) }.should raise_error(IOError)
+    io = StringIO.new(+"test", "r")
+    -> { io.putc(?a) }.should.raise(IOError)
 
-    io = StringIO.new("test")
+    io = StringIO.new(+"test")
     io.close_write
-    lambda { io.putc("t") }.should raise_error(IOError)
+    -> { io.putc("t") }.should.raise(IOError)
   end
 end

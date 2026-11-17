@@ -80,46 +80,42 @@ describe :bigdecimal_modulo, shared: true do
   end
 
   it "returns NaN if NaN is involved" do
-    @nan.send(@method, @nan).nan?.should == true
-    @nan.send(@method, @one).nan?.should == true
-    @one.send(@method, @nan).nan?.should == true
-    @infinity.send(@method, @nan).nan?.should == true
-    @nan.send(@method, @infinity).nan?.should == true
+    @nan.send(@method, @nan).should.nan?
+    @nan.send(@method, @one).should.nan?
+    @one.send(@method, @nan).should.nan?
+    @infinity.send(@method, @nan).should.nan?
+    @nan.send(@method, @infinity).should.nan?
   end
 
   it "returns NaN if the dividend is Infinity" do
-    @infinity.send(@method, @infinity).nan?.should == true
-    @infinity.send(@method, @one).nan?.should == true
-    @infinity.send(@method, @mixed).nan?.should == true
-    @infinity.send(@method, @one_minus).nan?.should == true
-    @infinity.send(@method, @frac_1).nan?.should == true
+    @infinity.send(@method, @infinity).should.nan?
+    @infinity.send(@method, @one).should.nan?
+    @infinity.send(@method, @mixed).should.nan?
+    @infinity.send(@method, @one_minus).should.nan?
+    @infinity.send(@method, @frac_1).should.nan?
 
-    @infinity_minus.send(@method, @infinity_minus).nan?.should == true
-    @infinity_minus.send(@method, @one).nan?.should == true
+    @infinity_minus.send(@method, @infinity_minus).should.nan?
+    @infinity_minus.send(@method, @one).should.nan?
 
-    @infinity.send(@method, @infinity_minus).nan?.should == true
-    @infinity_minus.send(@method, @infinity).nan?.should == true
+    @infinity.send(@method, @infinity_minus).should.nan?
+    @infinity_minus.send(@method, @infinity).should.nan?
   end
 
-  it "returns the dividend if the divisor is Infinity" do
-    @one.send(@method, @infinity).should == @one
-    @one.send(@method, @infinity_minus).should == @one
-    @frac_2.send(@method, @infinity_minus).should == @frac_2
+  version_is BigDecimal::VERSION, "3.3.0" do
+    it "returns the dividend if the divisor is Infinity and signs are same" do
+      @one.send(@method, @infinity).should == @one
+      (-@frac_2).send(@method, @infinity_minus).should == -@frac_2
+    end
+
+    it "returns the divisor if the divisor is Infinity and signs are different" do
+      (-@one).send(@method, @infinity).should == @infinity
+      @frac_2.send(@method, @infinity_minus).should == @infinity_minus
+    end
   end
 
   it "raises TypeError if the argument cannot be coerced to BigDecimal" do
-    lambda {
+    -> {
       @one.send(@method, '2')
-    }.should raise_error(TypeError)
-  end
-end
-
-describe :bigdecimal_modulo_zerodivisionerror, shared: true do
-  it "raises ZeroDivisionError if other is zero" do
-    bd5667 = BigDecimal("5667.19")
-
-    lambda { bd5667.send(@method, 0) }.should raise_error(ZeroDivisionError)
-    lambda { bd5667.send(@method, BigDecimal("0")) }.should raise_error(ZeroDivisionError)
-    lambda { @zero.send(@method, @zero) }.should raise_error(ZeroDivisionError)
+    }.should.raise(TypeError)
   end
 end

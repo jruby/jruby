@@ -1,0 +1,46 @@
+name: JRuby snapshot deploy
+
+on:
+  workflow_call:
+    inputs:
+      javaLevel:
+        description: "Java version level"
+        type: string
+        required: false
+        default: "8"
+    secrets:
+      SONATYPE_USERNAME:
+        required: true
+      SONATYPE_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ inputs.javaLevel }}
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          cache: 'maven'
+      - name: Publish package
+        run: ./mvnw -ntp clean deploy -Psnapshots
+        env:
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      - name: Archive non-Maven artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          path: maven/jruby-jars/pkg/jruby-jars-*.SNAPSHOT.gem
+          archive: false
+            

@@ -9,39 +9,39 @@ describe "String#each_byte" do
   end
 
   it "keeps iterating from the old position (to new string end) when self changes" do
-    r = ""
-    s = "hello world"
+    r = +""
+    s = +"hello world"
     s.each_byte do |c|
       r << c
       s.insert(0, "<>") if r.size < 3
     end
     r.should == "h><>hello world"
 
-    r = ""
-    s = "hello world"
+    r = +""
+    s = +"hello world"
     s.each_byte { |c| s.slice!(-1); r << c }
     r.should == "hello "
 
-    r = ""
-    s = "hello world"
+    r = +""
+    s = +"hello world"
     s.each_byte { |c| s.slice!(0); r << c }
     r.should == "hlowrd"
 
-    r = ""
-    s = "hello world"
+    r = +""
+    s = +"hello world"
     s.each_byte { |c| s.slice!(0..-1); r << c }
     r.should == "h"
   end
 
   it "returns self" do
     s = "hello"
-    (s.each_byte {}).should equal(s)
+    (s.each_byte {}).should.equal?(s)
   end
 
   describe "when no block is given" do
     it "returns an enumerator" do
       enum = "hello".each_byte
-      enum.should be_an_instance_of(Enumerator)
+      enum.should.instance_of?(Enumerator)
       enum.to_a.should == [104, 101, 108, 108, 111]
     end
 

@@ -10,18 +10,22 @@
  */
 package org.jruby.util.io;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.javasupport.Java;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 
 /**
  * Helper that attempts to improve Channels' static helpers.
@@ -57,8 +61,38 @@ public abstract class ChannelHelper {
         return Channels.newChannel(inputStream);
     }
 
-    public static WritableByteChannel writableChannel(final OutputStream ouputStream) {
-        return Channels.newChannel(ouputStream);
+    public static ReadableByteChannel readableChannel(final ByteArrayInputStream inputStream) {
+        return new SeekableByteChannelImpl(inputStream);
+    }
+
+    public static WritableByteChannel writableChannel(final OutputStream outputStream) {
+        return new SyncOutputStreamChannel(outputStream);
+    }
+
+    public static SeekableByteChannel seekableChannel(byte[] bytes, int base, int size) {
+        return new SeekableByteArrayChannel(bytes, base, size);
+    }
+    
+    private static class SyncOutputStreamChannel extends AbstractInterruptibleChannel implements WritableByteChannel {
+        private final OutputStream output;
+        
+        SyncOutputStreamChannel(OutputStream output) {
+            this.output = output;
+            this.out = Channels.newChannel(output);
+        }
+        @Override
+        protected void implCloseChannel() throws IOException {
+            out.close();
+        }
+
+        final WritableByteChannel out;
+
+        @Override
+        public int write(ByteBuffer src) throws IOException {
+            int written = out.write(src);
+            output.flush();
+            return written;
+        }
     }
 
     /**
@@ -112,7 +146,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterOutputStream) {
                 try {
                     OutputStream tmpStream =
-                            Modules.trySetAccessible(filterOutField) ? (OutputStream) filterOutField.get(filteredStream) : null;
+                            Java.trySetAccessible(filterOutField)
+                                    ? (OutputStream) filterOutField.get(filteredStream)
+                                    : null;
 
                     // try to unwrap as a Drip stream
                     if (!(tmpStream instanceof FilterOutputStream)) {
@@ -151,7 +187,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterInputStream) {
                 try {
                     InputStream tmpStream =
-                            Modules.trySetAccessible(filterInField) ? (InputStream) filterInField.get(filteredStream) : null;
+                            Java.trySetAccessible(filterInField)
+                                    ? (InputStream) filterInField.get(filteredStream)
+                                    : null;
 
                     // could not acquire
                     if (tmpStream == null) break;
@@ -181,7 +219,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field out = stream.getClass().getDeclaredField("out");
-                return Modules.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
+                return Java.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -192,7 +230,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field in = stream.getClass().getDeclaredField("in");
-                return Modules.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
+                return Java.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }

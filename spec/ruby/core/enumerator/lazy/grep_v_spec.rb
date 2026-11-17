@@ -18,17 +18,50 @@ describe "Enumerator::Lazy#grep_v" do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.grep_v(Object) {}
-    ret.should be_an_instance_of(Enumerator::Lazy)
-    ret.should_not equal(@yieldsmixed)
+    ret.should.instance_of?(Enumerator::Lazy)
+    ret.should_not.equal?(@yieldsmixed)
 
     ret = @yieldsmixed.grep_v(Object)
-    ret.should be_an_instance_of(Enumerator::Lazy)
-    ret.should_not equal(@yieldsmixed)
+    ret.should.instance_of?(Enumerator::Lazy)
+    ret.should_not.equal?(@yieldsmixed)
   end
 
   it "sets #size to nil" do
     Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object) {}.size.should == nil
     Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object).size.should == nil
+  end
+
+  it "sets $~ in the block" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep_v(/e/) { |e|
+      e.should == "abc"
+      $~.should == nil
+    }.force
+
+    # Set by the match of "def"
+    $&.should == "e"
+  end
+
+  it "sets $~ in the next block with each" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep_v(/e/).each { |e|
+      e.should == "abc"
+      $~.should == nil
+    }
+
+    # Set by the match of "def"
+    $&.should == "e"
+  end
+
+  it "sets $~ in the next block with map" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].lazy.grep_v(/e/).map { |e|
+      e.should == "abc"
+      $~.should == nil
+    }.force
+
+    # Set by the match of "def"
+    $&.should == "e"
   end
 
   describe "when the returned lazy enumerator is evaluated by Enumerable#first" do

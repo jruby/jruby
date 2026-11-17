@@ -35,6 +35,10 @@ public class MethodNames {
     public void setValue2(Object value) {}
     public void setValues2(Object value, Object otherValue) {}
 
+    // non-bean setter
+    public int setValueF(boolean value) {return 4;}
+    public static int setValueFs(boolean value) {return 4;}
+
     // Single letter method should exist (1.6.0 regression)
     public double getX() { return 1.0; }
     public int bigO() { return 0; }

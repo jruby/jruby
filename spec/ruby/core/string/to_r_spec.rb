@@ -2,7 +2,7 @@ require_relative '../../spec_helper'
 
 describe "String#to_r" do
   it "returns a Rational object" do
-    String.new.to_r.should be_an_instance_of(Rational)
+    String.new.to_r.should.instance_of?(Rational)
   end
 
   it "returns (0/1) for the empty String" do
@@ -31,6 +31,10 @@ describe "String#to_r" do
 
   it "treats leading hyphen as minus signs" do
     "-20".to_r.should == Rational(-20, 1)
+  end
+
+  it "accepts leading plus signs" do
+    "+20".to_r.should == Rational(20, 1)
   end
 
   it "does not treat a leading period without a numeric prefix as a decimal point" do

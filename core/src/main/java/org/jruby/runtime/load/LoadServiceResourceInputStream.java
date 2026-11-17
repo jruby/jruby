@@ -4,10 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author nicksieger
- */
 public class LoadServiceResourceInputStream extends ByteArrayInputStream {
 
     private static final byte[] NULL_BYTE_ARRAY = new byte[0];
@@ -45,17 +41,9 @@ public class LoadServiceResourceInputStream extends ByteArrayInputStream {
         return buf;
     }
 
-    private static final int READ_CHUNK_SIZE = 16384;
-
     private void bufferEntireStream(InputStream stream) throws IOException {
-        byte[] chunk = new byte[READ_CHUNK_SIZE];
-        int bytesRead;
-        while ((bytesRead = stream.read(chunk)) != -1) {
-            byte[] newbuf = new byte[buf.length + bytesRead];
-            System.arraycopy(buf, 0, newbuf, 0, buf.length);
-            System.arraycopy(chunk, 0, newbuf, buf.length, bytesRead);
-            buf = newbuf;
-            count = buf.length;
-        }
+        byte[] all = stream.readAllBytes();
+        buf = all;
+        count = all.length;
     }
 }

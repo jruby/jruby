@@ -5,7 +5,8 @@ require 'yaml'
 # This test demonstrates and verifies the marshalling fix for JRUBY-1877.
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
-    @gemspec = YAML::load <<-YAML
+    require 'yaml'
+    @gemspec = YAML::load(<<-YAML, aliases: true, permitted_classes: [Symbol, Time, Gem::Specification, Gem::Version, Gem::Dependency, Gem::Requirement])
 --- !ruby/object:Gem::Specification 
 name: activerecord-jdbcderby-adapter
 version: !ruby/object:Gem::Version 
@@ -106,7 +107,6 @@ YAML
       s.date = %q{2007-11-04}
       s.description = %q{Install this gem to use Derby with JRuby on Rails.}
       s.email = %q{nick@nicksieger.com, ola.bini@gmail.com}
-      s.has_rdoc = true
       s.homepage = %q{http://jruby-extras.rubyforge.org/ActiveRecord-JDBC}
       s.require_paths = ["lib"]
       s.required_ruby_version = Gem::Requirement.new("> 0.0.0")

@@ -16,52 +16,50 @@ describe "Socket#connect_nonblock" do
     @thread.join if @thread
   end
 
-  platform_is_not :solaris do
-    it "connects the socket to the remote side" do
-      port = nil
-      accept = false
-      @thread = Thread.new do
-        server = TCPServer.new(@hostname, 0)
-        port = server.addr[1]
-        Thread.pass until accept
-        conn = server.accept
-        conn << "hello!"
-        conn.close
-        server.close
-      end
-
-      Thread.pass until port
-
-      addr = Socket.sockaddr_in(port, @hostname)
-      begin
-        @socket.connect_nonblock(addr)
-      rescue Errno::EINPROGRESS
-      end
-
-      accept = true
-      IO.select nil, [@socket]
-
-      begin
-        @socket.connect_nonblock(addr)
-      rescue Errno::EISCONN
-        # Not all OS's use this errno, so we trap and ignore it
-      end
-
-      @socket.read(6).should == "hello!"
+  it "connects the socket to the remote side" do
+    port = nil
+    accept = false
+    @thread = Thread.new do
+      server = TCPServer.new(@hostname, 0)
+      port = server.addr[1]
+      Thread.pass until accept
+      conn = server.accept
+      conn << "hello!"
+      conn.close
+      server.close
     end
+
+    Thread.pass until port
+
+    addr = Socket.sockaddr_in(port, @hostname)
+    begin
+      @socket.connect_nonblock(addr)
+    rescue Errno::EINPROGRESS
+    end
+
+    accept = true
+    IO.select nil, [@socket]
+
+    begin
+      @socket.connect_nonblock(addr)
+    rescue Errno::EISCONN
+      # Not all OS's use this errno, so we trap and ignore it
+    end
+
+    @socket.read(6).should == "hello!"
   end
 
-  platform_is_not :freebsd, :solaris, :aix do
+  platform_is_not :freebsd, :aix do
     it "raises Errno::EINPROGRESS when the connect would block" do
-      lambda do
+      -> do
         @socket.connect_nonblock(@addr)
-      end.should raise_error(Errno::EINPROGRESS)
+      end.should.raise(Errno::EINPROGRESS)
     end
 
     it "raises Errno::EINPROGRESS with IO::WaitWritable mixed in when the connect would block" do
-      lambda do
+      -> do
         @socket.connect_nonblock(@addr)
-      end.should raise_error(IO::WaitWritable)
+      end.should.raise(IO::WaitWritable)
     end
 
     it "returns :wait_writable in exceptionless mode when the connect would block" do
@@ -95,7 +93,7 @@ describe 'Socket#connect_nonblock' do
       end
 
       it 'raises TypeError when passed an Integer' do
-        lambda { @client.connect_nonblock(666) }.should raise_error(TypeError)
+        -> { @client.connect_nonblock(666) }.should.raise(TypeError)
       end
     end
 
@@ -114,34 +112,34 @@ describe 'Socket#connect_nonblock' do
       platform_is_not :windows do
         it 'raises Errno::EISCONN when already connected' do
           @server.listen(1)
-          @client.connect(@server.getsockname).should == 0
+          @client.connect(@server.connect_address).should == 0
 
-          lambda {
-            @client.connect_nonblock(@server.getsockname)
+          -> {
+            @client.connect_nonblock(@server.connect_address)
 
             # A second call needed if non-blocking sockets become default
             # XXX honestly I don't expect any real code to care about this spec
             # as it's too implementation-dependent and checking for connect()
             # errors is futile anyways because of TOCTOU
-            @client.connect_nonblock(@server.getsockname)
-          }.should raise_error(Errno::EISCONN)
+            @client.connect_nonblock(@server.connect_address)
+          }.should.raise(Errno::EISCONN)
         end
 
         it 'returns 0 when already connected in exceptionless mode' do
           @server.listen(1)
-          @client.connect(@server.getsockname).should == 0
+          @client.connect(@server.connect_address).should == 0
 
-          @client.connect_nonblock(@server.getsockname, exception: false).should == 0
+          @client.connect_nonblock(@server.connect_address, exception: false).should == 0
         end
       end
 
-      platform_is_not :freebsd, :solaris do
+      platform_is_not :freebsd do
         it 'raises IO:EINPROGRESSWaitWritable when the connection would block' do
           @server.bind(@sockaddr)
 
-          lambda {
-            @client.connect_nonblock(@server.getsockname)
-          }.should raise_error(IO::EINPROGRESSWaitWritable)
+          -> {
+            @client.connect_nonblock(@server.connect_address)
+          }.should.raise(IO::EINPROGRESSWaitWritable)
         end
       end
     end

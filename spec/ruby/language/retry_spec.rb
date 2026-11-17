@@ -31,8 +31,11 @@ describe "The retry statement" do
     results.should == [1, 2, 3, 1, 2, 4, 5, 6, 4, 5]
   end
 
-  it "raises a SyntaxError when used outside of a begin statement" do
-    lambda { eval 'retry' }.should raise_error(SyntaxError)
+  it "raises a SyntaxError when used outside of a rescue statement" do
+    -> { eval 'retry' }.should.raise(SyntaxError)
+    -> { eval 'begin; retry; end' }.should.raise(SyntaxError)
+    -> { eval 'def m; retry; end' }.should.raise(SyntaxError)
+    -> { eval 'module RetrySpecs; retry; end' }.should.raise(SyntaxError)
   end
 end
 

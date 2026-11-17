@@ -95,11 +95,11 @@ public class LoggerFactory {
     /**
      * @deprecated prefer using {@link #getLogger(java.lang.Class)} if possible
      */
+    @Deprecated(since = "9.4-")
     public static Logger getLogger(String loggerName) {
         try {
             return LOGGER_OLD.newInstance(loggerName);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return getLoggerFallback(loggerName, ex);
         }
     }

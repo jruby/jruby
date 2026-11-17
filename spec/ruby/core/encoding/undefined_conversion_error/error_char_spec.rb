@@ -1,3 +1,4 @@
+require_relative "../../../spec_helper"
 require_relative '../fixtures/classes'
 
 describe "Encoding::UndefinedConversionError#error_char" do
@@ -7,8 +8,8 @@ describe "Encoding::UndefinedConversionError#error_char" do
   end
 
   it "returns a String" do
-    @exception.error_char.should be_an_instance_of(String)
-    @exception2.error_char.should be_an_instance_of(String)
+    @exception.error_char.should.instance_of?(String)
+    @exception2.error_char.should.instance_of?(String)
   end
 
   it "returns the one-character String that caused the exception" do

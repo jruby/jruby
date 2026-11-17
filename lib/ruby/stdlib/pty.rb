@@ -1,3 +1,8 @@
+if RbConfig::CONFIG['host_os'] !~ /mswin|win32|mingw/
+  require 'subspawn/replace-pty' # use SubSpawn's PTY & Process implementation as our own
+  return
+end
+
 require 'ffi'
 require 'fcntl'
 
@@ -7,7 +12,7 @@ module PTY
     ffi_lib FFI::Library::LIBC
     # openpty(3) is in libutil on linux and BSD, libc on MacOS
     if FFI::Platform.linux? || (FFI::Platform.bsd? && !FFI::Platform.mac?)
-      ffi_lib 'libutil'
+      ffi_lib ['libutil.so.1', 'util']
     end
     attach_function :openpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in, :buffer_in ], :int
   end
@@ -26,11 +31,7 @@ module PTY
 
   class << self
     def spawn(*args, &block)
-      if args.size > 0
-        exec_pty(args, &block)
-      else
-        exec_pty(get_shell, &block)
-      end
+      SubSpawn.pty_spawn(*args, &block)
     end
     alias :getpty :spawn
 
@@ -48,6 +49,14 @@ module PTY
 
       slave.define_singleton_method(:tty?) do
         true
+      end
+
+      slave.define_singleton_method(:inspect) do
+        "#<File:#{slave_name}>"
+      end
+
+      master.define_singleton_method(:inspect) do
+        "#<IO:masterpty:#{slave_name}>"
       end
 
       fds = [master, slave]
@@ -80,7 +89,7 @@ module PTY
           return status
         end
       end
-    rescue SystemCallError => e
+    rescue SystemCallError
       nil
     end
 
@@ -97,30 +106,6 @@ module PTY
       end
 
       [master.get_int(0), slave.get_int(0), name.get_string(0)]
-    end
-
-    def exec_pty(args)
-      master, slave = open
-
-      read, write = IO.pipe
-      pid = Process.spawn(*args, in: read, out: slave, err: slave, close_others: true, pgroup: true)
-      [read, slave].each(&:close)
-
-      master.close_on_exec = true
-      write.close_on_exec = true
-
-      ret = [master, write, pid]
-
-      if block_given?
-        begin
-          retval = yield(ret.dup)
-        ensure
-          ret[0, 2].reject(&:closed?).each(&:close)
-        end
-        retval
-      else
-        ret
-      end
     end
 
     def get_shell

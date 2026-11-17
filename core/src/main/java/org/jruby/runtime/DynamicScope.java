@@ -28,9 +28,11 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public abstract class DynamicScope implements Cloneable {
     // Static scoping information for this scope
@@ -70,11 +72,6 @@ public abstract class DynamicScope implements Cloneable {
      */
     public final DynamicScope getParentScope() {
         return parent;
-    }
-
-    @Deprecated
-    public DynamicScope getNextCapturedScope() {  // Used by ruby-debug-ide
-        return getParentScope();
     }
 
     /**
@@ -125,7 +122,7 @@ public abstract class DynamicScope implements Cloneable {
             values[i] = getValueDepthZero(i);
         }
         return values;
-    };
+    }
 
     /**
      * Get value from current scope or one of its captured scopes.
@@ -571,12 +568,31 @@ public abstract class DynamicScope implements Cloneable {
         return lambda;
     }
 
-    @Deprecated
-    public DynamicScope cloneScope() {
-        try {
-            return (DynamicScope) clone();
-        } catch (CloneNotSupportedException cnse) {
-            throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
-        }
+    /**
+     * A DynamicScope is the target of a non-local return if it is one of the following:
+     *
+     * * A method scope
+     * * A top-level script scope
+     * * A block scope that is either marked as the argument scope (define_method) or a lambda
+     *
+     * @return true if this scope is the nearest return scope, false otherwise
+     */
+    public boolean isReturnTarget() {
+        StaticScope staticScope = this.staticScope;
+        IRScopeType scopeType = staticScope.getScopeType();
+
+        return scopeType.isMethodType() ||                              // Contained within a method
+                scopeType == IRScopeType.SCRIPT_BODY ||
+                scopeType.isBlock() && (staticScope.isArgumentScope() || lambda);  // Contained within define_method closure
+    }
+
+    /**
+     * Binding needs to clone its scope with all the current values.
+     * @return a duplicate of this scope with all the current values
+     */
+    public DynamicScope dupEvalScope() {
+        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(staticScope.duplicate(), parent);
+        newScope.setVariableValues(getValues());
+        return newScope;
     }
 }

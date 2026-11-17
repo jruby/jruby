@@ -11,15 +11,13 @@ describe "Range#to_s" do
     (0.5..2.4).to_s.should == "0.5..2.4"
   end
 
-  it "returns a tainted string if either end is tainted" do
-    (("a".taint)..."c").to_s.tainted?.should be_true
-    ("a"...("c".taint)).to_s.tainted?.should be_true
-    ("a"..."c").taint.to_s.tainted?.should be_true
+  it "can show endless ranges" do
+    eval("(1..)").to_s.should == "1.."
+    eval("(1.0...)").to_s.should == "1.0..."
   end
 
-  it "returns a untrusted string if either end is untrusted" do
-    (("a".untrust)..."c").to_s.untrusted?.should be_true
-    ("a"...("c".untrust)).to_s.untrusted?.should be_true
-    ("a"..."c").untrust.to_s.untrusted?.should be_true
+  it "can show beginless ranges" do
+    (..1).to_s.should == "..1"
+    (...1.0).to_s.should == "...1.0"
   end
 end

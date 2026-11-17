@@ -4,12 +4,12 @@ require_relative 'fixtures/classes'
 describe "Array#concat" do
   it "returns the array itself" do
     ary = [1,2,3]
-    ary.concat([4,5,6]).equal?(ary).should be_true
+    ary.concat([4,5,6]).equal?(ary).should == true
   end
 
   it "appends the elements in the other array" do
     ary = [1, 2, 3]
-    ary.concat([9, 10, 11]).should equal(ary)
+    ary.concat([9, 10, 11]).should.equal?(ary)
     ary.should == [1, 2, 3, 9, 10, 11]
     ary.concat([])
     ary.should == [1, 2, 3, 9, 10, 11]
@@ -32,69 +32,13 @@ describe "Array#concat" do
     [].concat(obj).should == [5, 6, 7]
   end
 
-  it "raises a #{frozen_error_class} when Array is frozen and modification occurs" do
-    lambda { ArraySpecs.frozen_array.concat [1] }.should raise_error(frozen_error_class)
+  it "raises a FrozenError when Array is frozen and modification occurs" do
+    -> { ArraySpecs.frozen_array.concat [1] }.should.raise(FrozenError)
   end
 
   # see [ruby-core:23666]
-  it "raises a #{frozen_error_class} when Array is frozen and no modification occurs" do
-    lambda { ArraySpecs.frozen_array.concat([]) }.should raise_error(frozen_error_class)
-  end
-
-  it "keeps tainted status" do
-    ary = [1, 2]
-    ary.taint
-    ary.concat([3])
-    ary.tainted?.should be_true
-    ary.concat([])
-    ary.tainted?.should be_true
-  end
-
-  it "is not infected by the other" do
-    ary = [1,2]
-    other = [3]; other.taint
-    ary.tainted?.should be_false
-    ary.concat(other)
-    ary.tainted?.should be_false
-  end
-
-  it "keeps the tainted status of elements" do
-    ary = [ Object.new, Object.new, Object.new ]
-    ary.each {|x| x.taint }
-
-    ary.concat([ Object.new ])
-    ary[0].tainted?.should be_true
-    ary[1].tainted?.should be_true
-    ary[2].tainted?.should be_true
-    ary[3].tainted?.should be_false
-  end
-
-  it "keeps untrusted status" do
-    ary = [1, 2]
-    ary.untrust
-    ary.concat([3])
-    ary.untrusted?.should be_true
-    ary.concat([])
-    ary.untrusted?.should be_true
-  end
-
-  it "is not infected untrustedness by the other" do
-    ary = [1,2]
-    other = [3]; other.untrust
-    ary.untrusted?.should be_false
-    ary.concat(other)
-    ary.untrusted?.should be_false
-  end
-
-  it "keeps the untrusted status of elements" do
-    ary = [ Object.new, Object.new, Object.new ]
-    ary.each {|x| x.untrust }
-
-    ary.concat([ Object.new ])
-    ary[0].untrusted?.should be_true
-    ary[1].untrusted?.should be_true
-    ary[2].untrusted?.should be_true
-    ary[3].untrusted?.should be_false
+  it "raises a FrozenError when Array is frozen and no modification occurs" do
+    -> { ArraySpecs.frozen_array.concat([]) }.should.raise(FrozenError)
   end
 
   it "appends elements to an Array with enough capacity that has been shifted" do
@@ -124,7 +68,7 @@ describe "Array#concat" do
 
   it "returns self when given no arguments" do
     ary = [1, 2]
-    ary.concat.should equal(ary)
+    ary.concat.should.equal?(ary)
     ary.should == [1, 2]
   end
 end

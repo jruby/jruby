@@ -9,6 +9,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  *
  * @author headius
@@ -35,14 +37,14 @@ public class BenchFixnumFibRecursive {
     public static void benchFixnumFib(int n) {
         long start = System.currentTimeMillis();
         ThreadContext context = ruby.getCurrentContext();
-        RubyFixnum result = boxedFib(context, RubyFixnum.newFixnum(ruby, n));
+        RubyFixnum result = boxedFib(context, asFixnum(context, n));
         System.out.println("Took " + (System.currentTimeMillis() - start) + "ms for boxedFib(" + n + ") = " + result);
     }
     
     public static RubyFixnum[] FIXNUM_CACHE = {
-        RubyFixnum.newFixnum(ruby, 0),
-        RubyFixnum.newFixnum(ruby, 1),
-        RubyFixnum.newFixnum(ruby, 2)
+        asFixnum(ruby.getCurrentContext(), 0),
+        asFixnum(ruby.getCurrentContext(), 1),
+        asFixnum(ruby.getCurrentContext(), 2)
     };
     
     public static RubyFixnum boxedFib(ThreadContext context, RubyFixnum n) {

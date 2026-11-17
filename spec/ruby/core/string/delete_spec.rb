@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
@@ -14,7 +15,7 @@ describe "String#delete" do
   end
 
   it "raises an ArgumentError when given no arguments" do
-    lambda { "hell yeah".delete }.should raise_error(ArgumentError)
+    -> { "hell yeah".delete }.should.raise(ArgumentError)
   end
 
   it "negates sets starting with ^" do
@@ -53,29 +54,43 @@ describe "String#delete" do
     '哥哥我倒'.delete('哥').should == "我倒"
   end
 
-  it "respects backslash for escaping a -" do
-    'Non-Authoritative Information'.delete(' \-\'').should ==
-      'NonAuthoritativeInformation'
+  it "deletes characters anywhere in a long string" do
+    "-a-bc-def-ghij-klmno-pqrstu-vwxyz12-".delete("-").should == "abcdefghijklmnopqrstuvwxyz12"
+    "a_b-c d_e-f g_h-i j_k-l m".delete("-_ ").should == "abcdefghijklm"
+    "a\0b\0c\0d\0e\0f\0g\0h\0i".delete("\0").should == "abcdefghi"
   end
 
-  it "raises if the given ranges are invalid" do
+  it "deletes from a substring without changing the original" do
+    s = "x--a-b-c-d-e-f-g-h"
+    t = s[1..]
+    t.delete!("-").should.equal?(t)
+    t.should == "abcdefgh"
+    s.should == "x--a-b-c-d-e-f-g-h"
+  end
+
+  it "keeps multibyte characters when deleting ASCII characters" do
+    "\u{56db}-\u{6708}-\u{56db}-\u{6708}-\u{56db}".delete("-").should == "\u{56db}\u{6708}\u{56db}\u{6708}\u{56db}"
+  end
+
+  it "respects backslash for escaping" do
+    'Non-Authoritative Information'.delete(' \-\'').should ==
+      'NonAuthoritativeInformation'
+    "a-b".delete("a\\-b").should == ""
+    "^".delete("\\^").should == ""
+    "\\".delete("\\\\").should == ""
+  end
+
+  it "raises an ArgumentError when the sequence is invalid" do
     not_supported_on :opal do
       xFF = [0xFF].pack('C')
       range = "\x00 - #{xFF}".force_encoding('utf-8')
-      lambda { "hello".delete(range).should == "" }.should raise_error(ArgumentError)
+      -> { "hello".delete(range).should == "" }.should.raise(ArgumentError)
     end
-    lambda { "hello".delete("h-e") }.should raise_error(ArgumentError)
-    lambda { "hello".delete("^h-e") }.should raise_error(ArgumentError)
+    -> { "hello".delete("h-e") }.should.raise(ArgumentError)
+    -> { "hello".delete("^h-e") }.should.raise(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "hello".taint.delete("e").tainted?.should == true
-    "hello".taint.delete("a-z").tainted?.should == true
-
-    "hello".delete("e".taint).tainted?.should == false
-  end
-
-  it "tries to convert each set arg to a string using to_str" do
+  it "tries to convert each argument to a string using to_str" do
     other_string = mock('lo')
     other_string.should_receive(:to_str).and_return("lo")
 
@@ -85,35 +100,46 @@ describe "String#delete" do
     "hello world".delete(other_string, other_string2).should == "hell wrld"
   end
 
-  it "raises a TypeError when one set arg can't be converted to a string" do
-    lambda { "hello world".delete(100)       }.should raise_error(TypeError)
-    lambda { "hello world".delete([])        }.should raise_error(TypeError)
-    lambda { "hello world".delete(mock('x')) }.should raise_error(TypeError)
+  it "raises a TypeError when an argument can't be converted to a string" do
+    -> { "hello world".delete(100)       }.should.raise(TypeError)
+    -> { "hello world".delete([])        }.should.raise(TypeError)
+    -> { "hello world".delete(mock('x')) }.should.raise(TypeError)
   end
 
-  it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("oh no!!!").delete("!").should be_an_instance_of(StringSpecs::MyString)
+  it "returns String instances when called on a subclass" do
+    StringSpecs::MyString.new("oh no!!!").delete("!").should.instance_of?(String)
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hello".encode("US-ASCII").delete("lo").encoding.should == Encoding::US_ASCII
+  end
+
+  it "raises an Encoding::CompatibilityError when the encodings are incompatible" do
+    -> { "hello".delete("e".encode("UTF-16LE")) }.should.raise(Encoding::CompatibilityError)
+    -> { "hello".encode("UTF-16LE").delete("e") }.should.raise(Encoding::CompatibilityError)
   end
 end
 
 describe "String#delete!" do
   it "modifies self in place and returns self" do
     a = "hello"
-    a.delete!("aeiou", "^e").should equal(a)
+    a.delete!("aeiou", "^e").should.equal?(a)
     a.should == "hell"
   end
 
   it "returns nil if no modifications were made" do
     a = "hello"
     a.delete!("z").should == nil
+    a.delete!("\0").should == nil
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a.delete!("")            }.should raise_error(frozen_error_class)
-    lambda { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
+    -> { a.delete!("")            }.should.raise(FrozenError)
+    -> { a.delete!("z")           }.should.raise(FrozenError)
+    -> { a.delete!("aeiou", "^e") }.should.raise(FrozenError)
   end
 end

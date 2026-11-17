@@ -58,8 +58,8 @@ t
 t  protected org.jruby.parser.YYDebug yydebug;
 t
 t  /** index-checked interface to {@link #yyNames}.
-t      @param token single character or <tt>%token</tt> value.
-t      @return token name or <tt>[illegal]</tt> or <tt>[unknown]</tt>.
+t      @param token single character or <code>%token</code> value.
+t      @return token name or <code>[illegal]</code> or <code>[unknown]</code>.
 t    */
 t  public static final String yyName (int token) {
 t    if (token < 0 || token > yyNames.length) return "[illegal]";
@@ -118,7 +118,7 @@ t
 .  /** the generated parser, with debugging messages.
 .      Maintains a dynamic state and value stack.
 .      @param yyLex scanner.
-.      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
+.      @param yydebug debug message writer implementing <code>yyDebug</code>, or <code>null</code>.
 .      @return result of the last reduction, if any.
 .      @throws ParserSyntaxException on irrecoverable parse error.
 .    */
@@ -135,9 +135,9 @@ t    this.yydebug = (org.jruby.parser.YYDebug)ayydebug;
 .  protected int yyMax;
 .
 .  /** executed at the beginning of a reduce action.
-.      Used as <tt>$$ = yyDefault($1)</tt>, prior to the user-specified action, if any.
+.      Used as <code>$$ = yyDefault($1)</code>, prior to the user-specified action, if any.
 .      Can be overwritten to provide deep copy, etc.
-.      @param first value for <tt>$1</tt>, or <tt>null</tt>.
+.      @param first value for <code>$1</code>, or <code>null</code>.
 .      @return first.
 .    */
 .  protected Object yyDefault (Object first) {

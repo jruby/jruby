@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRManager;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 

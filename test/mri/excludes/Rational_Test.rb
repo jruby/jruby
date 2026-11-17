@@ -1,6 +1,1 @@
-exclude :test_conv, "needs investigation"
-exclude :test_marshal, "needs investigation"
-exclude :test_parse, "edge case parsing logic missing"
-exclude :test_power_overflow, "consumes much time and memory on JVM"
-exclude :test_ratsub, "needs investigation"
-exclude :test_supp, "float precision or display issue"
+exclude :test_gcd_no_memory_leak, "needs investigation"

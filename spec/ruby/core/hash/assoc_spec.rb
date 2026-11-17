@@ -6,7 +6,7 @@ describe "Hash#assoc" do
   end
 
   it "returns an Array if the argument is == to a key of the Hash" do
-    @h.assoc(:apple).should be_an_instance_of(Array)
+    @h.assoc(:apple).should.instance_of?(Array)
   end
 
   it "returns a 2-element Array if the argument is == to a key of the Hash" do
@@ -22,11 +22,11 @@ describe "Hash#assoc" do
   end
 
   it "only returns the first matching key-value pair for identity hashes" do
-    # Avoid literal String keys in Hash#[]= due to https://bugs.ruby-lang.org/issues/12855
+    # Avoid literal String keys since string literals can be frozen and interned e.g. with --enable-frozen-string-literal
     h = {}.compare_by_identity
-    k1 = 'pear'
+    k1 = 'pear'.dup
     h[k1] = :red
-    k2 = 'pear'
+    k2 = 'pear'.dup
     h[k2] = :green
     h.size.should == 2
     h.keys.grep(/pear/).size.should == 2
@@ -40,11 +40,11 @@ describe "Hash#assoc" do
   end
 
   it "returns nil if the argument is not a key of the Hash" do
-    @h.assoc(:green).should be_nil
+    @h.assoc(:green).should == nil
   end
 
   it "returns nil if the argument is not a key of the Hash even when there is a default" do
-    Hash.new(42).merge!( foo: :bar ).assoc(42).should be_nil
-    Hash.new{|h, k| h[k] = 42}.merge!( foo: :bar ).assoc(42).should be_nil
+    Hash.new(42).merge!( foo: :bar ).assoc(42).should == nil
+    Hash.new{|h, k| h[k] = 42}.merge!( foo: :bar ).assoc(42).should == nil
   end
 end

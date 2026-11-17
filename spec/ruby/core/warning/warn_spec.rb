@@ -16,7 +16,7 @@ describe "Warning.warn" do
   end
 
   it "extends itself" do
-    Warning.singleton_class.ancestors.should include(Warning)
+    Warning.singleton_class.ancestors.should.include?(Warning)
   end
 
   it "has Warning as the method owner" do
@@ -51,16 +51,137 @@ describe "Warning.warn" do
     end
   end
 
-  ruby_version_is "2.5" do
-    it "is called by Kernel.warn" do
-      Warning.should_receive(:warn).with("Chunky bacon!\n")
-      verbose = $VERBOSE
-      $VERBOSE = false
+  it "is called by Kernel.warn with nil category keyword" do
+    Warning.should_receive(:warn).with("Chunky bacon!\n", category: nil)
+    verbose = $VERBOSE
+    $VERBOSE = false
+    begin
+      Kernel.warn("Chunky bacon!")
+    ensure
+      $VERBOSE = verbose
+    end
+  end
+
+  it "is called by Kernel.warn with given category keyword converted to a symbol" do
+    Warning.should_receive(:warn).with("Chunky bacon!\n", category: :deprecated)
+    verbose = $VERBOSE
+    $VERBOSE = false
+    begin
+      Kernel.warn("Chunky bacon!", category: "deprecated")
+    ensure
+      $VERBOSE = verbose
+    end
+  end
+
+  it "warns when category is :deprecated and Warning[:deprecated] is true" do
+    warn_deprecated = Warning[:deprecated]
+    Warning[:deprecated] = true
+    begin
+      -> {
+        Warning.warn("foo", category: :deprecated)
+      }.should complain("foo")
+    ensure
+      Warning[:deprecated] = warn_deprecated
+    end
+  end
+
+  it "warns when category is :experimental and Warning[:experimental] is true" do
+    warn_experimental = Warning[:experimental]
+    Warning[:experimental] = true
+    begin
+      -> {
+        Warning.warn("foo", category: :experimental)
+      }.should complain("foo")
+    ensure
+      Warning[:experimental] = warn_experimental
+    end
+  end
+
+  ruby_version_is "3.4" do
+    it "warns when category is :strict_unused_block but Warning[:strict_unused_block] is false" do
+      warn_strict_unused_block = Warning[:strict_unused_block]
+      Warning[:strict_unused_block] = true
       begin
-        Kernel.warn("Chunky bacon!")
+        -> {
+          Warning.warn("foo", category: :strict_unused_block)
+        }.should complain("foo")
       ensure
-        $VERBOSE = verbose
+        Warning[:strict_unused_block] = warn_strict_unused_block
       end
     end
+  end
+
+  it "doesn't print message when category is :deprecated but Warning[:deprecated] is false" do
+    warn_deprecated = Warning[:deprecated]
+    Warning[:deprecated] = false
+    begin
+      -> {
+        Warning.warn("foo", category: :deprecated)
+      }.should_not complain
+    ensure
+      Warning[:deprecated] = warn_deprecated
+    end
+  end
+
+  it "doesn't print message when category is :experimental but Warning[:experimental] is false" do
+    warn_experimental = Warning[:experimental]
+    Warning[:experimental] = false
+    begin
+      -> {
+        Warning.warn("foo", category: :experimental)
+      }.should_not complain
+    ensure
+      Warning[:experimental] = warn_experimental
+    end
+  end
+
+  ruby_version_is "3.4" do
+    it "doesn't print message when category is :strict_unused_block but Warning[:strict_unused_block] is false" do
+      warn_strict_unused_block = Warning[:strict_unused_block]
+      Warning[:strict_unused_block] = false
+      begin
+        -> {
+          Warning.warn("foo", category: :strict_unused_block)
+        }.should_not complain
+      ensure
+        Warning[:strict_unused_block] = warn_strict_unused_block
+      end
+    end
+  end
+
+  ruby_bug '#20573', ''...'3.4' do
+    it "isn't called by Kernel.warn when category is :deprecated but Warning[:deprecated] is false" do
+      warn_deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        Warning.should_not_receive(:warn)
+        Kernel.warn("foo", category: :deprecated)
+      ensure
+        Warning[:deprecated] = warn_deprecated
+      end
+    end
+
+    it "isn't called by Kernel.warn when category is :experimental but Warning[:experimental] is false" do
+      warn_experimental = Warning[:experimental]
+      begin
+        Warning[:experimental] = false
+        Warning.should_not_receive(:warn)
+        Kernel.warn("foo", category: :experimental)
+      ensure
+        Warning[:experimental] = warn_experimental
+      end
+    end
+  end
+
+  it "prints the message when VERBOSE is false" do
+    -> { Warning.warn("foo") }.should complain("foo")
+  end
+
+  it "prints the message when VERBOSE is nil" do
+    -> { Warning.warn("foo") }.should complain("foo", verbose: nil)
+  end
+
+  it "prints the message when VERBOSE is true" do
+    -> { Warning.warn("foo") }.should complain("foo", verbose: true)
   end
 end

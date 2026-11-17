@@ -20,7 +20,7 @@ describe 'Socket.accept_loop' do
       # https://ci.appveyor.com/project/ruby/ruby/builds/20817932/job/dor2ipny7ru4erpa
       platform_is_not :windows do
         it 'blocks the caller' do
-          lambda { Socket.accept_loop([@server]) }.should block_caller
+          -> { Socket.accept_loop([@server]) }.should block_caller
         end
       end
     end
@@ -41,8 +41,8 @@ describe 'Socket.accept_loop' do
         end
 
         begin
-          conn.should be_an_instance_of(Socket)
-          addr.should be_an_instance_of(Addrinfo)
+          conn.should.instance_of?(Socket)
+          addr.should.instance_of?(Addrinfo)
         ensure
           conn.close
         end
@@ -53,7 +53,7 @@ describe 'Socket.accept_loop' do
   describe 'using separate Socket arguments' do
     describe 'without any available connections' do
       it 'blocks the caller' do
-        lambda { Socket.accept_loop(@server) }.should block_caller
+        -> { Socket.accept_loop(@server) }.should block_caller
       end
     end
 
@@ -73,8 +73,8 @@ describe 'Socket.accept_loop' do
         end
 
         begin
-          conn.should be_an_instance_of(Socket)
-          addr.should be_an_instance_of(Addrinfo)
+          conn.should.instance_of?(Socket)
+          addr.should.instance_of?(Addrinfo)
         ensure
           conn.close
         end

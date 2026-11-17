@@ -26,7 +26,7 @@ with_feature :ancillary_data do
 
     describe 'using non IO objects' do
       it 'raises TypeError' do
-        lambda { Socket::AncillaryData.unix_rights(10) }.should raise_error(TypeError)
+        -> { Socket::AncillaryData.unix_rights(10) }.should.raise(TypeError)
       end
     end
   end
@@ -41,20 +41,20 @@ with_feature :ancillary_data do
     it 'returns nil when the data is not a list of file descriptors' do
       data = Socket::AncillaryData.new(:UNIX, :SOCKET, :RIGHTS, '')
 
-      data.unix_rights.should be_nil
+      data.unix_rights.should == nil
     end
 
     it 'raises TypeError when the level is not SOL_SOCKET' do
       data = Socket::AncillaryData.new(:INET, :IP, :RECVTTL, '')
 
-      lambda { data.unix_rights }.should raise_error(TypeError)
+      -> { data.unix_rights }.should.raise(TypeError)
     end
 
-    platform_is_not :"solaris2.10", :aix do
+    platform_is_not :aix do
       it 'raises TypeError when the type is not SCM_RIGHTS' do
         data = Socket::AncillaryData.new(:INET, :SOCKET, :TIMESTAMP, '')
 
-        lambda { data.unix_rights }.should raise_error(TypeError)
+        -> { data.unix_rights }.should.raise(TypeError)
       end
     end
   end

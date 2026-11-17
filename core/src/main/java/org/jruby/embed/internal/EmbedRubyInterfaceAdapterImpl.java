@@ -32,7 +32,6 @@ package org.jruby.embed.internal;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedRubyInterfaceAdapter;
-import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -42,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The implementation of {@link EmbedRubyInterfaceAdapter} and implements the
  * method that gets a instance of requested interface, which is implemented in Ruby.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter {
 
@@ -73,16 +72,7 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
             IRubyObject rubyReceiver = JavaUtil.convertJavaToRuby(runtime, receiver);
             obj = JavaEmbedUtils.rubyToJava(runtime, rubyReceiver, clazz);
         }
-        final String name = clazz.getName();
-        final ClassLoader loader = obj.getClass().getClassLoader();
-        try {
-            @SuppressWarnings("unchecked")
-            Class<T> klass = (Class<T>) Class.forName(name, true, loader);
-            return klass.cast(obj);
-        }
-        catch (ClassNotFoundException e) {
-            throw new InvokeFailedException(e);
-        }
+        return clazz.cast(obj);
     }
 
 }

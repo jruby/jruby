@@ -35,14 +35,13 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a block of nodes (read that as list).
  */
 public class BlockNode extends ListNode {
-    public BlockNode(ISourcePosition position) {
-        super(position);
+    public BlockNode(int line) {
+        super(line);
     }
 
     public NodeType getNodeType() {

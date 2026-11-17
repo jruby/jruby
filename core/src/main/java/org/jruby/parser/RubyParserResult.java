@@ -39,8 +39,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.PreExeNode;
 import org.jruby.runtime.DynamicScope;
 
-/**
- */
 public class RubyParserResult {
     final public static List<Node> EMPTY_BEGIN_LIST = new ArrayList<Node>();
 

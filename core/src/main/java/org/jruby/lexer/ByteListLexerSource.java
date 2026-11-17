@@ -7,19 +7,21 @@ package org.jruby.lexer;
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelHelper;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.channels.Channel;
+
+import static org.jruby.api.Create.newString;
 
 /**
  *  Lexer source for ripper when we have all bytes available to us.
  */
 public class ByteListLexerSource extends LexerSource {
-    private ByteList completeSource; // The entire source of the file
+    private final ByteList completeSource; // The entire source of the file
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
     /**
@@ -57,7 +59,11 @@ public class ByteListLexerSource extends LexerSource {
         ByteList line = completeSource.makeShared(offset, end - offset);
         offset = end;
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), line));
+
+        if (scriptLines != null) {
+            var context = scriptLines.getRuntime().getCurrentContext();
+            scriptLines.append(context, newString(context, line));
+        }
 
         return line;
     }
@@ -68,14 +74,12 @@ public class ByteListLexerSource extends LexerSource {
     }
 
     @Override
-    public Channel getRemainingAsChannel() {
-        ByteArrayInputStream bais = new ByteArrayInputStream(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize());
-        bais.skip(offset);
-        return ChannelHelper.readableChannel(bais);
+    public Channel getRemainingAsChannel() throws IOException {
+        return ChannelHelper.seekableChannel(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize()).position(offset);
     }
 
     @Override
-    public IRubyObject getRemainingAsIO() {
+    public IRubyObject getRemainingAsIO() throws IOException {
         if (scriptLines == null) return null;
         return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
     }

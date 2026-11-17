@@ -17,7 +17,7 @@ describe 'BasicSocket#recvmsg_nonblock' do
       platform_is_not :windows do
         describe 'using an unbound socket' do
           it 'raises an exception extending IO::WaitReadable' do
-            lambda { @server.recvmsg_nonblock }.should raise_error(IO::WaitReadable)
+            -> { @server.recvmsg_nonblock }.should.raise(IO::WaitReadable)
           end
         end
       end
@@ -29,7 +29,11 @@ describe 'BasicSocket#recvmsg_nonblock' do
 
         describe 'without any data available' do
           it 'raises an exception extending IO::WaitReadable' do
-            lambda { @server.recvmsg_nonblock }.should raise_error(IO::WaitReadable)
+            -> { @server.recvmsg_nonblock }.should.raise(IO::WaitReadable)
+          end
+
+          it 'returns :wait_readable with exception: false' do
+            @server.recvmsg_nonblock(exception: false).should == :wait_readable
           end
         end
 
@@ -43,7 +47,7 @@ describe 'BasicSocket#recvmsg_nonblock' do
           end
 
           it 'returns an Array containing the data, an Addrinfo and the flags' do
-            @server.recvmsg_nonblock.should be_an_instance_of(Array)
+            @server.recvmsg_nonblock.should.instance_of?(Array)
           end
 
           describe 'without a maximum message length' do
@@ -70,12 +74,12 @@ describe 'BasicSocket#recvmsg_nonblock' do
             end
 
             it 'stores an Addrinfo at index 1' do
-              @array[1].should be_an_instance_of(Addrinfo)
+              @array[1].should.instance_of?(Addrinfo)
             end
 
             platform_is_not :windows do
               it 'stores the flags at index 2' do
-                @array[2].should be_kind_of(Integer)
+                @array[2].should.is_a?(Integer)
               end
             end
 
@@ -110,6 +114,21 @@ describe 'BasicSocket#recvmsg_nonblock' do
     end
 
     platform_is_not :windows do
+      describe 'using a connected but not bound socket' do
+        before do
+          @server = Socket.new(family, :STREAM)
+        end
+
+        after do
+          @server.close
+        end
+
+        it "raises Errno::ENOTCONN" do
+          -> { @server.recvmsg_nonblock }.should.raise(Errno::ENOTCONN)
+          -> { @server.recvmsg_nonblock(exception: false) }.should.raise(Errno::ENOTCONN)
+        end
+      end
+
       describe 'using a connected socket' do
         before do
           @client = Socket.new(family, :STREAM)
@@ -128,14 +147,14 @@ describe 'BasicSocket#recvmsg_nonblock' do
 
         describe 'without any data available' do
           it 'raises IO::WaitReadable' do
-            lambda {
+            -> {
               socket, _ = @server.accept
               begin
                 socket.recvmsg_nonblock
               ensure
                 socket.close
               end
-            }.should raise_error(IO::WaitReadable)
+            }.should.raise(IO::WaitReadable)
           end
         end
 
@@ -152,7 +171,7 @@ describe 'BasicSocket#recvmsg_nonblock' do
           end
 
           it 'returns an Array containing the data, an Addrinfo and the flags' do
-            @socket.recvmsg_nonblock.should be_an_instance_of(Array)
+            @socket.recvmsg_nonblock.should.instance_of?(Array)
           end
 
           describe 'the returned Array' do
@@ -165,11 +184,11 @@ describe 'BasicSocket#recvmsg_nonblock' do
             end
 
             it 'stores an Addrinfo at index 1' do
-              @array[1].should be_an_instance_of(Addrinfo)
+              @array[1].should.instance_of?(Addrinfo)
             end
 
             it 'stores the flags at index 2' do
-              @array[2].should be_kind_of(Integer)
+              @array[2].should.is_a?(Integer)
             end
 
             describe 'the returned Addrinfo' do
@@ -178,7 +197,7 @@ describe 'BasicSocket#recvmsg_nonblock' do
               end
 
               it 'raises when receiving the ip_address message' do
-                lambda { @addr.ip_address }.should raise_error(SocketError)
+                -> { @addr.ip_address }.should.raise(SocketError)
               end
 
               it 'uses the correct address family' do
@@ -194,10 +213,53 @@ describe 'BasicSocket#recvmsg_nonblock' do
               end
 
               it 'raises when receiving the ip_port message' do
-                lambda { @addr.ip_port }.should raise_error(SocketError)
+                -> { @addr.ip_port }.should.raise(SocketError)
               end
             end
           end
+        end
+      end
+    end
+  end
+end
+
+describe 'BasicSocket#recvmsg_nonblock' do
+  context "when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown)" do
+    describe "stream socket" do
+      before :each do
+        @server = TCPServer.new('127.0.0.1', 0)
+        @port = @server.addr[1]
+      end
+
+      after :each do
+        @server.close unless @server.closed?
+      end
+
+      platform_is_not :windows do
+        it "returns nil on a closed stream socket" do
+          ready = false
+
+          t = Thread.new do
+            client = @server.accept
+
+            Thread.pass while !ready
+            begin
+              client.recvmsg_nonblock(10)
+            rescue IO::EAGAINWaitReadable
+              retry
+            end
+          ensure
+            client.close if client
+          end
+
+          Thread.pass while t.status and t.status != "sleep"
+          t.status.should_not == nil
+
+          socket = TCPSocket.new('127.0.0.1', @port)
+          socket.close
+          ready = true
+
+          t.value.should == nil
         end
       end
     end

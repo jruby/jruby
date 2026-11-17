@@ -1,5 +1,9 @@
-require_relative 'shared/each'
+require_relative "../../../spec_helper"
+require 'zlib'
 
-describe "GzipReader#each_line" do
-  it_behaves_like :gzipreader_each, :each_line
+describe "Zlib::GzipReader#each_line" do
+  it "is an alias of Zlib::GzipReader#each" do
+    Zlib::GzipReader.instance_method(:each_line).should ==
+      Zlib::GzipReader.instance_method(:each)
+  end
 end

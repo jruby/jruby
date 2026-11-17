@@ -6,9 +6,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.platform.Platform;
+
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -19,51 +25,45 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     }
 
     @Override
-    public void init(Ruby runtime, RubyModule ffi) {
-        super.init(runtime, ffi);
+    public void init(Ruby runtime, RubyModule FFI) {
+        super.init(runtime, FFI);
 
-        synchronized (ffi) {
-            if (ffi.getClass("DynamicLibrary") == null) {
-                DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
-            }
-            if (ffi.getClass("Invoker") == null) {
-                JFFIInvoker.createInvokerClass(runtime, ffi);
-            }
-            if (ffi.getClass("VariadicInvoker") == null) {
-                VariadicInvoker.createVariadicInvokerClass(runtime, ffi);
-            }
-            if (ffi.getClass("Callback") == null) {
-                CallbackManager.createCallbackClass(runtime, ffi);
-            }
-            if (ffi.getClass("Function") == null) {
-                Function.createFunctionClass(runtime, ffi);
-            }
-            if (ffi.getClass("LastError") == null) {
-                ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
+        var context = runtime.getCurrentContext();
+        var Object = objectClass(context);
+
+        synchronized (FFI) {
+            if (FFI.getClass(context, "DynamicLibrary") == null) DynamicLibrary.createDynamicLibraryClass(context, FFI, Object);
+            if (FFI.getClass(context, "Invoker") == null) JFFIInvoker.createInvokerClass(context, FFI);
+            if (FFI.getClass(context, "VariadicInvoker") == null) VariadicInvoker.createVariadicInvokerClass(context, FFI, Object);
+            if (FFI.getClass(context, "Callback") == null) CallbackManager.createCallbackClass(context, FFI);
+            if (FFI.getClass(context, "Function") == null) Function.createFunctionClass(context, FFI);
+            if (FFI.getClass(context, "LastError") == null) {
+                var LastError = FFI.defineModuleUnder(context, "LastError").defineMethods(context, LastError.class);
+                if (Platform.IS_WINDOWS) LastError.defineMethods(context, WinapiLastError.class);
             }
         }
 
-        runtime.setFFI(new FFI(ffi));
+        runtime.setFFI(new FFI(FFI));
     }
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, 8, clear);
     }
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, align, clear);
@@ -79,8 +79,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     @Override
     public Function newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
+        var context = runtime.getCurrentContext();
         CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
-        RubyClass klass = runtime.getModule("FFI").getClass("Function");
+        RubyClass klass = Access.getClass(context, "FFI", "Function");
         return new Function(runtime, klass, mem, 
                 cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                 cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null, false);
@@ -111,15 +112,27 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     public static final class LastError {
         @JRubyMethod(name = {  "error" }, module = true)
-        public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
-            return context.runtime.newFixnum(com.kenai.jffi.LastError.getInstance().get());
+        public static final IRubyObject error(ThreadContext context, IRubyObject recv) {
+            return asFixnum(context, com.kenai.jffi.LastError.getInstance().get());
         }
 
         @JRubyMethod(name = {  "error=" }, module = true)
-        public static final  IRubyObject error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
-            com.kenai.jffi.LastError.getInstance().set((int)value.convertToInteger().getLongValue());
+        public static final IRubyObject error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
+            com.kenai.jffi.LastError.getInstance().set(toInt(context, value));
 
             return value;
+        }
+    }
+
+    public static final class WinapiLastError {
+        @JRubyMethod(name = {  "winapi_error" }, module = true)
+        public static final IRubyObject winapi_error(ThreadContext context, IRubyObject recv) {
+            return LastError.error(context, recv);
+        }
+
+        @JRubyMethod(name = {  "winapi_error=" }, module = true)
+        public static final IRubyObject winapi_error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
+            return LastError.error_set(context, recv, value);
         }
     }
 }

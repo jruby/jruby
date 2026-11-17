@@ -9,7 +9,7 @@ import org.jruby.ir.operands.Variable;
  * Context info for simple cloning operation.
  */
 public class SimpleCloneInfo extends CloneInfo {
-    private boolean isEnsureBlock;
+    private final boolean isEnsureBlock;
     private boolean cloneIPC;
 
     public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC) {

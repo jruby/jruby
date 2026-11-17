@@ -21,11 +21,6 @@ with_feature :readline do
         ruby_exe('File.write ARGV[0], Readline.readline', @options)
         File.read(@out).should == "test"
       end
-
-      it "taints the returned strings" do
-        ruby_exe('File.write ARGV[0], Readline.readline.tainted?', @options)
-        File.read(@out).should == "true"
-      end
     end
   end
 end

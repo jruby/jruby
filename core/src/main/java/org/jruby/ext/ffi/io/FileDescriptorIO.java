@@ -36,12 +36,14 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
 
 import java.nio.channels.ByteChannel;
+
+import static org.jruby.api.Convert.toInt;
 
 /**
  * An IO implementation that reads/writes to a native file descriptor.
@@ -49,12 +51,6 @@ import java.nio.channels.ByteChannel;
 @JRubyClass(name="FFI::" + FileDescriptorIO.CLASS_NAME, parent="IO")
 public class FileDescriptorIO extends RubyIO {
     public static final String CLASS_NAME = "FileDescriptorIO";
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new FileDescriptorIO(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
 
     public FileDescriptorIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -62,11 +58,15 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
+        this(runtime.getCurrentContext(), fd);
+    }
+
+    public FileDescriptorIO(ThreadContext context, IRubyObject fd) {
+        super(context.runtime, Access.getClass(context, "FFI", CLASS_NAME));
         MakeOpenFile();
-        ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
-        int fileno = RubyNumeric.fix2int(fd);
-        FileStat stat = runtime.getPosix().fstat(fileno);
+        ModeFlags modes = newModeFlags(context.runtime, ModeFlags.RDWR);
+        int fileno = toInt(context, fd);
+        FileStat stat = context.runtime.getPosix().fstat(fileno);
         ByteChannel channel;
 
         if (stat.isSocket()) {
@@ -74,7 +74,7 @@ public class FileDescriptorIO extends RubyIO {
         } else if (stat.isBlockDev() || stat.isCharDev()) {
             channel = new jnr.enxio.channels.NativeDeviceChannel(fileno);
         } else {
-            channel = new FileDescriptorByteChannel(runtime, fileno);
+            channel = new FileDescriptorByteChannel(context.runtime, fileno);
         }
 
 //        openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
@@ -84,48 +84,19 @@ public class FileDescriptorIO extends RubyIO {
         openFile.setSync(true);
     }
 
-    public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
-                Allocator.INSTANCE, module);
-        result.defineAnnotatedMethods(FileDescriptorIO.class);
-        result.defineAnnotatedConstants(FileDescriptorIO.class);
-
-        return result;
+    public static RubyClass createFileDescriptorIOClass(ThreadContext context, RubyModule FFI, RubyClass IO) {
+        return FFI.defineClassUnder(context, CLASS_NAME, IO, FileDescriptorIO::new).
+                defineMethods(context, FileDescriptorIO.class).
+                defineConstants(context, FileDescriptorIO.class);
     }
 
     @JRubyMethod(name = "new", meta = true)
     public static FileDescriptorIO newInstance(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.runtime, fd);
+        return new FileDescriptorIO(context, fd);
     }
 
-    @JRubyMethod(name = "wrap", required = 1, meta = true)
+    @JRubyMethod(name = "wrap", meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.runtime, fd);
-    }
-
-    static class FileDescriptorHelper {
-        static java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
-        static {
-            java.lang.reflect.Constructor<java.io.FileDescriptor> constructor;
-            try {
-                constructor = java.io.FileDescriptor.class.getDeclaredConstructor(int.class);
-                constructor.setAccessible(true);
-            } catch (Throwable t) {
-                constructor = null;
-            }
-            CONSTRUCTOR = constructor;
-        }
-
-        public static java.io.FileDescriptor wrap(int fileno) {
-            try {
-                return CONSTRUCTOR != null ? CONSTRUCTOR.newInstance(fileno) : new java.io.FileDescriptor();
-            } catch (IllegalAccessException iae) {
-                return new java.io.FileDescriptor();
-            } catch (InstantiationException ie) {
-                return new java.io.FileDescriptor();
-            } catch (java.lang.reflect.InvocationTargetException ite) {
-                return new java.io.FileDescriptor();
-            }
-        }
+        return new FileDescriptorIO(context, fd);
     }
 }

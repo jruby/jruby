@@ -33,12 +33,13 @@ import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * An implementation of BiVariable for a Ruby class variable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ClassVariable extends AbstractVariable {
 
@@ -48,7 +49,7 @@ public class ClassVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a class
      * variables is put in {@link BiVariableMap}. This variable is originated from Java.
      *
-     * @param runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of ClassVariable
@@ -63,7 +64,7 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Constructor when the variable is originated from Java
      *
-     * @param receiver
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name
      * @param javaObject
      */
@@ -87,21 +88,23 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Retrieves class variables from Ruby after the evaluation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved class variables.
      */
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
-        if ( vars.isLazy() ) return;
+        if (vars.isLazy()) return;
+
+        ThreadContext context = receiver.getRuntime().getCurrentContext();
         // trying to get variables from receiver;
-        updateClassVar(receiver, vars);
+        updateClassVar(context, receiver, vars);
         // trying to get variables from topself.
-        updateClassVar(getTopSelf(receiver), vars);
+        updateClassVar(context, getTopSelf(receiver), vars);
     }
 
-    private static void updateClassVar(final RubyObject receiver, final BiVariableMap vars) {
-        for ( final String name : receiver.getMetaClass().getClassVariableNameList() ) {
-            final IRubyObject value = receiver.getMetaClass().getClassVar(name);
+    private static void updateClassVar(ThreadContext context, final RubyObject receiver, final BiVariableMap vars) {
+        var metaClass = receiver.getMetaClass();
+        for ( final String name : metaClass.getClassVariableNameList() ) {
+            final IRubyObject value = metaClass.getClassVar(context, name);
             vars.updateVariable(receiver, name, value, ClassVariable.class);
         }
     }
@@ -114,17 +117,17 @@ public class ClassVariable extends AbstractVariable {
      * @param vars map to save retrieved instance variables.
      * @param name instace varible name
      */
-    public static void retrieveByKey(final RubyObject receiver,
-        final BiVariableMap vars, final String name) {
+    public static void retrieveByKey(final RubyObject receiver, final BiVariableMap vars, final String name) {
         final RubyClass klazz = receiver.getMetaClass();
+        var context = receiver.getRuntime().getCurrentContext();
         IRubyObject value = null;
         if ( receiver == receiver.getRuntime().getTopSelf() &&
              klazz.getClassVariableNameList().contains(name) ) {
-            value = klazz.getClassVar(name);
+            value = klazz.getClassVar(context, name);
         }
         else {
             if ( klazz.hasClassVariable(name) ) {
-                value = klazz.getClassVar(name);
+                value = klazz.getClassVar(context, name);
             }
         }
         if ( value == null ) return;
@@ -156,14 +159,12 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Injects a class variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
     @Override
     public void inject() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.setClassVar(name, irubyObject);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.setClassVar(context, name, rubyObject);
     }
 
     /**
@@ -172,7 +173,8 @@ public class ClassVariable extends AbstractVariable {
      */
     @Override
     public void remove() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.removeClassVariable(name);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.removeClassVariable(context, name);
     }
 }

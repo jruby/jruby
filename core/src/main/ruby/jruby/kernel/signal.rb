@@ -1,28 +1,24 @@
 module Signal
 
-  SIGNALS = {
-      0  => "SIGEXIT",
-      1  => "SIGHUP", 2  => "SIGINT", 3  => "SIGQUIT", 4  => "SIGILL", 5  => "SIGTRAP", 6  => "SIGABRT",
-      7  => "SIGPOLL", 8  => "SIGFPE", 9  => "SIGKILL", 10 => "SIGBUS", 11 => "SIGSEGV", 12 => "SIGSYS",
-      13 => "SIGPIPE", 14 => "SIGALRM", 15 => "SIGTERM", 16 => "SIGURG", 17 => "SIGSTOP", 18 => "SIGTSTP",
-      19 => "SIGCONT", 20 => "SIGCHLD", 21 => "SIGTTIN", 22 => "SIGTTOU", 24 => "SIGXCPU", 25 => "SIGXFSZ",
-      26 => "SIGVTALRM", 27 => "SIGPROF", 30 => "SIGUSR1", 31 => "SIGUSR2"
-  }
-  private_constant :SIGNALS
-
   def trap(sig, cmd = nil, &block)
-    sig = SIGNALS[sig] if sig.kind_of?(Integer)
-    sig = sig.to_s.sub(/^SIG(.+)/,'\1')
+    if sig.nil? || !sig.kind_of?(Integer) && !sig.kind_of?(Symbol) && !sig.kind_of?(String)
+      raise ArgumentError.new("bad signal type #{sig.class}")
+    end
+    if sig.kind_of?(Integer)
+      signo = sig
+      sig = Signal.signame(signo) rescue nil
+      raise ArgumentError.new("invalid signal number (#{signo})") unless sig
+    end
+    sig = sig.to_s
+    sig = sig[3..-1] if sig.start_with?('SIG') && sig.length > 3
 
     if %w(SEGV BUS ILL FPE VTALRM).include?(sig)
       raise ArgumentError.new("can't trap reserved signal: SIG%s" % sig)
     end
 
     oldhandler, installed = if block
-      raise SecurityError.new("Insecure: tainted signal trap") if block.tainted?
       Signal::__jtrap_kernel(block, sig)
     else
-      raise SecurityError.new("Insecure: tainted signal trap") if cmd.tainted?
       cmd = cmd.to_s if Symbol === cmd
       case cmd
       when Proc
@@ -38,7 +34,7 @@ module Signal
       when String
         Signal::__jtrap_kernel(proc{eval cmd, TOPLEVEL_BINDING}, sig)
       else
-        Signal::__jtrap_kernel(proc{cmd.call}, sig)
+        Signal::__jtrap_kernel(proc{|s|cmd.call s}, sig)
       end
     end
 

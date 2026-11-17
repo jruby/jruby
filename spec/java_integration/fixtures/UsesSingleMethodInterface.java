@@ -80,6 +80,10 @@ public class UsesSingleMethodInterface {
         return obj.getClass();
     }
 
+    public static Class getClassTyped(SingleMethodInterface obj) {
+        return obj.getClass();
+    }
+
     public static boolean equals(Object obj1, Object obj2) {
         return obj1.equals(obj2);
     }

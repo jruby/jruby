@@ -1,1 +1,0 @@
-fails:Kernel.__callee__ returns the aliased name when aliased method

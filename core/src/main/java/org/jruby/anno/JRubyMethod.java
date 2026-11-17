@@ -68,13 +68,20 @@ public @interface JRubyMethod {
      */
     boolean module() default false;
     /**
+     * Whether this method may recieve keyword arguments.  Methods may directly process the keywords
+     * or decide to pass them on to a subcall.  This will determine whether ThreadContext#callInfo
+     * will get reset before the call begins or not.  If keywords is true then it is the methods
+     * job to reset or not reset callInfo.
+     */
+    boolean keywords() default false;
+    /**
      * Whether this method expects to have a call frame allocated for it.
      */
     boolean frame() default false;
     /**
      * The visibility of this method.
      */
-    Visibility visibility() default Visibility.PUBLIC;
+    Visibility visibility() default Visibility.DEFAULT;
 
     /**
      * What, if anything, method reads from caller's frame
@@ -101,12 +108,14 @@ public @interface JRubyMethod {
      */
     boolean notImplemented() default false;
 
-    @Deprecated
-    boolean scope() default false;
+    /**
+     * Whether automatic arity-checking should be added to the Ruby binding for this
+     * method. Users can opt-out and do their own arity-checking in the method body.
+     */
+    boolean checkArity() default true;
 
-    @Deprecated
-    org.jruby.CompatVersion compat() default org.jruby.CompatVersion.BOTH;
-
-    @Deprecated
-    boolean backtrace() default false;
+    /**
+     * A list of classes that implement an abstract JRubyMethod, for backtrace purposes.
+     */
+    Class[] implementers() default {};
 }

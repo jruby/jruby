@@ -15,7 +15,7 @@ module JRuby
     
     def self.extend_object(obj)
       obj_r = JRuby.reference0(obj)
-      singleton_class = obj_r.singleton_class
+      singleton_class = obj_r.singleton_class(obj_r.runtime.current_context)
       JRuby.reference(singleton_class).become_synchronized
       
       super

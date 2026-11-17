@@ -74,4 +74,22 @@ class TestURIClassloader < Test::Unit::TestCase
       assert_include Dir[ 'lib/../*' ], 'lib/../Rakefile'
     end
   end
+
+  # GH-5127: subprocess cwd should be real cwd if JRuby cwd is set to classloader URI
+  def test_subprocess_cwd_from_uri_classloader_cwd
+    cwd = Dir.pwd
+    ensure_cwd do
+      Dir.chdir( 'uri:classloader:/' )
+      assert_true system(WINDOWS ? 'cd > $nul' : "pwd > /dev/null")
+      assert_equal cwd, (WINDOWS ? `cd` : `pwd`).chomp.tr('\\', '/') # due Windows
+    end
+  end
+
+  # GH-6045: don't double up slashes when canonicalizing a URI path
+  def test_uri_expand_path_does_not_double_slash
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader://foo/bar")
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar");
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("foo/bar", "uri:classloader://")
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("foo/bar", "uri:classloader:/")
+  end
 end

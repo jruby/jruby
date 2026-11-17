@@ -27,6 +27,8 @@
 
 package org.jruby.runtime.opto;
 
+import org.jruby.RubyModule;
+
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
 
@@ -41,32 +43,47 @@ public class SwitchPointInvalidator implements Invalidator {
         if (switchPoint == DUMMY) return;
 
         SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
-        switchPoint = new SwitchPoint();
+        switchPoint = DUMMY;
     }
 
     public void invalidateAll(List<Invalidator> invalidators) {
+        if (invalidators.isEmpty()) return;
+
         SwitchPoint[] switchPoints = new SwitchPoint[invalidators.size()];
         
         for (int i = 0; i < invalidators.size(); i++) {
             Invalidator invalidator = invalidators.get(i);
             assert invalidator instanceof SwitchPointInvalidator;
-            switchPoints[i] = ((SwitchPointInvalidator)invalidator).replaceSwitchPoint();
+            switchPoints[i] = ((SwitchPointInvalidator)invalidator).switchPoint;
         }
         
         SwitchPoint.invalidateAll(switchPoints);
+
+        for (int i = 0; i < invalidators.size(); i++) {
+            ((SwitchPointInvalidator)invalidators.get(i)).clearSwitchPoint(switchPoints[i]);
+        }
     }
     
     public synchronized Object getData() {
         SwitchPoint switchPoint = this.switchPoint;
-        return switchPoint == DUMMY ? this.switchPoint = new SwitchPoint() : switchPoint;
+        return switchPoint == DUMMY || switchPoint.hasBeenInvalidated() ? this.switchPoint = new SwitchPoint() : switchPoint;
+    }
+
+    private synchronized void clearSwitchPoint(SwitchPoint invalidated) {
+        if (switchPoint == invalidated) switchPoint = DUMMY;
     }
     
+    @Deprecated(since = "10.0.8.0", forRemoval = true)
     public synchronized SwitchPoint replaceSwitchPoint() {
         SwitchPoint switchPoint = this.switchPoint;
         if (switchPoint == DUMMY) return switchPoint;
 
         SwitchPoint oldSwitchPoint = switchPoint;
-        this.switchPoint = new SwitchPoint();
+        this.switchPoint = DUMMY;
         return oldSwitchPoint;
+    }
+
+    public void addIfUsed(RubyModule.InvalidatorList invalidators) {
+        if (switchPoint != DUMMY) invalidators.add(this);
     }
 }

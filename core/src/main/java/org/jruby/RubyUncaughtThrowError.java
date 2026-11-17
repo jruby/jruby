@@ -30,10 +30,15 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.UncaughtThrowError;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby UncaughtThrowError.
@@ -46,20 +51,30 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
 
     private IRubyObject tag, value;
 
-    static RubyClass define(Ruby runtime, RubyClass argumentError) {
-        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, (runtime1, klass) -> new RubyUncaughtThrowError(runtime1, klass));
-        UncaughtThrowError.defineAnnotatedMethods(RubyUncaughtThrowError.class);
-        return UncaughtThrowError;
+    static RubyClass define(ThreadContext context, RubyClass ArgumentError) {
+        return defineClass(context, "UncaughtThrowError", ArgumentError, RubyUncaughtThrowError::new).
+                defineMethods(context, RubyUncaughtThrowError.class);
     }
 
+    @Deprecated(since = "10.0.0.0")
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName());
-        this.message = runtime.getNil();
+        this(runtime.getCurrentContext(), exceptionClass);
     }
 
+    protected RubyUncaughtThrowError(ThreadContext context, RubyClass exceptionClass) {
+        super(context.runtime, exceptionClass, exceptionClass.getName(context));
+        this.message = context.nil;
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static RubyUncaughtThrowError newUncaughtThrowError(final Ruby runtime,
-        IRubyObject tag, IRubyObject value, RubyString message) {
-        RubyUncaughtThrowError error = new RubyUncaughtThrowError(runtime, runtime.getUncaughtThrowError());
+                                                               IRubyObject tag, IRubyObject value, RubyString message) {
+        return newUncaughtThrowError(runtime.getCurrentContext(), tag, value, message);
+    }
+
+    public static RubyUncaughtThrowError newUncaughtThrowError(ThreadContext context,
+                                                               IRubyObject tag, IRubyObject value, RubyString message) {
+        RubyUncaughtThrowError error = new RubyUncaughtThrowError(context, context.runtime.getUncaughtThrowError());
         error.tag = tag;
         error.value = value;
         error.message = message;
@@ -71,11 +86,18 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
         return new UncaughtThrowError(message, this);
     }
 
+    @Deprecated(since = "10.0.0.0")
     @Override
-    @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
+        return initialize(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
         this.tag = args[0]; this.value = args[1];
-        if ( args.length > 2 ) this.message = args[2];
+        if ( argc > 2 ) this.message = args[2];
         // makes no-sense for us to have a cause or does it ?!
         // super.initialize(NULL_ARRAY, block); // already set message
         return this;
@@ -89,13 +111,10 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
 
     @Override
     public RubyString to_s(ThreadContext context) {
-        if ( message.isNil() ) {
-            return RubyString.newEmptyString(context.runtime);
-        }
-        if ( tag == null ) return message.asString();
+        if (message.isNil()) return newEmptyString(context);
+        if (tag == null) return message.asString();
 
-        final RubyString str = message.asString();
-        return str.op_format(context, RubyArray.newArray(context.runtime, tag));
+        return message.asString().op_format(context, newArray(context, tag));
     }
 
     @Override

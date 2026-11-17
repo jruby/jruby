@@ -1,10 +1,6 @@
 #
 # Rakefile for JRuby.
 #
-# At this time, most JRuby build tasks still use build.xml and Apache
-# Ant. This Rakefile has some additional tasks. We hope to migrate
-# more out of build.xml and into Rake in the future.
-#
 # See also rakelib/*.rake for more tasks and details.
 
 require File.dirname(__FILE__) + '/rakelib/helpers.rb'

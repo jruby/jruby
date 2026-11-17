@@ -1,1 +1,0 @@
-exclude :test_imaps_post_connection_check, "Error: closed SSL engine"

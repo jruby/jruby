@@ -45,9 +45,4 @@ public interface ReOptions {
     int RE_LITERAL             = 256; // reusing regexp_options since we used 
                                       // and we won't escape regexp_options.
     int RE_DEFAULT = 512; // Only for RubyRegexp. for kcode default
-
-    @Deprecated
-    int RE_OPTION_LONGEST      = 16;
-    @Deprecated
-    int RE_MAY_IGNORECASE      = 32;
 }

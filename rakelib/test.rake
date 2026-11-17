@@ -8,28 +8,38 @@ task :test => "test:short"
 
 if ENV['CI']
   # MRI tests have a different flag for color
-  ADDITIONAL_TEST_OPTIONS = "-v --color=never --tty=no"
+  ADDITIONAL_TEST_OPTIONS = "--color=never --tty=no"
 
   # for normal test/unit tests
-  ENV['TESTOPT'] = "-v --no-use-color"
+  ENV['TESTOPT'] = "--no-use-color"
 
   # extend timeouts in MRI tests
-  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '10'
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
 
-AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors).to_i
+AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors.to_i / 2 + 1)
 
 namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
-    classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
+    mkdir_p "test/target/test-classes-isolated/java_integration/fixtures/isolated"
+    mkdir_p "test/target/test-interfaces-isolated/java_integration/fixtures/isolated"
+
+    classpath = %w[lib/jruby.jar test/target/junit.jar test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
     # try detecting javac - so we use the same Java versions as we're running (JAVA_HOME) with :
     java_home = [ ENV_JAVA['java.home'], File.join(ENV_JAVA['java.home'], '..') ] # in case of jdk/jre
     javac = java_home.map { |home| File.expand_path('bin/javac', home) }.find { |javac| File.exist?(javac) } || 'javac'
     sh "#{javac} -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    # move the objects that need to be in separate class loaders
+    mv "test/target/test-classes/java_integration/fixtures/isolated/classes",
+       "test/target/test-classes-isolated/java_integration/fixtures/isolated",
+       force: true
+    mv "test/target/test-classes/java_integration/fixtures/isolated/interfaces",
+       "test/target/test-interfaces-isolated/java_integration/fixtures/isolated",
+       force: true
   end
 
   short_tests = ['jruby', 'mri']
@@ -50,6 +60,11 @@ namespace :test do
   desc "Run tests that are too slow for the main suite"
   task :slow_suites => [:compile, *slow_tests]
 
+  desc "Check that the JIT can compile every method and block in the stdlib, ruby/spec and MRI tests"
+  task :jit_compile do
+    ruby "-J-XX:-OmitStackTraceInFastThrow tool/jit_compile_check.rb core/src/main/ruby lib/ruby/stdlib spec/ruby test/mri"
+  end
+
   task :rake_targets => long_tests
   task :extended => long_tests
 
@@ -60,8 +75,9 @@ namespace :test do
   end
 
   compile_flags = {
-    :default => :int,
-    :int => ["-X-C"],
+    :default => [],
+    # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+    :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
     :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", get_meta_size.call()],
@@ -80,15 +96,23 @@ namespace :test do
 
   namespace :mri do
     jruby_opts = {
-        int: "--dev",
+        # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+        int: "--dev -Xjit.threshold=1 -Xjit.background=false",
+        :'int:prism' => "-X-C -Xjit.threshold=1 -Xjit.background=false -Xparser.prism",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
     }
 
-    mri_suites = [:core, :extra, :stdlib]
+    mri_suites = {
+      core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -X+O",
+      stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+    }
 
-    mri_suites.each do |suite|
+    slowest = File.readlines("test/mri.core_slow.index").grep(/^[^#]\w+/).map(&:chomp).join("|")
+
+    mri_suites.each do |suite, extra_jruby_opts|
       files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
 
       namespace suite do
@@ -96,14 +120,27 @@ namespace :test do
         jruby_opts.each do |task, opts|
 
           task task do
-            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-            ruby "test/mri/runner.rb -j#{AVAILABLE_PROCESSORS} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q --name '!/#{slowest}/' -- #{files}"
+          end
+          task "#{task}:prism" do
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} -Xparser.prism #{opts}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end
       end
 
       # add int shortcut names
       task suite => "test:mri:#{suite}:int"
+    end
+
+    # Slow tests, based on core but filtering to include the slowest test methods
+    task :core_slow do
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --dev #{mri_suites[:core]}"
+
+      files = File.readlines("test/mri.core.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
+
+      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q --name '/#{slowest}/' -- #{files}"
     end
 
     task all: jruby_opts.keys
@@ -120,7 +157,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
@@ -139,7 +175,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.test_files = files_in_file 'test/slow.index'
     t.ruby_opts << '-J-ea' << '-I.'
     t.ruby_opts << '-J-cp target/test-classes'
@@ -155,7 +190,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-X+O'
   end
@@ -168,25 +202,5 @@ namespace :test do
     
     puts cmd
     system cmd
-  end
-  
-  namespace :junit do
-    test_class_path = [
-      "target/junit.jar",
-      "target/livetribe-jsr223.jar",
-      "target/bsf.jar",
-      "target/commons-logging.jar",
-      "lib/jruby.jar",
-      "target/test-classes",
-      "test/jruby/requireTest.jar",
-      "test"
-    ]
-    
-    desc "Run the main JUnit test suite"
-    task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '500M' do
-        jvmarg :line => '-ea'
-      end
-    end
   end
 end

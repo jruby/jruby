@@ -1,10 +1,16 @@
-fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads an array containing an instance of the object, followed by multiple instances of another object
-fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads any structure with multiple references to the same object, followed by multiple instances of another object
-fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads an array containing references to multiple instances of the object, followed by multiple instances of another object
-fails:Marshal.restore for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
-fails:Marshal.restore for a Module loads an old module
-fails:Marshal.restore for a wrapped C pointer loads
-fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _load_data
-fails:Marshal.restore when a class does not exist in the namespace raises an ArgumentError
 fails:Marshal.restore for a Symbol loads a binary encoded Symbol
 fails:Marshal.restore for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object
+fails:Marshal.restore when called with freeze: true does freeze extended objects
+fails:Marshal.restore when called with freeze: true does freeze extended objects with instance variables
+fails:Marshal.restore when called with a proc call the proc with extended objects
+fails:Marshal.restore when called with freeze: true returns frozen object having #_dump method
+fails:Marshal.restore when called with freeze: true returns frozen object responding to #marshal_dump and #marshal_load
+fails:Marshal.restore when called with freeze: true returns frozen object extended by a module
+fails:Marshal.restore when called on objects with custom _dump methods loads the String in multibyte encoding
+fails:Marshal.restore for a Rational loads
+fails:Marshal.restore for a Complex loads
+fails:Marshal.restore raises an ArgumentError when the dumped data is truncated
+fails:Marshal.restore raises an ArgumentError when the argument is empty String
+fails:Marshal.restore for a Data loads an extended Data
+fails:Marshal.restore for an Integer raises ArgumentError if the input is too short

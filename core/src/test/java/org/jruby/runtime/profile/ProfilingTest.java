@@ -57,7 +57,7 @@ public class ProfilingTest extends TestCase {
      */
     public void testProfilingServiceAsJavaProperty() {
 
-        // java -Djruby.cli.profiling.mode=SERVICE -Djruby.cli.profiling.service=org.jruby.runtime.profile.builtin.BuiltinProfilingService -cp jruby.jar org.jruby.Main 
+        // java -Djruby.cli.profiling.mode=SERVICE -Djruby.cli.profiling.service=org.jruby.runtime.profile.builtin.BuiltinProfilingService -cp jruby.jar org.jruby.main.Main 
 
         // TODO how to test it ??
     }

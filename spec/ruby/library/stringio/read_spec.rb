@@ -39,7 +39,7 @@ describe "StringIO#read when passed [length]" do
 
   it "returns nil when self's position is at the end" do
     @io.pos = 7
-    @io.read(10).should be_nil
+    @io.read(10).should == nil
   end
 
   it "returns an empty String when length is 0" do
@@ -53,10 +53,10 @@ describe "StringIO#read when passed length and a buffer" do
   end
 
   it "reads [length] characters into the buffer" do
-    buf = "foo"
+    buf = +"foo"
     result = @io.read(10, buf)
 
     buf.should == "abcdefghij"
-    result.should equal(buf)
+    result.should.equal?(buf)
   end
 end

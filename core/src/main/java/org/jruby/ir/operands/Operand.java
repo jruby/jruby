@@ -12,9 +12,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Operand {
-    public static final Operand[] EMPTY_ARRAY = new Operand[0];
+import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 
+public abstract class Operand {
+    public static final Operand[] EMPTY_ARRAY = EMPTY_OPERANDS;
     public Operand() {
     }
 
@@ -70,6 +71,18 @@ public abstract class Operand {
 
     public Operand getValue(Map<Operand, Operand> valueMap) {
         return this;
+    }
+
+    /**
+     * Returns true if this is an immediate value that will always be considered truthy (true, numbers, etc)
+     * @return
+     */
+    public boolean isTruthyImmediate() {
+        return false;
+    }
+
+    public boolean isFalseyImmediate() {
+        return false;
     }
 
     /** Append the list of variables used in this operand to the input list -- force every operand

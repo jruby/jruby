@@ -20,17 +20,15 @@ describe "BigDecimal's util method definitions" do
 
     it "should define #to_d on BigDecimal" do
       bd = BigDecimal("3.14")
-      bd.to_d.should equal(bd)
+      bd.to_d.should.equal?(bd)
     end
 
     it "should define #to_d on Rational" do
       Rational(22, 7).to_d(3).should == BigDecimal(3.14, 3)
     end
 
-    ruby_version_is "2.6" do
-      it "should define #to_d on nil" do
-        nil.to_d.should == BigDecimal(0)
-      end
+    it "should define #to_d on nil" do
+      nil.to_d.should == BigDecimal(0)
     end
   end
 

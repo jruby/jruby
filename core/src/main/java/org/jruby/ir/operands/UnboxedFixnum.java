@@ -3,6 +3,8 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /*
  * Represents a literal fixnum.
  *
@@ -15,7 +17,7 @@ import org.jruby.runtime.ThreadContext;
  * <pre>
  *   n = 0
  *   olda = nil
- *   while (n < 3)
+ *   while (n &lt; 3)
  *     a = 34853
  *     p a.equal?(olda)
  *     olda = a
@@ -38,7 +40,7 @@ public class UnboxedFixnum extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newFixnum(value);
+        return asFixnum(context, value);
     }
 
     @Override
@@ -63,5 +65,10 @@ public class UnboxedFixnum extends ImmutableLiteral {
     @Override
     public String toString() {
         return "UnboxedFixnum:" + value;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
     }
 }

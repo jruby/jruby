@@ -5,19 +5,21 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 
-public class DripMain {
+public class DripMain extends PrebootMain {
     public static RubyInstanceConfig DRIP_CONFIG;
     public static Ruby DRIP_RUNTIME;
 
     public static final String JRUBY_DRIP_WARMUP_ENV = "JRUBY_DRIP_WARMUP";
     public static final String JRUBY_DRIP_WARMUP_DEFAULT = "1 + 1";
-    public static final String JRUBY_DRIP_PREBOOT_FILE = "./dripmain.rb";
+    public static final String JRUBY_DRIP_FILE = "./dripmain.rb";
 
-    public static void main(String[] args) throws IOException {
-        // warmup JVM first
+    public static void main(String[] args) {
+        preboot(new DripMain(), args);
+    }
+
+    @Override
+    protected String[] warmup(String[] args) {
         Ruby ruby = Ruby.newInstance();
 
         String envWarmup = System.getenv(JRUBY_DRIP_WARMUP_ENV);
@@ -27,26 +29,36 @@ public class DripMain {
             ruby.evalScriptlet(JRUBY_DRIP_WARMUP_DEFAULT);
         }
 
-        // preboot actual runtime
         Ruby.clearGlobalRuntime();
-        File dripMain = new File(JRUBY_DRIP_PREBOOT_FILE);
 
+        return args;
+    }
+
+    @Override
+    protected String[] prepareOptions(String[] args) {
         // Disable native stdio when running under Drip (#4942)
         Options.NATIVE_STDIO.force("false");
 
-        RubyInstanceConfig config = new RubyInstanceConfig();
-        ruby = Ruby.newInstance(config);
+        return args;
+    }
 
+    @Override
+    protected Ruby prepareRuntime(RubyInstanceConfig config, String[] args) {
+        Ruby ruby = super.prepareRuntime(config, args);
+
+        File dripMain = new File(JRUBY_DRIP_FILE);
         if (dripMain.exists()) {
-            FileInputStream fis = new FileInputStream(dripMain);
-            try {
-                ruby.getLoadService().load(dripMain.getAbsolutePath(), false);
-            } finally {
-                fis.close();
-            }
+            ruby.getLoadService().load(dripMain.getAbsolutePath(), false);
         }
 
-        // use config and runtime from preboot process
+        return ruby;
+    }
+
+    @Override
+    protected void endPreboot(RubyInstanceConfig config, Ruby ruby, String[] args) {
+        super.endPreboot(config, ruby, args);
+
+        // backward compat
         DRIP_CONFIG = config;
         DRIP_RUNTIME = ruby;
     }

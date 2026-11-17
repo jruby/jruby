@@ -28,7 +28,6 @@ CSAutoloadC
 CSAutoloadD
 CSV
 ChainedNextTest
-Channel
 ChildClass
 ClassIdUnderAutoload
 ClassSpecDefineClass
@@ -40,8 +39,11 @@ CodingUS_ASCII
 CodingUTF_8
 ComparisonTest
 ConstantSpecsIncludedModule
+ConstantSpecsTwo
+ConstantSpecsThree
 ConstantVisibility
 Coverage
+CoverageSpecs
 CustomArgumentError
 DRb
 DRbIdConv
@@ -56,6 +58,7 @@ DefSpecsLambdaVisibility
 DefineMethodByProcClass
 DefineMethodSpecClass
 DefineSingletonMethodSpecClass
+Delegator
 DescArray
 DescObjectTest
 Digest
@@ -72,13 +75,14 @@ EvalBindingProcA
 Exception2MessageMapper
 ExceptionForMatrix
 Fcntl
+Fiddle
 FileStat
 FileUtils
 Find
 Forwardable
 GetoptLong
 HMACConstants
-HashStringsASCII8BIT
+HashStringsBinary
 HashStringsUSASCII
 HashStringsUTF8
 IPAddr
@@ -142,6 +146,7 @@ Prime
 Private
 ProcFromMethod
 Psych
+RactorLocalSingleton
 REXML
 RUBY_SIGNALS
 RbReadline
@@ -149,8 +154,10 @@ Readline
 ReceiverClass
 RegexpSpecsSubclass
 RegexpSpecsSubclassTwo
+Reline
 RescueInClassExample
 Resolv
+Ripper
 SHA1Constants
 SHA256Constants
 SHA384Constants
@@ -162,6 +169,7 @@ SecondClass
 SecureRandom
 Set
 Shellwords
+SimpleDelegator
 SingleForwardable
 Singleton
 Socket
@@ -172,6 +180,7 @@ SpecificExampleException
 Specs
 StrChild
 StrangeEach
+StringIO
 StringRefinement
 StringScanner
 StringSubclass
@@ -188,6 +197,7 @@ TimeoutError
 UDPSocket
 UNIXServer
 UNIXSocket
+URI
 UnaryMinusTest
 UnicodeNormalize
 UnloadableDumpableDir
@@ -195,6 +205,7 @@ UserArray
 UserCustomConstructorString
 UserDefined
 UserDefinedImmediate
+UserDefinedString
 UserDefinedWithIvar
 UserHash
 UserHashInitParams

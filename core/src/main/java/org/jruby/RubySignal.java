@@ -30,6 +30,7 @@ package org.jruby;
 
 import jnr.constants.platform.Signal;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
@@ -40,6 +41,13 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 
 import java.util.*;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.argumentError;
+
 @JRubyModule(name="Signal")
 public class RubySignal {
 
@@ -47,13 +55,13 @@ public class RubySignal {
 
     private final static SignalFacade initSignalFacade() {
         try {
-            return org.jruby.util.SunSignalFacade.class.newInstance();
+            return org.jruby.util.SunSignalFacade.class.getConstructor().newInstance();
         } catch (Throwable e) {
             return new NoFunctionalitySignalFacade();
         }
     }
     
-    public static void createSignal(Ruby runtime) {
+    public static void createSignal(ThreadContext context) {
         // We force java.lang.Process et al to load so that JVM's CHLD handler can be
         // overwritten by users (jruby/jruby#3283)
         if (!Platform.IS_WINDOWS) {
@@ -65,9 +73,7 @@ public class RubySignal {
             }
         }
 
-        RubyModule mSignal = runtime.defineModule("Signal");
-        
-        mSignal.defineAnnotatedMethods(RubySignal.class);
+        defineModule(context, "Signal").defineMethods(context, RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
 
@@ -76,10 +82,11 @@ public class RubySignal {
     private static final Map<Integer, String> SIGNUM_MAP;
 
     static {
-        HashMap<String, Integer> signals = new HashMap<>();
-        HashMap<Integer, String> signums = new HashMap<>();
+        HashMap<String, Integer> signals = new HashMap<>(Signal.values().length);
+        HashMap<Integer, String> signums = new HashMap<>(Signal.values().length);
 
-        for (Signal s : Signal.values()) {
+        Signal[] values = Signal.values();
+        for (Signal s : values) {
             // Skip signals not defined on this platform
             if (!s.defined()) continue;
 
@@ -91,8 +98,10 @@ public class RubySignal {
 
             // replace CLD with CHLD value
             int signo = s.intValue();
-            if (s == Signal.SIGCLD)
-                signo = Signal.SIGCHLD.intValue();
+            if (s == Signal.SIGCHLD || s == Signal.SIGCLD) {
+                // skip these because Ruby does them weirdly
+                continue;
+            }
 
             // omit unsupported signals
             if (signo >= 20000) continue;
@@ -104,6 +113,22 @@ public class RubySignal {
         // We always define KILL as 9 on Windows
         if (Platform.IS_WINDOWS) {
             signals.put("KILL", 9);
+        }
+
+        // map SIGCLD and SIGCHLD like Ruby
+        int CHLD;
+        if (Signal.SIGCLD.defined()) {
+            CHLD = Signal.SIGCLD.intValue();
+        } else if (Signal.SIGCHLD.defined()) {
+            CHLD = Signal.SIGCHLD.intValue();
+        } else {
+            CHLD = 0;
+        }
+
+        if (CHLD != 0) {
+            signals.put("CLD", CHLD);
+            signals.put("CHLD", CHLD);
+            signums.put(CHLD, "CHLD");
         }
 
         SIGNAME_MAP = Collections.unmodifiableMap(signals);
@@ -122,11 +147,11 @@ public class RubySignal {
         synchronized (recv) {
             names = (RubyHash) recv.getInternalVariables().getInternalVariable("signal_list");
             if (names == null) {
-                names = RubyHash.newHash(runtime);
+                names = newHash(context);
                 for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
-                    names.op_aset(context, runtime.freezeAndDedupString(runtime.newString(sig.getKey())), runtime.newFixnum(sig.getValue()));
+                    names.op_aset(context, runtime.newDeduplicatedString(sig.getKey()), asFixnum(context, sig.getValue()));
                 }
-                names.op_aset(context, runtime.freezeAndDedupString(runtime.newString("EXIT")), runtime.newFixnum(0));
+                names.op_aset(context, runtime.newDeduplicatedString("EXIT"), asFixnum(context, 0));
                 recv.getInternalVariables().setInternalVariable("signal_list", names);
             } else {
                 names.dup(context);
@@ -136,46 +161,65 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
-        return SIGNAL_FACADE.trap(recv, block, sig);
+        return __jtrap_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, block, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_kernel(ThreadContext context, final IRubyObject recv, IRubyObject block, IRubyObject sig) {
+        return SIGNAL_FACADE.trap(context, recv, block, sig);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restorePlatformDefault(recv, sig);
+        return __jtrap_platform_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_platform_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restorePlatformDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restoreOSDefault(recv, sig);
+        return __jtrap_osdefault_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_osdefault_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restoreOSDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.ignore(recv, sig);
+        return __jtrap_restore_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_restore_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.ignore(context, recv, sig);
+    }
+
+    @JRubyMethod(meta = true)
     public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
-        long sig = rubySig.convertToInteger().getLongValue();
+        long sig = toInt(context, rubySig);
         String signame = signo2signm(sig);
         if (signame == null) {
-            if(sig == 0) {
-                return RubyString.newString(context.runtime, "EXIT");
-            } else {
-                throw context.runtime.newArgumentError("invalid signal number: " + rubySig);
-            }
+            if (sig == 0) return newString(context, "EXIT");
+
+            throw argumentError(context, "invalid signal number: " + rubySig);
         }
-        return context.runtime.newString(signame);
+
+        return newString(context, signame);
     }
 
-    // MRI: signo2signm
+    @CRuby(value = "signo2signm", file = "signal.c")
     public static String signo2signm(long no) {
         return SIGNUM_MAP.get((int) no);
     }
 
-    // MRI: signm2signo
+    @CRuby(value = "signm2signo", file = "signal.c")
     public static long signm2signo(String nm) {
         Integer signo = SIGNAME_MAP.get(nm);
 

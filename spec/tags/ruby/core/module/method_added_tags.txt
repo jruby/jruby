@@ -1,0 +1,1 @@
+fails:Module#method_added is called when using #private in a subclass

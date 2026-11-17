@@ -1,41 +1,14 @@
+# frozen_string_literal: false
 describe :string_replace, shared: true do
   it "returns self" do
     a = "a"
-    a.send(@method, "b").should equal(a)
+    a.send(@method, "b").should.equal?(a)
   end
 
   it "replaces the content of self with other" do
     a = "some string"
     a.send(@method, "another string")
     a.should == "another string"
-  end
-
-  it "taints self if other is tainted" do
-    a = ""
-    b = "".taint
-    a.send(@method, b)
-    a.tainted?.should == true
-  end
-
-  it "does not untaint self if other is untainted" do
-    a = "".taint
-    b = ""
-    a.send(@method, b)
-    a.tainted?.should == true
-  end
-
-  it "untrusts self if other is untrusted" do
-    a = ""
-    b = "".untrust
-    a.send(@method, b)
-    a.untrusted?.should == true
-  end
-
-  it "does not trust self if other is trusted" do
-    a = "".untrust
-    b = ""
-    a.send(@method, b)
-    a.untrusted?.should == true
   end
 
   it "replaces the encoding of self with that of other" do
@@ -47,7 +20,7 @@ describe :string_replace, shared: true do
 
   it "carries over the encoding invalidity" do
     a = "\u{8765}".force_encoding('ascii')
-    "".send(@method, a).valid_encoding?.should be_false
+    "".send(@method, a).valid_encoding?.should == false
   end
 
   it "tries to convert other to string using to_str" do
@@ -57,19 +30,19 @@ describe :string_replace, shared: true do
   end
 
   it "raises a TypeError if other can't be converted to string" do
-    lambda { "hello".send(@method, 123)       }.should raise_error(TypeError)
-    lambda { "hello".send(@method, [])        }.should raise_error(TypeError)
-    lambda { "hello".send(@method, mock('x')) }.should raise_error(TypeError)
+    -> { "hello".send(@method, 123)       }.should.raise(TypeError)
+    -> { "hello".send(@method, [])        }.should.raise(TypeError)
+    -> { "hello".send(@method, mock('x')) }.should.raise(TypeError)
   end
 
-  it "raises a #{frozen_error_class} on a frozen instance that is modified" do
+  it "raises a FrozenError on a frozen instance that is modified" do
     a = "hello".freeze
-    lambda { a.send(@method, "world") }.should raise_error(frozen_error_class)
+    -> { a.send(@method, "world") }.should.raise(FrozenError)
   end
 
   # see [ruby-core:23666]
-  it "raises a #{frozen_error_class} on a frozen instance when self-replacing" do
+  it "raises a FrozenError on a frozen instance when self-replacing" do
     a = "hello".freeze
-    lambda { a.send(@method, a) }.should raise_error(frozen_error_class)
+    -> { a.send(@method, a) }.should.raise(FrozenError)
   end
 end

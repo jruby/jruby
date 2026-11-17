@@ -1,7 +1,7 @@
 require 'jruby/core_ext'
 
 describe "A child class with the same fully-qualified name as a parent class" do
-  it "uses its reified parent class as its own reified class" do
+  it 'generates a new reified class' do
     module GH1229
       class Foo; end
     end
@@ -15,6 +15,8 @@ describe "A child class with the same fully-qualified name as a parent class" do
     foo_ref = JRuby.reference(foo)
     foo2_ref = JRuby.reference(GH1229::Foo)
 
-    expect(foo2_ref.reified_class).to equal(foo_ref.reified_class)
+    expect(foo_ref.reified_class).to_not be(nil)
+    expect(foo2_ref.reified_class).to_not be(nil)
+    expect(foo2_ref.reified_class).to_not equal(foo_ref.reified_class)
   end
 end

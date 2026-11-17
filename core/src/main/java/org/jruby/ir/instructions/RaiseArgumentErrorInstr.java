@@ -67,7 +67,7 @@ public class RaiseArgumentErrorInstr extends NoOperandInstr implements FixedArit
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+        Arity.raiseArgumentError(context, numArgs, required, required + opt);
         return null;
     }
 

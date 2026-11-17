@@ -1,0 +1,2 @@
+fails:File.join raises errors for null bytes
+fails:File.join preserves the encoding of the path

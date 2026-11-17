@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
-require_relative '../../shared/queue/deque'
 
 describe "SizedQueue#deq" do
-  it_behaves_like :queue_deq, :deq, -> { SizedQueue.new(10) }
+  it "is an alias of SizedQueue#pop" do
+    SizedQueue.instance_method(:deq).should == SizedQueue.instance_method(:pop)
+  end
 end

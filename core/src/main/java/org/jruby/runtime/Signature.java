@@ -14,6 +14,7 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 
 /**
@@ -37,10 +38,13 @@ public class Signature {
     public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, 0, 0, -1);
     public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE, 0, 0, -1);
     public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE, 0, 0, -1);
+    public static final Signature FOUR_ARGUMENTS = new Signature(4, 0, 0, Rest.NONE, 0, 0, -1);
     public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM, 0, 0, -1);
     public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM, 0, 0, -1);
     public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM, 0, 0, -1);
     public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM, 0, 0, -1);
+    public static final Signature FOUR_REQUIRED = new Signature(4, 0, 0, Rest.NORM, 0, 0, -1);
+    public static final Signature ONE_OPT_ARGUMENT = new Signature(0, 1, 0, Rest.NONE, 0, 0, -1);
 
     private final short pre;
     private final short opt;
@@ -48,7 +52,7 @@ public class Signature {
     private final short post;
     private final short kwargs;
     private final short requiredKwargs;
-    private final Arity arity;
+    private final int arityValue;
     private final int keyRest;
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, int keyRest) {
@@ -59,16 +63,7 @@ public class Signature {
         this.kwargs = (short) kwargs;
         this.requiredKwargs = (short) requiredKwargs;
         this.keyRest = keyRest;
-
-        // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
-        //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
-        //       permit more than required args to be passed to a lambda, so we do not consider
-        //       it a "true" rest arg for arity-checking purposes below in checkArity.
-        if (rest != Rest.NONE || opt != 0) {
-            arity = Arity.createArity(-(required() + 1));
-        } else {
-            arity = Arity.fixed(required() + getRequiredKeywordForArityCount());
-        }
+        this.arityValue = calculateArityValue();
     }
 
     public int getRequiredKeywordForArityCount() {
@@ -88,44 +83,111 @@ public class Signature {
     public int keyRest() { return keyRest; }
 
     /**
+     * The minimum number of parameters supplied which can fulfill a call to this signature.  This
+     * method is for calculating the public-facing arity value.
+     *
+     * @return the minimum amount of params expected.
+     */
+    public int min() {
+        return required() + (requiredKwargs > 0 ? 1 : 0);
+    }
+
+    /**
+     * The maximum number of parameters supplied which can fulfill a call to this signature.  This
+     * method is for calculating the public-facing arity value.
+     *
+     * @return the minimum amount of params expected.
+     */
+    public int max() {
+        return rest != Rest.NONE && rest != Rest.ANON ?
+                -1 : required() + opt() + (kwargs() > 0 || restKwargs() ? 1 : 0);
+    }
+
+    /**
+     * Total number of keyword argument parameters.
+     * @return the number of kwarg parameters
+     */
+    public int kwargs() {
+        return kwargs;
+    }
+
+    /**
      * Are there an exact (fixed) number of parameters to this signature?
      */
     public boolean isFixed() {
-        return arityValue() >= 0;
+        return arityValue() >= 0 && rest != Rest.ANON;
+    }
+
+    /**
+     * Is this a signature with a no arguments of any kind?
+     */
+    public boolean isNoArguments() {
+        return isFixed() && required() == 0;
+    }
+
+    /**
+     * Is this a signature with a single fixed argument and NO keyword arguments?
+     */
+    public boolean isOneArgument() {
+        return isFixed() && required() == 1;
+    }
+
+    /**
+     * Is this a signature with a two fixed arguments and NO keyword arguments?
+     */
+    public boolean isTwoArguments() {
+        return isFixed() && required() == 2;
     }
 
     public int required() { return pre + post; }
-    public Arity arity() { return arity; }
 
     /**
      * Best attempt at breaking the code of arity values!  We figure out how many fixed/required parameters
-     * must be supplied.  Then we figure out if we need to mark the value as optional.  Optional is indicated
-     * by multiplying -1 * (fixed + 1).  Keyword args optional and rest values can indicate this optional
+     * must be supplied. Then we figure out if we need to mark the value as optional. Optional is indicated
+     * by multiplying -1 * (fixed + 1). Keyword args optional and rest values can indicate this optional
      * condition but only if no required keyword arguments are present.
      */
-    public int arityValue() {
+    public int calculateArityValue() {
         int oneForKeywords = requiredKwargs > 0 ? 1 : 0;
         int fixedValue = pre() + post() + oneForKeywords;
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
+        boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || rest() != Rest.NONE || (hasOptionalKeywords || restKwargs()) && oneForKeywords == 0) {
+        if (opt() > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || restKwargs())) {
             return -1 * (fixedValue + 1);
         }
 
         return fixedValue;
     }
 
-    // Lossy conversion to half-support older signatures which externally use Arity but needs to be converted.
-    public static Signature from(Arity arity) {
-        switch(arity.required()) {
+    public int arityValue() {
+        return arityValue;
+    }
+
+    /**
+     * If we are yield'ing to this signature should we spread/destructure a Ruby Array?
+     *
+     * @return true if the signature expects multiple args
+     */
+    public boolean isSpreadable() {
+        return arityValue < -1 || arityValue > 1 || (opt > 0 && !restKwargs()) || rest == Rest.ANON;
+    }
+
+
+    // Lossy conversion to support populator constructors
+    public static Signature fromArityValue(int arityValue) {
+        boolean negative = arityValue < 0;
+        int value = negative ? -1 * arityValue - 1 : arityValue;
+
+        switch(value) {
             case 0:
-                return arity.isFixed() ? Signature.NO_ARGUMENTS : Signature.OPTIONAL;
+                return negative ? Signature.OPTIONAL : Signature.NO_ARGUMENTS;
             case 1:
-                return arity.isFixed() ? Signature.ONE_ARGUMENT : Signature.ONE_REQUIRED;
+                return negative ? Signature.ONE_REQUIRED : Signature.ONE_ARGUMENT;
             case 2:
-                return arity.isFixed() ? Signature.TWO_ARGUMENTS : Signature.TWO_REQUIRED;
+                return negative ? Signature.TWO_REQUIRED : Signature.TWO_ARGUMENTS;
             case 3:
-                return arity.isFixed() ? Signature.THREE_ARGUMENTS : Signature.THREE_REQUIRED;
+                return negative ? Signature.THREE_REQUIRED : Signature.THREE_ARGUMENTS;
         }
 
         throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");
@@ -166,7 +228,17 @@ public class Signature {
                             return Signature.THREE_REQUIRED;
                     }
                     break;
+                case 4:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.FOUR_ARGUMENTS;
+                        case NORM:
+                            return Signature.FOUR_REQUIRED;
+                    }
+                    break;
             }
+        } else if (opt == 1 && pre == 0 && rest == Rest.NONE && post == 0 && kwargs == 0 && keyRest == -1) {
+            return Signature.ONE_OPT_ARGUMENT;
         }
         return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, keyRest);
     }
@@ -269,25 +341,31 @@ public class Signature {
         return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + keyRest + ")";
     }
 
+    @Deprecated(since = "10.0.0.0")
     public void checkArity(Ruby runtime, IRubyObject[] args) {
+        checkArity(runtime.getCurrentContext(), args);
+    }
+
+    public void checkArity(ThreadContext context, IRubyObject[] args) {
         if (args.length < required()) {
-            throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+            throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
         }
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
             if (args.length > required() + opt()) {
-                if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
+                if (hasKwargs() && !TypeConverter.checkHashType(context.runtime, args[args.length - 1]).isNil()) {
                     // we have kwargs and a potential kwargs hash, check with length - 1
                     if (args.length - 1 > required() + opt()) {
-                        throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+                        throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                     }
                 } else {
-                    throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+                    throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                 }
             }
         }
     }
 
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof Signature)) return false;
 
@@ -300,5 +378,10 @@ public class Signature {
                 kwargs == otherSig.kwargs &&
                 requiredKwargs == otherSig.requiredKwargs &&
                 keyRest == otherSig.keyRest;
+    }
+
+    @Override
+    public int hashCode() {
+        return rest.hashCode() + pre * 3 + opt * 5 + post * 7 + kwargs * 11 + requiredKwargs * 13 + arityValue * 17 + keyRest * 19;
     }
 }

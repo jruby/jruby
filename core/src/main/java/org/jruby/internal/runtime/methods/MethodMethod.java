@@ -37,26 +37,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class MethodMethod extends DynamicMethod {
-    private RubyUnboundMethod method;
+    private final RubyUnboundMethod method;
 
-    /**
-     * Constructor for MethodMethod.
-     * @param visibility
-     */
     public MethodMethod(RubyModule implementationClass, RubyUnboundMethod method, Visibility visibility) {
         // FIXME: set up a CallConfiguration for this
         super(implementationClass, visibility, method.getMethodName());
         this.method = method;
     }
 
-    /**
-     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         return method.bind(context, self).call(context, args, block);
     }

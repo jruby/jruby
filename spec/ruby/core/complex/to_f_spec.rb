@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe "Complex#to_f" do
-  describe "when the imaginary part is Fixnum 0" do
+  describe "when the imaginary part is Integer 0" do
     it "returns the result of sending #to_f to the real part" do
       real = mock_numeric('real')
       real.should_receive(:to_f).and_return(:f)
@@ -29,13 +29,13 @@ describe "Complex#to_f" do
 
   describe "when the imaginary part is non-zero" do
     it "raises RangeError" do
-      lambda { Complex(0, 1).to_f }.should raise_error(RangeError)
+      -> { Complex(0, 1).to_f }.should.raise(RangeError)
     end
   end
 
   describe "when the imaginary part is Float 0.0" do
     it "raises RangeError" do
-      lambda { Complex(0, 0.0).to_f }.should raise_error(RangeError)
+      -> { Complex(0, 0.0).to_f }.should.raise(RangeError)
     end
   end
 end

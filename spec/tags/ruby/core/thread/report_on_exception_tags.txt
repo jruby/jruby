@@ -1,1 +1,1 @@
-fails:Thread#report_on_exception= when used in conjunction with Thread#abort_on_exception first reports then send the exception back to the main Thread
+fails:Thread#report_on_exception= when set to true prints a backtrace on $stderr in the regular backtrace order

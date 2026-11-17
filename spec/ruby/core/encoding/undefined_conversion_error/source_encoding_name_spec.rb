@@ -1,3 +1,4 @@
+require_relative "../../../spec_helper"
 require_relative '../fixtures/classes'
 
 describe "Encoding::UndefinedConversionError#source_encoding_name" do
@@ -7,7 +8,7 @@ describe "Encoding::UndefinedConversionError#source_encoding_name" do
   end
 
   it "returns a String" do
-    @exception.source_encoding_name.should be_an_instance_of(String)
+    @exception.source_encoding_name.should.instance_of?(String)
   end
 
   it "is equal to the source encoding name of the object that raised it" do

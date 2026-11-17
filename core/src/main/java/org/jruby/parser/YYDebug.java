@@ -50,13 +50,13 @@ public class YYDebug {
     public void push(int a, Object b) {        
     }
     
-    public void reduce(int a, int b, int c, String d, short e) {
+    public void reduce(int a, int b, int c, String d, int e) {
     }
     
     public void reject() {
     }
     
-    public void shift(int a, short b, int c) {
+    public void shift(int a, int b, int c) {
     }
     
     public void shift(int a, int b) {

@@ -39,20 +39,23 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.ISourcePositionHolder;
+import org.jruby.parser.ProductionState;
 
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder, ISourcePosition {
+public abstract class Node {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<>();
 
     private int line;
-    
+
+    // Source span of this node: where its first character is and where its last one ends. The parser records it
+    // (see RubyParser's skeleton) when Coverage needs it, to identify methods and branches the way MRI does, and
+    // leaves it null otherwise (see RubyParserBase#recordsPositions).
+    private NodeSpan span;
+
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
     //    a = 1; [a, a = 2];
@@ -60,25 +63,51 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
     // so that the two values of a end up being different.
     protected boolean containsVariableAssignment;
     protected boolean newline;
+    // newline only to keep backtraces on this node's line, which is no line event (see setBacktraceNewline)
+    private static final byte BACKTRACE_NEWLINE = 1;
+    // written inside parentheses, which MRI has a node for (see setParenthesized)
+    private static final byte PARENTHESIZED = 2;
 
-    public Node(ISourcePosition position, boolean containsAssignment) {
-        this.line = position.getLine();
+    // One byte for both rather than a boolean each: a node's own fields then end a byte short of its 24, where the
+    // JVM puts a flag of the node's class (whether a CallNode is lazy, say) rather than starting 8 more bytes for it.
+    private byte flags;
+
+    public Node(int line, boolean containsAssignment) {
+        this.line = line;
         this.containsVariableAssignment = containsAssignment;
     }
 
     public void setNewline() {
         this.newline = true;
+        this.flags &= ~BACKTRACE_NEWLINE;
+    }
+
+    /**
+     * Make a node that is no line event of its own a newline anyway, so that backtraces report its line, as for
+     * the body of a modifier conditional written on lines before its condition. Coverage gives it no line event.
+     */
+    public void setBacktraceNewline() {
+        if (newline) return;
+
+        this.newline = true;
+        this.flags |= BACKTRACE_NEWLINE;
+    }
+
+    /**
+     * Whether this newline node is a line event (one Coverage counts), rather than a newline for backtraces only.
+     */
+    public boolean isLineEvent() {
+        return newline && (flags & BACKTRACE_NEWLINE) == 0;
+    }
+
+    // Used by heredoc dedent processing.  It gets unset so we do not liter line events because of it.
+    public void unsetNewline() {
+        this.newline = false;
+        this.flags &= ~BACKTRACE_NEWLINE;
     }
 
     public boolean isNewline() {
         return newline;
-    }
-
-    /**
-     * Location of this node within the source
-     */
-    public ISourcePosition getPosition() {
-        return this;
     }
 
     public int getLine() {
@@ -89,8 +118,126 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
         return null;
     }
 
-    public void setPosition(ISourcePosition position) {
-        this.line = position.getLine();
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    public boolean hasSourceSpan() {
+        return span != null && span.startColumn() >= 0 && span.endLine() >= 0;
+    }
+
+    // The span as recorded so far. Each change replaces it: a parse only makes them when Coverage needs positions.
+    private NodeSpan span() {
+        NodeSpan span = this.span;
+        return span != null ? span : NodeSpan.NONE;
+    }
+
+    /**
+     * Record the span from the parser's packed (line, column) positions (see ProductionState).
+     */
+    public void setSourceSpan(long start, long end) {
+        span = span().withSpan(ProductionState.line(start), ProductionState.column(start),
+                ProductionState.line(end), ProductionState.column(end), true);
+    }
+
+    /**
+     * Record the span of a node starting on its own line (getLine()).
+     */
+    public void setSourceSpan(int startColumn, int endLine, int endColumn) {
+        span = span().withSpan(-1, startColumn, endLine, endColumn, true);
+    }
+
+    /**
+     * Keep the span as it is now: enclosing productions handing the node along no longer widen it.
+     */
+    public void lockSourceSpan() {
+        NodeSpan span = span();
+        this.span = span.withSpan(span.startLine(), span.startColumn(), span.endLine(), span.endColumn(), true);
+    }
+
+    public void setSourceSpanEnd(long end) {
+        NodeSpan span = span();
+        this.span = span.withSpan(span.startLine(), span.startColumn(),
+                ProductionState.line(end), ProductionState.column(end), true);
+    }
+
+    /**
+     * Record the span of a production that produced this node. Each enclosing production that hands the node
+     * along as its own result widens the span to its own extent (an assignment grows its left-hand side into the
+     * whole assignment, a statement list grows as statements are appended), until an explicit span locks it.
+     */
+    public void setAutoSourceSpan(long start, long end) {
+        NodeSpan span = span();
+        if (span.locked()) return;
+
+        this.span = span.withSpan(ProductionState.line(start), ProductionState.column(start),
+                ProductionState.line(end), ProductionState.column(end), false);
+    }
+
+    /**
+     * Take the span of another node, though neither its parentheses nor what its class records besides.
+     */
+    public void copySourceSpan(Node other) {
+        NodeSpan from = other.span;
+        span = from == null ? null :
+                NodeSpan.NONE.withSpan(from.startLine(), from.startColumn(), from.endLine(), from.endColumn(), from.locked());
+    }
+
+    /**
+     * Record what else a class of node keeps of its source besides its span, such as where the else of a
+     * conditional is. It is kept with the span, so that it takes no room in a node parsed without positions.
+     */
+    protected final void setSourceDetail(Record detail) {
+        if (detail != null || span != null) span = span().withDetail(detail);
+    }
+
+    protected final Record getSourceDetail() {
+        return span == null ? null : span.detail();
+    }
+
+    /**
+     * Record that this expression was written inside parentheses. MRI has a node for the parentheses, which
+     * decides what its compiler folds away, whether or not Coverage is in use.
+     */
+    public void setParenthesized() {
+        flags |= PARENTHESIZED;
+    }
+
+    public boolean isParenthesized() {
+        return (flags & PARENTHESIZED) != 0;
+    }
+
+    /**
+     * Record where the parentheses around this expression are: MRI reports a branch arm consisting of a
+     * parenthesized expression at the parentheses.
+     */
+    public void setParenSpan(long start, long end) {
+        flags |= PARENTHESIZED;
+        span = span().withParens(SourceSpan.of(start, end));
+    }
+
+    /**
+     * The (zero-based) span of the parentheses written around this expression, or null when there are none or
+     * the parser did not record positions.
+     */
+    public SourceSpan getParenSpan() {
+        return span == null ? null : span.parens();
+    }
+
+    public int getStartLine() {
+        return span != null && span.startLine() >= 0 ? span.startLine() : line;
+    }
+
+    public int getStartColumn() {
+        return span == null ? -1 : span.startColumn();
+    }
+
+    public int getEndLine() {
+        return span == null ? -1 : span.endLine();
+    }
+
+    public int getEndColumn() {
+        return span == null ? -1 : span.endColumn();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);
@@ -134,6 +281,15 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
         return toString(false, 0);
     }
 
+    /**
+     * Not all interesting info in the AST is from Node data.  This method will print
+     * out anything else of note (e.g. FixnumNode's long value).
+     * @return null for no extra info or something otherwise.
+     */
+    public String toStringExtraInfo() {
+       return null;
+    }
+
     public String toString(boolean indent, int indentation) {
         if (this instanceof InvisibleNode) return "";
 
@@ -141,7 +297,9 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
 
         if (indent) indent(indentation, builder);
 
-        builder.append("(").append(getNodeName());
+        builder.append('(').append(getNodeName());
+
+        if (isNewline()) builder.append('*');
 
         String moreState = toStringInternal();
 
@@ -149,7 +307,10 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" line: ").append(getLine());
+
+        String extraInfo = toStringExtraInfo();
+        if (extraInfo != null) builder.append(", ").append(extraInfo);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 
@@ -182,9 +343,9 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
 
     /**
      * Overridden by nodes that have additional internal state to be displated in toString.
-     *
+     * <p>
      * For nodes that have it, name is handled separately, by implementing INameNode.
-     *
+     * <p>
      * Child nodes are handled via iterating #childNodes.
      *
      * @return A string representing internal node state, or null if none.
@@ -194,29 +355,12 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
     }
 
     private static void indent(int indentation, StringBuilder builder) {
-        for (int n = 0; n < indentation; n++) {
-            builder.append("  ");
-        }
+        builder.append("  ".repeat(Math.max(0, indentation)));
     }
 
     protected String getNodeName() {
         String name = getClass().getName();
         return name.substring(name.lastIndexOf('.') + 1);
-    }
-
-    public <T extends org.jruby.ast.Node> T findFirstChild(final Class<T> nodeClass) {
-        return accept(new AbstractNodeVisitor<T>() {
-
-            @Override
-            protected T defaultVisit(Node node) {
-                if (nodeClass.isAssignableFrom(node.getClass())) {
-                    return (T) node;
-                } else {
-                    return visitFirstChild(node);
-                }
-            }
-
-        });
     }
 
     /**

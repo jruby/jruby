@@ -2,9 +2,7 @@
 require 'test/unit'
 require 'optparse/ac'
 
-class TestOptionParser < Test::Unit::TestCase; end
-
-class TestOptionParser::AutoConf < Test::Unit::TestCase
+class TestOptionParserAutoConf < Test::Unit::TestCase
   def setup
     @opt = OptionParser::AC.new
     @foo = @bar = self.class
@@ -30,6 +28,13 @@ class TestOptionParser::AutoConf < Test::Unit::TestCase
     assert_equal(true, @foo)
     @opt.parse!(%w"--enable-bar")
     assert_equal(true, @bar)
+  end
+
+  def test_enable_value
+    @opt.parse!(%w"--enable-foo=A")
+    assert_equal("A", @foo)
+    @opt.parse!(%w"--enable-bar=B")
+    assert_equal("B", @bar)
   end
 
   def test_disable

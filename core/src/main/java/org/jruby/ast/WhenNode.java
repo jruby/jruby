@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a when condition
@@ -44,8 +43,8 @@ public class WhenNode extends Node {
     protected final Node bodyNode;
     private final Node nextCase;
 
-    public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        super(position, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
+    public WhenNode(int line, Node expressionNodes, Node bodyNode, Node nextCase) {
+        super(line, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
                 bodyNode != null && bodyNode.containsVariableAssignment() ||
                 nextCase != null && nextCase.containsVariableAssignment());
 
@@ -92,5 +91,35 @@ public class WhenNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(expressionNodes, bodyNode, nextCase);
+    }
+
+    // ---- branch coverage: where the 'else' keyword following this clause starts (when nextCase is an else body) ----
+
+    // null when there is none, or positions are not recorded
+    private SourcePosition elseStart() {
+        return (SourcePosition) getSourceDetail();
+    }
+
+    public void setElseStart(long elseStart) {
+        setSourceDetail(SourcePosition.of(elseStart));
+    }
+
+    public boolean hasElseStart() {
+        return elseStart() != null;
+    }
+
+    public void copyBranchInfo(WhenNode other) {
+        copySourceSpan(other);
+        setSourceDetail(other.elseStart());
+    }
+
+    public int getElseStartLine() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.line();
+    }
+
+    public int getElseStartColumn() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.column();
     }
 }

@@ -37,41 +37,40 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.RubyEncoding;
+import org.jruby.runtime.Helpers;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings("ComparableType")
 public class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
 
-    private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+    private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
-    // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
-    // until there's new releases we shall keep them public and maybe review other exts using BL's API
-    @Deprecated
-    public byte[] bytes;
-    @Deprecated
-    public int begin;
-    @Deprecated
-    public int realSize;
+    private byte[] bytes;
+    private int begin;
+    private int realSize;
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    transient int hash;
+    private transient int hash;
 
-    transient String stringValue;
+    private transient String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 
@@ -91,6 +90,20 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(int size) {
         bytes = new byte[size];
         realSize = 0;
+    }
+
+    /**
+     * Creates a new instance of Bytelist with a pre-allocated size and specified encoding.
+     *
+     * See {@link #ByteList(int)}
+     *
+     * @param size to preallocate the bytelist to
+     * @param enc encoding to set
+     */
+    public ByteList(int size, Encoding enc) {
+        bytes = new byte[size];
+        realSize = 0;
+        encoding = safeEncoding(enc);
     }
 
     /**
@@ -203,7 +216,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(byte[] wrap, int index, int len, Encoding encoding, boolean copy) {
         assert wrap != null : "'wrap' must not be null";
         assert index >= 0 && index <= wrap.length : "'index' is not without bounds of 'wrap' array";
-        assert wrap.length >= index + len : "'index' + 'len' is longer than the 'wrap' array";
+        assert len >= 0 : "'len' must be non-negative";
+        assert wrap.length - index >= len : "'len' extends beyond the 'wrap' array";
 
         if (copy) {
             bytes = new byte[len];
@@ -238,8 +252,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param len number of bytes to delete
      */
     public void delete(int start, int len) {
-        assert start >= begin && start < realSize : "'start' is at invalid index";
-        assert len >= 0 : "'len' must be positive";
+        assert start >= begin : "'start' is at invalid index (< begin)";
+        assert start < begin + realSize : "'start' is at invalid index (>= end)";
+        assert len >= 0 : "'len' must be non-negative";
         assert start + len <= begin + realSize : "too many bytes requested";
 
         realSize -= len;
@@ -335,13 +350,14 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     /**
      * Ensure that the bytelist is at least length bytes long.  Otherwise grow the backing store
-     * so that it is length bytes long
+     * so that it is at least length bytes long, but grow to 1.5 * length, if we're able
+     * to, to avoid thrashing.
      *
      * @param length to use to make sure ByteList is long enough
      */
     public void ensure(int length) {
         if (begin + length > bytes.length) {
-            byte[] tmp = new byte[Math.min(Integer.MAX_VALUE, length + (length >>> 1))];
+            byte[] tmp = new byte[Helpers.calculateBufferLength(length)];
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;
@@ -442,9 +458,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Append a single int to the ByteList
+     * Append a single byte to the ByteList by truncating the given int
      *
-     * @param b the int to be added
+     * @param b the int to truncated and added
      * @return this instance
      */
     public ByteList append(int b) {
@@ -609,7 +625,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return the byte retreived
      */
     public int get(int index) {
-        assert index >= 0 : "index must be positive";
+        assert index >= 0 : "index must be non-negative";
+        assert begin + index < begin + realSize : "index is too large";
 
         return bytes[begin + index] & 0xFF;
     }
@@ -631,7 +648,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is the new value.
      */
     public void set(int index, int b) {
-        assert index >= 0 : "index must be positive";
+        assert index >= 0 : "index must be non-negative";
         assert begin + index < begin + realSize : "index is too large";
 
         bytes[begin + index] = (byte)b;
@@ -908,10 +925,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         int to = begin + toffset;
         byte[]pa = other.bytes;
         int po = other.begin;
-        int pc = other.realSize;
+        int len = other.realSize;
 
-        while (--pc >= 0) if (ta[to++] != pa[po++]) return false;
-        return true;
+        return Arrays.mismatch(ta, to, to + len, pa, po, po + len) == -1;
     }
 
     /**
@@ -942,6 +958,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     @Override
     public boolean equals(Object other) {
+        if (other == this) return true;
         if (other instanceof ByteList) return equal((ByteList)other);
         return false;
     }
@@ -954,26 +971,30 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public boolean equal(ByteList other) {
         if (other == this) return true;
-        if (hash != 0 && other.hash != 0 && hash != other.hash) return false;
+        int hash = this.hash;
+        int otherHash = other.hash;
+        if (hash != 0 && otherHash != 0 && hash != otherHash) return false;
+        int realSize = this.realSize;
+        if (realSize != other.realSize) return false;
 
-        int first, last;
-        if ((last = realSize) == other.realSize) {
-            byte buf[] = bytes;
-            byte otherBuf[] = other.bytes;
-            // scanning from front and back simultaneously, meeting in
-            // the middle. the object is to get a mismatch as quickly as
-            // possible. alternatives might be: scan from the middle outward
-            // (not great because it won't pick up common variations at the
-            // ends until late) or sample odd bytes forward and even bytes
-            // backward (I like this one, but it's more expensive for
-            // strings that are equal; see sample_equals below).
+        int first;
+        int last = realSize;
+        byte buf[] = bytes;
+        byte otherBuf[] = other.bytes;
 
-            for (first = -1;
-                 --last > first && buf[begin + last] == otherBuf[other.begin + last] &&
-                         ++first < last && buf[begin + first] == otherBuf[other.begin + first] ; ) ;
-            return first >= last;
-        }
-        return false;
+        // scanning from front and back simultaneously, meeting in
+        // the middle. the object is to get a mismatch as quickly as
+        // possible. alternatives might be: scan from the middle outward
+        // (not great because it won't pick up common variations at the
+        // ends until late) or sample odd bytes forward and even bytes
+        // backward (I like this one, but it's more expensive for
+        // strings that are equal; see sample_equals below).
+        int begin = this.begin;
+        int otherBegin = other.begin;
+        for (first = -1;
+             --last > first && buf[begin + last] == otherBuf[otherBegin + last] &&
+                     ++first < last && buf[begin + first] == otherBuf[otherBegin + first] ; ) ;
+        return first >= last;
     }
 
     /**
@@ -1100,13 +1121,17 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     private void grow(int increaseRequested) {
         // new available size
-        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
-        // only recopy if bytes does not have enough room *after* the begin index
-        if (newSize > bytes.length - begin) {
-            byte[] newBytes = new byte[newSize + (newSize >> 1)];
-            if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
-            bytes = newBytes;
-            begin = 0;
+        try {
+            int newSize = Math.addExact(realSize, increaseRequested); // increase <= 0 -> no-op
+            // only recopy if bytes does not have enough room *after* the begin index
+            if (newSize > bytes.length - begin) {
+                byte[] newBytes = new byte[Helpers.calculateBufferLength(newSize)];
+                if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
+                bytes = newBytes;
+                begin = 0;
+            }
+        } catch (ArithmeticException ae) {
+            throw new OutOfMemoryError("Requested array size exceeds VM limit");
         }
     }
 
@@ -1172,14 +1197,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return a byte[]
      */
     public static byte[] plain(CharSequence s) {
-        if (s instanceof String) return ISO_LATIN_1.encode((String) s).array();
-
-        // Not a String...get it the slow way
-        byte[] bytes = new byte[s.length()];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) s.charAt(i);
-        }
-        return bytes;
+        return RubyEncoding.encodeISO(s);
     }
 
     /**
@@ -1206,7 +1224,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public static char[] plain(byte[] b, int start, int length) {
         assert b != null : "byte array cannot be null";
-        assert start >= 0 && start + length <= b.length : "Invalid start or start+length too long";
+        assert length >= 0 : "length must be non-negative";
+        assert start >= 0 && start + length <= b.length : "invalid start index";
 
         char[] chars = new char[length];
         for (int i = 0; i < length; i++) {
@@ -1223,12 +1242,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public static char[] plain(byte[] b) {
         assert b != null : "byte array cannot be null";
-
-        char[] chars = new char[b.length];
-        for (int i = 0; i < b.length; i++) {
-            chars[i] = (char) (b[i] & 0xFF);
-        }
-        return chars;
+        return plain(b, 0, b.length);
     }
 
     // Work around bad charset handling in JDK. See
@@ -1314,9 +1328,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public static int memcmp(final byte[] first, final int firstStart, final int firstLen, final byte[] second, final int secondStart, final int secondLen) {
         if (first == second) return 0;
         final int len =  Math.min(firstLen,secondLen);
-        int offset = -1;
-        for (  ; ++offset < len && first[firstStart + offset] == second[secondStart + offset]; ) ;
-        if (offset < len) {
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset != -1) {
             return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
         }
         return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
@@ -1329,16 +1342,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return -1, 0, 1
      */
     public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int len) {
-        int a = firstStart;
-        int b = secondStart;
-        int tmp;
-
-        for (; len != 0; --len) {
-            if ((tmp = first[a++] - second[b++]) != 0) {
-                return tmp;
-            }
-        }
-        return 0;
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset == -1) return 0;
+        return first[firstStart + offset] - second[secondStart + offset];
     }
 
 
@@ -1413,7 +1419,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param encoding the encoding to set
      */
     public void setEncoding(Encoding encoding) {
-        assert encoding != null;
         this.encoding = safeEncoding(encoding);
         invalidate();
     }

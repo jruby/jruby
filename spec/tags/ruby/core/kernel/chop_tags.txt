@@ -5,3 +5,6 @@ windows:#chop removes the final character of $_
 windows:#chop removes the final carriage return, newline of $_
 windows:Kernel.chop removes the final multi-byte character from $_
 windows:Kernel#chop removes the final multi-byte character from $_
+windows:Kernel#chop is a private method
+windows:Kernel#chop removes the final character of $_
+windows:Kernel#chop removes the final carriage return, newline of $_

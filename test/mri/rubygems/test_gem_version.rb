@@ -1,12 +1,15 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+
+require_relative "helper"
 require "rubygems/version"
 
-require "minitest/benchmark"
-
 class TestGemVersion < Gem::TestCase
-
   class V < ::Gem::Version
+  end
+
+  def test_nil_is_zero
+    zero = Gem::Version.create nil
+    assert_equal Gem::Version.create(0), zero
   end
 
   def test_bump
@@ -35,22 +38,23 @@ class TestGemVersion < Gem::TestCase
   def test_class_create
     real = Gem::Version.new(1.0)
 
-    assert_same  real, Gem::Version.create(real)
-    assert_nil   Gem::Version.create(nil)
+    assert_same real, Gem::Version.create(real)
+
     assert_equal v("5.1"), Gem::Version.create("5.1")
 
-    ver = '1.1'.freeze
-    assert_equal v('1.1'), Gem::Version.create(ver)
+    ver = "1.1"
+    assert_equal v("1.1"), Gem::Version.create(ver)
   end
 
   def test_class_correct
     assert_equal true,  Gem::Version.correct?("5.1")
     assert_equal false, Gem::Version.correct?("an incorrect version")
+    assert_equal true, Gem::Version.correct?(nil)
   end
 
   def test_class_new_subclass
-    v1 = Gem::Version.new '1'
-    v2 = V.new '1'
+    v1 = Gem::Version.new "1"
+    v2 = V.new "1"
 
     refute_same v1, v2
   end
@@ -77,7 +81,7 @@ class TestGemVersion < Gem::TestCase
   end
 
   def test_initialize
-    ["1.0", "1.0 ", " 1.0 ", "1.0\n", "\n1.0\n", "1.0".freeze].each do |good|
+    ["1.0", "1.0 ", " 1.0 ", "1.0\n", "\n1.0\n", "1.0"].each do |good|
       assert_version_equal "1.0", good
     end
 
@@ -96,21 +100,12 @@ class TestGemVersion < Gem::TestCase
     invalid_versions << "2.3422222.222.222222222.22222.ads0as.dasd0.ddd2222.2.qd3e."
 
     invalid_versions.each do |invalid|
-      e = assert_raises ArgumentError, invalid do
+      e = assert_raise ArgumentError, invalid do
         Gem::Version.new invalid
       end
 
       assert_equal "Malformed version number string #{invalid}", e.message, invalid
     end
-  end
-
-  def bench_anchored_version_pattern
-    assert_performance_linear 0.5 do |count|
-      version_string = count.times.map {|i| "0" * i.succ }.join(".") << "."
-      version_string =~ Gem::Version::ANCHORED_VERSION_PATTERN
-    end
-  rescue RegexpError
-    skip "It fails to allocate the memory for regex pattern of Gem::Version::ANCHORED_VERSION_PATTERN"
   end
 
   def test_empty_version
@@ -125,10 +120,10 @@ class TestGemVersion < Gem::TestCase
     assert_prerelease "22.1.50.0.d"
     assert_prerelease "1.2.d.42"
 
-    assert_prerelease '1.A'
+    assert_prerelease "1.A"
 
-    assert_prerelease '1-1'
-    assert_prerelease '1-a'
+    assert_prerelease "1-1"
+    assert_prerelease "1-a"
 
     refute_prerelease "1.2.0"
     refute_prerelease "2.9"
@@ -143,25 +138,53 @@ class TestGemVersion < Gem::TestCase
   end
 
   def test_spaceship
-    assert_equal( 0, v("1.0")       <=> v("1.0.0"))
-    assert_equal( 1, v("1.0")       <=> v("1.0.a"))
-    assert_equal( 1, v("1.8.2")     <=> v("0.0.0"))
-    assert_equal( 1, v("1.8.2")     <=> v("1.8.2.a"))
-    assert_equal( 1, v("1.8.2.b")   <=> v("1.8.2.a"))
-    assert_equal(-1, v("1.8.2.a")   <=> v("1.8.2"))
-    assert_equal( 1, v("1.8.2.a10") <=> v("1.8.2.a9"))
-    assert_equal( 0, v("")          <=> v("0"))
+    assert_equal(0, v("1.0")       <=> v("1.0.0"))
+    assert_equal(1, v("1.0")       <=> v("1.0.a"))
+    assert_equal(1, v("1.8.2")     <=> v("0.0.0"))
+    assert_equal(1, v("1.8.2")     <=> v("1.8.2.a"))
+    assert_equal(1, v("1.8.2.b")   <=> v("1.8.2.a"))
+    assert_equal(-1, v("1.8.2.a") <=> v("1.8.2"))
+    assert_equal(1, v("1.8.2.a10") <=> v("1.8.2.a9"))
+    assert_equal(0, v("")          <=> v("0"))
 
-    assert_nil v("1.0") <=> "whatever"
+    assert_equal(0, v("0.beta.1")  <=> v("0.0.beta.1"))
+    assert_equal(-1, v("0.0.beta")  <=> v("0.0.beta.1"))
+    assert_equal(-1, v("0.0.beta")  <=> v("0.beta.1"))
+
+    assert_equal(-1, v("5.a") <=> v("5.0.0.rc2"))
+    assert_equal(1, v("5.x") <=> v("5.0.0.rc2"))
+
+    [
+      [0, "1.9.3"],
+      [1, "1.9.2.99"],
+      [-1, "1.9.3.1"],
+      [nil, "whatever"],
+    ].each do |cmp, string_ver|
+      assert_equal(cmp, v("1.9.3") <=> string_ver)
+    end
   end
 
   def test_approximate_recommendation
     assert_approximate_equal "~> 1.0", "1"
+    assert_approximate_satisfies_itself "1"
+
     assert_approximate_equal "~> 1.0", "1.0"
+    assert_approximate_satisfies_itself "1.0"
+
     assert_approximate_equal "~> 1.2", "1.2"
+    assert_approximate_satisfies_itself "1.2"
+
     assert_approximate_equal "~> 1.2", "1.2.0"
+    assert_approximate_satisfies_itself "1.2.0"
+
     assert_approximate_equal "~> 1.2", "1.2.3"
-    assert_approximate_equal "~> 1.2", "1.2.3.a.4"
+    assert_approximate_satisfies_itself "1.2.3"
+
+    assert_approximate_equal "~> 1.2.a", "1.2.3.a.4"
+    assert_approximate_satisfies_itself "1.2.3.a.4"
+
+    assert_approximate_equal "~> 1.9.a", "1.9.0.dev"
+    assert_approximate_satisfies_itself "1.9.0.dev"
   end
 
   def test_to_s
@@ -177,9 +200,54 @@ class TestGemVersion < Gem::TestCase
     assert_less_than "1.0.0-1", "1"
   end
 
+  def test_sort_key_is_computed_on_regular_release
+    refute_nil v("9.8.7").send(:sort_key)
+  end
+
+  def test_sort_key_is_computed_on_security_release
+    refute_nil v("9.8.7.1").send(:sort_key)
+  end
+
+  def test_sort_key_is_not_computed_on_prerelease
+    assert_nil v("9.8.7.pre1").send(:sort_key)
+  end
+
+  def test_sort_key_is_not_computed_on_version_with_more_segments
+    assert_nil v("1.1.1.1.1.1.1").send(:sort_key)
+  end
+
+  def test_sort_key_is_not_computed_on_huge_numbers
+    assert_nil v("2.30.1.250000").send(:sort_key)
+  end
+
+  def test_sort_key_on_timestamped_version
+    a = v("1.0.0")
+    b = v("0.0.1.20220404083012")
+
+    assert_operator a, :>, b
+  end
+
+  def test_sort_key_when_segment_is_higher_than_radix
+    a = v("0.7.0")
+    b = v("0.6.63000")
+
+    assert_operator(a, :>, b)
+  end
+
+  def test_sort_key_is_used_for_comparison
+    a = v("18.0.1")
+    b = v("18.0.2")
+
+    # Ensure the slow path isn't getting hit
+    a.instance_variable_set(:@version, nil)
+    a.instance_variable_set(:@canonical_segments, nil)
+
+    assert_operator(a, :<, b)
+  end
+
   # modifying the segments of a version should not affect the segments of the cached version object
   def test_segments
-    v('9.8.7').segments[2] += 1
+    v("9.8.7").segments[2] += 1
 
     refute_version_equal "9.8.8", "9.8.7"
     assert_equal         [9,8,7], v("9.8.7").segments
@@ -191,47 +259,63 @@ class TestGemVersion < Gem::TestCase
     assert_equal [1, 2, 3, "pre", 1], v("1.2.3-1").canonical_segments
   end
 
+  def test_frozen_version
+    v = v("1.freeze.test").freeze
+    assert_less_than v, v("1")
+    assert_version_equal v("1"), v.release
+    assert_version_equal v("2"), v.bump
+  end
+
   # Asserts that +version+ is a prerelease.
 
-  def assert_prerelease version
+  def assert_prerelease(version)
     assert v(version).prerelease?, "#{version} is a prerelease"
   end
 
-  # Assert that +expected+ is the "approximate" recommendation for +version".
+  # Assert that +expected+ is the "approximate" recommendation for +version+.
 
-  def assert_approximate_equal expected, version
+  def assert_approximate_equal(expected, version)
     assert_equal expected, v(version).approximate_recommendation
+  end
+
+  # Assert that the "approximate" recommendation for +version+ satisfies +version+.
+
+  def assert_approximate_satisfies_itself(version)
+    gem_version = v(version)
+
+    assert Gem::Requirement.new(gem_version.approximate_recommendation).satisfied_by?(gem_version)
   end
 
   # Assert that bumping the +unbumped+ version yields the +expected+.
 
-  def assert_bumped_version_equal expected, unbumped
+  def assert_bumped_version_equal(expected, unbumped)
     assert_version_equal expected, v(unbumped).bump
   end
 
   # Assert that +release+ is the correct non-prerelease +version+.
 
-  def assert_release_equal release, version
+  def assert_release_equal(release, version)
     assert_version_equal release, v(version).release
   end
 
   # Assert that two versions are equal. Handles strings or
   # Gem::Version instances.
 
-  def assert_version_equal expected, actual
+  def assert_version_equal(expected, actual)
     assert_equal v(expected), v(actual)
     assert_equal v(expected).hash, v(actual).hash, "since #{actual} == #{expected}, they must have the same hash"
   end
 
   # Assert that two versions are eql?. Checks both directions.
 
-  def assert_version_eql first, second
-    first, second = v(first), v(second)
+  def assert_version_eql(first, second)
+    first = v(first)
+    second = v(second)
     assert first.eql?(second), "#{first} is eql? #{second}"
     assert second.eql?(first), "#{second} is eql? #{first}"
   end
 
-  def assert_less_than left, right
+  def assert_less_than(left, right)
     l = v(left)
     r = v(right)
     assert l < r, "#{left} not less than #{right}"
@@ -239,22 +323,23 @@ class TestGemVersion < Gem::TestCase
 
   # Refute the assumption that +version+ is a prerelease.
 
-  def refute_prerelease version
+  def refute_prerelease(version)
     refute v(version).prerelease?, "#{version} is NOT a prerelease"
   end
 
   # Refute the assumption that two versions are eql?. Checks both
   # directions.
 
-  def refute_version_eql first, second
-    first, second = v(first), v(second)
+  def refute_version_eql(first, second)
+    first = v(first)
+    second = v(second)
     refute first.eql?(second), "#{first} is NOT eql? #{second}"
     refute second.eql?(first), "#{second} is NOT eql? #{first}"
   end
 
   # Refute the assumption that the two versions are equal?.
 
-  def refute_version_equal unexpected, actual
+  def refute_version_equal(unexpected, actual)
     refute_equal v(unexpected), v(actual)
   end
 end

@@ -4,9 +4,6 @@ import com.kenai.jffi.CallingConvention;
 import java.util.Arrays;
 import org.jruby.ext.ffi.NativeType;
 
-/**
- *
- */
 public final class JITSignature {
     private final NativeType resultType;
     private final NativeType[] parameterTypes;

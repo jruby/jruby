@@ -35,30 +35,37 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jcodings.Encoding;
-
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
+public class SymbolNode extends Node implements ILiteralNode, INameNode, LiteralValue, SideEffectFree {
     private final RubySymbol name;
 
-    public SymbolNode(ISourcePosition position, RubySymbol value) {
-        super(position, false);
+    public SymbolNode(int line, RubySymbol value) {
+        super(line, false);
 
         this.name = value;
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof SymbolNode &&
                 name.equals(((SymbolNode) other).name) &&
                 name.getEncoding() == ((SymbolNode) other).name.getEncoding();
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * name.hashCode();
     }
 
     public NodeType getNodeType() {
@@ -79,5 +86,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return name;
     }
 }

@@ -48,11 +48,11 @@ import org.osgi.framework.Bundle;
  * as possible in the OSGi world.
  * <p>
  * Currently:
+ * </p>
  * <ol>
  * <li>Access to the java classes and resources provided by the osgi bundle.</li>
  * <li>Setup of jruby home pointing at the jruby bundle by default. Supporting unzipped jruby bundle for now.</li>
  * </ol>
- * </p>
  * <p>
  * TODO: look into using the LoadService of jruby.
  * Look if it would be possible to reuse the base runtime and minimize the cost of new
@@ -64,20 +64,26 @@ import org.osgi.framework.Bundle;
 public class OSGiScriptingContainer extends ScriptingContainer {
 
     /**
-     * @return A scripting container where the classloader can find classes
-     * in the osgi creator bundle and where the jruby home is set to point to
+     * A scripting container where the classloader can find classes in
+     * the osgi creator bundle and where the jruby home is set to point to
      * the one in the jruby's bundle home folder.
+     * <p>
      * scope: LocalContextScope.SINGLETHREAD; behavior: LocalVariableBehavior.TRANSIENT
+     * </p>
+     *
+     * @param creator
      */
     public OSGiScriptingContainer(Bundle creator) {
         this(creator, LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
     }
     /**
+     * A scripting container where the classloader can find classes in
+     * the osgi creator bundle and where the jruby home is set to point to
+     * the one in the jruby's bundle home folder.
+     *
+     * @param creator
      * @param scope if null, LocalContextScope.SINGLETHREAD
      * @param behavior if null, LocalVariableBehavior.TRANSIENT
-     * @return A scripting container where the classloader can find classes
-     * in the osgi creator bundle and where the jruby home is set to point to
-     * the one in the jruby's bundle home folder.
      */
     public OSGiScriptingContainer(Bundle creator,
             LocalContextScope scope, LocalVariableBehavior behavior) {

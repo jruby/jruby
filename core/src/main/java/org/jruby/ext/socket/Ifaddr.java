@@ -1,5 +1,13 @@
 package org.jruby.ext.socket;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyObject;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -8,18 +16,11 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyObject;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import jnr.constants.platform.InterfaceInfo;
 
-/**
- *
- * @author Lucas Allan Amorim
- */
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+
 public class Ifaddr extends RubyObject {
 
     private String name;
@@ -33,19 +34,12 @@ public class Ifaddr extends RubyObject {
     private boolean isLink;
     private String netmask;
     private int index;
+    private int flags;
     private String flagStatus;
     private Addrinfo addr;
 
-    public static void createIfaddr(Ruby runtime) {
-        RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
-                "Ifaddr",
-                runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Ifaddr(runtime, klazz);
-                    }
-                });
-        ifaddr.defineAnnotatedMethods(Ifaddr.class);
+    public static void createIfaddr(ThreadContext context, RubyClass Object, RubyClass Socket) {
+        Socket.defineClassUnder(context, "Ifaddr", Object, Ifaddr::new).defineMethods(context, Ifaddr.class);
     }
 
     public Ifaddr(Ruby runtime, RubyClass metaClass) {
@@ -61,12 +55,14 @@ public class Ifaddr extends RubyObject {
         this.index = ni.getIndex();
         this.networkInterface = ni;
         this.isLink = false;
+        this.flags = 0;
         this.address = it.getAddress();
         this.broadcast = it.getBroadcast();
         this.interfaceAddress = it;
-        setAddr(runtime);
+        setAddr(runtime.getCurrentContext());
         setNetmask(it);
         setInspectString(ni);
+        setInterfaceFlags(ni);
     }
 
     public Ifaddr(Ruby runtime, RubyClass metaClass, NetworkInterface ni) throws SocketException {
@@ -76,20 +72,22 @@ public class Ifaddr extends RubyObject {
         this.isUp = ni.isUp();
         this.isPointToPoint = ni.isPointToPoint();
         this.index = ni.getIndex();
+        this.flags = 0;
         this.networkInterface = ni;
         this.isLink = true;
-        setAddr(runtime);
+        setAddr(runtime.getCurrentContext());
         setInspectString(ni);
+        setInterfaceFlags(ni);
     }
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("#<Socket::Ifaddr: " + name + " " + flagStatus + ">");
+        return newString(context, "#<Socket::Ifaddr: " + name + " " + flagStatus + ">");
     }
 
     @JRubyMethod
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newString(name);
+        return newString(context, name);
     }
 
     @JRubyMethod
@@ -100,11 +98,11 @@ public class Ifaddr extends RubyObject {
     @JRubyMethod
     public IRubyObject broadaddr(ThreadContext context) {
         if (broadcast != null && isLink == false) {
-          return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), broadcast);
+          return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), broadcast);
         }
         try {
           if (isLink == true && networkInterface.isLoopback() == false) {
-            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), networkInterface, true);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), networkInterface, true);
           }
         } catch (SocketException e) {
         }
@@ -113,21 +111,23 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ifindex(ThreadContext context) {
-        return context.runtime.newFixnum(index);
-    }
-
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject flags(ThreadContext context) {
-        // not implemented yet
-        return context.nil;
+        return asFixnum(context, index);
     }
 
     @JRubyMethod
-    public IRubyObject netmask(ThreadContext context) throws UnknownHostException {
-        if (netmask == null) {
-            return context.nil;
+    public IRubyObject flags(ThreadContext context) {
+        return asFixnum(context, flags);
+    }
+
+    @JRubyMethod
+    public IRubyObject netmask(ThreadContext context) {
+        if (netmask == null) return context.nil;
+
+        try {
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), InetAddress.getByName(netmask));
+        } catch (UnknownHostException uhe) {
+            throw context.runtime.newIOErrorFromException(uhe);
         }
-        return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), InetAddress.getByName(netmask));
     }
 
     @JRubyMethod(notImplemented = true)
@@ -136,12 +136,12 @@ public class Ifaddr extends RubyObject {
         return context.nil;
     }
 
-    private void setAddr(Ruby runtime) {
+    private void setAddr(ThreadContext context) {
         if (address != null && isLink == false) {
-          addr = new Addrinfo(runtime, runtime.getClass("Addrinfo"), address);
+          addr = new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address);
         }
         if (isLink == true) {
-          addr = new Addrinfo(runtime, runtime.getClass("Addrinfo"), networkInterface, false);
+          addr = new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), networkInterface, false);
         }
     }
 
@@ -211,6 +211,21 @@ public class Ifaddr extends RubyObject {
     private String getBroadcastAsString() {
         if (broadcast == null) return "";
         return broadcast.toString().substring(1);
+    }
+
+    private void setInterfaceFlags(NetworkInterface nif) throws SocketException {
+        if (isUp) {
+            flags |= InterfaceInfo.IFF_UP.value();
+        }
+        if (nif.supportsMulticast()) {
+            flags |= InterfaceInfo.IFF_MULTICAST.value();
+        }
+        if (isLoopback) {
+            flags |= InterfaceInfo.IFF_LOOPBACK.value();
+        }
+        if (isPointToPoint) {
+            flags |= InterfaceInfo.IFF_POINTOPOINT.value();
+        }
     }
 
 }

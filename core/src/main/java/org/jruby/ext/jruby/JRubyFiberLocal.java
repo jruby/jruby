@@ -40,18 +40,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "JRuby::FiberLocal")
 public final class JRubyFiberLocal extends JRubyExecutionContextLocal {
-
-    static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass type) {
-            return new JRubyFiberLocal(runtime, type);
-        }
-    };
-
     public JRubyFiberLocal(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "with_value", required = 1)
+    @JRubyMethod(name = "with_value")
     public IRubyObject withValue(ThreadContext context, IRubyObject value, Block block) {
         final Map<Object, IRubyObject> contextVariables;
         contextVariables = getContextVariables(context);

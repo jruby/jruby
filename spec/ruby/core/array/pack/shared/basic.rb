@@ -1,6 +1,6 @@
 describe :array_pack_arguments, shared: true do
   it "raises an ArgumentError if there are fewer elements than the format requires" do
-    lambda { [].pack(pack_format(1)) }.should raise_error(ArgumentError)
+    -> { [].pack(pack_format(1)) }.should.raise(ArgumentError)
   end
 end
 
@@ -10,11 +10,11 @@ describe :array_pack_basic, shared: true do
   end
 
   it "raises a TypeError when passed nil" do
-    lambda { [@obj].pack(nil) }.should raise_error(TypeError)
+    -> { [@obj].pack(nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when passed an Integer" do
-    lambda { [@obj].pack(1) }.should raise_error(TypeError)
+    -> { [@obj].pack(1) }.should.raise(TypeError)
   end
 end
 
@@ -24,42 +24,50 @@ describe :array_pack_basic_non_float, shared: true do
   end
 
   it "ignores whitespace in the format string" do
-    [@obj, @obj].pack("a \t\n\v\f\r"+pack_format).should be_an_instance_of(String)
+    [@obj, @obj].pack("a \t\n\v\f\r"+pack_format).should.instance_of?(String)
+  end
+
+  it "ignores comments in the format string" do
+    # 2 additional directives ('a') are required for the X directive
+    [@obj, @obj, @obj, @obj].pack("aa #{pack_format} # some comment \n#{pack_format}").should.instance_of?(String)
+  end
+
+  it "raise ArgumentError when a directive is unknown" do
+    # additional directive ('a') is required for the X directive
+    -> { [@obj, @obj].pack("a K" + pack_format) }.should.raise(ArgumentError, /unknown pack directive 'K'/)
+    -> { [@obj, @obj].pack("a 0" + pack_format) }.should.raise(ArgumentError, /unknown pack directive '0'/)
+    -> { [@obj, @obj].pack("a :" + pack_format) }.should.raise(ArgumentError, /unknown pack directive ':'/)
   end
 
   it "calls #to_str to coerce the directives string" do
     d = mock("pack directive")
     d.should_receive(:to_str).and_return("x"+pack_format)
-    [@obj, @obj].pack(d).should be_an_instance_of(String)
-  end
-
-  it "taints the output string if the format string is tainted" do
-    [@obj, @obj].pack("x"+pack_format.taint).tainted?.should be_true
+    [@obj, @obj].pack(d).should.instance_of?(String)
   end
 end
 
 describe :array_pack_basic_float, shared: true do
   it "ignores whitespace in the format string" do
-    [9.3, 4.7].pack(" \t\n\v\f\r"+pack_format).should be_an_instance_of(String)
+    [9.3, 4.7].pack(" \t\n\v\f\r"+pack_format).should.instance_of?(String)
+  end
+
+  it "ignores comments in the format string" do
+    [9.3, 4.7].pack(pack_format + "# some comment \n" + pack_format).should.instance_of?(String)
   end
 
   it "calls #to_str to coerce the directives string" do
     d = mock("pack directive")
     d.should_receive(:to_str).and_return("x"+pack_format)
-    [1.2, 4.7].pack(d).should be_an_instance_of(String)
-  end
-
-  it "taints the output string if the format string is tainted" do
-    [3.2, 2.8].pack("x"+pack_format.taint).tainted?.should be_true
+    [1.2, 4.7].pack(d).should.instance_of?(String)
   end
 end
 
 describe :array_pack_no_platform, shared: true do
   it "raises ArgumentError when the format modifier is '_'" do
-    lambda{ [1].pack(pack_format("_")) }.should raise_error(ArgumentError)
+    ->{ [1].pack(pack_format("_")) }.should.raise(ArgumentError)
   end
 
   it "raises ArgumentError when the format modifier is '!'" do
-    lambda{ [1].pack(pack_format("!")) }.should raise_error(ArgumentError)
+    ->{ [1].pack(pack_format("!")) }.should.raise(ArgumentError)
   end
 end

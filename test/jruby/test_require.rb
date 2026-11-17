@@ -7,11 +7,11 @@ class TestRequire < Test::Unit::TestCase
   # See JRUBY-3078.
   def test_require_fires_once_across_threads
     $foo = 0
-    100.times do
+    100.times do |i|
       (1..(ENV['THREAD_COUNT'] || 5).to_i).map do
         Thread.new { require 'test/jruby/test_require_once_foo' }
       end.each { |t| t.join }
-      raise "Concurrent requires caused double-loading" if $foo != 1
+      raise "Concurrent requires caused double-loading in iteration #{i} with $foo == #{$foo}" if $foo != 1
       $foo = 0
       $".pop
     end
@@ -84,6 +84,29 @@ OUT
     end
   ensure
     ASimpleLib.send :remove_const, :Error
+  end
+
+  def test_require_raising
+    current_dir = File.expand_path(File.dirname(__FILE__))
+    if $LOAD_PATH.include?(current_dir)
+      current_dir = false
+    else
+      $LOAD_PATH << current_dir
+    end
+
+    threads = 5.times.map do
+      Thread.new do
+        require 'require_raising.rb'
+        'okay'
+      rescue LoadError => e
+        e.message
+      end
+    end
+
+    assert_equal ['raising'] * 5, threads.map(&:value)
+
+  ensure
+    $LOAD_PATH.delete current_dir if current_dir
   end
 
   # module ::Zlib; end

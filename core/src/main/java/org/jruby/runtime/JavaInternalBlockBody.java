@@ -35,11 +35,6 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
     }
 
-    @Deprecated // needed by jruby-rack until it supports 1.7 along side with 9K
-    public JavaInternalBlockBody(Ruby runtime, Arity arity) {
-        this(runtime, null, null, Signature.from(arity));
-    }
-
     // Make sure we are still on the same thread as originator if we care
     private void threadCheck(ThreadContext yieldingContext) {
         if (originalContext != null && yieldingContext != originalContext) {
@@ -47,39 +42,35 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         }
     }
 
-    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
-        Signature signature = block.getSignature();
-        int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
-
-        return args;
-    }
-
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return yield(context, block, adjustArgs(block, args), null);
+        return this.yield(context, block, CallBlock.adjustArgs(block, args), null);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        return yield(context, block, adjustArgs(block, args), null, blockArg);
+        return this.yield(context, block, CallBlock.adjustArgs(block, args), null, blockArg);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         threadCheck(context);
         
-        return yield(context, new IRubyObject[] { value });
+        return this.yield(context, value);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         threadCheck(context);
 
-        return yield(context, adjustArgs(block, args));
+        return this.yield(context, CallBlock.adjustArgs(block, args));
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);
+
+    public IRubyObject yield(ThreadContext context, IRubyObject arg) {
+        return this.yield(context, new IRubyObject[] { arg });
+    }
 
     @Override
     public StaticScope getStaticScope() {

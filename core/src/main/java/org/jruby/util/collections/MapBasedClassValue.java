@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A simple Map-based cache of proxies.
+ * @param <T> type
  */
 public final class MapBasedClassValue<T> extends ClassValue<T> {
     
@@ -27,6 +28,10 @@ public final class MapBasedClassValue<T> extends ClassValue<T> {
         }
 
         return obj;
+    }
+
+    public void clear() {
+        cache.clear();
     }
 
     // There's not a compelling reason to keep JavaClass instances in a weak map

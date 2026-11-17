@@ -34,24 +34,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.runtime.Helpers;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents an 'undef' statement.
  */
 public class UndefNode extends Node {
-    private Node name;
+    private final Node name;
 
     // name can be SymbolNode/DSymbolNode/LiteralNdoe
-    public UndefNode(ISourcePosition position, Node name) {
-        super(position, false);
+    public UndefNode(int line, Node name) {
+        super(line, false);
         this.name = name;
     }
 

@@ -1,1 +1,0 @@
-fails:UnboundMethod#owner returns the new owner for aliased methods on singleton classes

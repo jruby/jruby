@@ -23,4 +23,141 @@ class TestResolvResource < Test::Unit::TestCase
   def test_coord
     Resolv::LOC::Coord.create('1 2 1.1 N')
   end
+
+  # Decoding an unknown (type, class) pair builds a fresh class every time, so
+  # equality must not rest on the class identity.
+  def test_generic_equality
+    wire = generic_answer(40000, "\x01\x02\x03")
+    rr1 = decode_generic(wire)
+    rr2 = decode_generic(wire)
+
+    assert_not_same rr1.class, rr2.class
+    assert_equal rr1, rr2
+    assert rr1.eql?(rr2)
+    assert_equal rr1.hash, rr2.hash
+    assert_equal Resolv::DNS::Message.decode(wire), Resolv::DNS::Message.decode(wire)
+  end
+
+  # Any descendant counts, not just a class create returned.
+  def test_generic_equality_between_descendants
+    generic = Resolv::DNS::Resource::Generic
+    direct = generic.create(40000, 60000)
+    descendant = Class.new(generic.create(40000, 60000))
+
+    assert_equal direct.new("\x01\x02\x03"), descendant.new("\x01\x02\x03")
+    assert_equal descendant.new("\x01\x02\x03"), direct.new("\x01\x02\x03")
+    assert_equal generic.new("\x01\x02\x03"), generic.new("\x01\x02\x03")
+    assert_not_equal direct.new("\x01\x02\x03"),
+      Class.new(generic.create(40001, 60000)).new("\x01\x02\x03")
+  end
+
+  def test_generic_inequality
+    rr = decode_generic(generic_answer(40000, "\x01\x02\x03"))
+
+    assert_not_equal rr, decode_generic(generic_answer(40001, "\x01\x02\x03"))
+    assert_not_equal rr, decode_generic(generic_answer(40000, "\x09\x09\x09"))
+    assert_not_equal rr, Resolv::DNS::Resource::IN::A.new("192.168.0.1")
+  end
+
+  # A question holds the resource class itself, so it needs the same treatment.
+  def test_generic_question_equality
+    wire = generic_question(40000)
+
+    assert_equal Resolv::DNS::Message.decode(wire), Resolv::DNS::Message.decode(wire)
+    assert_not_equal Resolv::DNS::Message.decode(wire),
+      Resolv::DNS::Message.decode(generic_question(40001))
+  end
+
+  private def header(qdcount, ancount)
+    "\x00\x00\x00\x00".b + [qdcount, ancount, 0, 0].pack('nnnn')
+  end
+
+  private def generic_answer(type, rdata)
+    rdata = rdata.b
+    (header(0, 1) + "\x00".b + [type, 60000, 0, rdata.bytesize].pack('nnNn') + rdata).b
+  end
+
+  private def generic_question(type)
+    (header(1, 0) + "\x07example\x03com\x00".b + [type, 60000].pack('nn')).b
+  end
+
+  private def decode_generic(wire)
+    Resolv::DNS::Message.decode(wire).answer.first[2]
+  end
+
+  def test_srv_no_compress
+    # Domain name in SRV RDATA should not be compressed
+    issue29 = 'https://github.com/ruby/resolv/issues/29'
+    m = Resolv::DNS::Message.new(0)
+    m.add_answer('example.com', 0, Resolv::DNS::Resource::IN::SRV.new(0, 0, 0, 'www.example.com'))
+    assert_equal "\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x07example\x03com\x00\x00\x21\x00\x01\x00\x00\x00\x00\x00\x17\x00\x00\x00\x00\x00\x00\x03www\x07example\x03com\x00", m.encode, issue29
+  end
+end
+
+class TestResolvResourceCAA < Test::Unit::TestCase
+  def test_caa_roundtrip
+    raw_msg = "\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x03new\x07example\x03com\x00\x01\x01\x00\x01\x00\x00\x00\x00\x00\x16\x00\x05issueca1.example.net\xC0\x0C\x01\x01\x00\x01\x00\x00\x00\x00\x00\x0C\x80\x03tbsUnknown".b
+
+    m = Resolv::DNS::Message.new(0)
+    m.add_answer('new.example.com', 0, Resolv::DNS::Resource::IN::CAA.new(0, 'issue', 'ca1.example.net'))
+    m.add_answer('new.example.com', 0, Resolv::DNS::Resource::IN::CAA.new(128, 'tbs', 'Unknown'))
+    assert_equal raw_msg, m.encode
+
+    m = Resolv::DNS::Message.decode(raw_msg)
+    assert_equal 2, m.answer.size
+    _, _, caa0 = m.answer[0]
+    assert_equal 0, caa0.flags
+    assert_equal false, caa0.critical?
+    assert_equal 'issue', caa0.tag
+    assert_equal 'ca1.example.net', caa0.value
+    _, _, caa1 = m.answer[1]
+    assert_equal true, caa1.critical?
+    assert_equal 128, caa1.flags
+    assert_equal 'tbs', caa1.tag
+    assert_equal 'Unknown', caa1.value
+  end
+
+  def test_caa_stackoverflow
+    # gathered in the wild
+    raw_msg = "\x8D\x32\x81\x80\x00\x01\x00\x0B\x00\x00\x00\x00\x0Dstackoverflow\x03com\x00\x01\x01\x00\x01\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x13\x00\x05issuecomodoca.com\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x2D\x00\x05issuedigicert.com; cansignhttpexchanges=yes\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x16\x00\x05issueletsencrypt.org\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x29\x00\x05issuepki.goog; cansignhttpexchanges=yes\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x12\x00\x05issuesectigo.com\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x17\x00\x09issuewildcomodoca.com\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x31\x00\x09issuewilddigicert.com; cansignhttpexchanges=yes\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x1A\x00\x09issuewildletsencrypt.org\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x2D\x00\x09issuewildpki.goog; cansignhttpexchanges=yes\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x16\x00\x09issuewildsectigo.com\xC0\x0C\x01\x01\x00\x01\x00\x00\x01\x2C\x00\x2D\x80\x05iodefmailto:sysadmin-team@stackoverflow.com".b
+
+    m = Resolv::DNS::Message.decode(raw_msg)
+    assert_equal 11, m.answer.size
+    _, _, caa3 = m.answer[3]
+    assert_equal 0, caa3.flags
+    assert_equal 'issue', caa3.tag
+    assert_equal 'pki.goog; cansignhttpexchanges=yes', caa3.value
+    _, _, caa8 = m.answer[8]
+    assert_equal 0, caa8.flags
+    assert_equal 'issuewild', caa8.tag
+    assert_equal 'pki.goog; cansignhttpexchanges=yes', caa8.value
+    _, _, caa10 = m.answer[10]
+    assert_equal 128, caa10.flags
+    assert_equal 'iodef', caa10.tag
+    assert_equal 'mailto:sysadmin-team@stackoverflow.com', caa10.value
+  end
+
+  def test_caa_flags
+    assert_equal 255,
+      Resolv::DNS::Resource::IN::CAA.new(255, 'issue', 'ca1.example.net').flags
+    assert_raise(ArgumentError) do
+      Resolv::DNS::Resource::IN::CAA.new(256, 'issue', 'ca1.example.net')
+    end
+
+    assert_raise(ArgumentError) do
+      Resolv::DNS::Resource::IN::CAA.new(-1, 'issue', 'ca1.example.net')
+    end
+  end
+
+  def test_caa_tag
+    assert_raise(ArgumentError, 'Empty tag should be rejected') do
+      Resolv::DNS::Resource::IN::CAA.new(0, '', 'ca1.example.net')
+    end
+
+    assert_equal '123456789012345',
+      Resolv::DNS::Resource::IN::CAA.new(0, '123456789012345', 'ca1.example.net').tag
+    assert_raise(ArgumentError, 'Tag longer than 15 bytes should be rejected') do
+      Resolv::DNS::Resource::IN::CAA.new(0, '1234567890123456', 'ca1.example.net')
+    end
+  end
 end

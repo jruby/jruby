@@ -28,6 +28,8 @@ package org.jruby.util;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Arrays;
+
 /**
  * Support methods for (native) arrays.
  *
@@ -78,31 +80,19 @@ public abstract class ArraySupport {
     }
 
     public static Object[] newCopy(Object[] src, int length) {
-        final Object[] copy = new Object[length];
-        if (length > src.length) length = src.length;
-        copy(src, copy, 0, length);
-        return copy;
+        return Arrays.copyOfRange(src, 0, length);
     }
 
     public static IRubyObject[] newCopy(IRubyObject[] src, int length) {
-        final IRubyObject[] copy = new IRubyObject[length];
-        if (length > src.length) length = src.length;
-        copy(src, copy, 0, length);
-        return copy;
+        return Arrays.copyOfRange(src, 0, length);
     }
 
     public static IRubyObject[] newCopy(IRubyObject[] src, final int srcOff, int length) {
-        final IRubyObject[] copy = new IRubyObject[length];
-        if (length > src.length) length = src.length;
-        copy(src, srcOff, copy, 0, length);
-        return copy;
+        return Arrays.copyOfRange(src, srcOff, srcOff + length);
     }
 
     public static Class[] newCopy(Class[] src, int length) {
-        final Class[] copy = new Class[length];
-        if (length > src.length) length = src.length;
-        copy(src, copy, 0, length);
-        return copy;
+        return Arrays.copyOfRange(src, 0, length);
     }
 
     public static Object[] newCopy(Object[] src, Object last) {

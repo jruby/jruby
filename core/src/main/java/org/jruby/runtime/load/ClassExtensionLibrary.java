@@ -98,7 +98,7 @@ public class ClassExtensionLibrary implements Library {
                 continue;
             } catch (UnsupportedClassVersionError ucve) {
                 if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in '" + className + "': " + ucve, className);
             }
         }
 
@@ -160,7 +160,7 @@ public class ClassExtensionLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         if(BasicLibraryService.class.isAssignableFrom(theClass)) {
             try {
-                runtime.loadExtension(name, (BasicLibraryService)theClass.newInstance(), wrap);
+                runtime.loadExtension(name, (BasicLibraryService)theClass.getConstructor().newInstance(), wrap);
             } catch(final Exception ee) {
                 throw new RuntimeException(ee.getMessage(),ee);
             }

@@ -5,7 +5,6 @@ require 'test/unit'
 class TestObject < Test::Unit::TestCase
   def setup
     @verbose = $VERBOSE
-    $VERBOSE = nil
   end
 
   def teardown
@@ -47,15 +46,27 @@ class TestObject < Test::Unit::TestCase
     a = Object.new
     def a.b; 2 end
 
+    c = a.clone
+    assert_equal(false, c.frozen?)
+    assert_equal(false, a.frozen?)
+    assert_equal(2, c.b)
+
+    c = a.clone(freeze: true)
+    assert_equal(true, c.frozen?)
+    assert_equal(false, a.frozen?)
+    assert_equal(2, c.b)
+
     a.freeze
     c = a.clone
     assert_equal(true, c.frozen?)
+    assert_equal(true, a.frozen?)
     assert_equal(2, c.b)
 
     assert_raise(ArgumentError) {a.clone(freeze: [])}
     d = a.clone(freeze: false)
     def d.e; 3; end
     assert_equal(false, d.frozen?)
+    assert_equal(true, a.frozen?)
     assert_equal(2, d.b)
     assert_equal(3, d.e)
 
@@ -75,6 +86,30 @@ class TestObject < Test::Unit::TestCase
     assert_raise_with_message(ArgumentError, /\u{1f4a9}/) do
       Object.new.clone(freeze: x)
     end
+
+    c = Class.new do
+      attr_reader :f
+    end
+    o = c.new
+    def o.initialize_clone(_, freeze: true)
+      @f = freeze
+      super
+    end
+    clone = o.clone
+    assert_kind_of c, clone
+    assert_equal true, clone.f
+    clone = o.clone(freeze: false)
+    assert_kind_of c, clone
+    assert_equal false, clone.f
+
+    class << o
+      remove_method(:initialize_clone)
+    end
+    def o.initialize_clone(_)
+      super
+    end
+    assert_kind_of c, o.clone
+    assert_raise(ArgumentError) { o.clone(freeze: false) }
   end
 
   def test_init_dupclone
@@ -94,17 +129,6 @@ class TestObject < Test::Unit::TestCase
 
   def test_kind_of
     assert_raise(TypeError) { 1.kind_of?(1) }
-  end
-
-  def test_taint_frozen_obj
-    o = Object.new
-    o.freeze
-    assert_raise(FrozenError) { o.taint }
-
-    o = Object.new
-    o.taint
-    o.freeze
-    assert_raise(FrozenError) { o.untaint }
   end
 
   def test_freeze_immediate
@@ -130,6 +154,27 @@ class TestObject < Test::Unit::TestCase
 
   def test_nil_to_f
     assert_equal(0.0, nil.to_f)
+  end
+
+  def test_nil_to_s
+    str = nil.to_s
+    assert_equal("", str)
+    assert_predicate(str, :frozen?)
+    assert_same(str, nil.to_s)
+  end
+
+  def test_true_to_s
+    str = true.to_s
+    assert_equal("true", str)
+    assert_predicate(str, :frozen?)
+    assert_same(str, true.to_s)
+  end
+
+  def test_false_to_s
+    str = false.to_s
+    assert_equal("false", str)
+    assert_predicate(str, :frozen?)
+    assert_same(str, false.to_s)
   end
 
   def test_not
@@ -227,6 +272,20 @@ class TestObject < Test::Unit::TestCase
     assert_equal([:foo], o.methods(false), bug8044)
   end
 
+  def test_methods_prepend_singleton
+    c = Class.new(Module) {private def foo; end}
+    k = c.new
+    k.singleton_class
+    c.module_eval {prepend(Module.new)}
+    assert_equal([:foo], k.private_methods(false))
+  end
+
+  class ToStrCounter
+    def initialize(str = "@foo") @str = str; @count = 0; end
+    def to_str; @count += 1; @str; end
+    def count; @count; end
+  end
+
   def test_instance_variable_get
     o = Object.new
     o.instance_eval { @foo = :foo }
@@ -238,9 +297,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_get("bar") }
     assert_raise(TypeError) { o.instance_variable_get(1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     assert_equal(:foo, o.instance_variable_get(n))
     assert_equal(1, n.count)
   end
@@ -255,9 +312,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_set("bar", 1) }
     assert_raise(TypeError) { o.instance_variable_set(1, 1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     o.instance_variable_set(n, :bar)
     assert_equal(:bar, o.instance_eval { @foo })
     assert_equal(1, n.count)
@@ -274,9 +329,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_defined?("bar") }
     assert_raise(TypeError) { o.instance_variable_defined?(1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     assert_equal(true, o.instance_variable_defined?(n))
     assert_equal(1, n.count)
   end
@@ -302,10 +355,49 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
+  def test_remove_instance_variable_re_embed
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      c = Class.new do
+        attr_reader :a, :b, :c
+
+        def initialize
+          @a = nil
+          @b = nil
+          @c = nil
+        end
+      end
+
+      o1 = c.new
+      o2 = c.new
+
+      o1.instance_variable_set(:@foo, 5)
+      o1.instance_variable_set(:@a, 0)
+      o1.instance_variable_set(:@b, 1)
+      o1.instance_variable_set(:@c, 2)
+      refute_includes ObjectSpace.dump(o1), '"embedded":true'
+      o1.remove_instance_variable(:@foo)
+      assert_includes ObjectSpace.dump(o1), '"embedded":true'
+
+      o2.instance_variable_set(:@a, 0)
+      o2.instance_variable_set(:@b, 1)
+      o2.instance_variable_set(:@c, 2)
+      assert_includes ObjectSpace.dump(o2), '"embedded":true'
+
+      assert_equal(0, o1.a)
+      assert_equal(1, o1.b)
+      assert_equal(2, o1.c)
+      assert_equal(0, o2.a)
+      assert_equal(1, o2.b)
+      assert_equal(2, o2.c)
+    end;
+  end
+
   def test_convert_string
     o = Object.new
     def o.to_s; 1; end
     assert_raise(TypeError) { String(o) }
+    o.singleton_class.remove_method(:to_s)
     def o.to_s; "o"; end
     assert_equal("o", String(o))
     def o.to_str; "O"; end
@@ -318,6 +410,7 @@ class TestObject < Test::Unit::TestCase
     o = Object.new
     def o.to_a; 1; end
     assert_raise(TypeError) { Array(o) }
+    o.singleton_class.remove_method(:to_a)
     def o.to_a; [1]; end
     assert_equal([1], Array(o))
     def o.to_ary; [2]; end
@@ -335,6 +428,7 @@ class TestObject < Test::Unit::TestCase
     o = Object.new
     def o.to_hash; {a: 1, b: 2}; end
     assert_equal({a: 1, b: 2}, Hash(o))
+    o.singleton_class.remove_method(:to_hash)
     def o.to_hash; 9; end
     assert_raise(TypeError) { Hash(o) }
   end
@@ -343,6 +437,7 @@ class TestObject < Test::Unit::TestCase
     o = Object.new
     def o.to_i; nil; end
     assert_raise(TypeError) { Integer(o) }
+    o.singleton_class.remove_method(:to_i)
     def o.to_i; 42; end
     assert_equal(42, Integer(o))
     def o.respond_to?(*) false; end
@@ -365,6 +460,18 @@ class TestObject < Test::Unit::TestCase
     assert_equal(1+3+5+7+9, n)
   end
 
+  def test_max_shape_variation_with_performance_warnings
+    assert_in_out_err([], <<-INPUT, %w(), /The class Foo reached 8 shape variations, instance variables accesses will be slower and memory usage increased/)
+      $VERBOSE = false
+      Warning[:performance] = true
+
+      class Foo; end
+      10.times do |i|
+        Foo.new.instance_variable_set(:"@a\#{i}", nil)
+      end
+    INPUT
+  end
+
   def test_redefine_method_under_verbose
     assert_in_out_err([], <<-INPUT, %w(2), /warning: method redefined; discarding old foo$/)
       $VERBOSE = true
@@ -376,15 +483,30 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_redefine_method_which_may_case_serious_problem
-    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `object_id' may cause serious problems$")
-      $VERBOSE = false
-      def (Object.new).object_id; end
-    INPUT
+    %w(object_id __id__ __send__).each do |m|
+      assert_in_out_err([], <<-INPUT, [], %r"warning: redefining '#{m}' may cause serious problems$")
+        $VERBOSE = false
+        def (Object.new).#{m}; end
+      INPUT
 
-    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `__send__' may cause serious problems$")
-      $VERBOSE = false
-      def (Object.new).__send__; end
-    INPUT
+      assert_in_out_err([], <<-INPUT, [], %r"warning: redefining '#{m}' may cause serious problems$")
+        $VERBOSE = false
+        Class.new.define_method(:#{m}) {}
+      INPUT
+
+      assert_in_out_err([], <<-INPUT, [], %r"warning: redefining '#{m}' may cause serious problems$")
+        $VERBOSE = false
+        Class.new.attr_reader(:#{m})
+      INPUT
+
+      assert_in_out_err([], <<-INPUT, [], %r"warning: redefining '#{m}' may cause serious problems$")
+        $VERBOSE = false
+        Class.new do
+          def foo; end
+          alias #{m} foo
+        end
+      INPUT
+    end
 
     bug10421 = '[ruby-dev:48691] [Bug #10421]'
     assert_in_out_err([], <<-INPUT, ["1"], [], bug10421)
@@ -423,8 +545,8 @@ class TestObject < Test::Unit::TestCase
     bug2202 = '[ruby-core:26074]'
     assert_raise(NoMethodError, bug2202) {o2.meth2}
 
-    %w(object_id __send__ initialize).each do |m|
-      assert_in_out_err([], <<-INPUT, %w(:ok), %r"warning: removing `#{m}' may cause serious problems$")
+    %w(object_id __id__ __send__ initialize).each do |m|
+      assert_in_out_err([], <<-INPUT, %w(:ok), %r"warning: removing '#{m}' may cause serious problems$")
         $VERBOSE = false
         begin
           Class.new.instance_eval { remove_method(:#{m}) }
@@ -577,7 +699,7 @@ class TestObject < Test::Unit::TestCase
 
     called = []
     p.singleton_class.class_eval do
-      define_method(:respond_to?) do |a|
+      define_method(:respond_to?) do |a, priv = false|
         called << [:respond_to?, a]
         false
       end
@@ -720,7 +842,7 @@ class TestObject < Test::Unit::TestCase
     e = assert_raise(NoMethodError) {
       o.never_defined_test_no_superclass_method
     }
-    assert_equal(m1, e.message, bug2312)
+    assert_equal(m1.lines.first, e.message.lines.first, bug2312)
   end
 
   def test_superclass_method
@@ -765,36 +887,7 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
-  def test_untrusted
-    verbose = $VERBOSE
-    $VERBOSE = false
-    begin
-      obj = Object.new
-      assert_equal(false, obj.untrusted?)
-      assert_equal(false, obj.tainted?)
-      obj.untrust
-      assert_equal(true, obj.untrusted?)
-      assert_equal(true, obj.tainted?)
-      obj.trust
-      assert_equal(false, obj.untrusted?)
-      assert_equal(false, obj.tainted?)
-      obj.taint
-      assert_equal(true, obj.untrusted?)
-      assert_equal(true, obj.tainted?)
-      obj.untaint
-      assert_equal(false, obj.untrusted?)
-      assert_equal(false, obj.tainted?)
-    ensure
-      $VERBOSE = verbose
-    end
-  end
-
   def test_to_s
-    x = Object.new
-    x.taint
-    s = x.to_s
-    assert_equal(true, s.tainted?)
-
     x = eval(<<-EOS)
       class ToS\u{3042}
         new.to_s
@@ -803,14 +896,10 @@ class TestObject < Test::Unit::TestCase
     assert_match(/\bToS\u{3042}:/, x)
 
     name = "X".freeze
-    x = Object.new.taint
+    x = Object.new
     class<<x;self;end.class_eval {define_method(:to_s) {name}}
     assert_same(name, x.to_s)
-    assert_not_predicate(name, :tainted?)
-    assert_raise(FrozenError) {name.taint}
     assert_equal("X", [x].join(""))
-    assert_not_predicate(name, :tainted?)
-    assert_not_predicate(eval('"X".freeze'), :tainted?)
   end
 
   def test_inspect
@@ -828,6 +917,15 @@ class TestObject < Test::Unit::TestCase
     x.instance_variable_set(:@foo, "value")
     x.instance_variable_set(:@bar, 42)
     assert_match(/\A#<Object:0x\h+ (?:@foo="value", @bar=42|@bar=42, @foo="value")>\z/, x.inspect)
+
+    # Bug: [ruby-core:19167]
+    x = Object.new
+    x.instance_variable_set(:@foo, NilClass)
+    assert_match(/\A#<Object:0x\h+ @foo=NilClass>\z/, x.inspect)
+    x.instance_variable_set(:@foo, TrueClass)
+    assert_match(/\A#<Object:0x\h+ @foo=TrueClass>\z/, x.inspect)
+    x.instance_variable_set(:@foo, FalseClass)
+    assert_match(/\A#<Object:0x\h+ @foo=FalseClass>\z/, x.inspect)
 
     # #inspect does not call #to_s anymore
     feature6130 = '[ruby-core:43238]'
@@ -855,6 +953,105 @@ class TestObject < Test::Unit::TestCase
     assert_match(/\bInspect\u{3042}:.* @\u{3044}=42\b/, x.inspect)
     x.instance_variable_set("@\u{3046}".encode(Encoding::EUC_JP), 6)
     assert_match(/@\u{3046}=6\b/, x.inspect)
+
+    x = Object.new
+    x.singleton_class.class_eval do
+      private def instance_variables_to_inspect = [:@host, :@user]
+    end
+
+    x.instance_variable_set(:@host, "localhost")
+    x.instance_variable_set(:@user, "root")
+    x.instance_variable_set(:@password, "hunter2")
+    s = x.inspect
+    assert_include(s, "@host=\"localhost\"")
+    assert_include(s, "@user=\"root\"")
+    assert_not_include(s, "@password=")
+  end
+
+  def test_inspect_mutating_ivar
+    obj = Object.new
+    evil = Object.new
+    evil.define_singleton_method(:inspect) do
+      obj.instance_variables.each { |v| obj.remove_instance_variable(v) }
+      "evil"
+    end
+    obj.instance_variable_set(:@evil, evil)
+    10.times { |i| obj.instance_variable_set(:"@v#{i}", 0) }
+    # Buffered iteration: inspect sees a snapshot of the original ivars
+    result = obj.inspect
+    assert_include result, "@evil=evil"
+    10.times { |i| assert_include result, "@v#{i}=0" }
+  end
+
+  def test_inspect_mutating_ivar_too_complex
+    # Force too_complex by creating many shape variations on the same class
+    c = Class.new
+    50.times do |i|
+      o = c.new
+      o.instance_variable_set(:"@unique_#{i}", 0)
+    end
+
+    obj = c.new
+    evil = Object.new
+    evil.define_singleton_method(:inspect) do
+      obj.instance_variables.each { |v| obj.remove_instance_variable(v) }
+      ""
+    end
+    obj.instance_variable_set(:@evil, evil)
+    10.times { |i| obj.instance_variable_set(:"@v#{i}", 0) }
+    # too_complex objects use st_foreach which handles mutation gracefully
+    obj.inspect
+  end
+
+  def test_inspect_too_complex
+    kernel_inspect = Kernel.instance_method(:inspect)
+
+    klasses = [
+      Class.new,
+      Class.new(String),
+      Class.new(Array),
+      Class.new(Hash),
+      Struct.new(:x),
+      Class.new(Thread::Mutex),
+      # It's very difficult to get a too_complex T_CLASS, so that isn't tested here
+    ]
+
+    klasses.each_with_index do |klass, idx|
+      8.times do |i|
+        klass.new.instance_variable_set(:"@sib_#{rand(999999)}", 1)
+      end
+
+      obj = klass.new
+      obj.instance_variable_set(:@a, 1)
+      obj.instance_variable_set(:@b, 2)
+
+      s = kernel_inspect.bind_call(obj)
+      assert_include(s, "@a=1")
+      assert_include(s, "@b=2")
+    end
+  end
+
+  def test_singleton_methods
+    assert_equal([], Object.new.singleton_methods)
+    assert_equal([], Object.new.singleton_methods(false))
+    c = Class.new
+    def c.foo; end
+    assert_equal([:foo], c.singleton_methods - [:yaml_tag])
+    assert_equal([:foo], c.singleton_methods(false))
+    assert_equal([], c.singleton_class.singleton_methods(false))
+    c.singleton_class.singleton_class
+    assert_equal([], c.singleton_class.singleton_methods(false))
+
+    o = c.new.singleton_class
+    assert_equal([:foo], o.singleton_methods - [:yaml_tag])
+    assert_equal([], o.singleton_methods(false))
+    o.singleton_class
+    assert_equal([:foo], o.singleton_methods - [:yaml_tag])
+    assert_equal([], o.singleton_methods(false))
+
+    c.extend(Module.new{def bar; end})
+    assert_equal([:bar, :foo], c.singleton_methods.sort - [:yaml_tag])
+    assert_equal([:foo], c.singleton_methods(false))
   end
 
   def test_singleton_class
@@ -878,11 +1075,25 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
+  def test_singleton_class_freeze
+    x = Object.new
+    xs = x.singleton_class
+    x.freeze
+    assert_predicate(xs, :frozen?)
+
+    y = Object.new
+    ys = y.singleton_class
+    ys.prepend(Module.new)
+    y.freeze
+    assert_predicate(ys, :frozen?, '[Bug #19169]')
+  end
+
   def test_redef_method_missing
     bug5473 = '[ruby-core:40287]'
     ['ArgumentError.new("bug5473")', 'ArgumentError, "bug5473"', '"bug5473"'].each do |code|
       exc = code[/\A[A-Z]\w+/] || 'RuntimeError'
       assert_separately([], <<-SRC)
+      $VERBOSE = nil
       class ::Object
         def method_missing(m, *a, &b)
           raise #{code}
@@ -900,7 +1111,7 @@ class TestObject < Test::Unit::TestCase
     assert_nothing_raised("copy") {a.instance_eval {initialize_copy(b)}}
     c = a.dup.freeze
     assert_raise(FrozenError, "frozen") {c.instance_eval {initialize_copy(b)}}
-    d = a.dup.trust
+    d = a.dup
     [a, b, c, d]
   end
 
@@ -944,5 +1155,14 @@ class TestObject < Test::Unit::TestCase
         GC.start
       end
     EOS
+  end
+
+  def test_frozen_inspect
+    obj = Object.new
+    obj.instance_variable_set(:@a, "a")
+    ins = obj.inspect
+    obj.freeze
+
+    assert_equal(ins, obj.inspect)
   end
 end

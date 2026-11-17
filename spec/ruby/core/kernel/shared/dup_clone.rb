@@ -40,7 +40,7 @@ describe :kernel_dup_clone, shared: true do
     o.obj = array
 
     o2 = o.send(@method)
-    o2.obj.should equal(o.obj)
+    o2.obj.should.equal?(o.obj)
   end
 
   it "calls #initialize_copy on the NEW object if available, passing in original object" do
@@ -49,17 +49,7 @@ describe :kernel_dup_clone, shared: true do
 
     o.obj.should == :original
     o2.obj.should == :init_copy
-    o2.original.should equal(o)
-  end
-
-  it "preserves tainted state from the original" do
-    o = ObjectSpecDupInitCopy.new
-    o2 = o.send(@method)
-    o.taint
-    o3 = o.send(@method)
-
-    o2.tainted?.should == false
-    o3.tainted?.should == true
+    o2.original.should.equal?(o)
   end
 
   it "does not preserve the object_id" do
@@ -67,16 +57,6 @@ describe :kernel_dup_clone, shared: true do
     old_object_id = o1.object_id
     o2 = o1.send(@method)
     o2.object_id.should_not == old_object_id
-  end
-
-  it "preserves untrusted state from the original" do
-    o = ObjectSpecDupInitCopy.new
-    o2 = o.send(@method)
-    o.untrust
-    o3 = o.send(@method)
-
-    o2.untrusted?.should == false
-    o3.untrusted?.should == true
   end
 
   it "returns nil for NilClass" do
@@ -99,27 +79,13 @@ describe :kernel_dup_clone, shared: true do
     :my_symbol.send(@method).should == :my_symbol
   end
 
-  ruby_version_is ''...'2.5' do
-    it "raises a TypeError for Complex" do
-      c = Complex(1.3, 3.1)
-      lambda { c.send(@method) }.should raise_error(TypeError)
-    end
-
-    it "raises a TypeError for Rational" do
-      r = Rational(1, 3)
-      lambda { r.send(@method) }.should raise_error(TypeError)
-    end
+  it "returns self for Complex" do
+    c = Complex(1.3, 3.1)
+    c.send(@method).should.equal? c
   end
 
-  ruby_version_is '2.5' do
-    it "returns self for Complex" do
-      c = Complex(1.3, 3.1)
-      c.send(@method).should equal c
-    end
-
-    it "returns self for Rational" do
-      r = Rational(1, 3)
-      r.send(@method).should equal r
-    end
+  it "returns self for Rational" do
+    r = Rational(1, 3)
+    r.send(@method).should.equal? r
   end
 end

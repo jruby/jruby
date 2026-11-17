@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 #
 # This file is part of ruby-ffi.
 # For licensing, see LICENSE.SPECS
@@ -15,6 +16,7 @@ module PointerTestLib
     # NetBSD uses #define instead of typedef for these
     attach_function :ptr_ret_int32_t, :ptr_ret___int32_t, [ :pointer, :int ], :int
   end
+  attach_function :ptr_ret_int64_t, [ :pointer, :int ], :int64_t
   attach_function :ptr_from_address, [ FFI::Platform::ADDRESS_SIZE == 32 ? :uint : :ulong_long ], :pointer
   attach_function :ptr_set_pointer, [ :pointer, :int, :pointer ], :void
   attach_function :ptr_ret_pointer, [ :pointer, :int ], :pointer
@@ -55,11 +57,23 @@ describe "Pointer" do
   end
 
   it "Fixnum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32(0, 0) }.to raise_error
+    expect { PointerTestLib.ptr_ret_int32_t(0, 0) }.to raise_error(ArgumentError)
   end
 
   it "Bignum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32(0xfee1deadbeefcafebabe, 0) }.to raise_error
+    expect { PointerTestLib.ptr_ret_int32_t(0xfee1deadbeefcafebabe, 0) }.to raise_error(ArgumentError)
+  end
+
+  it "String can be used as a Pointer argument" do
+    s = "123\0abö"
+    expect( PointerTestLib.ptr_ret_int64_t(s, 0) ).to eq(s.unpack("q")[0])
+  end
+
+  it "#to_ptr" do
+    memory = FFI::MemoryPointer.new :pointer
+    expect(memory.to_ptr).to eq(memory)
+
+    expect(FFI::Pointer::NULL.to_ptr).to eq(FFI::Pointer::NULL)
   end
 
   describe "pointer type methods" do
@@ -87,7 +101,30 @@ describe "Pointer" do
         expect(array[j].address).to eq(address)
       end
     end
-    
+
+    it "#write_array_of_type for uint8" do
+      values = [10, 227, 32]
+      memory = FFI::MemoryPointer.new FFI::TYPE_UINT8, values.size
+      memory.write_array_of_type(FFI::TYPE_UINT8, :put_uint8, values)
+      array = memory.read_array_of_type(FFI::TYPE_UINT8, :read_uint8, values.size)
+      values.each_with_index do |val, j|
+        expect(array[j]).to eq(val)
+      end
+    end
+
+    it "#write_array_of_type for uint32" do
+      values = [10, 227, 32]
+      memory = FFI::MemoryPointer.new FFI::TYPE_UINT32, values.size
+      memory.write_array_of_type(FFI::TYPE_UINT32, :put_uint32, values)
+      array = memory.read_array_of_type(FFI::TYPE_UINT32, :read_uint32, values.size)
+      values.each_with_index do |val, j|
+        expect(array[j]).to eq(val)
+      end
+    end
+    it "#write_array_of_type should raise an error with non-array argument" do
+      memory = FFI::MemoryPointer.new FFI::TYPE_INT8, 1
+      expect { memory.write_array_of_int8(0) }.to raise_error(TypeError)
+    end
   end
 
   describe 'NULL' do
@@ -105,6 +142,11 @@ describe "Pointer" do
     end
     it 'returns true when compared with nil' do
       expect((FFI::Pointer::NULL == nil)).to be true
+    end
+    it 'should not raise an error when attempting read/write zero length array' do
+      null_ptr = FFI::Pointer::NULL
+      expect( null_ptr.read_array_of_uint(0) ).to eq([])
+      null_ptr.write_array_of_uint([])
     end
   end
 
@@ -139,13 +181,61 @@ describe "Pointer" do
     end
   end
 
-  it "is not eql? for purposes of hash lookup (GH-2995)" do
-    a = FFI::Pointer.new(0)
-    b = FFI::Pointer.new(0)
+  describe "#order" do
+    it "should return the system order by default" do
+      expect(FFI::Pointer.new(0x0).order).to eq(OrderHelper::ORDER)
+    end
 
-    expect(a == b).to eq true
-    expect(a.eql? b).to eq false
-    expect(Hash[a,true][b]).to eq nil
+    it "should return self if there is no change" do
+      pointer = FFI::Pointer.new(0x0)
+      expect(pointer.order(OrderHelper::ORDER)).to be pointer
+    end
+
+    it "should return a new pointer if there is a change" do
+      pointer = FFI::Pointer.new(0x0)
+      expect(pointer.order(OrderHelper::OTHER_ORDER)).to_not be pointer
+    end
+
+    it "can be set to :little" do
+      expect(FFI::Pointer.new(0x0).order(:little).order).to eq(:little)
+    end
+
+    it "can be set to :big" do
+      expect(FFI::Pointer.new(0x0).order(:big).order).to eq(:big)
+    end
+
+    it "can be set to :network, which sets it to :big" do
+      expect(FFI::Pointer.new(0x0).order(:network).order).to eq(:big)
+    end
+
+    it "cannot be set to other symbols" do
+      expect { FFI::Pointer.new(0x0).order(:unknown) }.to raise_error(ArgumentError)
+    end
+
+    it "can be used to read in little order" do
+      pointer = FFI::MemoryPointer.from_string("\x1\x2\x3\x4").order(:little)
+      expect(pointer.read_int32).to eq(67305985)
+    end
+
+    it "can be used to read in big order" do
+      pointer = FFI::MemoryPointer.from_string("\x1\x2\x3\x4").order(:big)
+      expect(pointer.read_int32).to eq(16909060)
+    end
+
+    it "can be used to read in network order" do
+      pointer = FFI::MemoryPointer.from_string("\x1\x2\x3\x4").order(:network)
+      expect(pointer.read_int32).to eq(16909060)
+    end
+  end if RUBY_ENGINE != "truffleruby"
+
+  describe "#size_limit?" do
+    it "should not have size limit" do
+      expect(FFI::Pointer.new(0).size_limit?).to be false
+    end
+
+    it "should have size limit" do
+      expect(FFI::Pointer.new(0).slice(0, 10).size_limit?).to be true
+    end
   end
 end
 
@@ -179,7 +269,8 @@ describe "AutoPointer" do
     def self.release(ptr); end
   end
 
-  it "cleanup via default release method" do
+  # see #427
+  it "cleanup via default release method", :broken => true do
     expect(AutoPointerSubclass).to receive(:release).at_least(loop_count-wiggle_room).times
     AutoPointerTestHelper.reset
     loop_count.times do
@@ -191,7 +282,8 @@ describe "AutoPointer" do
     AutoPointerTestHelper.gc_everything loop_count
   end
 
-  it "cleanup when passed a proc" do
+  # see #427
+  it "cleanup when passed a proc", :broken => true do
     #  NOTE: passing a proc is touchy, because it's so easy to create a memory leak.
     #
     #  specifically, if we made an inline call to
@@ -209,7 +301,8 @@ describe "AutoPointer" do
     AutoPointerTestHelper.gc_everything loop_count
   end
 
-  it "cleanup when passed a method" do
+  # see #427
+  it "cleanup when passed a method", :broken => true do
     expect(AutoPointerTestHelper).to receive(:release).at_least(loop_count-wiggle_room).times
     AutoPointerTestHelper.reset
     loop_count.times do
@@ -270,7 +363,7 @@ describe "AutoPointer" do
       aptr = ptr_class.new(FFI::Pointer.new(:int, 0xdeadbeef))
       expect(aptr.type_size).to eq(FFI.type_size(:int))
     end
-    
+
     it "[] offset should match wrapped Pointer" do
       mptr = FFI::MemoryPointer.new(:int, 1024)
       aptr = ptr_class.new(FFI::Pointer.new(:int, mptr))

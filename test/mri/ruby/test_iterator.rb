@@ -12,17 +12,12 @@ class Array
 end
 
 class TestIterator < Test::Unit::TestCase
-  def ttt
-    assert(iterator?)
-  end
-
-  def test_iterator
-    assert(!iterator?)
-
-    ttt{}
-
-    # yield at top level	!! here's not toplevel
-    assert(!defined?(yield))
+  def test_yield_at_toplevel
+    assert_separately([],"#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      assert(!block_given?)
+      assert(!defined?(yield))
+    end;
   end
 
   def test_array
@@ -107,6 +102,16 @@ class TestIterator < Test::Unit::TestCase
     assert_equal([1, 2, 3, 4, 5, 6, 7], x)
   end
 
+  def test_array_for_masgn
+    a = [Struct.new(:to_ary).new([1,2])]
+    x = []
+    a.each {|i,j|x << [i,j]}
+    assert_equal([[1,2]], x)
+    x = []
+    for i,j in a; x << [i,j]; end
+    assert_equal([[1,2]], x)
+  end
+
   def test_append_method_to_built_in_class
     x = [[1,2],[3,4],[5,6]]
     assert_equal(x.iter_test1{|e|e}, x.iter_test2{|e|e})
@@ -170,10 +175,13 @@ class TestIterator < Test::Unit::TestCase
   end
 
   def test_block_given
+    verbose_bak, $VERBOSE = $VERBOSE, nil
     assert(m1{p 'test'})
     assert(m2{p 'test'})
     assert(!m1())
     assert(!m2())
+  ensure
+    $VERBOSE = verbose_bak
   end
 
   def m3(var, &block)
@@ -303,7 +311,18 @@ class TestIterator < Test::Unit::TestCase
 
   def test_ljump
     assert_raise(LocalJumpError) {get_block{break}.call}
-    assert_raise(LocalJumpError) {proc_call2(get_block{break}){}}
+    begin
+      verbose_bak, $VERBOSE = $VERBOSE, nil
+      # See the commit https://github.com/ruby/ruby/commit/7d8a415bc2d08a1b5e9d1ea802493b6eeb99c219
+      # This block is not used but this is intentional.
+      #   |
+      #   +-----------------------------------------------------+
+      #                                                         |
+      #                                                         vv
+      assert_raise(LocalJumpError) {proc_call2(get_block{break}){}}
+    ensure
+      $VERBOSE = verbose_bak
+    end
 
     # cannot use assert_nothing_raised due to passing block.
     begin
@@ -334,8 +353,7 @@ class TestIterator < Test::Unit::TestCase
     marity_test(:marity_test)
     marity_test(:p)
 
-    lambda(&method(:assert)).call(true)
-    lambda(&get_block{|a,n| assert(a,n)}).call(true, "marity")
+    get_block{|a,n| assert(a,n)}.call(true, "marity")
   end
 
   def foo

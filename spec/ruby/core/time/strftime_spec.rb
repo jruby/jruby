@@ -6,14 +6,14 @@ require_relative '../../shared/time/strftime_for_time'
 
 describe "Time#strftime" do
   before :all do
-    @new_date = lambda { |y,m,d| Time.gm(y,m,d) }
-    @new_time = lambda { |*args| Time.gm(*args) }
-    @new_time_in_zone = lambda { |zone,offset,*args|
+    @new_date = -> y, m, d { Time.gm(y,m,d) }
+    @new_time = -> *args { Time.gm(*args) }
+    @new_time_in_zone = -> zone, offset, *args {
       with_timezone(zone, offset) do
         Time.new(*args)
       end
     }
-    @new_time_with_offset = lambda { |y,m,d,h,min,s,offset|
+    @new_time_with_offset = -> y, m, d, h, min, s, offset {
       Time.new(y,m,d,h,min,s,offset)
     }
 
@@ -25,7 +25,7 @@ describe "Time#strftime" do
 
   # Differences with date
   it "requires an argument" do
-    lambda { @time.strftime }.should raise_error(ArgumentError)
+    -> { @time.strftime }.should.raise(ArgumentError)
   end
 
   # %Z is zone name or empty for Time
@@ -48,5 +48,44 @@ describe "Time#strftime" do
   it "rounds an offset to the nearest second when formatting with %z" do
     time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36645, 10)]
     time.strftime("%::z").should == "+01:01:05"
+  end
+
+  it "supports RFC 3339 UTC for unknown offset local time, -0000, as %-z" do
+    time = Time.gm(2022)
+
+    time.strftime("%z").should == "+0000"
+    time.strftime("%-z").should == "-0000"
+    time.strftime("%-:z").should == "-00:00"
+    time.strftime("%-::z").should == "-00:00:00"
+  end
+
+  it "applies '-' flag to UTC time" do
+    time = Time.utc(2022)
+    time.strftime("%-z").should == "-0000"
+
+    time = Time.gm(2022)
+    time.strftime("%-z").should == "-0000"
+
+    time = Time.new(2022, 1, 1, 0, 0, 0, "Z")
+    time.strftime("%-z").should == "-0000"
+
+    time = Time.new(2022, 1, 1, 0, 0, 0, "-00:00")
+    time.strftime("%-z").should == "-0000"
+
+    time = Time.new(2022, 1, 1, 0, 0, 0, "+03:00").utc
+    time.strftime("%-z").should == "-0000"
+  end
+
+  it "ignores '-' flag for non-UTC time" do
+    time = Time.new(2022, 1, 1, 0, 0, 0, "+03:00")
+    time.strftime("%-z").should == "+0300"
+  end
+
+  it "works correctly with width, _ and 0 flags, and :" do
+    Time.now.utc.strftime("%-_10z").should == "      -000"
+    Time.now.utc.strftime("%-10z").should == "-000000000"
+    Time.now.utc.strftime("%-010:z").should == "-000000:00"
+    Time.now.utc.strftime("%-_10:z").should == "     -0:00"
+    Time.now.utc.strftime("%-_10::z").should == "  -0:00:00"
   end
 end

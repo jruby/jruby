@@ -24,39 +24,39 @@ describe "Module#using" do
       end
     end
 
-    -> () {
+    -> {
       Module.new do
         using refinement
       end
-    }.should_not raise_error
+    }.should_not.raise
   end
 
   it "accepts module without refinements" do
     mod = Module.new
 
-    -> () {
+    -> {
       Module.new do
         using mod
       end
-    }.should_not raise_error
+    }.should_not.raise
   end
 
   it "does not accept class" do
     klass = Class.new
 
-    -> () {
+    -> {
       Module.new do
         using klass
       end
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises TypeError if passed something other than module" do
-    -> () {
+    -> {
       Module.new do
         using "foo"
       end
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "returns self" do
@@ -67,7 +67,7 @@ describe "Module#using" do
       result = using refinement
     end
 
-    result.should equal(mod)
+    result.should.equal?(mod)
   end
 
   it "works in classes too" do
@@ -93,9 +93,9 @@ describe "Module#using" do
       end
     end
 
-    -> () {
+    -> {
       mod.foo
-    }.should raise_error(RuntimeError, /Module#using is not permitted in methods/)
+    }.should.raise(RuntimeError, /Module#using is not permitted in methods/)
   end
 
   it "activates refinement even for existed objects" do
@@ -241,6 +241,96 @@ describe "Module#using" do
 
       c = klass.new
       mod.call_foo(c).should == "foo from refinement"
+    end
+
+    it "is active for module defined via Module.new {}" do
+      refinement = Module.new do
+        refine Integer do
+          def foo; "foo from refinement"; end
+        end
+      end
+
+      result = nil
+
+      Module.new do
+        using refinement
+
+        Module.new do
+          result = 1.foo
+        end
+      end
+
+      result.should == "foo from refinement"
+    end
+
+    it "is active for class defined via Class.new {}" do
+      refinement = Module.new do
+        refine Integer do
+          def foo; "foo from refinement"; end
+        end
+      end
+
+      result = nil
+
+      Module.new do
+        using refinement
+
+        Class.new do
+          result = 1.foo
+        end
+      end
+
+      result.should == "foo from refinement"
+    end
+
+    it "is active for block called via instance_exec" do
+      refinement = Module.new do
+        refine Integer do
+          def foo; "foo from refinement"; end
+        end
+      end
+
+      c = Class.new do
+        using refinement
+
+        def abc
+          block = -> {
+            1.foo
+          }
+
+          self.instance_exec(&block)
+        end
+      end
+
+      c.new.abc.should == "foo from refinement"
+    end
+
+    it "is active for block called via instance_eval" do
+      refinement = Module.new do
+        refine String do
+          def foo; "foo from refinement"; end
+        end
+      end
+
+      c = Class.new do
+        using refinement
+
+        def initialize
+          @a = +"1703"
+
+          @a.instance_eval do
+            def abc
+              "#{self}: #{self.foo}"
+            end
+          end
+        end
+
+        def abc
+          @a.abc
+        end
+      end
+
+      c.new.abc.should == "1703: foo from refinement"
     end
 
     it "is not active if `using` call is not evaluated" do

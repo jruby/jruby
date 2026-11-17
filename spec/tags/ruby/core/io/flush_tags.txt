@@ -1,0 +1,1 @@
+windows:IO#flush on a pipe raises Errno::EPIPE if sync=false and the read end is closed

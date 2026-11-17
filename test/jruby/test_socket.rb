@@ -27,16 +27,80 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  def assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    # Force pending input without depending on packet arrival or read-ahead timing.
+    socket.ungetbyte('body')
+    assert_equal 5, socket.public_send(write_method, 'reply')
+    assert_equal 'body', socket.read_nonblock(4, exception: false)
+    assert_equal 'reply', peer.read(5)
+  end
+
+  def test_tcp_socket_write_preserves_buffered_input
+    [:write, :write_nonblock].each do |write_method|
+      listener = TCPServer.new('127.0.0.1', 0)
+      peer = TCPSocket.new('127.0.0.1', listener.addr[1])
+      socket = listener.accept
+      assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    ensure
+      socket&.close
+      peer&.close
+      listener&.close
+    end
+  end
+
+  if !WINDOWS
+    def test_unix_socket_write_preserves_buffered_input
+      [:write, :write_nonblock].each do |write_method|
+        socket, peer = UNIXSocket.pair
+        assert_buffered_input_survives_socket_write(socket, peer, write_method)
+      ensure
+        socket&.close
+        peer&.close
+      end
+    end
+  end
+
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)
-      t = Thread.new do
-        s = server.accept
-        s.close
+      begin
+        t = Thread.new do
+          s = server.accept
+          s.close
+        end
+        client = TCPSocket.new(nil, 7789)
+        client.write ""
+        t.join
+      ensure
+        server.close if server && !server.closed?
       end
-      client = TCPSocket.new(nil, 7789)
-      client.write ""
-      t.join
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_info
+      assert_nothing_raised do
+        server = TCPServer.new(nil, 7789)
+        begin
+          t = Thread.new do
+            s = server.accept
+            s.close
+          end
+          client = TCPSocket.new(nil, 7789)
+          t.join
+          tcp_info = client.getsockopt(Socket::IPPROTO_TCP, Socket::TCP_INFO)
+          state = tcp_info.unpack("C")[0]
+          assert_equal(8, state) # CLOSE_WAIT
+        ensure
+          server.close if server && !server.closed?
+        end
+      end
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_not_available_constant
+      assert !Socket.const_defined?(:TCP_KEEPALIVE)
     end
   end
 
@@ -146,6 +210,50 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_socket_get_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT, 1)
+    ensure
+      socket.close
+    end
+  end
+
   # JRUBY-4299
   def test_tcp_socket_reuse_addr
     socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
@@ -193,7 +301,7 @@ class SocketTest < Test::Unit::TestCase
       # Permission denied - bind(2) for nil port 42
       assert_equal 'Permission denied - bind(2) for nil port 42', e.message
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0
 
     #begin
     #  UDPSocket.new.bind nil, nil
@@ -208,14 +316,14 @@ class SocketTest < Test::Unit::TestCase
     rescue Errno::EACCES
       # Permission denied - bind(2) for 0 port 42
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0 (while triggering a Security Alert)
 
     begin
       UDPSocket.new.bind "127.0.0.1", 191
     rescue Errno::EACCES
       # Permission denied - bind(2) for "127.0.0.1" port 191
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0
   end
 
   def test_tcp_socket_errors
@@ -228,6 +336,7 @@ class SocketTest < Test::Unit::TestCase
     end
 
     server = TCPServer.new('127.0.0.1', 10022)
+    pend 'TODO: IOError: closed stream (on Windows)' if WINDOWS
     Thread.new { server.accept }
     socket = TCPSocket.new('127.0.0.1', 10022)
     begin
@@ -259,6 +368,29 @@ class SocketTest < Test::Unit::TestCase
   ensure
     serv.close if serv
     c.close if c
+  end
+
+  # IO.select in another thread leaves the channel nonblocking, where ServerSocket#accept used to raise EAGAIN
+  def test_server_socket_accept_waits_while_another_thread_selects_on_it
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    selector = Thread.new { IO.select([server]) }
+    Thread.pass until selector.status == "sleep"
+    acceptor = Thread.new { server.accept }
+    Thread.pass until acceptor.status == "sleep" || !acceptor.alive?
+
+    client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+
+    assert acceptor.join(10), "accept did not return"
+    socket, addrinfo = acceptor.value
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    # IO.select returns only if it saw the connection before the acceptor took it
+    selector&.kill
+    socket&.close
+    client&.close
+    server&.close
   end
 
 end
@@ -365,6 +497,7 @@ class UNIXSocketTests < Test::Unit::TestCase
      end
 
      def test_can_create_socket_server_and_accept_nonblocking
+       pending_hangs_on_macos_aarch64
        path = "/tmp/sample"
 
        File.unlink(path) if File.exist?(path)
@@ -544,7 +677,7 @@ class UNIXSocketTests < Test::Unit::TestCase
 
         sock2.send("hello", 0)
         assert_equal "hell", sock1.recv(4)
-        assert_equal "", sock1.recv(0)
+        assert_equal nil, sock1.recv(0)
         assert_equal "o", sock1.recv(1)
 
         sock2.close
@@ -555,7 +688,55 @@ class UNIXSocketTests < Test::Unit::TestCase
         end
       end
 
+      # nio4r registers the channel with a default java.nio Selector (socketry/nio4r#67)
+      def test_socketpair_registers_with_java_selector
+        [Socket.pair(:UNIX, :STREAM), UNIXSocket.pair].each do |sock1, sock2|
+          selector = java.nio.channels.Selector.open
+          channel = sock2.to_channel
+          channel.configureBlocking(false)
+          channel.register(selector, java.nio.channels.SelectionKey::OP_READ)
+
+          sock1.write("hello")
+          assert_equal 1, selector.select(1000)
+        ensure
+          selector&.close
+          sock1&.close
+          sock2&.close
+        end
+      end
+
+      def test_socketpair_linger
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_equal [false, 0], sock1.getsockopt(:SOCKET, :LINGER).linger
+
+        sock1.setsockopt(Socket::Option.linger(true, 5))
+        assert_equal [true, 5], sock1.getsockopt(:SOCKET, :LINGER).linger
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      # pair ends are JDK channels, which have no java.net.Socket behind them
+      def test_socketpair_close_read_via_plain_io
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        io = IO.for_fd(sock1.fileno, autoclose: false)
+        assert_nil io.close_read
+        assert_raise(IOError) { io.read(1) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      def test_socketpair_bind_raises_einval
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_raise(Errno::EINVAL) { sock1.bind(Addrinfo.unix("/tmp/jruby-pair-bind-#{$$}.sock")) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
       def test_recv_nonblock
+        pending_hangs_on_macos_aarch64
         s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
         begin
           s1.recv_nonblock(1)
@@ -573,14 +754,19 @@ class UNIXSocketTests < Test::Unit::TestCase
         rescue IO::EAGAINWaitReadable
         end
         s2.send('a', 0)
-        s1.recv_nonblock(5, nil, str = '')
+        s1.recv_nonblock(5, nil, str = +'')
         assert_equal 'a', str
         assert_raise(IO::EAGAINWaitReadable) { s1.recv_nonblock(5, nil, str) }
         assert_equal :wait_readable, s1.recv_nonblock(5, exception: false)
       end
 
     end
+  private
+
+  def pending_hangs_on_macos_aarch64
+    pend "hangs on MacOS/ARM64" if RbConfig::CONFIG['host_os'] =~ /darwin/
   end
+end
 
 class ServerTest < Test::Unit::TestCase
   include TestHelper
@@ -591,7 +777,7 @@ class ServerTest < Test::Unit::TestCase
     # do things like wait until the other thread blocks
     port = 41258
     server = TCPServer.new('localhost', port)
-    queue = Queue.new
+    pend 'TODO: IOError: stream closed in another thread (on Windows)' if WINDOWS
     thread = Thread.new do
       server.accept
     end
@@ -680,4 +866,104 @@ class ServerTest < Test::Unit::TestCase
     server.close rescue nil
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
+end
+
+# ServerSocket is JRuby-only, so spec/ruby does not cover its accept waiting through Fiber::Scheduler#io_wait
+class AcceptFiberSchedulerTest < Test::Unit::TestCase
+  # Records each io_wait and parks the fiber until the test resumes it with what io_wait returns
+  class WaitScheduler
+    attr_reader :io_waits
+
+    def initialize
+      @io_waits = []
+    end
+
+    def io_wait(io, events, timeout)
+      @io_waits << [io, events, timeout]
+      Fiber.yield
+    end
+
+    # required by Fiber.set_scheduler, unused by this test
+    def block(blocker, timeout = nil)
+      Fiber.yield
+    end
+
+    def unblock(blocker, fiber)
+    end
+
+    def kernel_sleep(duration = nil)
+      Fiber.yield
+    end
+  end
+
+  # The fibers run in a thread joined with a timeout, so the test fails instead of hanging when accept blocks that
+  # thread, or holds the server's blocking lock while it waits and the sibling fiber's accept_nonblock waits on it
+  def test_server_socket_accept_waits_through_the_scheduler
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    scheduler = WaitScheduler.new
+    accepted = client = nil
+
+    thread = Thread.new do
+      Thread.current.report_on_exception = false
+      Fiber.set_scheduler(scheduler)
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      assert_equal :wait_readable, Fiber.new(blocking: false) { server.accept_nonblock(exception: false) }.resume
+      client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+      IO.select([server])
+      accepted = acceptor.resume(IO::READABLE)
+    end
+
+    assert thread.join(10), "the scheduler's thread did not finish within 10s"
+    socket, addrinfo = accepted
+    assert_equal [[server, IO::READABLE, nil]], scheduler.io_waits
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    socket&.close
+    client&.close
+    server&.close
+  end
+end
+
+# Selectors are pooled, and killing a thread wakes its selector. A wakeup that lands after the selector has gone
+# back to the pool must not cut short the next thread's wait: https://github.com/jruby/jruby/issues/9981
+class StaleSelectorWakeupTest < Test::Unit::TestCase
+  ATTEMPTS = 100
+
+  def setup
+    require 'jruby'
+    server = TCPServer.new("127.0.0.1", 0)
+    @socket = TCPSocket.new("127.0.0.1", server.addr[1])
+    @peer = server.accept
+    server.close
+  end
+
+  def teardown
+    [@socket, @peer].each { |io| io&.close }
+  end
+
+  # Kills a thread that keeps taking a selector from the pool and handing it back, so the kill's wakeup sometimes
+  # lands just as the selector goes back. The pool starts empty, so the wait that follows gets that same selector.
+  def test_killing_a_waiting_thread_does_not_wake_the_next_waiter
+    pool = JRuby.runtime.selector_pool
+    early = ATTEMPTS.times.count do
+      pool.cleanup
+      spinner = Thread.new { loop { @socket.wait_readable(0) } }
+      sleep Random.rand(0.002)
+      spinner.kill
+      spinner.join
+      elapsed { @socket.wait_readable(0.02) } < 0.015
+    end
+    assert_equal 0, early, "#{early} of #{ATTEMPTS} waits returned early"
+  end
+
+  private
+
+  def elapsed
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+  end
 end

@@ -153,7 +153,7 @@ class TestDate < Test::Unit::TestCase
     begin
       Date.new(1900, 1, 0)
       fail 'expected to fail'
-    rescue ArgumentError => e
+    rescue Date::Error => e
       assert_equal('invalid date', e.message)
     end
   end
@@ -257,7 +257,7 @@ class TestDate < Test::Unit::TestCase
       d = DateTime.new(*args)
       assert_equal([ 2020, 12, 23, 8 + 5, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.sec_fraction ])
     else
-      assert_raise(ArgumentError) { DateTime.new(*args) }
+      assert_raise(Date::Error) { DateTime.new(*args) }
     end
 
     args = [ 2018, 10, 7.to_r / 3, 5, 0, Rational(10, 3) ]
@@ -315,15 +315,15 @@ class TestDate < Test::Unit::TestCase
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 
     #assert_raise(ArgumentError) { DateTime.new(y, m, d, Rational(43, 2), -17, -35) }
-    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, -17, -80) }
-    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, 67) }
+    assert_raise(Date::Error) { DateTime.new(y, m, d, 10, -17, -80) }
+    assert_raise(Date::Error) { DateTime.new(y, m, d, 10, 67) }
     begin
       DateTime.new(y, m, d, 25); fail 'expected to raise!'
-    rescue ArgumentError => ex
+    rescue Date::Error => ex
       assert_equal('invalid date', ex.message)
     end
 
-    assert_raise(ArgumentError) { DateTime.new(2001, 2, 11.to_r / 13, Rational(10, 3), Rational(200, 21)) }
+    assert_raise(Date::Error) { DateTime.new(2001, 2, 11.to_r / 13, Rational(10, 3), Rational(200, 21)) }
   end
 
   def test_sec_fraction
@@ -754,9 +754,9 @@ class TestDate < Test::Unit::TestCase
     d = DateTime.new(2025, 12, 31, 24)
     assert_equal([2026, 1, 1, 0, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
 
-    assert_raises(ArgumentError) { DateTime.new(2025, 12, 31, 24, 1) }
+    assert_raises(Date::Error) { DateTime.new(2025, 12, 31, 24, 1) }
     DateTime.new(1008, 12, 31, 24, 0)
-    assert_raises(ArgumentError) { DateTime.new(2025, 11, 30, 24, 0, 30) }
+    assert_raises(Date::Error) { DateTime.new(2025, 11, 30, 24, 0, 30) }
     DateTime.new(2025, 11, 30, 24, 0, 0)
   end
 
@@ -912,12 +912,56 @@ class TestDate < Test::Unit::TestCase
     assert_equal(-1199, dt.year)
   end
 
+  def test_marshaling_keeps_offset
+    dt = DateTime.now
+    offset = dt.offset
+    dt2 = Marshal.load(Marshal.dump(dt))
+    assert_equal(offset, dt2.offset)
+    assert_equal(dt, dt2)
+  end
+
   def test_marshaling_with_active_support_like_calculation # GH-5188
     time = ActiveSupport.time_advance(Time.now, days: 1)
     date = time.to_date
 
     dump = Marshal.dump(date)
     assert_equal(time.to_date, Marshal.load(dump))
+  end
+
+  def test_bignum_jd_fraction
+    dt = DateTime.jd Rational("106143484200006057997/43200000000000")
+    assert_equal(2015, dt.year)
+    assert_equal(1, dt.month)
+    assert_equal(2, dt.day)
+    assert_equal('#<DateTime: 2015-01-02T02:20:00+00:00 ((2457025j,8400s,12115994n),+0s,2299161j)>', dt.inspect)
+
+    dt = DateTime.jd Rational("296143484258716057997185/43200000000000001")
+    assert_equal(14056, dt.year)
+    assert_equal(9, dt.month)
+    assert_equal(21, dt.day)
+    assert_equal(05, dt.hour)
+    assert_equal(55, dt.min)
+    assert_equal(17, dt.sec)
+    # NOTE: due rounding JRuby ends up with a different fraction :
+    #assert_equal(0.4, dt.sec_fraction.to_f.round(1))
+  end
+
+  def test_exception_cause_cmp
+    begin
+      Date.new(2000, 1, 1) == nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
+  end
+
+  def test_exception_cause_eqq
+    begin
+      Date.new(2000, 1, 1) <=> nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
   end
 
   module ActiveSupport

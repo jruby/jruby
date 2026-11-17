@@ -111,14 +111,12 @@ public final class Frame {
      * when needed.
      */
     private Frame(Frame frame) {
-        Block block = frame.block;
-
-        block.getClass(); // null check
+        assert frame.block != null;
 
         this.self = frame.self;
         this.name = frame.name;
         this.klazz = frame.klazz;
-        this.block = block;
+        this.block = frame.block;
         this.visibility = frame.visibility;
     }
 
@@ -148,8 +146,7 @@ public final class Frame {
      */
     public void updateFrame(Frame frame) {
         Block block = frame.block;
-
-        block.getClass(); // null check
+        assert block != null;
 
         this.self = frame.self;
         this.name = frame.name;
@@ -167,13 +164,29 @@ public final class Frame {
      * @param block The block passed to the method
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Block block) {
-        block.getClass(); // null check
-
+        assert block != null;
         this.self = self;
         this.name = name;
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
+    }
+
+    /**
+     * Update the frame based on the given values.
+     *
+     * @param klazz The class against which the method is being called
+     * @param self The 'self' for the method
+     * @param name The name under which the method is being invoked
+     * @param block The block passed to the method
+     */
+    public void updateFrame(RubyModule klazz, IRubyObject self, String name, Visibility visibility, Block block) {
+        assert block != null;
+        this.self = self;
+        this.name = name;
+        this.klazz = klazz;
+        this.block = block;
+        this.visibility = visibility;
     }
 
     /**
@@ -356,7 +369,4 @@ public final class Frame {
 
         return sb.toString();
     }
-
-    @Deprecated
-    public static final Frame DUMMY = new Frame();
 }

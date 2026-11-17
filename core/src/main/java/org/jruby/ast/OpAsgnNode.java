@@ -36,13 +36,9 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
-/**
- *
- */
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
@@ -51,11 +47,10 @@ public class OpAsgnNode extends Node {
     private final RubySymbol variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, RubySymbol variableName,
+    public OpAsgnNode(int line, Node receiverNode, Node valueNode, RubySymbol variableName,
                       RubySymbol operatorName, boolean isLazy) {
-        super(position, receiverNode.containsVariableAssignment());
+        super(line, receiverNode.containsVariableAssignment());
 
-        assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;

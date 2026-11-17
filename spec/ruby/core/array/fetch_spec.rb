@@ -12,9 +12,9 @@ describe "Array#fetch" do
   end
 
   it "raises an IndexError if there is no element at index" do
-    lambda { [1, 2, 3].fetch(3) }.should raise_error(IndexError)
-    lambda { [1, 2, 3].fetch(-4) }.should raise_error(IndexError)
-    lambda { [].fetch(0) }.should raise_error(IndexError)
+    -> { [1, 2, 3].fetch(3) }.should.raise(IndexError, "index 3 outside of array bounds: -3...3")
+    -> { [1, 2, 3].fetch(-4) }.should.raise(IndexError, "index -4 outside of array bounds: -3...3")
+    -> { [].fetch(0) }.should.raise(IndexError, "index 0 outside of array bounds: 0...0")
   end
 
   it "returns default if there is no element at index if passed a default value" do
@@ -33,11 +33,11 @@ describe "Array#fetch" do
     o = mock('5')
     def o.to_int(); 5; end
 
-    [1, 2, 3].fetch(o) { |i| i }.should equal(o)
+    [1, 2, 3].fetch(o) { |i| i }.should.equal?(o)
   end
 
   it "gives precedence to the default block over the default argument" do
-    lambda {
+    -> {
       @result = [1, 2, 3].fetch(9, :foo) { |i| i * i }
     }.should complain(/block supersedes default value argument/)
     @result.should == 81
@@ -50,6 +50,6 @@ describe "Array#fetch" do
   end
 
   it "raises a TypeError when the passed argument can't be coerced to Integer" do
-    lambda { [].fetch("cat") }.should raise_error(TypeError)
+    -> { [].fetch("cat") }.should.raise(TypeError, "no implicit conversion of String into Integer")
   end
 end

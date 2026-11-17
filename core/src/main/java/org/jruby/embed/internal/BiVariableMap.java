@@ -44,6 +44,7 @@ import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -53,7 +54,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  * should be String, and values should be {@link BiVariable} type object.
  * This map does not permit null or empty key. Each operation of this class is not
  * synchronized; however, concurrent access to values are synchronized. When
- * {@link ScriptingContainer} is shared by multiple threads, specify thread safe
+ * {@link org.jruby.embed.ScriptingContainer ScriptingContainer} is shared by multiple threads, specify thread safe
  * for a local context scope, which makes a map thread local.
  *
  * Usage example:
@@ -62,11 +63,11 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  *         Map map = container.getVarMap();
  *         map.put("@coefficient", new Float(3.14));</pre>
  * or, using a shortcut method:
- * * <pre>
+ * <pre>
  *         ScriptingContainer container = new ScriptingContainer();
  *         container.put("@coefficient", new Float(3.14));</pre>
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class BiVariableMap implements Map<String, Object> {
 
@@ -80,8 +81,8 @@ public class BiVariableMap implements Map<String, Object> {
      * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
      *
-     * @param runtime is environment where variables are used to execute Ruby scripts.
-     * @param behavior is one of variable behaviors defined in VariableBehavior.
+     * @param provider
+     * @param lazy
      */
     public BiVariableMap(LocalContextProvider provider, boolean lazy) {
         this.provider = provider;
@@ -143,9 +144,9 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains no key-value mappings.
+     * Returns <code>true</code> if this map contains no key-value mappings.
      *
-     * @return <tt>true</tt> if this map contains no key-value mappings
+     * @return <code>true</code> if this map contains no key-value mappings
      */
     @Override
     public boolean isEmpty() {
@@ -166,11 +167,11 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains a mapping for the specified
+     * Returns <code>true</code> if this map contains a mapping for the specified
      * key.
      *
      * @param key is a key to be tested its presence
-     * @return <tt>true</tt> if this map contains a mapping for the specified key
+     * @return <code>true</code> if this map contains a mapping for the specified key
      */
     @Override
     public boolean containsKey(final Object key) {
@@ -179,11 +180,11 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map maps one or more keys to the
+     * Returns <code>true</code> if this map maps one or more keys to the
      * specified value.
      *
      * @param value is a Java object to be tested it presence
-     * @return Returns <tt>true</tt> if this map maps one or more keys to the
+     * @return Returns <code>true</code> if this map maps one or more keys to the
      * specified value.
      */
     @Override
@@ -230,11 +231,7 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     private RubyObject getReceiverObject(final Object receiver) {
-        if ( receiver instanceof RubyObject ) return (RubyObject) receiver;
-        //if ( receiver instanceof IRubyObject ) {
-        //    return (RubyObject) ( (IRubyObject) receiver ).getRuntime().getTopSelf();
-        //}
-        return getTopSelf();
+        return receiver instanceof RubyObject ? (RubyObject) receiver : getTopSelf();
     }
 
     private RubyObject getTopSelf() {
@@ -249,7 +246,6 @@ public class BiVariableMap implements Map<String, Object> {
      * @return the BiVariable type object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    //@Deprecated
     public BiVariable getVariable(final String name) {
         return getVariable(getTopSelf(), name);
     }
@@ -308,8 +304,8 @@ public class BiVariableMap implements Map<String, Object> {
      *
      * @param key the key with which the specified value is to be associated
      * @param value a simple Java object to be associated with the specified key
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     @Override
     public Object put(String key, Object value) {
@@ -324,22 +320,21 @@ public class BiVariableMap implements Map<String, Object> {
      * @param receiver a receiver object to associate a given key-value pair with
      * @param key the key with which the specified value is to be associated
      * @param value a simple Java object to be associated with the specified key
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     public Object put(Object receiver, String key, Object value) {
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
-        final String name = key.intern();
-        BiVariable var = getVariable(robj, name);
+        BiVariable var = getVariable(robj, key);
         Object oldValue = null;
         if ( var != null ) { // updates
             oldValue = var.getJavaObject();
             var.setJavaObject(robj.getRuntime(), value);
         }
         else { // creates new value
-            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
-            if ( var != null ) update(name, var);
+            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, key, value);
+            if ( var != null ) update(key, var);
         }
         return oldValue;
     }
@@ -353,7 +348,7 @@ public class BiVariableMap implements Map<String, Object> {
     public String[] getLocalVarNames() {
         if ( variables == null ) return EMPTY_STRING_ARRAY;
 
-        List<String> localVarNames = new ArrayList<String>();
+        List<String> localVarNames = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarNames.add( var.getName() );
@@ -371,7 +366,7 @@ public class BiVariableMap implements Map<String, Object> {
     public IRubyObject[] getLocalVarValues() {
         if ( variables == null ) return IRubyObject.NULL_ARRAY;
 
-        List<IRubyObject> localVarValues = new ArrayList<IRubyObject>();
+        List<IRubyObject> localVarValues = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarValues.add( var.getRubyObject() );
@@ -380,8 +375,8 @@ public class BiVariableMap implements Map<String, Object> {
         return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
     }
 
-    void inject(final ManyVarsDynamicScope scope, final int depth, final IRubyObject receiver) {
-        VariableInterceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
+    void inject(final DynamicScope scope) {
+        VariableInterceptor.inject(this, scope);
     }
 
     void retrieve(final IRubyObject receiver) {
@@ -398,11 +393,11 @@ public class BiVariableMap implements Map<String, Object> {
      * Removes the mapping for a key from this map if it is present in a top level.
      *
      * <p>Returns the value to which this map previously associated the key,
-     * or <tt>null</tt> if the map contained no mapping for the key.
+     * or <code>null</code> if the map contained no mapping for the key.
 
      * @param key the key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     @Override
     public Object remove(final Object key) {
@@ -414,18 +409,18 @@ public class BiVariableMap implements Map<String, Object> {
      * receiver.
      *
      * <p>Returns the value to which this map previously associated the key,
-     * or <tt>null</tt> if the map contained no mapping for the key.
+     * or <code>null</code> if the map contained no mapping for the key.
 
      * @param key the key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     public Object removeFrom(final Object receiver, final Object key) {
         if ( variables == null ) return null;
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
         for ( int i = 0; i < size(); i++ ) {
-            if ( ((String) key).equals( varNames.get(i) ) ) {
+            if ( key.equals( varNames.get(i) ) ) {
                 final BiVariable var = variables.get(i);
                 if ( var.isReceiverIdentical(robj) ) {
                     varNames.remove(i);
@@ -440,9 +435,8 @@ public class BiVariableMap implements Map<String, Object> {
     /**
      * Copies all of the mappings from the specified map to this map.
      *
-     * @param t mappings to be stored in this map
+     * @param map mappings to be stored in this map
      */
-
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
         if (map == null) {

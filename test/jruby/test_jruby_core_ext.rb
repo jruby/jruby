@@ -50,18 +50,17 @@ class TestJRubyCoreExt < Test::Unit::TestCase
     subclasses = Base.subclasses
     assert_equal ['TestJRubyCoreExt::Role', 'TestJRubyCoreExt::User'], subclasses.map(&:name).sort
 
-    assert_same_contents [ Role, User, SuperUser ], Base.subclasses(true)
-
+    assert_same_contents [ Role, User ], Base.subclasses
     assert_same_contents [ SuperUser ], User.subclasses
 
     SuperUser.extend Module.new
     SuperUser.send :include, Module.new
-    assert_equal [ SuperUser ], User.subclasses(true)
     assert_equal [ ], SuperUser.subclasses
-    assert_equal [ ], SuperUser.subclasses(true)
     klass = Class.new(SuperUser)
     assert_equal [ klass ], SuperUser.subclasses
-    assert_equal [ SuperUser, klass ], User.subclasses(true)
+    assert_equal [ klass ], JRuby.subclasses(SuperUser)
+    assert_equal [ klass ], JRuby.subclasses(SuperUser, all: true)
+    assert_equal [ SuperUser, klass ], JRuby.subclasses(User, all: true)
 
     assert User.to_java.subclasses(true).include? SuperUser
     assert Base.to_java.subclasses # basically that () works

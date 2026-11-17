@@ -9,9 +9,7 @@ describe "Zlib::GzipWriter#<<" do
 
   it "returns self" do
     Zlib::GzipWriter.wrap @io do |gzio|
-      (gzio << "test").should equal(gzio)
+      (gzio << "test").should.equal?(gzio)
     end
   end
-
-  it "needs to be reviewed for spec completeness"
 end

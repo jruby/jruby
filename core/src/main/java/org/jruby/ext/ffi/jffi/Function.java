@@ -12,10 +12,16 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="FFI::Function", parent="FFI::Pointer")
 public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
@@ -26,21 +32,18 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     private final boolean saveError;
     private volatile boolean autorelease = true;
 
-    public static RubyClass createFunctionClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("Function",
-                module.getClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(AbstractInvoker.class);
-        result.defineAnnotatedMethods(Function.class);
-        result.defineAnnotatedConstants(Function.class);
-
-        return result;
+    public static RubyClass createFunctionClass(ThreadContext context, RubyModule FFI) {
+        return FFI.defineClassUnder(context, "Function", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractInvoker.class, Function.class).
+                defineConstants(context, Function.class);
     }
     
     Function(Ruby runtime, RubyClass klass, MemoryIO address,
             Type returnType, Type[] parameterTypes, CallingConvention convention,
             IRubyObject enums, boolean saveError) {
         super(runtime, klass, parameterTypes.length, address);
+
+        var context = runtime.getCurrentContext();
 
         this.functionInfo = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
@@ -49,13 +52,16 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         
         this.enums = enums;
         this.saveError = saveError;
+        var singleton = singletonClass(context);
         // Wire up Function#call(*args) to use the super-fast native invokers
-        getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
+        singleton.addMethod(context, "call", createDynamicMethod(singleton));
     }
 
     Function(Ruby runtime, RubyClass klass, MemoryIO address,
             NativeFunctionInfo functionInfo, IRubyObject enums) {
         super(runtime, klass, functionInfo.parameterTypes.length, address);
+
+        var context = runtime.getCurrentContext();
 
         this.functionInfo = functionInfo;
 
@@ -63,23 +69,19 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
                 functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
         this.enums = enums;
         this.saveError = true;
+        var singleton = singletonClass(context);
         // Wire up Function#call(*args) to use the super-fast native invokers
-        getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
+        singleton.addMethod(context, "call", createDynamicMethod(singleton));
     }
     
-    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2)
+    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
         MemoryIO fptr = null;
-        RubyHash options = null;
         Object proc = null;
-        int optionsIndex = 2;
+        int optionsIndex;
 
-        Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
-
-        if (!(args[1] instanceof RubyArray)) {
-            throw context.runtime.newTypeError("Invalid parameter array "
-                    + args[1].getMetaClass().getName() + " (expected Array)");
-        }
+        if (!(args[1] instanceof RubyArray)) throw typeError(context, "Invalid parameter array ", args[1], " (expected Array)");
 
         RubyArray paramTypes = (RubyArray) args[1];
         Type[] parameterTypes = new Type[paramTypes.size()];
@@ -87,42 +89,35 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             parameterTypes[i] = org.jruby.ext.ffi.Util.findType(context, paramTypes.entry(i));
         }
 
-        if (args.length > 2 && args[2] instanceof Pointer) {
+        if (argc > 2 && args[2] instanceof Pointer) {
             fptr = new CodeMemoryIO(context.runtime, (Pointer) args[2]);
             optionsIndex = 3;
-        } else if (args.length > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
+        } else if (argc > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
             proc = args[2];
             optionsIndex = 3;
         } else if (block.isGiven()) {
             proc = block;
             optionsIndex = 2;
         } else {
-            throw context.runtime.newTypeError("Invalid function address "
-                    + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
-        }    
+            throw typeError(context, "Invalid function address ", args[0], " (expected FFI::Pointer)");
+        }
+
+        Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
 
         // Get the convention from the options hash
         String convention = "default";
         IRubyObject enums = null;
         boolean saveError = true;
-        if (args.length > optionsIndex && args[optionsIndex] instanceof RubyHash) {
-            options = (RubyHash) args[optionsIndex];
+        if (argc > optionsIndex && args[optionsIndex] instanceof RubyHash options) {
+            IRubyObject rbConvention = options.fastARef(asSymbol(context, "convention"));
+            if (rbConvention != null && !rbConvention.isNil()) convention = rbConvention.asJavaString();
 
-            IRubyObject rbConvention = options.fastARef(context.runtime.newSymbol("convention"));
-            if (rbConvention != null && !rbConvention.isNil()) {
-                convention = rbConvention.asJavaString();
-            }
+            IRubyObject rbSaveErrno = options.fastARef(asSymbol(context, "save_errno"));
+            if (rbSaveErrno != null && !rbSaveErrno.isNil()) saveError = rbSaveErrno.isTrue();
 
-            IRubyObject rbSaveErrno = options.fastARef(context.runtime.newSymbol("save_errno"));
-            if (rbSaveErrno != null && !rbSaveErrno.isNil()) {
-                saveError = rbSaveErrno.isTrue();
-            }
-
-            enums = options.fastARef(context.runtime.newSymbol("enums"));
+            enums = options.fastARef(asSymbol(context, "enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-                throw context.runtime.newTypeError("wrong type for options[:enum] "
-                        + enums.getMetaClass().getName() + " (expected Hash or Enums)");
-
+                throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
             }
         }
 
@@ -138,21 +133,17 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
-        if (getMemoryIO() instanceof AllocatedDirectMemoryIO) {
-            ((AllocatedDirectMemoryIO) getMemoryIO()).free();
-        } else {
-            throw context.runtime.newRuntimeError("cannot free non-allocated function");
-        }
-        
+        if (!(getMemoryIO() instanceof AllocatedDirectMemoryIO mio)) throw runtimeError(context, "cannot free non-allocated function");
+        mio.free();
         // Replace memory object with one that throws an exception on any access
         setMemoryIO(new FreedMemoryIO(context.runtime));
         return context.nil;
     }
 
-    @JRubyMethod(name = "autorelease=", required = 1)
+    @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
-            ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());
+        if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO amio) {
+           amio.setAutoRelease(autorelease = release.isTrue());
         }
 
         return context.nil;
@@ -160,7 +151,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(autorelease);
+        return asBoolean(context, autorelease);
     }
 
     @Override

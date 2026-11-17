@@ -1,0 +1,1 @@
+fails:Data#eql? recursive structure returns false if any corresponding elements are not equal with #eql?

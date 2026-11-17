@@ -17,7 +17,7 @@ module TestEnum1
   enum [:c5, 42, :c6, :c7, :c8]
   enum [:c9, 42, :c10, :c11, 4242, :c12]
   enum [:c13, 42, :c14, 4242, :c15, 424242, :c16, 42424242]
-  
+
   attach_function :test_untagged_enum, [:int], :int
 end
 
@@ -262,7 +262,7 @@ describe "All enums" do
     expect(TestEnum1.enum_value(:c14)).to eq(4242)
     expect(TestEnum1.enum_value(:c15)).to eq(424242)
     expect(TestEnum1.enum_value(:c16)).to eq(42424242)
-    
+
     expect(TestEnum3.enum_value(:c13)).to eq(42)
     expect(TestEnum3.enum_value(:c14)).to eq(4242)
     expect(TestEnum3.enum_value(:c15)).to eq(424242)
@@ -417,7 +417,17 @@ describe "All enums" do
   end
 
   it "duplicate enum keys rejected" do
-    expect { enum [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ] }.to raise_error
-    expect { enum FFI::Type::UINT64, [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ] }.to raise_error
+    expect do
+      Module.new do
+        extend FFI::Library
+        enum [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ]
+      end
+    end.to raise_error(ArgumentError, /duplicate/)
+    expect do
+      Module.new do
+        extend FFI::Library
+        enum FFI::Type::UINT64, [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ]
+      end
+    end.to raise_error(ArgumentError, /duplicate/)
   end
 end

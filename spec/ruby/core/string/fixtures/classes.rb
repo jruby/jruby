@@ -4,7 +4,7 @@ class Object
   def unpack_format(count=nil, repeat=nil)
     format = "#{instance_variable_get(:@method)}#{count}"
     format *= repeat if repeat
-    format.dup # because it may then become tainted
+    format
   end
 end
 
@@ -44,6 +44,17 @@ module StringSpecs
     def initialize(str)
       raise ArgumentError.new('constructor was called') unless str == 'silly:string'
       self.replace(str)
+    end
+  end
+
+  class SpecialVarProcessor
+    def process(match)
+      if $~ != nil
+        str = $~[0]
+      else
+        str = "unset"
+      end
+      "<#{str}>"
     end
   end
 end

@@ -15,9 +15,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ProcessModuleBodyInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
-    public ProcessModuleBodyInstr(Variable result, Operand moduleBody, Operand block) {
-        super(Operation.PROCESS_MODULE_BODY, result, moduleBody, block);
+public class ProcessModuleBodyInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
+    public ProcessModuleBodyInstr(Variable result, Operand moduleBody) {
+        super(Operation.PROCESS_MODULE_BODY, result, moduleBody);
 
         assert result != null: "ProcessModuleBodyInstr result is null";
     }
@@ -26,34 +26,21 @@ public class ProcessModuleBodyInstr extends TwoOperandResultBaseInstr implements
         return getOperand1();
     }
 
-    public Operand getBlock() {
-        return getOperand2();
-    }
-
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), getModuleBody().cloneForInlining(ii),
-                getBlock().cloneForInlining(ii));
-    }
-
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getModuleBody());
-        e.encode(getBlock());
+        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), getModuleBody().cloneForInlining(ii));
     }
 
     public static ProcessModuleBodyInstr decode(IRReaderDecoder d) {
-        return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+        return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         InterpretedIRBodyMethod bodyMethod = (InterpretedIRBodyMethod) getModuleBody().retrieve(context, self, currScope, currDynScope, temp);
-        Block b = (Block) getBlock().retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
 
-        return bodyMethod.call(context, implClass, implClass, null, b);
+        return bodyMethod.call(context, implClass, implClass, null, Block.NULL_BLOCK);
     }
 
     @Override

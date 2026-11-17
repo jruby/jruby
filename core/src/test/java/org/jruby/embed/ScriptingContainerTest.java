@@ -31,6 +31,8 @@ package org.jruby.embed;
 
 import org.jruby.Profile;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.ast.Node;
@@ -40,8 +42,13 @@ import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.Options;
@@ -57,6 +64,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.HashSet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,6 +78,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -486,8 +496,7 @@ public class ScriptingContainerTest {
 
         script = "";
         Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
-        Node node = runtime.parseEval(script, "<script>", null, 0);
-        IRubyObject expRet = runtime.runInterpreter(node);
+        IRubyObject expRet = runtime.evalScriptlet(script);
         result = instance.parse(script);
         IRubyObject ret = result.run();
         assertEquals(expRet.toJava(String.class), ret.toJava(String.class));
@@ -499,7 +508,7 @@ public class ScriptingContainerTest {
                    "\"はろ〜、わぁ〜るど！\"\n" +
                  "end\n" +
                  "say_something";
-        expRet = runtime.runInterpreter(runtime.parseEval(script, "<script>", null, 0));
+        expRet = runtime.evalScriptlet(script);
         ret = instance.parse(script).run();
         assertEquals(expRet.toJava(String.class), ret.toJava(String.class));
 
@@ -530,22 +539,17 @@ public class ScriptingContainerTest {
     @Test
     public void testParse_3args_1() throws FileNotFoundException {
         logger1.info("parse(reader, filename, lines)");
-        Reader reader = null;
         String filename = "";
-        int[] lines = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        EmbedEvalUnit expResult = null;
-        EmbedEvalUnit result = instance.parse(reader, filename, lines);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        FileReader reader = new FileReader(filename);
         instance.put("@t", 2);
-        result = instance.parse(reader, filename);
+        EmbedEvalUnit result = instance.parse(reader, filename);
         IRubyObject ret = result.run();
         String expStringResult =
             "Trick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
@@ -559,8 +563,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(reader, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -578,7 +581,7 @@ public class ScriptingContainerTest {
         int[] lines = null;
 
         String[] paths = {basedir + "/lib", basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -588,9 +591,9 @@ public class ScriptingContainerTest {
 
         try {
             result = instance.parse(type, filename, lines);
-        } catch (Throwable t) {
-            assertTrue(t.getCause() instanceof FileNotFoundException);
-            t.printStackTrace(new PrintStream(outStream));
+        } catch (Exception e) {
+            assertTrue(e.getClass().toString(), e instanceof FileNotFoundException);
+            e.printStackTrace(new PrintStream(outStream));
         }
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
@@ -625,8 +628,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(PathType.RELATIVE, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -678,8 +680,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(istream, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -702,10 +703,8 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(script);
         assertEquals(expResult, result);
         script = "";
-        expResult = "";
         result = instance.runScriptlet(script);
-        // Maybe bug. This should return "", but RubyNil.
-        //assertEquals(expResult, result);
+        assertNull(result);
 
         script = "# -*- coding: utf-8 -*-\n" +
                  "def say_something()" +
@@ -735,22 +734,18 @@ public class ScriptingContainerTest {
     @Test
     public void testRunScriptlet_Reader_String() throws FileNotFoundException {
         logger1.info("runScriptlet(reader, filename)");
-        Reader reader = null;
         String filename = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.runScriptlet(reader, filename);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        Reader reader = new FileReader(filename);
         instance.put("@t", 3);
-        result = instance.runScriptlet(reader, filename);
-        expResult =
+        Object result = instance.runScriptlet(reader, filename);
+        Object expResult =
             "Trick or Treat!\nTrick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
         assertEquals(expResult, result);
 
@@ -811,8 +806,9 @@ public class ScriptingContainerTest {
         Object result;
         try {
             result = instance.parse(type, filename);
-        } catch (Throwable e) {
-            assertTrue(e.getCause() instanceof FileNotFoundException);
+        } catch (Exception e) {
+            assertTrue(e.toString(), e instanceof ParseFailedException);
+            assertTrue(Objects.toString(e.getCause()), e.getCause() instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
 
@@ -908,19 +904,21 @@ public class ScriptingContainerTest {
     public void testCallMethod_3args() {
         logger1.info("callMethod(receiver, methodName, returnType)");
         Object receiver = null;
-        String methodName = "";
         Class<Object> returnType = null;
         String[] paths = {basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
 
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, returnType);
-        assertEquals(expResult, result);
+        try {
+            Object result = instance.callMethod(receiver, "", returnType);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/next_year_1.rb";
         receiver = instance.runScriptlet(PathType.RELATIVE, filename);
@@ -953,28 +951,21 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_1() {
         logger1.info("callMethod(receiver, methodName, singleArg, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object singleArg = null;
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, singleArg, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/list_printer_1.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "print_list";
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "print_list";
         String[] hellos = {"你好", "こんにちは", "Hello", "Здравствуйте"};
-        singleArg = Arrays.asList(hellos);
+        Object singleArg = Arrays.asList(hellos);
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);
         instance.callMethod(receiver, methodName, singleArg, null);
-        expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
+        Object expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
         assertEquals(expResult, sw.toString().trim());
 
         instance.getVarMap().clear();
@@ -987,23 +978,16 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_2() {
         logger1.info("callMethod(receiver, methodName, args, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object[] args = null;
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, args, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/quadratic_formula.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "solve";
-        args = new Double[]{12.0, -21.0, -6.0};
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "solve";
+        Object[] args = new Double[]{12.0, -21.0, -6.0};
         List<Double> solutions = instance.callMethod(receiver, methodName, args, List.class);
         assertEquals(2, solutions.size());
         assertEquals(new Double(-0.25), solutions.get(0));
@@ -1011,10 +995,9 @@ public class ScriptingContainerTest {
 
         args = new Double[]{1.0, 1.0, 1.0};
         try {
-            solutions = instance.callMethod(receiver, methodName, args, List.class);
+            instance.callMethod(receiver, methodName, args, List.class);
         } catch (RuntimeException e) {
-            Throwable t = e.getCause();
-            assertTrue(t.getMessage().contains("RangeError"));
+            assertTrue(e.getMessage().contains("RangeError"));
         }
 
         instance.getVarMap().clear();
@@ -1058,8 +1041,14 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
 
         // Verify that empty message name returns null
-        Object result = instance.callMethod(null, "", returnType, unit);
-        assertEquals(null, result);
+        try {
+            Object result = instance.callMethod(null, "", returnType, unit);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (InvokeFailedException ex) {
+            assertTrue(Objects.toString(ex.getCause()), ex.getCause() instanceof NoMethodError);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String text =
             "songs:\n"+
@@ -1090,22 +1079,18 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_without_returnType() {
         logger1.info("callMethod no returnType");
-        Object receiver = null;
-        String methodName = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName);
-        assertEquals(expResult, result);
+
         String script =
                 "def say_something\n" +
                   "return \"Oh, well. I'm stucked\"" +
                 "end";
-        receiver = instance.runScriptlet(script);
-        methodName = "say_something";
+        Object receiver = instance.runScriptlet(script);
+        String methodName = "say_something";
         String something = (String)instance.callMethod(receiver, methodName);
         assertEquals("Oh, well. I'm stucked", something);
 
@@ -1813,28 +1798,6 @@ public class ScriptingContainerTest {
     }
 
     /**
-     * Test of setRunRubyInProcess method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetRunRubyInProcess() {
-        logger1.info("setRunRubyInProcess");
-        boolean inprocess = false;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setRunRubyInProcess(inprocess);
-        assertEquals(inprocess, instance.isRunRubyInProcess());
-
-        inprocess = true;
-        instance.setRunRubyInProcess(inprocess);
-        assertEquals(inprocess, instance.isRunRubyInProcess());
-
-        instance.terminate();
-    }
-
-    /**
      * Test of isObjectSpaceEnabled method, of class ScriptingContainer.
      */
     @Test
@@ -1925,7 +1888,10 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         String expResult = System.getProperty("user.dir");
         String result = instance.getCurrentDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
@@ -1992,7 +1958,10 @@ public class ScriptingContainerTest {
             expResult = System.getProperty("java.io.tmpdir");
         }
         String result = instance.getHomeDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
@@ -2252,14 +2221,15 @@ public class ScriptingContainerTest {
         instance.terminate();
 
         filename = "["+this.getClass().getCanonicalName()+"]";
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setScriptFilename(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         try {
             instance.runScriptlet("puts \"Hello");
         } catch (RuntimeException e) {
-            assertTrue(sw.toString().contains(filename));
+            assertTrue(e instanceof SyntaxError);
+            assertTrue(e.toString().contains(filename));
         }
 
         instance.terminate();
@@ -2357,33 +2327,20 @@ public class ScriptingContainerTest {
      * Test of getJitThreshold method, of class ScriptingContainer.
      */
     @Test
-    public void testGetJitThreshold() {
+    public void testGetSetJitThreshold() {
         logger1.info("getJitThreshold");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        int expResult = 50;
-        int result = instance.getJitThreshold();
-        assertEquals(expResult, result);
+        assertEquals(Constants.JIT_THRESHOLD, instance.getJitThreshold());
+        assertTrue(instance.getJitThreshold() > 0);
 
-        instance.terminate();
-    }
-
-    /**
-     * Test of setJitThreshold method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetJitThreshold() {
         logger1.info("setJitThreshold");
-        int threshold = 0;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setJitThreshold(threshold);
+        instance.setJitThreshold(0);
+        assertEquals(0, instance.getJitThreshold());
+        assertEquals(0, instance.getProvider().getRubyInstanceConfig().getJitThreshold());
 
         instance.terminate();
     }
@@ -2392,33 +2349,20 @@ public class ScriptingContainerTest {
      * Test of getJitMax method, of class ScriptingContainer.
      */
     @Test
-    public void testGetJitMax() {
+    public void testGetSetJitMax() {
         logger1.info("getJitMax");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        int expResult = 4096;
-        int result = instance.getJitMax();
-        assertEquals(expResult, result);
+        assertEquals(Constants.JIT_MAX_LIMIT, instance.getJitMax());
+        assertTrue(instance.getJitMax() > 0);
 
-        instance.terminate();
-    }
-
-    /**
-     * Test of setJitMax method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetJitMax() {
         logger1.info("setJitMax");
-        int max = 0;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setJitMax(max);
+        instance.setJitMax(-1);
+        assertEquals(-1, instance.getJitMax());
+        assertEquals(-1, instance.getProvider().getRubyInstanceConfig().getJitMax());
 
         instance.terminate();
     }
@@ -2682,28 +2626,280 @@ public class ScriptingContainerTest {
         container.terminate();
     }
 
-// NOTE: test makes no sense on 9K
+// Temporarily disabled until we can address https://github.com/ruby/timeout/pull/21
+// See https://github.com/jruby/jruby/issues/7349
+//    /**
+//     * Verifies thread cleanup when using {@code org.jruby.ext.timeout.Timeout} in an embedded environment
+//     */
 //    @Test
-//    public void testSystemPropertyCatcherSetCompatVersion() {
-//        ScriptingContainer container;
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.8");
-//        container = new ScriptingContainer(LocalContextScope.THREADSAFE);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("1.8.7", container.runScriptlet("RUBY_VERSION"));
+//    public void testTimeoutCleanup() {
+//        // memorize threads alive prior to creating a scripting container
+//        Set<Long> preTestThreadsIds = new HashSet<>();
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            preTestThreadsIds.add(thread.getId());
+//        }
+//        // create a scripting container and run a basic script that uses the timeout module, expecting an exception
+//        ScriptingContainer container = new ScriptingContainer();
+//        container.setErrorWriter(writer);
+//        String script = "require 'timeout'\n" +
+//                "Timeout::timeout(0.1) { sleep(5) }";
+//        EvalFailedException thrown = null;
+//        try {
+//            container.parse(script).run();
+//        } catch (EvalFailedException caught) {
+//            thrown = caught;
+//        }
+//        // assert exception
+//        assertNotNull("Timeout module did not interrupt sleep as expected", thrown);
+//        assertEquals("(Error) execution expired", thrown.getMessage());
+//        // find any thread(s) launched due to script execution
+//        Set<Long> spawnedThreadIds = new HashSet<>();
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            if (!preTestThreadsIds.remove(thread.getId())) {
+//                spawnedThreadIds.add(thread.getId());
+//            }
+//        }
+//        // terminate container
 //        container.terminate();
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "RUBY2_0");
-//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("2.0.0", container.runScriptlet("RUBY_VERSION"));
-//        container.terminate();
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.9");
-//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("1.9.3", container.runScriptlet("RUBY_VERSION"));
-//        container.terminate();
+//        // verify any spawned threads have been terminated
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            assertFalse("Timeout module left dangling threads after ScriptingContainer termination",
+//                    spawnedThreadIds.contains(thread.getId()));
+//        }
 //    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_kwargsOnly() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:, greeting: 'Hello')\n" +
+                "  \"#{greeting}, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("name", "World");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hello, World!", result.toString());
+
+            kwargs.put("greeting", "Hi");
+            result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hi, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_positionalAndKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def combine(a, b, separator: ', ')\n" +
+                "  \"#{a}#{separator}#{b}\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {"foo", "bar"};
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("separator", " - ");
+            String result = instance.callMethodWithKeywordArgs(receiver, "combine", args, kwargs, String.class);
+            assertEquals("foo - bar", result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_returnType() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def add(x:, y:)\n  x + y\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("x", 3);
+            kwargs.put("y", 4);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "add", null, kwargs, Long.class);
+            assertEquals(Long.valueOf(7), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_nullValue() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def check_nil(val: 'default')\n  val.nil?\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("val", null);
+            Boolean result = instance.callMethodWithKeywordArgs(receiver, "check_nil", null, kwargs, Boolean.class);
+            assertTrue(result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_emptyKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def double(a)\n  a * 2\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {5};
+            Map<String, Object> kwargs = new HashMap<>();
+            Long result = instance.callMethodWithKeywordArgs(receiver, "double", args, kwargs, Long.class);
+            assertEquals(Long.valueOf(10), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_block() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def transform(x, factor:)\n" +
+                "  block_given? ? yield(x * factor) : (x * factor)\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {5};
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("factor", 3);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "transform", args, kwargs,
+                    Block.NULL_BLOCK, Long.class);
+            assertEquals(Long.valueOf(15), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_callInfoIsRestored() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:)\n" +
+                "  \"Hello, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            ThreadContext context = instance.getProvider().getRuntime().getCurrentContext();
+            int sentinel = 0xCAFE;
+            context.callInfo = sentinel;
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("name", "World");
+            instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+
+            assertEquals("callInfo should be restored to the value present before the kwargs call",
+                    sentinel, context.callInfo);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_callInfoRestoredAfterException() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def boom(msg:)\n" +
+                "  raise msg\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            ThreadContext context = instance.getProvider().getRuntime().getCurrentContext();
+            int sentinel = 0xBEEF;
+            context.callInfo = sentinel;
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("msg", "kaboom");
+            try {
+                instance.callMethodWithKeywordArgs(receiver, "boom", kwargs);
+                fail("expected the Ruby method to raise");
+            } catch (InvokeFailedException expected) {
+            }
+
+            assertEquals("callInfo should be restored even when the Ruby method raises",
+                    sentinel, context.callInfo);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_rubyStringKeys() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:)\n" +
+                "  \"Hello, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Map<RubyString, Object> kwargs = new HashMap<>();
+            kwargs.put(RubyString.newString(runtime, "name"), "World");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hello, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_symbolKeys() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:, greeting: 'Hello')\n" +
+                "  \"#{greeting}, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Map<RubySymbol, Object> kwargs = new HashMap<>();
+            kwargs.put(runtime.newSymbol("name"), "World");
+            kwargs.put(runtime.newSymbol("greeting"), "Hi");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hi, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_symbolKeysPositionalAndReturnType() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def add(base, x:, y:)\n  base + x + y\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Object[] args = {10};
+            Map<RubySymbol, Object> kwargs = new HashMap<>();
+            kwargs.put(runtime.newSymbol("x"), 3);
+            kwargs.put(runtime.newSymbol("y"), 4);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "add", args, kwargs, Long.class);
+            assertEquals(Long.valueOf(17), result);
+        } finally {
+            instance.terminate();
+        }
+    }
 
 }

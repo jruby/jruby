@@ -10,12 +10,14 @@
 # include <errno.h>
 #endif
 
-int setLastError(int error) {
-#if defined(_WIN32) || defined(__WIN32__)
+void setLastError(int error) {
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
     SetLastError(error);
 #else
     errno = error;
 #endif
-    return -1;
 }
 
+void setErrno(int error) {
+  errno = error;
+}

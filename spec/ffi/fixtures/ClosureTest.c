@@ -6,12 +6,37 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #ifndef _WIN32
 # include <pthread.h>
 #else
 # include <windows.h>
 # include <process.h>
 #endif
+
+double testClosureVrDva(double d, ...) {
+    va_list args;
+    double (*closure)(void);
+
+    va_start(args, d);
+    closure = va_arg(args, double (*)(void));
+    va_end(args);
+
+    return d + closure();
+}
+
+long testClosureVrILva(int i, long l, ...) {
+    va_list args;
+    int (*cl1)(int);
+    long (*cl2)(long);
+
+    va_start(args, l);
+    cl1 = va_arg(args, int (*)(int));
+    cl2 = va_arg(args, long (*)(long));
+    va_end(args);
+
+    return cl1(i) + cl2(l);
+}
 
 #define R(T, rtype) rtype testClosureVr##T(rtype (*closure)(void)) { \
     return closure != NULL ? (*closure)() : (rtype) 0; \
@@ -35,6 +60,7 @@ R(J, long long);
 R(LL, long long);
 R(F, float);
 R(D, double);
+R(LD, long double);
 R(P, const void*);
 
 
@@ -47,8 +73,24 @@ P(J, long long);
 P(LL, long long);
 P(F, float);
 P(D, double);
+P(LD, long double);
 P(P, const void*);
 P(UL, unsigned long);
+
+#if defined(_WIN32) && !defined(_WIN64)
+bool __stdcall testClosureStdcall(long *a1, void __stdcall(*closure)(void *, long), long a2) { \
+    void* sp_pre;
+    void* sp_post;
+
+    asm volatile (" movl %%esp,%0" : "=g" (sp_pre));
+    (*closure)(a1, a2);
+    asm volatile (" movl %%esp,%0" : "=g" (sp_post));
+
+    /* %esp before pushing parameters on the stack and after the call returns
+     * should be equal, if both sides respects the stdcall convention */
+    return sp_pre == sp_post;
+}
+#endif
 
 void testOptionalClosureBrV(void (*closure)(char), char a1)
 {
@@ -67,14 +109,22 @@ static void *
 threadVrV(void *arg)
 {
     struct ThreadVrV* t = (struct ThreadVrV *) arg;
-    
+
     int i;
     for (i = 0; i < t->count; i++) {
         (*t->closure)();
     }
-    
+
     return NULL;
 }
+
+#ifdef _WIN32
+static void
+threadVrV_win32(void *arg)
+{
+    threadVrV(arg);
+}
+#endif
 
 void testThreadedClosureVrV(void (*closure)(void), int n)
 {
@@ -84,8 +134,8 @@ void testThreadedClosureVrV(void (*closure)(void), int n)
     pthread_create(&t, NULL, threadVrV, &arg);
     pthread_join(t, NULL);
 #else
-    HANDLE hThread = (HANDLE) _beginthread((void (*)(void *))threadVrV, 0, &arg);
-    WaitForSingleObject(hThread, INFINITE);	
+    HANDLE hThread = (HANDLE) _beginthread(threadVrV_win32, 0, &arg);
+    WaitForSingleObject(hThread, INFINITE);
 #endif
 }
 

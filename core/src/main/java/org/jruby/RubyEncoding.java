@@ -26,65 +26,71 @@
 
 package org.jruby;
 
-import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 
+import org.jcodings.Config;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
-import static com.headius.backport9.buffer.Buffers.clearBuffer;
-import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Access.encodingService;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
-    public static final Charset UTF8 = Charset.forName("UTF-8");
-    public static final Charset UTF16 = Charset.forName("UTF-16");
-    public static final Charset ISO = Charset.forName("ISO-8859-1");
-    public static final ByteList LOCALE = ByteList.create("locale");
-    public static final ByteList EXTERNAL = ByteList.create("external");
-    public static final ByteList FILESYSTEM = ByteList.create("filesystem");
-    public static final ByteList INTERNAL = ByteList.create("internal");
+    public static final Charset UTF8 = StandardCharsets.UTF_8;
+    public static final Charset UTF16 = StandardCharsets.UTF_16;
+    public static final Charset ISO = StandardCharsets.ISO_8859_1;
 
-    public static RubyClass createEncodingClass(Ruby runtime) {
-        RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setEncoding(encodingc);
-        encodingc.setClassIndex(ClassIndex.ENCODING);
-        encodingc.setReifiedClass(RubyEncoding.class);
-        encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
+    public static final ByteList LOCALE = new ByteList(encodeISO("locale"), false);
+    public static final ByteList EXTERNAL = new ByteList(encodeISO("external"), false);
+    public static final ByteList FILESYSTEM = new ByteList(encodeISO("filesystem"), false);
+    public static final ByteList INTERNAL = new ByteList(encodeISO("internal"), false);
+    public static final ByteList BINARY_ASCII_NAME = new ByteList(encodeISO("BINARY (ASCII-8BIT)"), false);
 
-        encodingc.getSingletonClass().undefineMethod("allocate");
-        encodingc.defineAnnotatedMethods(RubyEncoding.class);
+    @JRubyConstant("UNICODE_VERSION")
+    public static final String UNICODE_VERSION = Config.UNICODE_VERSION_STRING;
 
-        return encodingc;
+    public static RubyClass createEncodingClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Encoding", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyEncoding.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyEncoding.class)).
+                classIndex(ClassIndex.ENCODING).
+                defineMethods(context, RubyEncoding.class).
+                defineConstants(context, RubyEncoding.class).
+                tap(c -> c.singletonClass(context).undefMethods(context, "allocate"));
     }
 
     private Encoding encoding;
     private final ByteList name;
     private final boolean isDummy;
-    private final Object constant;
+    private final transient Object constant;
 
     private RubyEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         this(runtime, new ByteList(name, p, end), null, isDummy);
@@ -146,13 +152,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
 
         if (!(obj1 instanceof RubyString)) {
-            IRubyObject objTmp = obj1; // swap1 obj1 & obj2
+            IRubyObject objTmp = obj1; // swap obj1 & obj2
             obj1 = obj2;
             obj2 = objTmp;
-
-            Encoding encTmp = enc1;  // swap their encodings
-            enc1 = enc2;
-            enc2 = encTmp;
+            // Note: enc1/enc2 are NOT swapped — they retain the
+            // original argument order, matching CRuby's rb_enc_compatible.
         }
 
         if (obj1 instanceof RubyString) {
@@ -180,28 +184,53 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static byte[] encodeUTF8(String str) {
-        return encodeUTF8((CharSequence) str);
+        return str.getBytes(UTF8);
     }
 
     public static byte[] encodeUTF8(CharSequence str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getBytes(UTF8.encode(toCharBuffer(str)));
+        if (str instanceof String) return encodeUTF8((String) str);
+        if (str instanceof StringBuilder || str instanceof StringBuffer || str instanceof CharBuffer) {
+            return str.toString().getBytes(UTF8);
         }
-        return getBytes(getUTF8Coder().encode(str));
+        // RubyString's CharSequence view can differ from its decoded String.
+        // Other CharSequences need not expose their charAt() contents through toString().
+        char[] chars = new char[str.length()];
+        for (int i = 0; i < chars.length; i++) chars[i] = str.charAt(i);
+        return new String(chars).getBytes(UTF8);
+    }
+
+    public static byte[] encodeISO(CharSequence str) {
+        return encodeISOLoop(str);
+    }
+
+    public static byte[] encodeISO(char[] str) {
+        return encodeISOLoop(str);
+    }
+
+    private static byte[] encodeISOLoop(char[] s) {
+        int length = s.length;
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) s[i];
+        }
+        return bytes;
+    }
+
+    private static byte[] encodeISOLoop(CharSequence s) {
+        int length = s.length();
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) s.charAt(i);
+        }
+        return bytes;
     }
 
     static ByteList doEncodeUTF8(String str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
-        }
-        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+        return new ByteList(str.getBytes(UTF8), UTF8Encoding.INSTANCE, false);
     }
 
     static ByteList doEncodeUTF8(CharSequence str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
-        }
-        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+        return new ByteList(encodeUTF8(str), UTF8Encoding.INSTANCE, false);
     }
 
     private static CharBuffer toCharBuffer(CharSequence str) {
@@ -214,9 +243,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return bytes;
     }
 
-    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc, final boolean shared) {
+    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc) {
         byte[] bytes; int off;
-        if (!shared && buffer.hasArray()) { // HeapByteBuffer
+        if (buffer.hasArray()) { // HeapByteBuffer
             bytes = buffer.array();
             off = buffer.arrayOffset();
         } else {
@@ -250,11 +279,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     static ByteList doEncode(String cs, Charset charset, Encoding enc) {
-        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
+        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc);
     }
 
     static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
-        return getByteList(charset.encode(toCharBuffer(cs)), enc, false);
+        return getByteList(charset.encode(toCharBuffer(cs)), enc);
     }
 
     public static byte[] encode(String str, Charset charset) {
@@ -264,11 +293,42 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return bytes;
     }
 
+    /**
+     * Decode the range of bytes specified as UTF-8 content.
+     *
+     * @param bytes the byte array
+     * @param start start of content
+     * @param length length of content
+     * @return a decoded String based on UTF-8 bytes
+     */
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        if (length > CHAR_THRESHOLD) {
-            return UTF8.decode(ByteBuffer.wrap(bytes, start, length)).toString();
-        }
-        return getUTF8Coder().decode(bytes, start, length).toString();
+        return new String(bytes, start, length, UTF8);
+    }
+
+    /**
+     * Decode the range of bytes specified as "raw" binary content, as in ISO-8859-1 or ASCII-8BIT encodings.
+     *
+     * Each byte becomes the char with the same unsigned value.
+     *
+     * @param bytes the byte array
+     * @param start start of content
+     * @param length length of content
+     * @return a decoded String based on raw bytes
+     */
+    public static String decodeRaw(byte[] bytes, int start, int length) {
+        return new String(bytes, start, length, ISO);
+    }
+
+    /**
+     * Decode the specified bytelist as "raw" binary content.
+     *
+     * This is the same as calling {@link #decodeRaw(byte[], int, int)} with the contents of byteList.
+     *
+     * @param byteList
+     * @return a decoded string based on raw bytes
+     */
+    public static String decodeRaw(ByteList byteList) {
+        return decodeRaw(byteList.unsafeBytes(), byteList.begin(), byteList.realSize());
     }
 
     public static String decodeUTF8(byte[] bytes) {
@@ -283,121 +343,64 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
 
-    /** The maximum number of characters we can encode/decode in our cached buffers */
-    private static final int CHAR_THRESHOLD = 1024;
-
-    private static class UTF8Coder {
-        private final CharsetEncoder encoder = UTF8.newEncoder();
-        private final CharsetDecoder decoder = UTF8.newDecoder();
-        /** The resulting encode/decode buffer sized by the max number of
-         * characters (using 4 bytes per char possible for utf-8) */
-        private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
-        private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
-        private final CharBuffer charBuffer = CharBuffer.allocate(BUF_SIZE);
-
-        UTF8Coder() {
-            decoder.onMalformedInput(CodingErrorAction.REPLACE);
-            decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
-        }
-
-        public final ByteBuffer encode(String str) {
-            ByteBuffer buf = byteBuffer;
-            CharBuffer cbuf = charBuffer;
-            clearBuffer(buf);
-            clearBuffer(cbuf);
-            cbuf.put(str);
-            flipBuffer(cbuf);
-            encoder.encode(cbuf, buf, true);
-            flipBuffer(buf);
-
-            return buf;
-        }
-
-        public final ByteBuffer encode(CharSequence str) {
-            ByteBuffer buf = byteBuffer;
-            CharBuffer cbuf = charBuffer;
-            clearBuffer(buf);
-            clearBuffer(cbuf);
-            // NOTE: doesn't matter is we toString here in terms of speed
-            // ... so we "safe" some space at least by not copy-ing char[]
-            for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
-            flipBuffer(cbuf);
-            encoder.encode(cbuf, buf, true);
-            flipBuffer(buf);
-
-            return buf;
-        }
-
-        public final CharBuffer decode(byte[] bytes, int start, int length) {
-            CharBuffer cbuf = charBuffer;
-            ByteBuffer buf = byteBuffer;
-            clearBuffer(cbuf);
-            clearBuffer(buf);
-            buf.put(bytes, start, length);
-            flipBuffer(buf);
-            decoder.decode(buf, cbuf, true);
-            flipBuffer(cbuf);
-
-            return cbuf;
-        }
-
-    }
-
     /**
-     * UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
-     * See JRUBY-6522
+     * Check whether the given encoding and the encoding from the given {@link CodeRangeable} are compatible.
+     *
+     * This version differs from {@link RubyString#checkEncoding(CodeRangeable)} in that the contents of the first
+     * encoding's string are not taken into consideration (e.g. blank first string does not skip compatibility check
+     * with second string's encoding).
+     *
+     * See rb_enc_check in CRuby and use from stringio that passes encoding instead of string for the first argument.
+     *
+     * See https://github.com/ruby/stringio/pull/116 for some discussion
+     *
+     * MRI: rb_enc_check with encoding for first parameter
+     *
+     * @param context the current thread context
+     * @param encoding the first encoding
+     * @param other the {@link CodeRangeable} from which to get bytes and the second encoding
+     * @return a negotiated encoding, if compatible; null otherwise
      */
-    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER = new ThreadLocal<>();
-
-    private static UTF8Coder getUTF8Coder() {
-        UTF8Coder coder;
-        SoftReference<UTF8Coder> ref = UTF8_CODER.get();
-        if (ref == null || (coder = ref.get()) == null) {
-            coder = new UTF8Coder();
-            UTF8_CODER.set(new SoftReference<>(coder));
-        }
-
-        return coder;
+    public static Encoding checkEncoding(ThreadContext context, Encoding encoding, CodeRangeable other) {
+        Encoding enc = StringSupport.areCompatible(encoding, other);
+        if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                inspectName(encoding) + " and " + inspectName(other.getByteList().getEncoding()));
+        return enc;
     }
 
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        return RubyArray.newArrayMayCopy(runtime, runtime.getEncodingService().getEncodingList());
+        return RubyArray.newArrayMayCopy(context.runtime, encodingService(context).getEncodingList());
     }
 
     @JRubyMethod(name = "locale_charmap", meta = true)
     public static IRubyObject locale_charmap(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
-        ByteList name = new ByteList(service.getLocaleEncoding().getName());
+        ByteList name = new ByteList(encodingService(context).getLocaleEncoding().getName());
 
-        return RubyString.newUsAsciiStringNoCopy(runtime, name);
+        return RubyString.newUsAsciiStringNoCopy(context.runtime, name);
     }
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "name_list", meta = true)
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = encodingService(context);
 
-        RubyArray result = runtime.newArray(service.getEncodings().size() + service.getAliases().size());
-        HashEntryIterator i;
-        i = service.getEncodings().entryIterator();
+        var result = allocArray(context, service.getEncodings().size() + service.getAliases().size() + 4);
+        var i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            var e = i.next();
+            result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
         i = service.getAliases().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            var e = i.next();
+            result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
 
-        result.append(runtime.newString(EXTERNAL));
-        result.append(runtime.newString(LOCALE));
+        result.append(context, newString(context, EXTERNAL));
+        result.append(context, newString(context, FILESYSTEM));
+        result.append(context, newString(context, INTERNAL));
+        result.append(context, newString(context, LOCALE));
 
         return result;
     }
@@ -405,41 +408,41 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "aliases", meta = true)
     public static IRubyObject aliases(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
-
+        EncodingService service = encodingService(context);
         IRubyObject list[] = service.getEncodingList();
         HashEntryIterator i = service.getAliases().entryIterator();
-        RubyHash result = RubyHash.newHash(runtime);
+        RubyHash result = newHash(context);
 
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            IRubyObject alias = RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context);
-            IRubyObject name = RubyString.newUsAsciiStringShared(runtime,
+            IRubyObject alias = RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context);
+            IRubyObject name = RubyString.newUsAsciiStringShared(context.runtime,
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
 
-        result.fastASet(runtime.newString(EXTERNAL),
-                runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
-        result.fastASet(runtime.newString(LOCALE),
-                runtime.newString(new ByteList(service.getLocaleEncoding().getName())));
+        addSpecialAlias(context, result, EXTERNAL, service.getDefaultExternalEncoding());
+        Encoding internal = service.getDefaultInternalEncoding();
+        if (internal != null) {
+            addSpecialAlias(context, result, INTERNAL, internal);
+        }
+        addSpecialAlias(context, result, FILESYSTEM, service.getDefaultFilesystemEncoding());
+        addSpecialAlias(context, result, LOCALE, service.getLocaleEncoding());
 
         return result;
     }
 
-    @JRubyMethod(name = "find", meta = true)
-    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        Ruby runtime = context.runtime;
-
-        // Wacky but true...return arg if it is an encoding looking for itself
-        if (str instanceof RubyEncoding) return str;
-
-        return runtime.getEncodingService().rubyEncodingFromObject(str);
+    private static void addSpecialAlias(ThreadContext context, RubyHash result, ByteList alias, Encoding encoding) {
+        result.fastASet(newString(context, alias), newString(context, new ByteList(encoding.getName())));
     }
 
-    @JRubyMethod(name = "replicate")
+    @JRubyMethod(name = "find", meta = true)
+    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        return str instanceof RubyEncoding ? str : encodingService(context).rubyEncodingFromObject(str);
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject replicate(ThreadContext context, IRubyObject arg) {
         return new RubyEncoding(context.runtime, arg.convertToString().getBytes(), getEncoding(), isDummy);
     }
@@ -456,7 +459,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "ascii_compatible?")
     public IRubyObject asciiCompatible_p(ThreadContext context) {
-        return context.runtime.newBoolean(getEncoding().isAsciiCompatible());
+        return asBoolean(context, getEncoding().isAsciiCompatible());
     }
 
     @JRubyMethod(name = {"to_s", "name"})
@@ -469,27 +472,44 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public IRubyObject inspect(ThreadContext context) {
         ByteList bytes = new ByteList();
         bytes.append("#<Encoding:".getBytes());
-        bytes.append(name);
+        bytes.append(inspectName());
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
         return RubyString.newUsAsciiStringNoCopy(context.runtime, bytes);
     }
 
+    private ByteList inspectName() {
+        if (getEncoding() == ASCIIEncoding.INSTANCE) {
+            return BINARY_ASCII_NAME;
+        }
+        return name;
+    }
+
+    /**
+     * The name of an encoding as error messages show it, which names ASCII-8BIT as BINARY.
+     *
+     * @param encoding the encoding
+     * @return "BINARY (ASCII-8BIT)" for ASCII-8BIT and the encoding's name otherwise
+     */
+    @CRuby(value = "rb_enc_inspect_name", file = "encoding.c")
+    public static String inspectName(Encoding encoding) {
+        return encoding == ASCIIEncoding.INSTANCE ? "BINARY (ASCII-8BIT)" : encoding.toString();
+    }
+
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "names")
     public IRubyObject names(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = encodingService(context);
         Entry entry = service.findEncodingOrAliasEntry(name);
-
-        RubyArray result = runtime.newArray();
+        var result = newArray(context);
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
+        Ruby runtime = context.runtime;
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
         i = service.getAliases().entryIterator();
@@ -497,31 +517,32 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
-        result.append(runtime.newString(EXTERNAL));
-        result.append(runtime.newString(LOCALE));
+        if (getEncoding() == service.getDefaultExternalEncoding()) result.append(context, newString(context, EXTERNAL));
+        if (getEncoding() == service.getDefaultInternalEncoding()) result.append(context, newString(context, INTERNAL));
+        if (getEncoding() == service.getDefaultFilesystemEncoding()) result.append(context, newString(context, FILESYSTEM));
+        if (getEncoding() == service.getLocaleEncoding()) result.append(context, newString(context, LOCALE));
 
         return result;
     }
 
     @JRubyMethod(name = "dummy?")
     public IRubyObject dummy_p(ThreadContext context) {
-        return context.runtime.newBoolean(isDummy);
+        return asBoolean(context, isDummy);
     }
 
     @JRubyMethod(name = "compatible?", meta = true)
     public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
-        Ruby runtime = context.runtime;
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
+        return enc == null ? context.nil : encodingService(context).getEncoding(enc);
     }
 
     @JRubyMethod(name = "default_external", meta = true)
     public static IRubyObject getDefaultExternal(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getEncodingService().getDefaultExternal();
+        return encodingService(context).getDefaultExternal();
     }
 
     @JRubyMethod(name = "default_external=", meta = true)
@@ -533,15 +554,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "default_internal", meta = true)
     public static IRubyObject getDefaultInternal(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getEncodingService().getDefaultInternal();
+        return encodingService(context).getDefaultInternal();
     }
 
-    @Deprecated
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultInternal(recv.getRuntime().getCurrentContext(), recv);
-    }
-
-    @JRubyMethod(name = "default_internal=", required = 1, meta = true)
+    @JRubyMethod(name = "default_internal=", meta = true)
     public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);

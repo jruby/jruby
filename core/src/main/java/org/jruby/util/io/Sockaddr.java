@@ -1,15 +1,18 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyBoolean;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.socket.Addrinfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.pack;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayOutputStream;
@@ -29,6 +32,12 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+
 public class Sockaddr {
 
     public static InetAddress addressFromString(Ruby runtime, String s) {
@@ -36,7 +45,7 @@ public class Sockaddr {
             byte[] bs = ByteList.plain(s);
             return InetAddress.getByAddress(bs);
         } catch(Exception e) {
-            throw sockerr(runtime, "strtoaddr: " + e.toString());
+            throw sockerr(runtime.getCurrentContext(), "strtoaddr: " + e.toString());
         }
     }
 
@@ -44,17 +53,14 @@ public class Sockaddr {
         try {
             return new String(ByteList.plain(as.getAddress()));
         } catch(Exception e) {
-            throw sockerr(runtime, "addrtostr: " + e.toString());
+            throw sockerr(runtime.getCurrentContext(), "addrtostr: " + e.toString());
         }
     }
 
     public static InetSocketAddress addressFromArg(ThreadContext context, IRubyObject arg) {
         InetSocketAddress iaddr;
-        if (arg instanceof Addrinfo) {
-            Addrinfo addrinfo = (Addrinfo)arg;
-            if (!addrinfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrinfo);
-            }
+        if (arg instanceof Addrinfo addrinfo) {
+            if (!addrinfo.ip_p(context).isTrue()) throw typeError(context, "not an INET or INET6 address: " + addrinfo);
             iaddr = new InetSocketAddress(addrinfo.getInetAddress(), addrinfo.getPort());
         } else {
             iaddr = addressFromSockaddr_in(context, arg);
@@ -69,22 +75,18 @@ public class Sockaddr {
     }
 
     public static InetSocketAddress addressFromSockaddr_in(ThreadContext context, ByteList val) {
-        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, val);
+        RubyArray sockaddr = unpack_sockaddr_in(context, val);
 
         IRubyObject addr = sockaddr.pop(context);
         IRubyObject _port = sockaddr.pop(context);
-        int port = SocketUtils.portToInt(_port);
 
         return new InetSocketAddress(
-                addr.convertToString().toString(), port);
+                addr.convertToString().toString(), SocketUtils.portToInt(context, _port));
     }
 
     public static SocketAddress addressFromSockaddr(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-
         ByteList val = arg.convertToString().getByteList();
-
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
+        AddressFamily af = getAddressFamilyFromSockaddr(context, val);
 
         switch (af) {
             case AF_UNIX:
@@ -93,7 +95,7 @@ public class Sockaddr {
             case AF_INET6:
                 return addressFromSockaddr_in(context, val);
             default:
-                throw runtime.newArgumentError("can't resolve socket address of wrong type");
+                throw argumentError(context, "can't resolve socket address of wrong type");
 
         }
     }
@@ -105,9 +107,9 @@ public class Sockaddr {
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, ByteList bl) {
-        String pathStr = pathFromSockaddr_un(context, bl.bytes());
+        RubyString pathStr = pathFromSockaddr_un(context, bl.bytes());
 
-        return new UnixSocketAddress(new File(pathStr));
+        return new UnixSocketAddress(new File(pathStr.toString()));
     }
 
     public static IRubyObject packSockaddrFromAddress(ThreadContext context, InetSocketAddress sock) {
@@ -119,14 +121,20 @@ public class Sockaddr {
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        final int portNum;
-        if ( ! port.isNil() ) {
-            portNum = port instanceof RubyString ?
-                    Integer.parseInt(port.convertToString().toString()) :
-                        RubyNumeric.fix2int(port);
-        }
-        else {
+        int portNum;
+        if (port.isNil()) {
             portNum = 0;
+        } else if (port instanceof RubyString) {
+            String portString = port.asJavaString();
+            try {
+                portNum = Integer.parseInt(portString);
+            } catch (NumberFormatException e) {
+                Service service = Service.getServiceByName(portString, "tcp"); // FIXME: is tcp safe here?
+                if (service == null) throw sockerr(context, "getaddrinfo: Servname not supported for ai_socktype");
+                portNum = service.getPort();
+            }
+        } else {
+            portNum = toInt(context, port);
         }
 
         final String hostStr = host.isNil() ? null : host.convertToString().toString();
@@ -160,17 +168,16 @@ public class Sockaddr {
                 }
             }
             catch (UnknownHostException e) {
-                throw sockerr(context.runtime, "getaddrinfo: No address associated with nodename");
+                throw org.jruby.ext.socket.ResolutionError.newNameNotKnown(context);
             }
 
             writeSockaddrFooter(ds);
         }
         catch (IOException e) {
-            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
+            throw sockerr(context, "pack_sockaddr_in: internal error");
         }
 
-        return context.runtime.newString(new ByteList(bufS.toByteArray(),
-                false));
+        return newString(context, new ByteList(bufS.toByteArray(), false));
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, InetSocketAddress sock) {
@@ -189,7 +196,7 @@ public class Sockaddr {
 
             String host = sock.getAddress().getHostAddress();
 
-            if(host != null && "".equals(host)) {
+            if ("".equals(host)) {
                 ds.writeInt(0);
 
             } else {
@@ -201,44 +208,33 @@ public class Sockaddr {
             writeSockaddrFooter(ds);
 
         } catch (IOException e) {
-            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
+            throw sockerr(context, "pack_sockaddr_in: internal error");
 
         }
 
-        return context.runtime.newString(new ByteList(bufS.toByteArray(),
-                false));
+        return newString(context, new ByteList(bufS.toByteArray(), false));
     }
 
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
-        final Ruby runtime = context.runtime;
-
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrinfo = (Addrinfo)addr;
-
+        if (addr instanceof Addrinfo addrinfo) {
             if (((RubyBoolean)addrinfo.ip_p(context)).isFalse()) {
-                throw runtime.newArgumentError("not an AF_INET/AF_INET6 sockaddr");
+                throw argumentError(context, "not an AF_INET/AF_INET6 sockaddr");
             }
 
-            return RubyArray.newArray(runtime, addrinfo.ip_port(context),
-                                      addrinfo.ip_address(context));
+            return newArray(context, addrinfo.ip_port(context), addrinfo.ip_address(context));
         }
 
-        ByteList val = addr.convertToString().getByteList();
-
-        return unpack_sockaddr_in(context, val);
+        return unpack_sockaddr_in(context, addr.convertToString().getByteList());
     }
 
     public static RubyArray unpack_sockaddr_in(ThreadContext context, ByteList val) {
-        final Ruby runtime = context.runtime;
+        AddressFamily af = getAddressFamilyFromSockaddr(context, val);
 
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
-
-        if (af != AddressFamily.AF_INET &&
-            af != AddressFamily.AF_INET6) {
-            throw runtime.newArgumentError("not an AF_INET/AF_INET6 sockaddr");
+        if (af != AddressFamily.AF_INET && af != AddressFamily.AF_INET6) {
+            throw argumentError(context, "not an AF_INET/AF_INET6 sockaddr");
         }
 
-        int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
+        int port = uint16((byte) val.get(2), (byte) val.get(3));
 
         final StringBuilder formatAddr = new StringBuilder();
         RubyString ip;
@@ -251,30 +247,25 @@ public class Sockaddr {
                       .append(val.get(6) & 0xff)
                       .append('.')
                       .append(val.get(7) & 0xff);
-            ip = RubyString.newString(runtime, formatAddr);
+            ip = newString(context, formatAddr.toString());
         } else {                                    // if af == AddressFamily.AF_INET6
             for (int i = 4; i <= 19; i++) {
                 if (i != 4 && i % 2 == 0) formatAddr.append(':');
                 formatAddr.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
             }
-            ip = RubyString.newString(runtime,
-                                      SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
+            ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
-        return RubyArray.newArray(runtime, runtime.newFixnum(port), ip);
+        return newArray(context, asFixnum(context, port), ip);
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {
-        final Ruby runtime = context.runtime;
-
         ByteBuffer buf = ByteBuffer.allocate(SOCKADDR_UN_SIZE);
-
         byte[] path = unixpath.getBytes();
 
         if (path.length > SOCKADDR_UN_PATH) {
             String errorMsg = "too long unix socket path (%d bytes given but %d bytes max)";
-            String formattedErrorMsg = String.format(errorMsg, path.length, SOCKADDR_UN_PATH);
-            throw runtime.newArgumentError(formattedErrorMsg);
+            throw argumentError(context, String.format(errorMsg, path.length, SOCKADDR_UN_PATH));
         }
 
         int afamily = AddressFamily.AF_UNIX.intValue();
@@ -284,30 +275,25 @@ public class Sockaddr {
         buf.put((byte)low);
         buf.put(path);
 
-        return RubyString.newString(runtime, buf.array());
+        return newString(context, new ByteList(buf.array()));
     }
 
     public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
-        final Ruby runtime = context.runtime;
-
         if (addr instanceof Addrinfo) {
             Addrinfo addrinfo = (Addrinfo)addr;
 
             if (((RubyBoolean)addrinfo.unix_p(context)).isFalse()) {
-                throw runtime.newArgumentError("not an AF_UNIX sockaddr");
+                throw argumentError(context, "not an AF_UNIX sockaddr");
             }
             return addrinfo.unix_path(context);
         }
 
         ByteList val = addr.convertToString().getByteList();
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
+        AddressFamily af = getAddressFamilyFromSockaddr(context, val);
 
-        if (af != AddressFamily.AF_UNIX) {
-            throw runtime.newArgumentError("not an AF_UNIX sockaddr");
-        }
+        if (af != AddressFamily.AF_UNIX) throw argumentError(context, "not an AF_UNIX sockaddr");
 
-        String filename = pathFromSockaddr_un(context, val.bytes());
-        return context.runtime.newString(filename);
+        return pathFromSockaddr_un(context, val.bytes());
     }
 
     public static void writeSockaddrHeader(AddressFamily family, DataOutputStream ds) throws IOException {
@@ -333,26 +319,31 @@ public class Sockaddr {
         ds.write(port);
     }
 
+    public static AddressFamily getAddressFamilyFromSockaddr(ThreadContext context, ByteList val) {
+        if (val.length() < 2) throw argumentError(context, "too short sockaddr");
+
+        return AddressFamily.valueOf(uint16((byte) val.get(0), (byte) val.get(1)));
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
-        if (val.length() < 2) {
-            throw runtime.newArgumentError("too short sockaddr");
-        }
-
-        int high = val.get(0) & 0xff;
-        int low = val.get(1) & 0xff;
-
-        return AddressFamily.valueOf((high << 8) + low);
+        return getAddressFamilyFromSockaddr(runtime.getCurrentContext(), val);
     }
 
-    private static RuntimeException sockerr(Ruby runtime, String msg) {
-        return RaiseException.from(runtime, runtime.getClass("SocketError"), msg);
+    private static RuntimeException sockerr(ThreadContext context, String msg) {
+        return RaiseException.from(context.runtime, Access.getClass(context, "SocketError"), msg);
     }
 
+    @Deprecated(since = "10.0.0.0")
     public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {
+        return sockaddrFromBytes(runtime.getCurrentContext(), val);
+    }
+
+    public static SocketAddress sockaddrFromBytes(ThreadContext context, byte[] val) throws IOException {
         AddressFamily afamily = AddressFamily.valueOf(uint16(val[0], val[1]));
 
         if (afamily == null || afamily == AddressFamily.__UNKNOWN_CONSTANT__) {
-            throw runtime.newArgumentError("can't resolve socket address of wrong type");
+            throw argumentError(context, "can't resolve socket address of wrong type");
         }
 
         int port;
@@ -369,21 +360,21 @@ public class Sockaddr {
                 String path = new String(val, 2, val.length - 2);
                 return new UnixSocketAddress(new File(path));
             default:
-                throw runtime.newArgumentError("can't resolve socket address of wrong type");
+                throw argumentError(context, "can't resolve socket address of wrong type");
         }
     }
 
     private static int uint16(byte high, byte low) {
-        return ((high & 0xFF) << 8) + (low & 0xFF);
+        return Short.toUnsignedInt(pack(high, low));
     }
 
-    private static String pathFromSockaddr_un(ThreadContext context, byte[] raw) {
+    private static RubyString pathFromSockaddr_un(ThreadContext context, byte[] raw) {
         int end = 2;
         for (; end < raw.length; end++) {
             if (raw[end] == 0) break;
         }
 
-        return new String(raw, 2, (end - 2));
+        return newString(context, raw, 2, (end - 2));
     }
 
     // sizeof(sockaddr_un) on Linux

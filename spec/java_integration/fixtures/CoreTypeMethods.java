@@ -335,4 +335,44 @@ public class CoreTypeMethods {
     public String getTypeInstance(long i, String o, String o2, String o3) {
         return "long,string,string,string";
     }
+
+    public static int manyArityStatic() {
+        return 0;
+    }
+
+    public static int manyArityStatic(String str1) {
+        return 1;
+    }
+
+    public static int manyArityStatic(String str1, String str2) {
+        return 2;
+    }
+
+    public static int manyArityStatic(String str1, String str2, String str3) {
+        return 3;
+    }
+
+    public static int manyArityStatic(String str1, String str2, String str3, String str4) {
+        return 4;
+    }
+
+    public int manyArityInstance() {
+        return 0;
+    }
+
+    public int manyArityInstance(String str1) {
+        return 1;
+    }
+
+    public int manyArityInstance(String str1, String str2) {
+        return 2;
+    }
+
+    public int manyArityInstance(String str1, String str2, String str3) {
+        return 3;
+    }
+
+    public int manyArityInstance(String str1, String str2, String str3, String str4) {
+        return 4;
+    }
 }

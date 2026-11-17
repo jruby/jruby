@@ -7,4 +7,12 @@ describe "Range#==" do
   it "returns true if the endpoints are ==" do
     (0..1).should == (0..1.0)
   end
+
+  it "returns true if the endpoints are == for endless ranges" do
+    eval("(1.0..)").should == eval("(1.0..)")
+  end
+
+  it "returns true if the endpoints are == for beginless ranges" do
+    (...10).should == (...10)
+  end
 end

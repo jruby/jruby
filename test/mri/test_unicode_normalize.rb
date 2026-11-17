@@ -9,10 +9,11 @@ require 'unicode_normalize/normalize'
 class TestUnicodeNormalize < Test::Unit::TestCase
 
   UNICODE_VERSION = RbConfig::CONFIG['UNICODE_VERSION']
-  UNICODE_DATA_PATH = "../enc/unicode/data/#{UNICODE_VERSION}"
+  path = File.expand_path("../enc/unicode/data/#{UNICODE_VERSION}", __dir__)
+  UNICODE_DATA_PATH = File.directory?("#{path}/ucd") ? "#{path}/ucd" : path
 
   def self.expand_filename(basename)
-    File.expand_path("#{UNICODE_DATA_PATH}/#{basename}.txt", __dir__)
+    File.expand_path("#{basename}.txt", UNICODE_DATA_PATH)
   end
 end
 
@@ -23,7 +24,7 @@ class TestUnicodeNormalize
   NormTest = Struct.new :source, :NFC, :NFD, :NFKC, :NFKD, :line
 
   def self.read_tests
-    lines = IO.readlines(expand_filename('NormalizationTest'), encoding: 'utf-8')
+    lines = File.readlines(expand_filename('NormalizationTest'), encoding: 'utf-8')
     firstline = lines.shift
     define_method "test_0_normalizationtest_firstline" do
       assert_include(firstline, "NormalizationTest-#{UNICODE_VERSION}.txt")
@@ -44,7 +45,7 @@ class TestUnicodeNormalize
 
   begin
     @@tests ||= read_tests
-  rescue Errno::ENOENT => e
+  rescue Errno::ENOENT
     @@tests ||= []
   end
 
@@ -145,7 +146,9 @@ class TestUnicodeNormalize
   generate_test_check_false :NFC, :NFKC, :nfkc
   generate_test_check_false :NFD, :NFKC, :nfkc
   generate_test_check_false :NFKD, :NFKC, :nfkc
+end
 
+class TestUnicodeNormalize
   def test_non_UTF_8
     assert_equal "\u1E0A".encode('UTF-16BE'), "D\u0307".encode('UTF-16BE').unicode_normalize(:nfc)
     assert_equal true, "\u1E0A".encode('UTF-16BE').unicode_normalized?(:nfc)
@@ -164,6 +167,13 @@ class TestUnicodeNormalize
     assert_equal "\u1100\u1161\u11A8", "\uAC00\u11A8".unicode_normalize(:nfd)
   end
 
+  # preventive tests for (non-)bug #14934
+  def test_no_trailing_jamo
+    assert_equal "\u1100\u1176\u11a8", "\u1100\u1176\u11a8".unicode_normalize(:nfc)
+    assert_equal "\uae30\u11a7",       "\u1100\u1175\u11a7".unicode_normalize(:nfc)
+    assert_equal "\uae30\u11c3",       "\u1100\u1175\u11c3".unicode_normalize(:nfc)
+  end
+
   def test_hangul_plus_accents
     assert_equal "\uAC00\u0323\u0300", "\uAC00\u0300\u0323".unicode_normalize(:nfc)
     assert_equal "\uAC00\u0323\u0300", "\u1100\u1161\u0300\u0323".unicode_normalize(:nfc)
@@ -175,6 +185,10 @@ class TestUnicodeNormalize
     assert_raise(Encoding::CompatibilityError) { "abc".force_encoding('ISO-8859-1').unicode_normalize }
     assert_raise(Encoding::CompatibilityError) { "abc".force_encoding('ISO-8859-1').unicode_normalize! }
     assert_raise(Encoding::CompatibilityError) { "abc".force_encoding('ISO-8859-1').unicode_normalized? }
+  end
+
+  def test_reiwa
+    assert_equal "\u4EE4\u548C", "\u32FF".unicode_normalize(:nfkc)
   end
 
   def test_us_ascii
@@ -194,5 +208,33 @@ class TestUnicodeNormalize
     assert_equal true, ascii_string.unicode_normalized?(:nfd)
     assert_equal true, ascii_string.unicode_normalized?(:nfkc)
     assert_equal true, ascii_string.unicode_normalized?(:nfkd)
+  end
+
+  def test_bug_21559
+    str = "s\u{1611e}\u{323}\u{1611e}\u{307}\u{1611f}"
+    assert_equal str.unicode_normalize(:nfd), str.unicode_normalize(:nfc).unicode_normalize(:nfd)
+  end
+
+  def test_gurung_khema
+    assert_equal "\u{16121 16121 16121 16121 16121 1611E}", "\u{1611E 16121 16121 16121 16121 16121}".unicode_normalize
+  end
+
+  def test_canonical_ordering
+    a = "\u03B1\u0313\u0300\u0345"
+    a_unordered1 = "\u03B1\u0345\u0313\u0300"
+    a_unordered2 = "\u03B1\u0313\u0345\u0300"
+    u1 = "U\u0308\u0304"
+    u2 = "U\u0304\u0308"
+    s = "s\u0323\u0307"
+    s_unordered = "s\u0307\u0323"
+    o = "\u{1611e}\u{1611e}\u{1611f}"
+    # Actual cases called through String#unicode_normalize
+    assert_equal(s + o, UnicodeNormalize.canonical_ordering_one(s_unordered + o))
+    assert_equal(a[1..], UnicodeNormalize.canonical_ordering_one(a_unordered1[1..]))
+    assert_equal(a[1..] + o, UnicodeNormalize.canonical_ordering_one(a_unordered2[1..] + o))
+    # Artificial cases
+    assert_equal(a + u1 + o + u2 + s, UnicodeNormalize.canonical_ordering_one(a + u1 + o + u2 + s))
+    assert_equal(s[1..] + a + a, UnicodeNormalize.canonical_ordering_one(s_unordered[1..] + a_unordered1 + a_unordered2))
+    assert_equal(o + s + u1 + a + o + a + u2 + o, UnicodeNormalize.canonical_ordering_one(o + s_unordered + u1 + a_unordered1 + o + a_unordered2 + u2 + o))
   end
 end

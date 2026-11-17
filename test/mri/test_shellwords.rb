@@ -68,6 +68,11 @@ class TestShellwords < Test::Unit::TestCase
     assert_equal "ps -p #{$$}", joined
   end
 
+  def test_shellescape
+    assert_equal "''", shellescape('')
+    assert_equal "\\^AZaz09_\\\\-.,:/@'\n'+\\'\\\"", shellescape("^AZaz09_\\-.,:\/@\n+'\"")
+  end
+
   def test_whitespace
     empty = ''
     space = " "
@@ -122,5 +127,14 @@ class TestShellwords < Test::Unit::TestCase
     # be changed in future.  There would be no multibyte character
     # used as shell meta-character that needs to be escaped.
     assert_equal "\\あ\\い", "あい".shellescape
+  end
+
+  def test_nul_char
+    assert_raise(ArgumentError) do
+      shellescape("\0")
+    end
+    assert_raise(ArgumentError) do
+      shelljoin(["\0"])
+    end
   end
 end

@@ -1,0 +1,1 @@
+fails:IO#wait [timeout, mode] passed raises ArgumentError when several Integer arguments passed

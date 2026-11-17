@@ -30,7 +30,7 @@ describe :time_params, shared: true do
   end
 
   it "raises a TypeError if the year is nil" do
-    lambda { Time.send(@method, nil) }.should raise_error(TypeError)
+    -> { Time.send(@method, nil) }.should.raise(TypeError)
   end
 
   it "accepts nil month, day, hour, minute, and second" do
@@ -145,46 +145,55 @@ describe :time_params, shared: true do
   end
 
   it "raises an ArgumentError for out of range month" do
-    lambda {
-      Time.send(@method, 2008, 13, 31, 23, 59, 59)
-    }.should raise_error(ArgumentError)
+    # For some reason MRI uses a different message for month in 13-15 and month>=16
+    -> {
+      Time.send(@method, 2008, 16, 31, 23, 59, 59)
+    }.should.raise(ArgumentError, /(mon|argument) out of range/)
   end
 
   it "raises an ArgumentError for out of range day" do
-    lambda {
+    -> {
       Time.send(@method, 2008, 12, 32, 23, 59, 59)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError for out of range hour" do
-    lambda {
+    -> {
       Time.send(@method, 2008, 12, 31, 25, 59, 59)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError for out of range minute" do
-    lambda {
+    -> {
       Time.send(@method, 2008, 12, 31, 23, 61, 59)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises an ArgumentError for out of range second" do
-    lambda {
+    # For some reason MRI uses different messages for seconds 61-63 and seconds >= 64
+    -> {
       Time.send(@method, 2008, 12, 31, 23, 59, 61)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError, /(sec|argument) out of range/)
+    -> {
+      Time.send(@method, 2008, 12, 31, 23, 59, -1)
+    }.should.raise(ArgumentError, "argument out of range")
+  end
+
+  it "raises ArgumentError when given 8 arguments" do
+    -> { Time.send(@method, *[0]*8) }.should.raise(ArgumentError)
   end
 
   it "raises ArgumentError when given 9 arguments" do
-    lambda { Time.send(@method, *[0]*9) }.should raise_error(ArgumentError)
+    -> { Time.send(@method, *[0]*9) }.should.raise(ArgumentError)
   end
 
   it "raises ArgumentError when given 11 arguments" do
-    lambda { Time.send(@method, *[0]*11) }.should raise_error(ArgumentError)
+    -> { Time.send(@method, *[0]*11) }.should.raise(ArgumentError)
   end
 
   it "returns subclass instances" do
     c = Class.new(Time)
-    c.send(@method, 2008, "12").should be_an_instance_of(c)
+    c.send(@method, 2008, "12").should.instance_of?(c)
   end
 end
 
@@ -202,25 +211,25 @@ describe :time_params_10_arg, shared: true do
   end
 
   it "raises an ArgumentError for out of range values" do
-    lambda {
+    -> {
       Time.send(@method, 61, 59, 23, 31, 12, 2008, :ignored, :ignored, :ignored, :ignored)
-    }.should raise_error(ArgumentError) # sec
+    }.should.raise(ArgumentError) # sec
 
-    lambda {
+    -> {
       Time.send(@method, 59, 61, 23, 31, 12, 2008, :ignored, :ignored, :ignored, :ignored)
-    }.should raise_error(ArgumentError) # min
+    }.should.raise(ArgumentError) # min
 
-    lambda {
+    -> {
       Time.send(@method, 59, 59, 25, 31, 12, 2008, :ignored, :ignored, :ignored, :ignored)
-    }.should raise_error(ArgumentError) # hour
+    }.should.raise(ArgumentError) # hour
 
-    lambda {
+    -> {
       Time.send(@method, 59, 59, 23, 32, 12, 2008, :ignored, :ignored, :ignored, :ignored)
-    }.should raise_error(ArgumentError) # day
+    }.should.raise(ArgumentError) # day
 
-    lambda {
+    -> {
       Time.send(@method, 59, 59, 23, 31, 13, 2008, :ignored, :ignored, :ignored, :ignored)
-    }.should raise_error(ArgumentError) # month
+    }.should.raise(ArgumentError) # month
   end
 end
 
@@ -231,7 +240,7 @@ describe :time_params_microseconds, shared: true do
   end
 
   it "raises an ArgumentError for out of range microsecond" do
-    lambda { Time.send(@method, 2000, 1, 1, 20, 15, 1, 1000000) }.should raise_error(ArgumentError)
+    -> { Time.send(@method, 2000, 1, 1, 20, 15, 1, 1000000) }.should.raise(ArgumentError)
   end
 
   it "handles fractional microseconds as a Float" do

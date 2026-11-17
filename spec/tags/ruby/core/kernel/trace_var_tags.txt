@@ -1,1 +1,0 @@
-fails:Kernel#trace_var accepts a String argument instead of a Proc or block

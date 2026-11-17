@@ -14,9 +14,9 @@ describe "Enumerable#sort" do
   end
 
   it "raises a NoMethodError if elements do not define <=>" do
-    lambda do
+    -> do
       EnumerableSpecs::Numerous.new(BasicObject.new, BasicObject.new, BasicObject.new).sort
-    end.should raise_error(NoMethodError)
+    end.should.raise(NoMethodError)
   end
 
   it "sorts enumerables that contain nils" do
@@ -31,16 +31,16 @@ describe "Enumerable#sort" do
   it "compare values returned by block with 0" do
     EnumerableSpecs::Numerous.new.sort { |n, m| -(n+m) * (n <=> m) }.should == [6, 5, 4, 3, 2, 1]
     EnumerableSpecs::Numerous.new.sort { |n, m|
-      EnumerableSpecs::ComparableWithFixnum.new(-(n+m) * (n <=> m))
+      EnumerableSpecs::ComparableWithInteger.new(-(n+m) * (n <=> m))
     }.should == [6, 5, 4, 3, 2, 1]
-    lambda {
+    -> {
       EnumerableSpecs::Numerous.new.sort { |n, m| (n <=> m).to_s }
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises an error if objects can't be compared" do
     a=EnumerableSpecs::Numerous.new(EnumerableSpecs::Uncomparable.new, EnumerableSpecs::Uncomparable.new)
-    lambda {a.sort}.should raise_error(ArgumentError)
+    -> {a.sort}.should.raise(ArgumentError)
   end
 
   it "gathers whole arrays as elements when each yields multiple" do

@@ -30,6 +30,7 @@
 package org.jruby.util.cli;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
@@ -50,6 +51,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
@@ -90,11 +93,12 @@ public class ArgumentProcessor {
 
     private final List<Argument> arguments;
     private int argumentIndex = 0;
-    private boolean processArgv;
+    private final boolean processArgv;
     private final boolean rubyOpts;
     final RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
+    private boolean dashUpperU = false;
 
     private static final Pattern VERSION_FLAG = Pattern.compile("^--[12]\\.[89012]$");
 
@@ -239,6 +243,7 @@ public class ArgumentProcessor {
                 case 'd':
                     config.setDebug(true);
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     break;
                 case 'e':
                     disallowedInRubyOpts(argument);
@@ -247,7 +252,11 @@ public class ArgumentProcessor {
                     config.setHasInlineScript(true);
                     break FOR;
                 case 'E':
-                    processEncodingOption(grabValue(getArgumentError("unknown encoding name")));
+                    if (dashUpperU) {
+                        MainExitException mee = fakeRuntimeError("jruby: default_internal already set to UTF-8");
+                        throw mee;
+                    }
+                    processEncodingOption("-E", grabValue(getArgumentError("unknown encoding name")));
                     break FOR;
                 case 'F':
                     disallowedInRubyOpts(argument);
@@ -267,12 +276,10 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                    String separator = java.io.File.pathSeparator;
-                    if (":".equals(separator)) {
-                        separator = SEPARATOR;
-                    }
-                    String[] ls = s.split(separator);
-                    config.getLoadPaths().addAll(Arrays.asList(ls));
+                    String separator = ":".equals(File.pathSeparator) ? SEPARATOR : File.pathSeparator;
+                    Stream<String> paths = Arrays.stream(s.split(separator)).map(path -> new JRubyFile(path).getAbsolutePath());
+
+                    config.getLoadPaths().addAll(paths.collect(Collectors.toList()));
                     break FOR;
                 case 'J':
                     String js = grabOptionalValue();
@@ -282,17 +289,21 @@ public class ArgumentProcessor {
                         grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
                     }
                     break FOR;
-                case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
+                case 'K': // @Deprecated(since = "9.1.3.0") TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(eArg));
+                    KCode kcode = KCode.create(eArg);
 
-                    // source encoding
-                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+                    if (kcode != KCode.NIL) {
+                        config.setKCode(kcode);
 
-                    // set external encoding if not already specified
-                    if (config.getExternalEncoding() == null) {
-                        config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        // source encoding
+                        config.setSourceEncoding(config.getKCode().getEncoding().toString());
+
+                        // set external encoding if not already specified
+                        if (config.getExternalEncoding() == null) {
+                            config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        }
                     }
 
                     break;
@@ -325,26 +336,25 @@ public class ArgumentProcessor {
                     disallowedInRubyOpts(argument);
                     runBinScript();
                     break FOR;
-                case 'T':
-                    {
-                        grabOptionalValue();
-                        break FOR;
-                    }
                 case 'U':
+                    dashUpperU = true;
                     config.setInternalEncoding("UTF-8");
                     break;
                 case 'v':
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     config.setShowVersion(true);
                     break;
                 case 'w':
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     break;
                 case 'W':
                     {
                         String temp = grabOptionalValue();
                         if (temp == null) {
                             config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                            config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                         } else {
                             if (temp.equals("0")) {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.NIL);
@@ -352,10 +362,36 @@ public class ArgumentProcessor {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.FALSE);
                             } else if (temp.equals("2")) {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                                config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                             } else {
-                                MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
-                                mee.setUsageError(true);
-                                throw mee;
+                                switch (temp) {
+                                    case ":deprecated":
+                                        config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
+                                        break;
+                                    case ":no-deprecated":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.DEPRECATED);
+                                        break;
+                                    case ":experimental":
+                                        config.getWarningCategories().add(RubyWarnings.Category.EXPERIMENTAL);
+                                        break;
+                                    case ":no-experimental":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.EXPERIMENTAL);
+                                        break;
+                                    case ":performance":
+                                        config.getWarningCategories().add(RubyWarnings.Category.PERFORMANCE);
+                                        break;
+                                    case ":no-performance":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.PERFORMANCE);
+                                        break;
+                                    default:
+                                        if (temp.charAt(0) == ':') {
+                                            config.getError().println("warning: unknown warning category: " + temp.substring(1));
+                                        } else {
+                                            MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or a valid category"));
+                                            mee.setUsageError(true);
+                                            throw mee;
+                                        }
+                                }
                             }
                         }
                         break FOR;
@@ -445,8 +481,23 @@ public class ArgumentProcessor {
                                 continue;
                             }
 
-                            config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
+                            config.getError().println("warning: unknown argument for --debug: '" + debug + "'");
                         }
+                        break FOR;
+                    } else if (argument.startsWith("--encoding")) {
+                        String encodingValue;
+                        final int len = argument.length();
+                        if (len == "--encoding".length()) {
+                            characterIndex = len;
+                            encodingValue = grabValue(getArgumentError("missing argument for --encoding"), false);
+                        } else {
+                            int splitIndex = argument.indexOf('=');
+                            if (splitIndex == -1 || len == (splitIndex + 1)) {
+                                throw new MainExitException(0, "jruby: missing argument for --encoding");
+                            }
+                            encodingValue = argument.substring(splitIndex + 1);
+                        }
+                        processEncodingOption("--encoding", encodingValue);
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
@@ -542,8 +593,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--dump")) {
                         characterIndex = argument.length();
-                        String error = "--dump only supports [version, copyright, usage, yydebug, syntax, insns] on JRuby";
-                        String dumpArg = grabValue(getArgumentError(error));
+                        String dumpArg = grabValue("missing argument for --dump", false);
                         if (dumpArg.equals("version")) {
                             config.setShowVersion(true);
                             config.setShouldRunInterpreter(false);
@@ -564,7 +614,7 @@ public class ArgumentProcessor {
                         } else if (dumpArg.equals("insns")) {
                             config.setShowBytecode(true);
                         } else {
-                            MainExitException mee = new MainExitException(1, error);
+                            MainExitException mee = new MainExitException(1, "--dump only supports [version, copyright, usage, yydebug, syntax, insns] on JRuby");
                             mee.setUsageError(true);
                             throw mee;
                         }
@@ -583,8 +633,49 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--yydebug")) {
                         disallowedInRubyOpts(argument);
                         config.setParserDebug(true);
+                        break FOR;
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                        break FOR;
+                    } else if (argument.startsWith("--backtrace-limit=")) {
+                        String limit = valueListFor(argument, "backtrace-limit")[0];
+                        config.setBacktraceLimit(Integer.parseInt(limit));
+                        break FOR;
+                    } else if (argument.startsWith("--external-encoding=")) {
+                        String externalEncoding = valueListFor(argument, "external-encoding")[0];
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--external-encoding")) {
+                        characterIndex = argument.length();
+                        String externalEncoding = grabValue("missing argument for --external-encoding", false);
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding=")) {
+                        String internalEncoding = valueListFor(argument, "internal-encoding")[0];
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding")) {
+                        characterIndex = argument.length();
+                        String internalEncoding = grabValue("missing argument for --internal-encoding", false);
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--backtrace-limit=")) {
+                        String backtraceLimit = valueListFor(argument, "backtrace-limit")[0];
+                        try {
+                            int limit = Integer.parseInt(backtraceLimit);
+                            config.setBacktraceLimit(limit);
+                        } catch (NumberFormatException nfe) {
+                            throw new MainExitException(1, "jruby: wrong limit for backtrace length");
+                        }
+                    } else if (argument.startsWith("--backtrace-limit")) {
+                        characterIndex = argument.length();
+                        String backtraceLimit = grabValue("missing argument for --backtrace-limit", false);
+                        try {
+                            int limit = Integer.parseInt(backtraceLimit);
+                            config.setBacktraceLimit(limit);
+                        } catch (NumberFormatException nfe) {
+                            throw new MainExitException(1, "jruby: wrong limit for backtrace length");
+                        }
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
@@ -604,7 +695,7 @@ public class ArgumentProcessor {
         BiFunction<ArgumentProcessor, Boolean, Void> feature = FEATURES.get(name);
 
         if (feature == null) {
-            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
+            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": '" + name + "'");
         } else {
             feature.apply(this, enable);
         }
@@ -621,8 +712,13 @@ public class ArgumentProcessor {
 
     private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
-            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
+            throw fakeRuntimeError("jruby: invalid switch in RUBYOPT: " + option);
         }
+    }
+
+    private MainExitException fakeRuntimeError(String message) {
+        // We process arguments before JRuby boots, so there's no RuntimeError class yet
+        return new MainExitException(1, message + " (RuntimeError)");
     }
 
     private static void errorMissingEquals(String label) {
@@ -632,11 +728,11 @@ public class ArgumentProcessor {
         throw mee;
     }
 
-    private void processEncodingOption(String value) {
+    private void processEncodingOption(String optionString, String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
             case 3:
-                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
+                throw new MainExitException(1, "extra argument for " + optionString + ": " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
             case 1:
@@ -709,14 +805,6 @@ public class ArgumentProcessor {
             config.getError().println("warning: could not resolve -S script: " + scriptName);
         }
         // fall back to JRuby::Commands
-        return null;
-    }
-
-    @Deprecated
-    public String resolveScriptUsingClassLoader(String scriptName) {
-        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:/bin/" + scriptName;
-        }
         return null;
     }
 
@@ -820,6 +908,14 @@ public class ArgumentProcessor {
             processor.config.setDisableDidYouMean(!enable); return null;
         });
         features.put("did_you_mean", function); // alias
+        features.put("error-highlight", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableErrorHighlight(!enable); return null;
+        });
+        features.put("error_highlight", function); // alias
+        features.put("syntax-suggest", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableSyntaxSuggest(!enable); return null;
+        });
+        features.put("syntax_suggest", function); // alias
         features.put("rubyopt", (ArgumentProcessor processor, Boolean enable) -> {
             processor.config.setDisableRUBYOPT(!enable); return null;
         });

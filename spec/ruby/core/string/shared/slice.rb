@@ -21,17 +21,17 @@ describe :string_slice, shared: true do
   end
 
   it "raises a TypeError if the given index is nil" do
-    lambda { "hello".send(@method, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError if the given index can't be converted to an Integer" do
-    lambda { "hello".send(@method, mock('x')) }.should raise_error(TypeError)
-    lambda { "hello".send(@method, {})        }.should raise_error(TypeError)
-    lambda { "hello".send(@method, [])        }.should raise_error(TypeError)
+    -> { "hello".send(@method, mock('x')) }.should.raise(TypeError)
+    -> { "hello".send(@method, {})        }.should.raise(TypeError)
+    -> { "hello".send(@method, [])        }.should.raise(TypeError)
   end
 
   it "raises a RangeError if the index is too big" do
-    lambda { "hello".send(@method, bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, bignum_value) }.should.raise(RangeError)
   end
 end
 
@@ -80,21 +80,12 @@ describe :string_slice_index_length, shared: true do
     "hello there".send(@method, -3,2).should == "er"
   end
 
-  it "always taints resulting strings when self is tainted" do
-    str = "hello world"
-    str.taint
-
-    str.send(@method, 0,0).tainted?.should == true
-    str.send(@method, 0,1).tainted?.should == true
-    str.send(@method, 2,1).tainted?.should == true
-  end
-
-  it "returns a string with the same encoding" do
+  it "returns a string with the same encoding as self" do
     s = "hello there"
     s.send(@method, 1, 9).encoding.should == s.encoding
 
-    a = "hello".force_encoding("binary")
-    b = " there".force_encoding("ISO-8859-1")
+    a = "hello".dup.force_encoding("binary")
+    b = " there".dup.force_encoding("ISO-8859-1")
     c = (a + b).force_encoding(Encoding::US_ASCII)
 
     c.send(@method, 0, 5).encoding.should == Encoding::US_ASCII
@@ -119,11 +110,25 @@ describe :string_slice_index_length, shared: true do
 
     "x".send(@method, -2,0).should == nil
     "x".send(@method, -2,1).should == nil
+
+    "x".send(@method, fixnum_max, 1).should == nil
   end
 
   it "returns nil if the length is negative" do
     "hello there".send(@method, 4,-3).should == nil
     "hello there".send(@method, -4,-3).should == nil
+  end
+
+  platform_is pointer_size: 64 do
+    it "returns nil if the length is negative big value" do
+      "hello there".send(@method, 4, -(1 << 31)).should == nil
+
+      # by some reason length < -(1 << 31) on CI on Windows leads to
+      # 'RangeError: bignum too big to convert into `long'' error
+      platform_is_not :windows do
+        "hello there".send(@method, 4, -(1 << 63)).should == nil
+      end
+    end
   end
 
   it "calls to_int on the given index and the given length" do
@@ -140,30 +145,35 @@ describe :string_slice_index_length, shared: true do
   end
 
   it "raises a TypeError when idx or length can't be converted to an integer" do
-    lambda { "hello".send(@method, mock('x'), 0) }.should raise_error(TypeError)
-    lambda { "hello".send(@method, 0, mock('x')) }.should raise_error(TypeError)
+    -> { "hello".send(@method, mock('x'), 0) }.should.raise(TypeError)
+    -> { "hello".send(@method, 0, mock('x')) }.should.raise(TypeError)
 
     # I'm deliberately including this here.
     # It means that str.send(@method, other, idx) isn't supported.
-    lambda { "hello".send(@method, "", 0) }.should raise_error(TypeError)
+    -> { "hello".send(@method, "", 0) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when the given index or the given length is nil" do
-    lambda { "hello".send(@method, 1, nil)   }.should raise_error(TypeError)
-    lambda { "hello".send(@method, nil, 1)   }.should raise_error(TypeError)
-    lambda { "hello".send(@method, nil, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, 1, nil)   }.should.raise(TypeError)
+    -> { "hello".send(@method, nil, 1)   }.should.raise(TypeError)
+    -> { "hello".send(@method, nil, nil) }.should.raise(TypeError)
   end
 
   it "raises a RangeError if the index or length is too big" do
-    lambda { "hello".send(@method, bignum_value, 1) }.should raise_error(RangeError)
-    lambda { "hello".send(@method, 0, bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, bignum_value, 1) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0, bignum_value) }.should.raise(RangeError)
   end
 
-  it "returns subclass instances" do
+  it "raises a RangeError if the index or length is too small" do
+    -> { "hello".send(@method, -bignum_value, 1) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0, -bignum_value) }.should.raise(RangeError)
+  end
+
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0,0).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, 0,4).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, 1,4).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 0,0).should.instance_of?(String)
+    s.send(@method, 0,4).should.instance_of?(String)
+    s.send(@method, 1,4).should.instance_of?(String)
   end
 
   it "handles repeated application" do
@@ -202,6 +212,10 @@ describe :string_slice_range, shared: true do
     "x".send(@method, 1..-1).should == ""
   end
 
+  it "returns a String in the same encoding as self" do
+    "hello there".encode("US-ASCII").send(@method, 1..1).encoding.should == Encoding::US_ASCII
+  end
+
   it "returns nil if the beginning of the range falls outside of self" do
     "hello there".send(@method, 12..-1).should == nil
     "hello there".send(@method, 20..25).should == nil
@@ -234,23 +248,11 @@ describe :string_slice_range, shared: true do
     "x".send(@method, 1...-1).should == ""
   end
 
-  it "always taints resulting strings when self is tainted" do
-    str = "hello world"
-    str.taint
-
-    str.send(@method, 0..0).tainted?.should == true
-    str.send(@method, 0...0).tainted?.should == true
-    str.send(@method, 0..1).tainted?.should == true
-    str.send(@method, 0...1).tainted?.should == true
-    str.send(@method, 2..3).tainted?.should == true
-    str.send(@method, 2..0).tainted?.should == true
-  end
-
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0...0).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, 0..4).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, 1..4).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 0...0).should.instance_of?(String)
+    s.send(@method, 0..4).should.instance_of?(String)
+    s.send(@method, 1..4).should.instance_of?(String)
   end
 
   it "calls to_int on range arguments" do
@@ -289,6 +291,30 @@ describe :string_slice_range, shared: true do
     "hello world".send(@method, 6..5).send(@method, -1..-1).should == nil
     "hello world".send(@method, 6..5).send(@method, 1..1).should == nil
   end
+
+  it "raises a type error if a range is passed with a length" do
+    ->{ "hello".send(@method, 1..2, 1) }.should.raise(TypeError)
+  end
+
+  it "raises a RangeError if one of the bound is too big" do
+    -> { "hello".send(@method, bignum_value..(bignum_value + 1)) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0..bignum_value) }.should.raise(RangeError)
+  end
+
+  it "works with endless ranges" do
+    "hello there".send(@method, eval("(2..)")).should == "llo there"
+    "hello there".send(@method, eval("(2...)")).should == "llo there"
+    "hello there".send(@method, eval("(-4..)")).should == "here"
+    "hello there".send(@method, eval("(-4...)")).should == "here"
+  end
+
+  it "works with beginless ranges" do
+    "hello there".send(@method, (..5)).should == "hello "
+    "hello there".send(@method, (...5)).should == "hello"
+    "hello there".send(@method, (..-4)).should == "hello th"
+    "hello there".send(@method, (...-4)).should == "hello t"
+    "hello there".send(@method, (...nil)).should == "hello there"
+  end
 end
 
 describe :string_slice_regexp, shared: true do
@@ -301,31 +327,14 @@ describe :string_slice_regexp, shared: true do
     "hello there".send(@method, /xyz/).should == nil
   end
 
-  not_supported_on :opal do
-    it "always taints resulting strings when self or regexp is tainted" do
-      strs = ["hello world"]
-      strs += strs.map { |s| s.dup.taint }
-
-      strs.each do |str|
-        str.send(@method, //).tainted?.should == str.tainted?
-        str.send(@method, /hello/).tainted?.should == str.tainted?
-
-        tainted_re = /./
-        tainted_re.taint
-
-        str.send(@method, tainted_re).tainted?.should == true
-      end
-    end
-
-    it "returns an untrusted string if the regexp is untrusted" do
-      "hello".send(@method, /./.untrust).untrusted?.should be_true
-    end
+  it "returns a String in the same encoding as self" do
+    "hello there".encode("US-ASCII").send(@method, /[aeiou](.)\1/).encoding.should == Encoding::US_ASCII
   end
 
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, //).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, /../).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, //).should.instance_of?(String)
+    s.send(@method, /../).should.instance_of?(String)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -352,42 +361,28 @@ describe :string_slice_regexp_index, shared: true do
     "har".send(@method, /(.)(.)(.)/, -3).should == "h"
   end
 
-  it "always taints resulting strings when self or regexp is tainted" do
-    strs = ["hello world"]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      str.send(@method, //, 0).tainted?.should == str.tainted?
-      str.send(@method, /hello/, 0).tainted?.should == str.tainted?
-
-      str.send(@method, /(.)(.)(.)/, 0).tainted?.should == str.tainted?
-      str.send(@method, /(.)(.)(.)/, 1).tainted?.should == str.tainted?
-      str.send(@method, /(.)(.)(.)/, -1).tainted?.should == str.tainted?
-      str.send(@method, /(.)(.)(.)/, -2).tainted?.should == str.tainted?
-
-      tainted_re = /(.)(.)(.)/
-      tainted_re.taint
-
-      str.send(@method, tainted_re, 0).tainted?.should == true
-      str.send(@method, tainted_re, 1).tainted?.should == true
-      str.send(@method, tainted_re, -1).tainted?.should == true
-    end
-  end
-
-  not_supported_on :opal do
-    it "returns an untrusted string if the regexp is untrusted" do
-      "hello".send(@method, /(.)/.untrust, 1).untrusted?.should be_true
-    end
-  end
-
   it "returns nil if there is no match" do
     "hello there".send(@method, /(what?)/, 1).should == nil
   end
 
+  it "returns nil if the index is larger than the number of captures" do
+    "hello there".send(@method, /hello (.)/, 2).should == nil
+    # You can't refer to 0 using negative indices
+    "hello there".send(@method, /hello (.)/, -2).should == nil
+  end
+
   it "returns nil if there is no capture for the given index" do
     "hello there".send(@method, /[aeiou](.)\1/, 2).should == nil
-    # You can't refer to 0 using negative indices
-    "hello there".send(@method, /[aeiou](.)\1/, -2).should == nil
+  end
+
+  it "returns nil if the given capture group was not matched but still sets $~" do
+    "test".send(@method, /te(z)?/, 1).should == nil
+    $~[0].should == "te"
+    $~[1].should == nil
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hello there".encode("US-ASCII").send(@method, /[aeiou](.)\1/, 0).encoding.should == Encoding::US_ASCII
   end
 
   it "calls to_int on the given index" do
@@ -399,19 +394,19 @@ describe :string_slice_regexp_index, shared: true do
   end
 
   it "raises a TypeError when the given index can't be converted to Integer" do
-    lambda { "hello".send(@method, /(.)(.)(.)/, mock('x')) }.should raise_error(TypeError)
-    lambda { "hello".send(@method, /(.)(.)(.)/, {})        }.should raise_error(TypeError)
-    lambda { "hello".send(@method, /(.)(.)(.)/, [])        }.should raise_error(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, mock('x')) }.should.raise(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, {})        }.should.raise(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, [])        }.should.raise(TypeError)
   end
 
   it "raises a TypeError when the given index is nil" do
-    lambda { "hello".send(@method, /(.)(.)(.)/, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, nil) }.should.raise(TypeError)
   end
 
-  it "returns subclass instances" do
+  it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, /(.)(.)/, 0).should be_an_instance_of(StringSpecs::MyString)
-    s.send(@method, /(.)(.)/, 1).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, /(.)(.)/, 0).should.instance_of?(String)
+    s.send(@method, /(.)(.)/, 1).should.instance_of?(String)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -432,19 +427,6 @@ describe :string_slice_string, shared: true do
     "hello there".send(@method, s).should == s
   end
 
-  it "taints resulting strings when other is tainted" do
-    strs = ["", "hello world", "hello"]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      strs.each do |other|
-        r = str.send(@method, other)
-
-        r.tainted?.should == !r.nil? & other.tainted?
-      end
-    end
-  end
-
   it "doesn't set $~" do
     $~ = nil
 
@@ -460,14 +442,14 @@ describe :string_slice_string, shared: true do
     o = mock('x')
     o.should_not_receive(:to_str)
 
-    lambda { "hello".send(@method, o) }.should raise_error(TypeError)
+    -> { "hello".send(@method, o) }.should.raise(TypeError)
   end
 
-  it "returns a subclass instance when given a subclass instance" do
+  it "returns a String instance when given a subclass instance" do
     s = StringSpecs::MyString.new("el")
     r = "hello".send(@method, s)
     r.should == "el"
-    r.should be_an_instance_of(StringSpecs::MyString)
+    r.should.instance_of?(String)
   end
 end
 
@@ -493,51 +475,29 @@ describe :string_slice_regexp_group, shared: true do
       "hello there".send(@method, /(?<g>h(?<g>.))/, 'g').should == "e"
     end
 
-    it "always taints resulting strings when self or regexp is tainted" do
-      strs = ["hello world"]
-      strs += strs.map { |s| s.dup.taint }
-
-      strs.each do |str|
-        str.send(@method, /(?<hi>hello)/, 'hi').tainted?.should == str.tainted?
-
-        str.send(@method, /(?<g>(.)(.)(.))/, 'g').tainted?.should == str.tainted?
-        str.send(@method, /(?<h>.)(.)(.)/, 'h').tainted?.should == str.tainted?
-        str.send(@method, /(.)(?<a>.)(.)/, 'a').tainted?.should == str.tainted?
-        str.send(@method, /(.)(.)(?<r>.)/, 'r').tainted?.should == str.tainted?
-        str.send(@method, /(?<h>.)(?<a>.)(?<r>.)/, 'r').tainted?.should == str.tainted?
-
-        tainted_re = /(?<a>.)(?<b>.)(?<c>.)/
-        tainted_re.taint
-
-        str.send(@method, tainted_re, 'a').tainted?.should be_true
-        str.send(@method, tainted_re, 'b').tainted?.should be_true
-        str.send(@method, tainted_re, 'c').tainted?.should be_true
-      end
-    end
-
     it "returns nil if there is no match" do
-      "hello there".send(@method, /(?<whut>what?)/, 'whut').should be_nil
+      "hello there".send(@method, /(?<whut>what?)/, 'whut').should == nil
     end
 
     it "raises an IndexError if there is no capture for the given name" do
-      lambda do
+      -> do
         "hello there".send(@method, /[aeiou](.)\1/, 'non')
-      end.should raise_error(IndexError)
+      end.should.raise(IndexError)
     end
 
     it "raises a TypeError when the given name is not a String" do
-      lambda { "hello".send(@method, /(?<q>.)/, mock('x')) }.should raise_error(TypeError)
-      lambda { "hello".send(@method, /(?<q>.)/, {})        }.should raise_error(TypeError)
-      lambda { "hello".send(@method, /(?<q>.)/, [])        }.should raise_error(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, mock('x')) }.should.raise(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, {})        }.should.raise(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, [])        }.should.raise(TypeError)
     end
 
     it "raises an IndexError when given the empty String as a group name" do
-      lambda { "hello".send(@method, /(?<q>)/, '') }.should raise_error(IndexError)
+      -> { "hello".send(@method, /(?<q>)/, '') }.should.raise(IndexError)
     end
 
-    it "returns subclass instances" do
+    it "returns String instances" do
       s = StringSpecs::MyString.new("hello")
-      s.send(@method, /(?<q>.)/, 'q').should be_an_instance_of(StringSpecs::MyString)
+      s.send(@method, /(?<q>.)/, 'q').should.instance_of?(String)
     end
 
     it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -545,13 +505,13 @@ describe :string_slice_regexp_group, shared: true do
       $~[0].should == 'he'
 
       'hello'.send(@method, /(?<non>not)/, 'non')
-      $~.should be_nil
+      $~.should == nil
     end
   end
 end
 
 describe :string_slice_symbol, shared: true do
   it "raises TypeError" do
-    lambda { 'hello'.send(@method, :hello) }.should raise_error(TypeError)
+    -> { 'hello'.send(@method, :hello) }.should.raise(TypeError)
   end
 end

@@ -37,6 +37,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ArraySupport;
 
@@ -47,12 +50,11 @@ import org.jruby.util.ArraySupport;
  */
 @JRubyClass(name="Interrupt", parent="SignalException")
 public class RubyInterrupt extends RubySignalException {
-    private static final ObjectAllocator INTERRUPT_ALLOCATOR = (runtime, klass) -> new RubyInterrupt(runtime, klass);
+    private static final ObjectAllocator INTERRUPT_ALLOCATOR = RubyInterrupt::new;
 
-    static RubyClass define(Ruby runtime, RubyClass signalExceptionClass) {
-        RubyClass interruptClass = runtime.defineClass("Interrupt", signalExceptionClass, INTERRUPT_ALLOCATOR);
-        interruptClass.defineAnnotatedMethods(RubyInterrupt.class);
-        return interruptClass;
+    static RubyClass define(ThreadContext context, RubyClass SignalException) {
+        return defineClass(context, "Interrupt", SignalException, INTERRUPT_ALLOCATOR).
+                defineMethods(context, RubyInterrupt.class);
     }
 
     protected RubyInterrupt(Ruby runtime, RubyClass exceptionClass) {
@@ -64,19 +66,19 @@ public class RubyInterrupt extends RubySignalException {
         return new Interrupt(message, this);
     }
 
-    @JRubyMethod(optional = 1, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(context, args, 0, 1);
 
-        Arity.checkArgumentCount(runtime, args, 0, 1);
+        final Ruby runtime = context.runtime;
 
         IRubyObject signo = runtime.newFixnum(SIGINT);
 
         if (args.length > 0) {
             args = ArraySupport.newCopy(signo, args);
         } else {
-            args = new IRubyObject[]{signo, runtime.newString("Interrupt")};
+            args = new IRubyObject[]{signo, newString(context, "Interrupt")};
         }
 
         super.initialize(context, args, block);

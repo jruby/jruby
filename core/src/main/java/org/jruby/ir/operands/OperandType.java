@@ -10,6 +10,7 @@ public enum OperandType {
     ARRAY("ary", (byte) 'A'),
     BIGNUM("big", (byte) 'B'),
     BOOLEAN("bool", (byte) 'b'),
+    BUILTIN_CLASS("cls", (byte) 'O'),
     COMPLEX("com", (byte) 'C'),
     CURRENT_SCOPE("scope", (byte) 's'),
     DYNAMIC_SYMBOL("dsym", (byte) 'd'),
@@ -17,12 +18,12 @@ public enum OperandType {
     FLOAT("flo", (byte) 'F'),
     GLOBAL_VARIABLE("$", (byte) '$'),
     HASH("hash", (byte) '{'),
+    INTEGER("int", (byte) 'I'),
     IR_EXCEPTION("ir_ex", (byte) '!'),
     LABEL("ipc", (byte) 'L'),
     LOCAL_VARIABLE("*", (byte) 'l'), // Also applicable for ClosureLocalVariable
     NIL("nil", (byte) 'N'),
     NTH_REF("nth", (byte) '1'),
-    OBJECT_CLASS("objcls", (byte) 'O'),
     RANGE("rng", (byte) '.'),
     RATIONAL("rat", (byte) 'r'),
     REGEXP("reg", (byte) '/'),
@@ -44,8 +45,8 @@ public enum OperandType {
     NULL_BLOCK("noblock", (byte) 'o'),
     FILENAME("file", (byte) 'm'),
     SYMBOL_PROC("symproc", (byte) 'P'),
-    SCOPE("scope", (byte) '#')
-    ;
+    SCOPE("scope", (byte) '#'),
+    CHILLED_STRING("chilled", (byte) 'c');
 
     private final String shortName;
     private final byte coded;

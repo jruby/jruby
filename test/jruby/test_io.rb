@@ -3,11 +3,11 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'stringio'
+require 'tempfile'
 
 class TestIO < Test::Unit::TestCase
   include TestHelper
 
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SOLARIS = RbConfig::CONFIG['host_os'] =~ /solaris/
 
   def setup
@@ -102,7 +102,7 @@ class TestIO < Test::Unit::TestCase
     @to_close << f
     assert_raises(Errno::EINVAL) { IO.new(f.fileno, "w") }
     f.close
-  end
+  end unless WINDOWS # MRI (on Windows) does not raise anything
 
   def test_ios_with_compatible_flags
     ensure_files @file
@@ -143,6 +143,7 @@ class TestIO < Test::Unit::TestCase
     file2_fileno = file2.fileno;
     file2 = file2.reopen(file)
     assert_equal(file.pos, file2.pos)
+    pend 'TODO: fileno is NOT being re-used on Windows' if WINDOWS
     assert_equal(file2_fileno, file2.fileno);
     assert(file.fileno != file2.fileno);
     file2.close
@@ -150,6 +151,22 @@ class TestIO < Test::Unit::TestCase
 
     # reopen of a filename after a close should succeed (JRUBY-1885)
     assert_nothing_raised { file.reopen(@file) }
+  end
+
+  def test_reopen_copies_encoding
+    ensure_files @file, @file2
+    f1 = File.open(@file)
+    @to_close << f1
+    f1.set_encoding("EUC-JP:UTF-8")
+
+    f2 = File.open(@file2)
+    @to_close << f2
+    f2.set_encoding("ISO-8859-1:US-ASCII")
+
+    f1.reopen(f2)
+
+    assert_equal Encoding::ISO_8859_1, f1.external_encoding
+    assert_equal Encoding::US_ASCII, f1.internal_encoding
   end
 
   def test_file_read
@@ -170,6 +187,27 @@ class TestIO < Test::Unit::TestCase
      f = File.open(@file)
      @to_close << f
      assert_equal " ", f.read(1, nil)
+  end
+
+  def test_file_read_into_buffer_code_range
+    buf = String.new
+    buf.concat "¿Cómo estás? Ça va bien?"
+    assert_false buf.ascii_only? # base-line: scan and set the code-range for the buffer
+
+    require 'tempfile'
+    tmpfile = Tempfile.new('file')
+    tmpfile.open
+    tmpfile.write("ascii only")
+    tmpfile.flush
+    tmpfile.close
+
+    File.open(tmpfile.path, encoding: 'binary') do |file|
+      file.read(10, buf) # read less then buf.size
+    end
+    tmpfile.delete
+
+    assert_true buf.ascii_only? # reading into the buffer should have cleared the code-range
+    assert_equal 'ascii only', buf
   end
 
   def test_open
@@ -308,6 +346,7 @@ class TestIO < Test::Unit::TestCase
       f.read(3)
       f.ungetc(100)
       f.pos = 2
+      pend 'TODO: set pos read fails with IOError: byte oriented read for character buffered IO' if WINDOWS
       assert_equal("LLO", f.read(3))
 
       f.ungetc(100)
@@ -355,11 +394,10 @@ class TestIO < Test::Unit::TestCase
   def test_multithreaded_writes
     f = File.open("__temp1", "w")
     @to_close << f
-    threads = []
-    100.times {
-      threads << Thread.new { 100.times { f.print('.') } }
-    }
-    threads.each {|thread| thread.join}
+    100.times.map {
+      Thread.new { 100.times { f.print('.') } }
+    }.each(&:join)
+    f.flush
     f.close
     assert_equal 100*100, File.size("__temp1")
   ensure
@@ -424,13 +462,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_file_constants_included
     assert IO.include?(File::Constants)
-    constants = ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
-                   "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
-                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
-                   "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
-                   "WRONLY"]
+    constants = ["APPEND", "BINARY", "CREAT", "EXCL",
+                 "FNM_CASEFOLD", "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
+                 "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
+                 "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "TRUNC", "WRONLY"]
     constants = constants.map(&:to_sym)
     constants.each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
+    assert IO.constants.include?(:SYNC), "SYNC not included" unless WINDOWS
   end
 
   #JRUBY-3012
@@ -518,16 +556,30 @@ class TestIO < Test::Unit::TestCase
   # JRUBY-6137
   def test_rubyio_fileno_mapping_leak
     fileno_util = JRuby.runtime.fileno_util
-    starting_count = fileno_util.number_of_wrappers
 
-    # use a non-channel stream to ensure we use our mapping
-    io = org.jruby.RubyIO.new(JRuby.runtime, java.io.ByteArrayOutputStream.new)
+    # other test threads may still be cleaning up filenos, so we give a few rounds for this to settle
+    count = 0
+    while count < 10
+      starting_count = fileno_util.number_of_wrappers
 
-    open_io_count = fileno_util.number_of_wrappers
+      # use a non-channel stream to ensure we use our mapping
+      io = org.jruby.RubyIO.new(JRuby.runtime, java.io.ByteArrayOutputStream.new)
+
+      open_io_count = fileno_util.number_of_wrappers
+
+      io.close
+      closed_io_count = fileno_util.number_of_wrappers
+
+      if starting_count == closed_io_count
+        break
+      end
+
+      # either leaking or other threads are opening and closing; pause and try again
+      Thread.pass
+    end
+
+    # proceed to assertions
     assert_equal(starting_count + 1, open_io_count)
-
-    io.close
-    closed_io_count = fileno_util.number_of_wrappers
     assert_equal(starting_count, closed_io_count)
   end if RUBY_ENGINE == 'jruby'
 
@@ -613,6 +665,62 @@ class TestIO < Test::Unit::TestCase
     after = fu.number_of_wrappers
 
     assert_equal before, after, "no wrappers should have been registered"
+  end
+
+  # https://github.com/jruby/jruby/issues/9324
+  def test_accept_on_closed_server_raises_ioerror
+    require 'socket'
+
+    # Concurrent threads create timing pressure needed to hit the race between one accept returning and the next start.
+    500.times do
+      tcp = TCPServer.new("127.0.0.1", 0)
+      port = tcp.connect_address.ip_port
+
+      thread = Thread.new do
+        Thread.current.abort_on_exception = false
+        Thread.current.report_on_exception = false
+        loop do
+          c = tcp.accept
+          c.close
+        end
+      rescue IOError, Errno::EBADF, Errno::EINVAL, Errno::ECONNABORTED, Errno::ENOTSOCK, Errno::ECONNRESET
+        # expected on shutdown — before the fix, NullPointerException/AssertionError escapes here
+      end
+
+      10.times { Thread.new { begin; TCPSocket.new("127.0.0.1", port).close; rescue; end } }
+      Thread.pass
+      tcp.close rescue nil
+
+      thread.join(2)
+      thread.kill if thread.alive?
+    end
+    # If we reach here, no AssertionError killed the process
+    assert true
+  end
+
+  # Thread#kill unblocks a write by interrupting the thread, and the JDK closes the
+  # interruptible channel in response. Ruby never closed the stream, so the close in
+  # the ensure must succeed rather than report the vanished channel as Errno::EBADF.
+  def test_close_after_kill_during_blocking_write
+    read, write = IO.pipe
+    @to_close << read
+    @to_close << write
+
+    started = Queue.new
+    thread = Thread.new do
+      begin
+        started << true
+        write.write('x' * 1_000_000) # larger than the pipe buffer, so it blocks
+      ensure
+        write.close
+      end
+    end
+
+    started.pop
+    sleep 0.2 # let the write fill the buffer and block
+    thread.kill
+
+    assert_nothing_raised { thread.join }
   end
 
 end

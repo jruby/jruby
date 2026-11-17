@@ -30,14 +30,18 @@ module JRuby
     end
 
     def self.is_array?(obj)
-      coerce_to(obj, Array, :to_ary) if obj.respond_to? :to_ary
+      coerce_to(obj, Array, :to_ary) if object_respond_to?(obj, :to_ary)
     end
 
     def self.convert_to_str(obj)
       unless obj.respond_to? :to_str
         raise TypeError, "cannot convert #{obj.class} into String"
       end
-      obj = obj.to_str
+      obj.to_str
+    end
+
+    def self.object_respond_to?(obj, method)
+      obj.respond_to?(method) # NOTE: should handle BasicObject? (rescue nil)
     end
   end
 end

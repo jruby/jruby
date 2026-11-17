@@ -4,7 +4,7 @@ require_relative '../enumerable/shared/enumeratorized'
 
 # Modifying a collection while the contents are being iterated
 # gives undefined behavior. See
-# http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/23633
+# https://blade.ruby-lang.org/ruby-core/23633
 
 describe "Array#rindex" do
   it "returns the first index backwards from the end where element == to object" do
@@ -32,6 +32,31 @@ describe "Array#rindex" do
     [1, 1, 3, 2, 1, 3].rindex(4).should == nil
   end
 
+  it "compares an Integer with Float elements using Float#==" do
+    [1.0, 0.5, 1.0, 2.5].rindex(1).should == 2
+    [0.5, 1.5, 2.5].rindex(1).should == nil
+  end
+
+  it "compares a Float with Integer elements using Integer#==" do
+    [1, 0, 1, 2].rindex(1.0).should == 2
+    [0, 1, 2].rindex(1.5).should == nil
+  end
+
+  it "considers 0.0 and -0.0 equal" do
+    [1.0, 0.0, 2.0].rindex(-0.0).should == 1
+  end
+
+  it "finds a NaN element only if it is the same object" do
+    nan = Float::NAN
+    [nan, 1.0, nan, 2.0].rindex(nan).should == 2
+    [nan, 1.0, nan, 2.0].rindex(0.0 / 0.0).should == nil
+  end
+
+  it "uses a redefined Integer#==" do
+    result = ArraySpecs.with_redefined_integer_equality { [1, 2, 3, 2, 1].rindex(42) }
+    result.should == 3
+  end
+
   it "returns correct index even after delete_at" do
     array = ["fish", "bird", "lion", "cat"]
     array.delete_at(0)
@@ -41,7 +66,7 @@ describe "Array#rindex" do
   it "properly handles empty recursive arrays" do
     empty = ArraySpecs.empty_recursive_array
     empty.rindex(empty).should == 0
-    empty.rindex(1).should be_nil
+    empty.rindex(1).should == nil
   end
 
   it "properly handles recursive arrays" do
@@ -68,10 +93,25 @@ describe "Array#rindex" do
     seen.should == [3]
   end
 
+  it "tolerates increasing an array size during iteration" do
+    array = [:a, :b, :c]
+    ScratchPad.record []
+    i = 0
+
+    array.rindex do |e|
+      ScratchPad << e
+      array.prepend i if i < 100
+      i += 1
+      false
+    end
+
+    ScratchPad.recorded.should == [:c, :a, 1]
+  end
+
   describe "given no argument and no block" do
     it "produces an Enumerator" do
       enum = [4, 2, 1, 5, 1, 3].rindex
-      enum.should be_an_instance_of(Enumerator)
+      enum.should.instance_of?(Enumerator)
       enum.each { |x| x < 2 }.should == 4
     end
   end

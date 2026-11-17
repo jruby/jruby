@@ -8,22 +8,29 @@ describe "Module#const_set" do
 
     ConstantSpecs.const_set "CS_CONST402", :const402
     ConstantSpecs.const_get(:CS_CONST402).should == :const402
+  ensure
+    ConstantSpecs.send(:remove_const, :CS_CONST401)
+    ConstantSpecs.send(:remove_const, :CS_CONST402)
   end
 
   it "returns the value set" do
     ConstantSpecs.const_set(:CS_CONST403, :const403).should == :const403
+  ensure
+    ConstantSpecs.send(:remove_const, :CS_CONST403)
   end
 
   it "sets the name of an anonymous module" do
     m = Module.new
     ConstantSpecs.const_set(:CS_CONST1000, m)
     m.name.should == "ConstantSpecs::CS_CONST1000"
+  ensure
+    ConstantSpecs.send(:remove_const, :CS_CONST1000)
   end
 
-  it "does not set the name of a module scoped by an anonymous module" do
+  it "sets the name of a module scoped by an anonymous module" do
     a, b = Module.new, Module.new
     a.const_set :B, b
-    b.name.should be_nil
+    b.name.should.end_with? '::B'
   end
 
   it "sets the name of contained modules when assigning a toplevel anonymous module" do
@@ -38,23 +45,27 @@ describe "Module#const_set" do
     b.name.should == "ModuleSpecs_CS3::B"
     c.name.should == "ModuleSpecs_CS3::B::C"
     d.name.should == "ModuleSpecs_CS3::D"
+  ensure
+    Object.send(:remove_const, :ModuleSpecs_CS3)
   end
 
   it "raises a NameError if the name does not start with a capital letter" do
-    lambda { ConstantSpecs.const_set "name", 1 }.should raise_error(NameError)
+    -> { ConstantSpecs.const_set "name", 1 }.should.raise(NameError)
   end
 
   it "raises a NameError if the name starts with a non-alphabetic character" do
-    lambda { ConstantSpecs.const_set "__CONSTX__", 1 }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_set "@Name", 1 }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_set "!Name", 1 }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_set "::Name", 1 }.should raise_error(NameError)
+    -> { ConstantSpecs.const_set "__CONSTX__", 1 }.should.raise(NameError)
+    -> { ConstantSpecs.const_set "@Name", 1 }.should.raise(NameError)
+    -> { ConstantSpecs.const_set "!Name", 1 }.should.raise(NameError)
+    -> { ConstantSpecs.const_set "::Name", 1 }.should.raise(NameError)
   end
 
   it "raises a NameError if the name contains non-alphabetic characters except '_'" do
     ConstantSpecs.const_set("CS_CONST404", :const404).should == :const404
-    lambda { ConstantSpecs.const_set "Name=", 1 }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_set "Name?", 1 }.should raise_error(NameError)
+    -> { ConstantSpecs.const_set "Name=", 1 }.should.raise(NameError)
+    -> { ConstantSpecs.const_set "Name?", 1 }.should.raise(NameError)
+  ensure
+    ConstantSpecs.send(:remove_const, :CS_CONST404)
   end
 
   it "calls #to_str to convert the given name to a String" do
@@ -62,14 +73,16 @@ describe "Module#const_set" do
     name.should_receive(:to_str).and_return("CS_CONST405")
     ConstantSpecs.const_set(name, :const405).should == :const405
     ConstantSpecs::CS_CONST405.should == :const405
+  ensure
+    ConstantSpecs.send(:remove_const, :CS_CONST405)
   end
 
   it "raises a TypeError if conversion to a String by calling #to_str fails" do
     name = mock('123')
-    lambda { ConstantSpecs.const_set name, 1 }.should raise_error(TypeError)
+    -> { ConstantSpecs.const_set name, 1 }.should.raise(TypeError)
 
     name.should_receive(:to_str).and_return(123)
-    lambda { ConstantSpecs.const_set name, 1 }.should raise_error(TypeError)
+    -> { ConstantSpecs.const_set name, 1 }.should.raise(TypeError)
   end
 
   describe "when overwriting an existing constant" do
@@ -91,15 +104,14 @@ describe "Module#const_set" do
       mod.const_get(:Foo).should == 1
     end
 
-    it "does not warn if the previous value was undefined" do
+    it "does not warn after a failed autoload" do
       path = fixture(__FILE__, "autoload_o.rb")
       ScratchPad.record []
       mod = Module.new
 
       mod.autoload :Foo, path
-      -> { mod::Foo }.should raise_error(NameError)
+      -> { mod::Foo }.should.raise(NameError)
 
-      mod.should have_constant(:Foo)
       mod.const_defined?(:Foo).should == false
       mod.autoload?(:Foo).should == nil
 
@@ -125,9 +137,9 @@ describe "Module#const_set" do
       @name = :Foo
     end
 
-    it "raises a #{frozen_error_class} before setting the name" do
-      lambda { @frozen.const_set @name, nil }.should raise_error(frozen_error_class)
-      @frozen.should_not have_constant(@name)
+    it "raises a FrozenError before setting the name" do
+      -> { @frozen.const_set @name, nil }.should.raise(FrozenError)
+      @frozen.should_not.const_defined?(@name)
     end
   end
 end

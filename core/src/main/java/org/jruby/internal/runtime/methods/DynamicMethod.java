@@ -32,18 +32,29 @@ package org.jruby.internal.runtime.methods;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
-import org.jruby.runtime.Arity;
+import org.jruby.ext.coverage.MethodCoverage;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
+
+import static org.jruby.api.Error.argumentError;
 
 /**
  * DynamicMethod represents a method handle in JRuby, to provide both entry
@@ -69,6 +80,10 @@ public abstract class DynamicMethod {
     protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
+    /** Has this method been aliased. */
+    protected boolean aliased;
+    /** Coverage call counter for this entry (methods mode). Null unless Coverage registered the entry. */
+    protected MethodCoverage methodCoverage;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -99,6 +114,7 @@ public abstract class DynamicMethod {
     /**
      * A no-arg constructor used only by the UndefinedMethod subclass and
      * CompiledMethod handles. instanceof assertions make sure this is so.
+     * @param name the name of the method
      */
     protected DynamicMethod(String name) {
         this.visibility = (byte) Visibility.PUBLIC.ordinal();
@@ -126,10 +142,22 @@ public abstract class DynamicMethod {
         return serialNumber;
     }
 
+    /**
+     * Whether this method is a builtin method, i.e. a method built-in to JRuby and
+     * loaded during its core boot process.
+     *
+     * @return true if this is a core built-in method, false otherwise
+     */
     public boolean isBuiltin() {
         return (flags & BUILTIN_FLAG) == BUILTIN_FLAG;
     }
 
+    /**
+     * Force this method to be treated as a core built-in method if true,
+     * or as a normal non-core method otherwise.
+     *
+     * @param isBuiltin true if this is a core built-in method, false otherwise
+     */
     public void setIsBuiltin(boolean isBuiltin) {
         if (isBuiltin) {
             flags |= BUILTIN_FLAG;
@@ -187,40 +215,85 @@ public abstract class DynamicMethod {
     // dynamic method handles.
     ////////////////////////////////////////////////////////////////////////////
 
-    /** Arity 0, no block */
+    /* Arity 0, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         return call(context, self, klazz, name, Block.NULL_BLOCK);
     }
-    /** Arity 0, with block; calls through IRubyObject[] path */
+    /* Arity 0, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, block);
     }
-    /** Arity 1, no block */
+    /* Arity 1, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0) {
         return call(context, self, klazz, name, arg0, Block.NULL_BLOCK);
     }
-    /** Arity 1, with block; calls through IRubyObject[] path */
+    /* Arity 1, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0}, block);
     }
-    /** Arity 2, no block */
+    /* Arity 2, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1) {
         return call(context, self, klazz, name, arg0, arg1, Block.NULL_BLOCK);
     }
-    /** Arity 2, with block; calls through IRubyObject[] path */
+    /* Arity 2, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1}, block);
     }
-    /** Arity 3, no block */
+    /* Arity 3, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return call(context, self, klazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
-    /** Arity 3, with block; calls through IRubyObject[] path */
+    /* Arity 3, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
+    /**
+     * Get the source name for {@code Method#original_name}.
+     * Overridden by {@link AliasMethod} and {@link RenamedDynamicMethod}.
+     *
+     * @return the source name
+     */
+    public String getOldName() {
+        return name;
+    }
 
+    /**
+     * The file this method was defined in, or null if it has no position (native methods). Follows aliases.
+     */
+    public String getSourceFile() {
+        return getRealMethod() instanceof PositionAware poser ? TraceType.maskInternalFiles(poser.getFile()) : null;
+    }
+
+    /**
+     * The line this method was defined on, 1-based, or non-positive if it has no usable position.
+     * Follows aliases.
+     */
+    public int getSourceLine() {
+        return getRealMethod() instanceof PositionAware poser ? poser.getLine() + 1 : -1;
+    }
+
+    /*
+     * Will call respond_to?/respond_to_missing? on object and name.
+     *
+     * Reached with priv false, where MRI passes one argument without looking at arity at all. Do not fold
+     * this into RubyClass's argument count rule, which is the priv-true side.
+     */
+    public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
+        Signature signature = getSignature();
+
+        if (signature.isFixed()) {
+            int required = signature.required();
+
+            if (required == 1) {
+                return call(context, self, klazz, respondToMethodName, name).isTrue();
+            } else if (required != 2) {
+                throw argumentError(context, respondToMethodName + " " + "must accept 1 or 2 arguments (requires " + required + ")");
+            }
+        }
+
+        return call(context, self, klazz, respondToMethodName, name, context.tru).isTrue();
+    }
 
     /**
      * Duplicate this method, returning DynamicMethod referencing the same code
@@ -280,9 +353,8 @@ public abstract class DynamicMethod {
         while (cls.isIncluded()) cls = cls.getMetaClass();
 
         // For visibility we need real meta class and not anonymous one from class << self
-        if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
-
-        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
+        if (cls instanceof MetaClass meta) cls = meta.getRealClass();
+        if (cls instanceof PrependedModule prep) cls = prep.getOrigin();
 
         return cls;
     }
@@ -323,6 +395,7 @@ public abstract class DynamicMethod {
 
     /**
      * Get the original owner of this method/
+     * @return the module method was defined in
      */
     public RubyModule getDefinedClass() {
         RubyModule definedClass = this.definedClass;
@@ -334,6 +407,7 @@ public abstract class DynamicMethod {
 
     /**
      * Set the defining class for this method, as when restructuring hierarchy for prepend.
+     * @param definedClass that method was defined in
      */
     public void setDefinedClass(RubyModule definedClass) {
         this.definedClass = definedClass;
@@ -380,14 +454,20 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Retrieve the arity of this method, used for reporting arity to Ruby
-     * code. This arity may or may not reflect the actual specific or variable
-     * arities of the referenced method.
+     * Retrieve the signature of this method.
      *
-     * @return The arity of the method, as reported to Ruby consumers.
+     * @return the signature
      */
-    public Arity getArity() {
-        return Arity.optional();
+    public Signature getSignature() {
+        return Signature.OPTIONAL;
+    }
+
+    /**
+     * The signature arity reports. Usually {@link #getSignature()}; a method defined from a block reports the
+     * block's arity signature (see {@link org.jruby.runtime.BlockBody#getAritySignature()}).
+     */
+    public Signature getAritySignature() {
+        return getSignature();
     }
 
     /**
@@ -409,6 +489,8 @@ public abstract class DynamicMethod {
         private final boolean statik;
         private final boolean java;
         private Method reflected;
+        private MethodHandle handle;
+        private boolean notFound;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -466,8 +548,47 @@ public abstract class DynamicMethod {
             try {
                 return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
+                this.notFound = true;
                 throw new RuntimeException(e);
             }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public Method getMethodQuiet() {
+            Method reflected = this.reflected;
+            if (reflected != null || notFound) return reflected;
+            try {
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+            } catch (Exception e) {
+                this.notFound = true;
+                return null;
+            }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public MethodHandle getHandleQuiet(MethodHandles.Lookup lookup) {
+            MethodHandle handle = this.handle;
+            if (handle != null || notFound) return null;
+
+            Method reflected = getMethodQuiet();
+            try {
+                if (reflected != null) return lookup.unreflect(reflected);
+            } catch (Exception e) {
+                this.notFound = true;
+            }
+            return null;
         }
 
         @Override
@@ -496,7 +617,7 @@ public abstract class DynamicMethod {
 
     /**
      * Get the "handle" associated with this DynamicMethod.
-     * 
+     *
      * @return the handle
      */
     public Object getHandle() {
@@ -516,6 +637,7 @@ public abstract class DynamicMethod {
      * Whether this method is "not implemented". This is
      * primarily to support Ruby 1.9's behavior of respond_to? yielding false if
      * the feature in question is unsupported (but still having the method defined).
+     * @return is this a method which is marked as not implemented
      */
     public boolean isNotImplemented() {
         return (flags & NOTIMPL_FLAG) == NOTIMPL_FLAG;
@@ -523,13 +645,19 @@ public abstract class DynamicMethod {
     
     /**
      * Additional metadata about this method.
+     * @return method data (defined in sub classes)
      */
     public MethodData getMethodData() {
         return MethodData.NULL;
     }
+
+    public Collection<String> getInstanceVariableNames() {
+        return Collections.EMPTY_LIST;
+    }
     
     /**
      * Set whether this method is "not implemented".
+     * @param setNotImplemented is this not implement or not
      */
     public void setNotImplemented(boolean setNotImplemented) {
         if (setNotImplemented) {
@@ -544,34 +672,66 @@ public abstract class DynamicMethod {
     }
 
     @Deprecated
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        this(implementationClass, visibility);
+    public void adjustAliasCount(int delta) {
+        aliased = delta > 0;
     }
 
     @Deprecated
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
-        this(implementationClass, visibility, name);
+    public int getAliasCount() {
+        return this.aliased ? 1 : 0;
     }
 
-    @Deprecated
-    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        init(implementationClass, visibility);
+    public void setAliased() {
+        this.aliased = true;
     }
 
-    @Deprecated
-    public CallConfiguration getCallConfig() {
-        return CallConfiguration.FrameNoneScopeNone;
-    }
-
-    @Deprecated
-    public void setCallConfig(CallConfiguration callConfig) {
+    public boolean isAliased() {
+        return this.aliased;
     }
 
     /**
-     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
+     * The Coverage call counter attached to this entry, or null when its calls are not counted.
      */
-    @Deprecated
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        this(implementationClass, visibility, "(anonymous)");
+    public MethodCoverage getMethodCoverage() {
+        return methodCoverage;
+    }
+
+    public void setMethodCoverage(MethodCoverage methodCoverage) {
+        this.methodCoverage = methodCoverage;
+    }
+
+    /**
+     * Pass this entry's Coverage counter, if any, to the body about to run on this thread. Every Ruby-level call
+     * path calls this. ReceiveMethodCoverageInstr is the other end. No-op when the entry has no counter.
+     */
+    protected final void prepareMethodCoverage(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null) context.setPendingMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * Count a call whose body is skipped. ConcreteJavaProxy skips the initialize of a Java subclass when it is a
+     * plain super that forwards its arguments. MRI still fires CALL for it. Callers have checked the arity already.
+     */
+    public final void coverElidedCall(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null && context.runtime.getCoverageData().isRunning()) methodCoverage.cover();
+    }
+
+    /**
+     * Indicates the method will behave like a ruby2 keywords accepting method.
+     * This must be a Ruby implementation to work.  See Module#ruby2_keywords
+     * for information on the semantics of a method which is marked this way.
+     */
+    public void setRuby2Keywords() {
+        // non-native (Ruby) methods implement this.  We have an empty impl here vs
+        // abstract because we are unsure if any external native extensions happen
+        // to implement their own methods.  If it were abstract that extension would
+        // no longer compile.
+        //
+        // If an external does have their own special method impl AND it is not
+        // a native (Java) method then it must override this method and handle state.
+        // Our IR subsystem will know by how it is marked to process arguments
+        // in an appropriate way.
     }
 }

@@ -9,18 +9,19 @@ class EqualMatcher
   end
 
   def failure_message
-    ["Expected #{@actual.pretty_inspect}",
-     "to be identical to #{@expected.pretty_inspect}"]
+    ["Expected #{MSpec.format(@actual)}",
+     "to be identical to #{MSpec.format(@expected)}"]
   end
 
   def negative_failure_message
-    ["Expected #{@actual.pretty_inspect}",
-     "not to be identical to #{@expected.pretty_inspect}"]
+    ["Expected #{MSpec.format(@actual)}",
+     "not to be identical to #{MSpec.format(@expected)}"]
   end
 end
 
 module MSpecMatchers
   private def equal(expected)
+    MSpec.deprecate __method__, '.should.equal?'
     EqualMatcher.new(expected)
   end
 end

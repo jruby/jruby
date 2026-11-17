@@ -32,24 +32,19 @@ package org.jruby.management;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
-import java.util.Arrays;
-import java.util.stream.Stream;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.BacktraceData;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Format;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 
 public class Runtime implements RuntimeMBean {
     private final SoftReference<Ruby> ruby;
 
-    private static final StackWalker WALKER = StackWalker.getInstance();
+    private static final StackWalker WALKER = ThreadContext.WALKER;
 
     public Runtime(Ruby ruby) {
         this.ruby = new SoftReference<Ruby>(ruby);
@@ -135,7 +130,6 @@ public class Runtime implements RuntimeMBean {
                     result[0] = ruby.get().evalScriptlet(code).toString();
                 } catch (RaiseException re) {
                     result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException(), false);
-                    // ruby.get().getGlobalVariables().set("$!", oldExc); // Restore $!
                 } catch (Throwable t) {
                     StringWriter sw = new StringWriter();
                     t.printStackTrace(new PrintWriter(sw));

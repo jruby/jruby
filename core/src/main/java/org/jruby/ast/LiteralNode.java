@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 
 /**
@@ -19,10 +18,10 @@ import org.jruby.util.ByteList;
  * Used by alias and undef.
  */
 public class LiteralNode extends Node implements InvisibleNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
-    public LiteralNode(ISourcePosition position, RubySymbol name) {
-        super(position, false);
+    public LiteralNode(int line, RubySymbol name) {
+        super(line, false);
         this.name = name;
     }
 

@@ -1,3 +1,0 @@
-windows(JRUBY-4445):FileTest.identical? returns true if both named files are identical
-windows:FileTest.identical? returns true for a file and its link
-windows:FileTest.identical? accepts an object that has a #to_path method

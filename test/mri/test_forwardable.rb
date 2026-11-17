@@ -3,6 +3,7 @@ require 'test/unit'
 require 'forwardable'
 
 class TestForwardable < Test::Unit::TestCase
+  INTEGER = 42
   RECEIVER = BasicObject.new
   RETURNED1 = BasicObject.new
   RETURNED2 = BasicObject.new
@@ -15,15 +16,43 @@ class TestForwardable < Test::Unit::TestCase
     def delegated2
       RETURNED2
     end
+
+    def delegated1_kw(**kw)
+      [RETURNED1, kw]
+    end
   end
 
   def test_def_instance_delegator
     %i[def_delegator def_instance_delegator].each do |m|
+      ret = nil
       cls = forwardable_class do
-        __send__ m, :@receiver, :delegated1
+        ret = __send__ m, :@receiver, :delegated1
       end
 
       assert_same RETURNED1, cls.new.delegated1
+      assert_equal :delegated1, ret
+    end
+  end
+
+  def test_def_instance_delegator_constant
+    %i[def_delegator def_instance_delegator].each do |m|
+      cls = forwardable_class do
+        __send__ m, 'TestForwardable::INTEGER', :to_i
+      end
+
+      assert_equal 42, cls.new.to_i
+    end
+  end
+
+  def test_def_instance_delegator_kw
+    %i[def_delegator def_instance_delegator].each do |m|
+      cls = forwardable_class do
+        __send__ m, :@receiver, :delegated1_kw
+      end
+
+      ary = cls.new.delegated1_kw b: 1
+      assert_same RETURNED1, ary[0]
+      assert_equal({b: 1}, ary[1])
     end
   end
 
@@ -96,6 +125,18 @@ class TestForwardable < Test::Unit::TestCase
     end
   end
 
+  def test_def_instance_delegators_send_id
+    %i[def_delegators def_instance_delegators].each do |m|
+      cls = forwardable_class do
+        attr_reader :receiver
+        __send__ m, :@receiver, :__send__, :__id__
+      end
+
+      assert_not_equal cls.new.__id__, cls.new.receiver.__id__
+      assert_not_equal cls.new.__send__(:__id__), cls.new.receiver.__send__(:__id__)
+    end
+  end
+
   def test_instance_delegate
     %i[delegate instance_delegate].each do |m|
       cls = forwardable_class do
@@ -146,11 +187,13 @@ class TestForwardable < Test::Unit::TestCase
 
   def test_class_single_delegator
     %i[def_delegator def_single_delegator].each do |m|
+      ret = nil
       cls = single_forwardable_class do
-        __send__ m, :@receiver, :delegated1
+        ret = __send__ m, :@receiver, :delegated1
       end
 
       assert_same RETURNED1, cls.delegated1
+      assert_equal :delegated1, ret
     end
   end
 
@@ -204,6 +247,18 @@ class TestForwardable < Test::Unit::TestCase
     end
   end
 
+  def test_obj_single_delegators_send_id
+    %i[def_delegators def_single_delegators].each do |m|
+      obj = single_forwardable_object do
+        singleton_class.__send__ :attr_reader, :receiver
+        __send__ m, :@receiver, :__send__, :__id__
+      end
+
+      assert_not_equal obj.__id__, obj.receiver.__id__
+      assert_not_equal obj.__send__(:__id__), obj.receiver.__send__(:__id__)
+    end
+  end
+
   def test_obj_single_delegate
     %i[delegate single_delegate].each do |m|
       obj = single_forwardable_object do
@@ -251,7 +306,7 @@ class TestForwardable < Test::Unit::TestCase
 
   def test_basicobject_subclass
     bug11616 = '[ruby-core:71176] [Bug #11616]'
-    assert_raise_with_message(NameError, /`bar'/, bug11616) {
+    assert_raise_with_message(NameError, /[`']bar'/, bug11616) {
       Foo2.new.baz
     }
   end
@@ -294,6 +349,14 @@ class TestForwardable < Test::Unit::TestCase
     assert_warn(/forwarding to private method/) do
       assert_equal(:foo, cls.new.bar)
     end
+  end
+
+  def test_non_module
+    str = String.new
+    str.extend Forwardable
+    str.instance_variable_set("@h", 42)
+    str.def_delegator("@h", :to_s, :forty_two)
+    assert_equal("42", str.forty_two)
   end
 
   private

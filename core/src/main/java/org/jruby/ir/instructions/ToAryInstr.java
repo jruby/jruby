@@ -3,11 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -29,7 +29,7 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
     }
 
     @Override
-    public boolean canBeDeletedFromScope(IRScope s) {
+    public boolean canBeDeletedFromScope(FullInterpreterContext fic) {
         // This is an instruction that can be safely deleted
         // since it is inserted by JRuby to facilitate other operations
         // and has no real side effects. Currently, this has been marked
@@ -38,7 +38,7 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
     }
 
     @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         Operand a = getArray().getValue(valueMap);
         return a instanceof Array ? a : null;
@@ -47,12 +47,6 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
     @Override
     public Instr clone(CloneInfo ii) {
         return new ToAryInstr((Variable) result.cloneForInlining(ii), getArray().cloneForInlining(ii));
-    }
-
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getArray());
     }
 
     public static ToAryInstr decode(IRReaderDecoder d) {

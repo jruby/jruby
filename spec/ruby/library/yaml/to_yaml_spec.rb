@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
-require_relative 'fixtures/common'
 require_relative 'fixtures/example_class'
+
+require 'yaml'
 
 describe "Object#to_yaml" do
 
@@ -12,36 +13,44 @@ describe "Object#to_yaml" do
     { "a" => "b"}.to_yaml.should match_yaml("--- \na: b\n")
   end
 
-  it "returns the YAML representation of a Class object" do
+  it "returns the YAML representation of an object" do
     YAMLSpecs::Example.new("baz").to_yaml.should match_yaml("--- !ruby/object:YAMLSpecs::Example\nname: baz\n")
+  end
+
+  it "returns the YAML representation of a Class object" do
+    YAMLSpecs::Example.to_yaml.should match_yaml("--- !ruby/class 'YAMLSpecs::Example'\n")
+  end
+
+  it "returns the YAML representation of a Module object" do
+    Enumerable.to_yaml.should match_yaml("--- !ruby/module 'Enumerable'\n")
   end
 
   it "returns the YAML representation of a Date object" do
     require 'date'
-    Date.parse('1997/12/30').to_yaml.should match_yaml("--- 1997-12-30\n")
+    Date.new(1997, 12, 30).to_yaml.should match_yaml("--- 1997-12-30\n")
   end
 
   it "returns the YAML representation of a FalseClass" do
     false_klass = false
-    false_klass.should be_kind_of(FalseClass)
+    false_klass.should.is_a?(FalseClass)
     false_klass.to_yaml.should match_yaml("--- false\n")
   end
 
   it "returns the YAML representation of a Float object" do
     float = 1.2
-    float.should be_kind_of(Float)
+    float.should.is_a?(Float)
     float.to_yaml.should match_yaml("--- 1.2\n")
   end
 
   it "returns the YAML representation of an Integer object" do
     int = 20
-    int.should be_kind_of(Integer)
+    int.should.is_a?(Integer)
     int.to_yaml.should match_yaml("--- 20\n")
   end
 
   it "returns the YAML representation of a NilClass object" do
     nil_klass = nil
-    nil_klass.should be_kind_of(NilClass)
+    nil_klass.should.is_a?(NilClass)
     nil_klass.to_yaml.should match_yaml("--- \n")
   end
 
@@ -56,6 +65,13 @@ describe "Object#to_yaml" do
   it "returns the YAML representation of a Struct object" do
     Person = Struct.new(:name, :gender)
     Person.new("Jane", "female").to_yaml.should match_yaml("--- !ruby/struct:Person\nname: Jane\ngender: female\n")
+  ensure
+    Object.send(:remove_const, :Person)
+  end
+
+  it "returns the YAML representation of an unnamed Struct object" do
+    person = Struct.new(:name, :gender)
+    person.new("Jane", "female").to_yaml.should match_yaml("--- !ruby/struct\nname: Jane\ngender: female\n")
   end
 
   it "returns the YAML representation of a Symbol object" do
@@ -68,20 +84,20 @@ describe "Object#to_yaml" do
 
   it "returns the YAML representation of a TrueClass" do
     true_klass = true
-    true_klass.should be_kind_of(TrueClass)
+    true_klass.should.is_a?(TrueClass)
     true_klass.to_yaml.should match_yaml("--- true\n")
   end
 
   it "returns the YAML representation of a Error object" do
-    StandardError.new("foobar").to_yaml.should match_yaml("--- !ruby/exception:StandardError\nmessage: foobar\n")
+    StandardError.new("foobar").to_yaml.should match_yaml("--- !ruby/exception:StandardError\nmessage: foobar\nbacktrace: \n")
   end
 
   it "returns the YAML representation for Range objects" do
     yaml = Range.new(1,3).to_yaml
-    yaml.include?("!ruby/range").should be_true
-    yaml.include?("begin: 1").should be_true
-    yaml.include?("end: 3").should be_true
-    yaml.include?("excl: false").should be_true
+    yaml.include?("!ruby/range").should == true
+    yaml.include?("begin: 1").should == true
+    yaml.include?("end: 3").should == true
+    yaml.include?("excl: false").should == true
   end
 
   it "returns the YAML representation of numeric constants" do

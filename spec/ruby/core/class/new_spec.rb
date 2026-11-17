@@ -7,7 +7,7 @@ describe "Class.new with a block given" do
     klass = Class.new do
       self_in_block = self
     end
-    self_in_block.should equal klass
+    self_in_block.should.equal? klass
   end
 
   it "uses the given block as the class' body" do
@@ -70,11 +70,11 @@ describe "Class.new" do
   it "raises a TypeError if passed a metaclass" do
     obj = mock("Class.new metaclass")
     meta = obj.singleton_class
-    lambda { Class.new meta }.should raise_error(TypeError)
+    -> { Class.new meta }.should.raise(TypeError)
   end
 
   it "creates a class without a name" do
-    Class.new.name.should be_nil
+    Class.new.name.should == nil
   end
 
   it "creates a class that can be given a name by assigning it to a constant" do
@@ -83,6 +83,8 @@ describe "Class.new" do
     a = Class.new
     MyClass::NestedClass = a
     MyClass::NestedClass.name.should == "MyClass::NestedClass"
+  ensure
+    Object.send(:remove_const, :MyClass)
   end
 
   it "sets the new class' superclass to the given class" do
@@ -95,12 +97,13 @@ describe "Class.new" do
   end
 
   it "raises a TypeError when given a non-Class" do
-    error_msg = /superclass must be a Class/
-    lambda { Class.new("")         }.should raise_error(TypeError, error_msg)
-    lambda { Class.new(1)          }.should raise_error(TypeError, error_msg)
-    lambda { Class.new(:symbol)    }.should raise_error(TypeError, error_msg)
-    lambda { Class.new(mock('o'))  }.should raise_error(TypeError, error_msg)
-    lambda { Class.new(Module.new) }.should raise_error(TypeError, error_msg)
+    error_msg = /superclass must be a.*Class/
+    -> { Class.new("")              }.should.raise(TypeError, error_msg)
+    -> { Class.new(1)               }.should.raise(TypeError, error_msg)
+    -> { Class.new(:symbol)         }.should.raise(TypeError, error_msg)
+    -> { Class.new(mock('o'))       }.should.raise(TypeError, error_msg)
+    -> { Class.new(Module.new)      }.should.raise(TypeError, error_msg)
+    -> { Class.new(BasicObject.new) }.should.raise(TypeError, error_msg)
   end
 end
 
@@ -126,7 +129,7 @@ describe "Class#new" do
       end
     end
 
-    klass.new.initialized?.should == true
+    klass.new.should.initialized?
     klass.new(1, 2, 3).args.should == [1, 2, 3]
   end
 
@@ -138,8 +141,8 @@ describe "Class#new" do
     end
 
     instance = klass.new
-    instance.should be_kind_of klass
-    instance.class.should equal klass
+    instance.should.is_a? klass
+    instance.class.should.equal? klass
   end
 
   it "passes the block to #initialize" do

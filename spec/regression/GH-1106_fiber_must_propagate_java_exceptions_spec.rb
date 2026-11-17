@@ -3,19 +3,19 @@
 describe "A Fiber" do
   describe "that sees a Java exception raised all the way out of its body" do
     it "propagates that exception to any resuming thread" do
-      f = Fiber.new { raise java.lang.Exception.new }
+      f = Fiber.new { raise java.lang.IllegalStateException.new('TEST') }
 
       expect do
         f.resume
-      end.to raise_error(java.lang.Exception)
+      end.to raise_error(java.lang.IllegalStateException)
     end
 
     it "shuts down its internal queue so no further resumes are possible" do
-      f = Fiber.new { raise java.lang.Exception.new }
+      f = Fiber.new { raise java.lang.IllegalStateException.new('TEST') }
 
       begin 
         f.resume
-      rescue java.lang.Exception
+      rescue java.lang.IllegalStateException
       end
 
       expect do
@@ -41,4 +41,4 @@ describe "A Fiber" do
       expect(t.status).to eq(false) # dead
     end
   end
-end if RUBY_VERSION >= "1.9"
+end

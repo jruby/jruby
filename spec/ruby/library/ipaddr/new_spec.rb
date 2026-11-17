@@ -3,9 +3,9 @@ require 'ipaddr'
 
 describe "IPAddr#new" do
   it "initializes IPAddr" do
-    lambda{ IPAddr.new("3FFE:505:ffff::/48") }.should_not raise_error
-    lambda{ IPAddr.new("0:0:0:1::")          }.should_not raise_error
-    lambda{ IPAddr.new("2001:200:300::/48")  }.should_not raise_error
+    ->{ IPAddr.new("3FFE:505:ffff::/48") }.should_not.raise
+    ->{ IPAddr.new("0:0:0:1::")          }.should_not.raise
+    ->{ IPAddr.new("2001:200:300::/48")  }.should_not.raise
   end
 
   it "initializes IPAddr ipv6 address with short notation" do
@@ -27,8 +27,8 @@ describe "IPAddr#new" do
     a.to_s.should == "3ffe:505:2::"
     a.to_string.should == "3ffe:0505:0002:0000:0000:0000:0000:0000"
     a.family.should == Socket::AF_INET6
-    a.ipv4?.should == false
-    a.ipv6?.should == true
+    a.should_not.ipv4?
+    a.should.ipv6?
     a.inspect.should == "#<IPAddr: IPv6:3ffe:0505:0002:0000:0000:0000:0000:0000/ffff:ffff:ffff:0000:0000:0000:0000:0000>"
   end
 
@@ -51,8 +51,8 @@ describe "IPAddr#new" do
     a.to_s.should == "192.168.1.2"
     a.to_string.should == "192.168.1.2"
     a.family.should == Socket::AF_INET
-    a.ipv4?.should == true
-    a.ipv6?.should == false
+    a.should.ipv4?
+    a.should_not.ipv6?
   end
 
   it "initializes IPAddr ipv4 address with / subnet notation" do
@@ -79,15 +79,30 @@ describe "IPAddr#new" do
 
   it "raises on incorrect IPAddr strings" do
     [
-      ["fe80::1%fxp0"],
       ["::1/255.255.255.0"],
       [IPAddr.new("::1").to_i],
       ["::ffff:192.168.1.2/120", Socket::AF_INET],
       ["[192.168.1.2]/120"],
     ].each { |args|
-      lambda{
+      ->{
         IPAddr.new(*args)
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     }
+  end
+
+  describe("bracketed IPv6 address with a prefix length") do
+    version_is(IPAddr::VERSION, "1.3"..."1.4") do # ruby_version_is "4.1"..."4.2"
+      it "is warned" do
+        -> {
+          a = IPAddr.new("[2001:200:300::]/48")
+        }.should output(nil, /is an invalid address/)
+      end
+    end
+
+    version_is(IPAddr::VERSION, "1.4") do # ruby_version_is "4.2"
+      it "is an invalid address" do
+        -> { IPAddr.new("[2001:200:300::]/48") }.should.raise(IPAddr::InvalidAddressError)
+      end
+    end
   end
 end

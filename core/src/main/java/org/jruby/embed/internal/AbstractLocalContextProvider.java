@@ -33,10 +33,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
-/**
- *
- * @author Yoko Harada <yokolet@gmail.com>
- */
 public abstract class AbstractLocalContextProvider implements LocalContextProvider {
 
     protected final RubyInstanceConfig config;

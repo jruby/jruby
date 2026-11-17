@@ -1,1 +1,2 @@
-fails:Assigning an anonymous module to a constant does not set the name of a module scoped by an anonymous module
+fails(low priority excluded from JRuby 10):The module keyword does not reopen a module included in Object
+fails:The module keyword raises a TypeError if the constant is a Class

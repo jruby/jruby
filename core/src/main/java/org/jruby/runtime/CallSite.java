@@ -64,6 +64,19 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum);
+
+    /**
+     * Call the site's method against the target object, passing a literal long
+     * value. This version does not check visibility.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param self the target object to call against
+     * @param fixnum the literal long value to pass
+     * @return the result of the call
+     */
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, long fixnum) {
+        return call(context, self, self, fixnum);
+    }
     
     /**
      * Call the site's method against the target object, passing a literal double
@@ -76,6 +89,19 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote);
+
+    /**
+     * Call the site's method against the target object, passing a literal double
+     * value. This version does not check visibility.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param self the target object to call against
+     * @param flote the literal double value to pass
+     * @return the result of the call
+     */
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, double flote) {
+        return call(context, self, self, flote);
+    }
     
     // no block
 
@@ -154,7 +180,7 @@ public abstract class CallSite {
     // with block pass
     /**
      * Call the site's method against the target object passing no arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -166,7 +192,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -179,7 +205,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing two arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -193,7 +219,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing three arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -208,7 +234,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -221,7 +247,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      * 
      * As a "varargs" method, this will use the length of the args array to
      * dispatch to the correct arity call, rather than dispatching unconditionally

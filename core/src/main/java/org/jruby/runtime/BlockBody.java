@@ -50,7 +50,7 @@ import java.lang.invoke.MethodHandles;
 public abstract class BlockBody {
 
     protected final Signature signature;
-    protected volatile MethodHandle testBlockBody;
+    protected MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
@@ -60,12 +60,13 @@ public abstract class BlockBody {
         return signature;
     }
 
-    public EvalType getEvalType()  {
-        return null; // method should be abstract - isn't due compatibility
-    }
-
-    public void setEvalType(EvalType evalType) {
-        // NOOP - but "real" block bodies should track their eval-type
+    /**
+     * The signature arity reports. Usually {@link #getSignature()}, which also decides how a yielded array is
+     * spread; a body whose arity differs from its yield behavior overrides this. Internal checks such as yield
+     * spreading and Java overload selection keep using {@link #getSignature()}.
+     */
+    public Signature getAritySignature() {
+        return getSignature();
     }
 
     public boolean canCallDirect() {
@@ -97,7 +98,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
         }
     }
 
@@ -105,7 +106,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, blockArg);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
         }
     }
 
@@ -121,8 +122,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, args, self);
         } else {
-            IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
-            return doYield(context, block, preppedValue, self);
+            return doYield(context, block, args, self);
         }
     }
 
@@ -145,13 +145,13 @@ public abstract class BlockBody {
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        return yield(context, block, args, self);
+        return this.yield(context, block, args, self);
     }
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
-        return yield(context, block, value);
+        return this.yield(context, block, value);
     }
 
     public IRubyObject call(ThreadContext context, Block block) {
@@ -159,7 +159,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
         }
     }
 
@@ -171,7 +171,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, null, null);
         } else {
-            return yield(context, block, null);
+            return this.yield(context, block, null);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0) {
@@ -179,7 +179,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block unusedBlock) {
@@ -190,7 +190,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, new IRubyObject[] { arg0 }, null);
         } else {
-            return yield(context, block, arg0);
+            return this.yield(context, block, arg0);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
@@ -198,7 +198,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block unusedBlock) {
@@ -209,7 +209,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, new IRubyObject[] { arg0, arg1 }, null);
         } else {
-            return yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
+            return this.yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
@@ -217,7 +217,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
         } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+            return this.yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
         }
     }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
@@ -228,23 +228,13 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
         } else {
-            return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+            return this.yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
         }
     }
 
 
     public abstract StaticScope getStaticScope();
     public abstract void setStaticScope(StaticScope newScope);
-
-    /**
-     * What is the arity of this block?
-     *
-     * @return the arity
-     */
-    @Deprecated
-    public Arity arity() {
-        return signature.arity();
-    }
 
     /**
      * Is the current block a real yield'able block instead a null one
@@ -265,19 +255,18 @@ public abstract class BlockBody {
      */
     public abstract int getLine();
 
+    /**
+     * Is this block represented by Ruby code?
+     */
+    public boolean isRubyBlock() {
+        return false;
+    }
+
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         if (type == Block.Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        } else {
-            // SSS FIXME: How is it even possible to "call" a NORMAL block?
-            // I thought only procs & lambdas can be called, and blocks are yielded to.
-            if (args.length == 1) {
-                // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature, type == Block.Type.NORMAL && args[0] instanceof RubyArray);
-            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
-                // discard excess arguments
-                args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
-            }
+            signature.checkArity(context, args);
+        } else if (args.length == 1) {
+            args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature);
         }
 
         return args;

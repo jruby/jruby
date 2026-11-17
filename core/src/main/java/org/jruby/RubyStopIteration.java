@@ -32,7 +32,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 
 /**
  /**
@@ -45,16 +49,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="StopIteration", parent="IndexError")
 public class RubyStopIteration extends RubyIndexError {
 
-    static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, (runtime1, klass) -> new RubyStopIteration(runtime1, klass));
-        StopIteration.defineAnnotatedMethods(RubyStopIteration.class);
-        return StopIteration;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "StopIteration", IndexError, RubyStopIteration::new).
+                defineMethods(context, RubyStopIteration.class);
     }
 
     public static RubyStopIteration newInstance(ThreadContext context, IRubyObject result, String message) {
-        final Ruby runtime = context.runtime;
-        RubyClass StopIteration = runtime.getStopIteration();
-        final IRubyObject msg = message == null ? context.nil : runtime.newString(message);
+        RubyClass StopIteration = context.runtime.getStopIteration();
+        final IRubyObject msg = message == null ? context.nil : newString(context, message);
         RubyStopIteration instance = (RubyStopIteration)
                 StopIteration.newInstance(context, msg, Block.NULL_BLOCK);
         instance.result = result;
@@ -77,8 +79,19 @@ public class RubyStopIteration extends RubyIndexError {
         return result == null ? getRuntime().getNil() : result;
     }
 
+    @JRubyMethod(name = "__set_result__", visibility = Visibility.PRIVATE)
+    public IRubyObject __set_result__(IRubyObject result) {
+        return this.result = result;
+    }
+
     public void setResult(IRubyObject result) {
         this.result = result;
     }
 
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyStopIteration exception = (RubyStopIteration)clone;
+        exception.result = result;
+    }
 }

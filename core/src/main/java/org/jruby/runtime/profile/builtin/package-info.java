@@ -4,5 +4,4 @@
  *
  * @author Andre Kullmann
  */
-@Deprecated
 package org.jruby.runtime.profile.builtin;

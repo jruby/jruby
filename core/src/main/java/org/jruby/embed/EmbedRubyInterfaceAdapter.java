@@ -33,7 +33,7 @@ package org.jruby.embed;
  * This interface defines a method to get a instance of requested interface, which
  * is implemented in Ruby.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface EmbedRubyInterfaceAdapter {
     /**

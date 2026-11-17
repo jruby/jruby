@@ -19,6 +19,29 @@ describe :io_copy_stream_to_file, shared: true do
     File.read(@to_name).should == "Line one"
   end
 
+  it "copies nothing when given 0 bytes length to read" do
+    IO.copy_stream(@object.from, @to_name, 0).should == 0
+    File.read(@to_name).should == ""
+  end
+
+  it "calls #to_int to convert length" do
+    length = mock("length")
+    length.should_receive(:to_int).and_return(8)
+    IO.copy_stream(@object.from, @to_name, length).should == 8
+    File.read(@to_name).should == "Line one"
+  end
+
+  it "raises a TypeError if #to_int does not return an Integer" do
+    length = mock("length")
+    length.should_receive(:to_int).and_return("8")
+    -> { IO.copy_stream(@object.from, @to_name, length) }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError if passed an object that does not respond to #to_int" do
+    length = mock("length")
+    -> { IO.copy_stream(@object.from, @to_name, length) }.should.raise(TypeError)
+  end
+
   it "calls #to_path to convert on object to a file name" do
     obj = mock("io_copy_stream_to")
     obj.should_receive(:to_path).and_return(@to_name)
@@ -31,7 +54,23 @@ describe :io_copy_stream_to_file, shared: true do
     obj = mock("io_copy_stream_to")
     obj.should_receive(:to_path).and_return(1)
 
-    lambda { IO.copy_stream(@object.from, obj) }.should raise_error(TypeError)
+    -> { IO.copy_stream(@object.from, obj) }.should.raise(TypeError)
+  end
+
+  platform_is :darwin do
+    it "writes to a file when given a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+      utf8_path = tmp("io_read_utf8_path_\u{3042}.txt")
+      # Can fail with UndefinedConversionError if tmp path has non-Shift_JIS chars (e.g. Emojis, Hangul, Cyrillic, accented letters)
+      non_utf8_path = utf8_path.encode(Encoding::Windows_31J)
+
+      begin
+        IO.copy_stream(@object.from, non_utf8_path)
+        File.read(utf8_path).should == @content
+      ensure
+        rm_r utf8_path
+        rm_r non_utf8_path
+      end
+    end
   end
 end
 
@@ -40,6 +79,29 @@ describe :io_copy_stream_to_file_with_offset, shared: true do
     it "copies only length bytes from the offset" do
       IO.copy_stream(@object.from, @to_name, 8, 4).should == 8
       File.read(@to_name).should == " one\n\nLi"
+    end
+
+    it "copies nothing when given 0 bytes length to read" do
+      IO.copy_stream(@object.from, @to_name, 0, 4).should == 0
+      File.read(@to_name).should == ""
+    end
+
+    it "calls #to_int to convert the offset" do
+      offset = mock("offset")
+      offset.should_receive(:to_int).and_return(4)
+      IO.copy_stream(@object.from, @to_name, 8, offset).should == 8
+      File.read(@to_name).should == " one\n\nLi"
+    end
+
+    it "raises a TypeError if #to_int does not return an Integer" do
+      offset = mock("offset")
+      offset.should_receive(:to_int).and_return("4")
+      -> { IO.copy_stream(@object.from, @to_name, 8, offset) }.should.raise(TypeError)
+    end
+
+    it "raises a TypeError if passed an object that does not respond to #to_int" do
+      offset = mock("offset")
+      -> { IO.copy_stream(@object.from, @to_name, 8, offset) }.should.raise(TypeError)
     end
   end
 end
@@ -69,19 +131,45 @@ describe :io_copy_stream_to_io, shared: true do
   end
 
   it "raises an IOError if the destination IO is not open for writing" do
-    @to_io.close
-    @to_io = new_io @to_name, "r"
-    lambda { IO.copy_stream @object.from, @to_io }.should raise_error(IOError)
+    to_io = new_io __FILE__, "r"
+    begin
+      -> { IO.copy_stream @object.from, to_io }.should.raise(IOError)
+    ensure
+      to_io.close
+    end
   end
 
   it "does not close the destination IO" do
     IO.copy_stream(@object.from, @to_io)
-    @to_io.closed?.should be_false
+    @to_io.closed?.should == false
   end
 
   it "copies only length bytes when specified" do
     IO.copy_stream(@object.from, @to_io, 8).should == 8
     File.read(@to_name).should == "Line one"
+  end
+
+  it "copies nothing when given 0 bytes length to read" do
+    IO.copy_stream(@object.from, @to_io, 0).should == 0
+    File.read(@to_name).should == ""
+  end
+
+  it "calls #to_int to convert length" do
+    length = mock("length")
+    length.should_receive(:to_int).and_return(8)
+    IO.copy_stream(@object.from, @to_io, length).should == 8
+    File.read(@to_name).should == "Line one"
+  end
+
+  it "raises a TypeError if #to_int does not return an Integer" do
+    length = mock("length")
+    length.should_receive(:to_int).and_return("8")
+    -> { IO.copy_stream(@object.from, @to_io, length) }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError if passed an object that does not respond to #to_int" do
+    length = mock("length")
+    -> { IO.copy_stream(@object.from, @to_io, length) }.should.raise(TypeError)
   end
 end
 
@@ -90,6 +178,29 @@ describe :io_copy_stream_to_io_with_offset, shared: true do
     it "copies only length bytes from the offset" do
       IO.copy_stream(@object.from, @to_io, 8, 4).should == 8
       File.read(@to_name).should == " one\n\nLi"
+    end
+
+    it "copies nothing when given 0 bytes length to read" do
+      IO.copy_stream(@object.from, @to_io, 0, 4).should == 0
+      File.read(@to_name).should == ""
+    end
+
+    it "calls #to_int to convert the offset" do
+      offset = mock("offset")
+      offset.should_receive(:to_int).and_return(4)
+      IO.copy_stream(@object.from, @to_io, 8, offset).should == 8
+      File.read(@to_name).should == " one\n\nLi"
+    end
+
+    it "raises a TypeError if #to_int does not return an Integer" do
+      offset = mock("offset")
+      offset.should_receive(:to_int).and_return("4")
+      -> { IO.copy_stream(@object.from, @to_io, 8, offset) }.should.raise(TypeError)
+    end
+
+    it "raises a TypeError if passed an object that does not respond to #to_int" do
+      offset = mock("offset")
+      -> { IO.copy_stream(@object.from, @to_io, 8, offset) }.should.raise(TypeError)
     end
   end
 end
@@ -109,7 +220,8 @@ describe "IO.copy_stream" do
   end
 
   after :each do
-    rm_r @to_name, @from_bigfile
+    rm_r @to_name if @to_name
+    rm_r @from_bigfile
   end
 
   describe "from an IO" do
@@ -125,12 +237,12 @@ describe "IO.copy_stream" do
     it "raises an IOError if the source IO is not open for reading" do
       @from_io.close
       @from_io = new_io @from_bigfile, "a"
-      lambda { IO.copy_stream @from_io, @to_name }.should raise_error(IOError)
+      -> { IO.copy_stream @from_io, @to_name }.should.raise(IOError)
     end
 
     it "does not close the source IO" do
       IO.copy_stream(@from_io, @to_name)
-      @from_io.closed?.should be_false
+      @from_io.closed?.should == false
     end
 
     platform_is_not :windows do
@@ -164,6 +276,25 @@ describe "IO.copy_stream" do
       it_behaves_like :io_copy_stream_to_io, nil, IOSpecs::CopyStream
       it_behaves_like :io_copy_stream_to_io_with_offset, nil, IOSpecs::CopyStream
     end
+
+    describe "to a Tempfile" do
+      before :all do
+        require 'tempfile'
+      end
+
+      before :each do
+        @to_io = Tempfile.new("rubyspec_copy_stream", encoding: Encoding::BINARY, mode: File::RDONLY)
+        @to_name = @to_io.path
+      end
+
+      after :each do
+        @to_io.close!
+        @to_name = nil # do not rm_r it, already done by Tempfile#close!
+      end
+
+      it_behaves_like :io_copy_stream_to_io, nil, IOSpecs::CopyStream
+      it_behaves_like :io_copy_stream_to_io_with_offset, nil, IOSpecs::CopyStream
+    end
   end
 
   describe "from a file name" do
@@ -183,7 +314,24 @@ describe "IO.copy_stream" do
       obj = mock("io_copy_stream_from")
       obj.should_receive(:to_path).and_return(1)
 
-      lambda { IO.copy_stream(obj, @to_name) }.should raise_error(TypeError)
+      -> { IO.copy_stream(obj, @to_name) }.should.raise(TypeError)
+    end
+
+    platform_is :darwin do
+      it "reads a file when given a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+        utf8_path = tmp("io_read_utf8_path_\u{3042}.txt")
+        # Can fail with UndefinedConversionError if tmp path has non-Shift_JIS chars (e.g. Emojis, Hangul, Cyrillic, accented letters)
+        non_utf8_path = utf8_path.encode(Encoding::Windows_31J)
+
+        begin
+          File.write(utf8_path, @content)
+          IO.copy_stream(non_utf8_path, @to_name)
+          File.read(@to_name).should == @content
+        ensure
+          rm_r utf8_path
+          rm_r non_utf8_path
+        end
+      end
     end
 
     describe "to a file name" do
@@ -217,12 +365,12 @@ describe "IO.copy_stream" do
 
     it "does not close the source IO" do
       IO.copy_stream(@from_io, @to_name)
-      @from_io.closed?.should be_false
+      @from_io.closed?.should == false
     end
 
     platform_is_not :windows do
       it "raises an error when an offset is specified" do
-        lambda { IO.copy_stream(@from_io, @to_name, 8, 4) }.should raise_error(Errno::ESPIPE)
+        -> { IO.copy_stream(@from_io, @to_name, 8, 4) }.should.raise(Errno::ESPIPE)
       end
     end
 
@@ -278,5 +426,80 @@ describe "IO.copy_stream" do
       IO.copy_stream(@io, @to_name)
     end
 
+    it "does not call #read on the source or #write on the destination if zero length is given" do
+      from = mock("io_copy_stream_to_object_zero_length_read")
+      to = mock("io_copy_stream_to_object_zero_length_write")
+      from.should_not_receive(:read)
+      from.should_not_receive(:readpartial)
+      to.should_not_receive(:write)
+      IO.copy_stream(from, to, 0).should == 0
+    end
+  end
+
+  describe "with a destination that does partial reads" do
+    before do
+      @from_out, @from_in = IO.pipe
+      @to_out, @to_in = IO.pipe
+    end
+
+    after do
+      [@from_out, @from_in, @to_out, @to_in].each {|io| io.close rescue nil}
+    end
+
+    it "calls #write repeatedly on the destination Object" do
+      @from_in.write "1234"
+      @from_in.close
+
+      th = Thread.new do
+        IO.copy_stream(@from_out, @to_in)
+      end
+
+      copied = ""
+      4.times do
+        copied += @to_out.read(1)
+      end
+
+      th.join
+
+      copied.should == "1234"
+    end
+
+  end
+end
+
+describe "IO.copy_stream" do
+  it "does not use buffering when writing to STDOUT" do
+    IO.popen([*ruby_exe, fixture(__FILE__ , "copy_in_out.rb")], "r+") do |io|
+      io.write("bar")
+      io.read(3).should == "bar"
+    end
+  end
+end
+
+describe "IO.copy_stream" do
+  context "given length" do
+    it "calls #read/#readpartial with remaining bytes count" do
+      input = +"abcdefghijklmnopqrstuvwxyz"
+      read_maxlens = []
+      from = Object.new
+      from.define_singleton_method(:read) do |maxlen, buf = nil|
+        read_maxlens << maxlen
+        bytes_to_read = read_maxlens.size == 1 ? 5 : maxlen
+        bytes = input.slice!(0, bytes_to_read)
+        buf.replace(bytes) if buf
+        bytes
+      end
+
+      output = +""
+      to = Object.new
+      to.define_singleton_method(:write) do |bytes|
+        output << bytes
+        bytes.bytesize
+      end
+
+      IO.copy_stream(from, to, 12).should == 12
+      read_maxlens.should == [12, 7]
+      output.should == "abcdefghijkl"
+    end
   end
 end

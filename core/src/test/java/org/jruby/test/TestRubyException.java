@@ -34,26 +34,33 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+
 public class TestRubyException extends TestCase {
 
 	private Ruby runtime;
+	private ThreadContext context;
 	private RubyException exception;
 
 	public void setUp() {
 		runtime = Ruby.newInstance();
-		exception = new RubyException(runtime, runtime.getClass("StandardError"), "test");
+		context = runtime.getCurrentContext();
+		exception = new RubyException(runtime, Access.getClass(context, "StandardError"), "test");
 	}
 
 	public void testToJava() {
 		assertNotNull(exception.toJava(Object.class));
-		assertSame(exception, exception.toJava(Object.class));
+		assertSame(exception.toThrowable(), exception.toJava(Object.class));
 
 		Object throwable = exception.toJava(RaiseException.class);
 		assertNotNull(throwable);
@@ -64,11 +71,13 @@ public class TestRubyException extends TestCase {
 	}
 
 	public void testConcreteToJava() {
-		RaiseException raise = runtime.newArgumentError("BLAH");
+		RaiseException raise = argumentError(context, "BLAH");
 		assertSame(raise, raise.getException().toJava(Throwable.class));
 
 		assertNotNull(raise.getException().toJava(Object.class));
-		assertSame(raise.getException(), raise.getException().toJava(Object.class));
+		assertSame(raise, raise.getException().toJava(Object.class));
+
+		assertSame(raise.getException(), raise.getException().toJava(org.jruby.RubyObject.class));
 	}
 
 	public void testPrintBacktrace() {
@@ -81,7 +90,7 @@ public class TestRubyException extends TestCase {
 	}
 
 	public void testPrintNilBacktrace() {
-		exception.set_backtrace(runtime.getNil());
+		exception.set_backtrace(context, context.nil);
 		
 		String[] lines = printError();
 		
@@ -89,7 +98,7 @@ public class TestRubyException extends TestCase {
 	}
 
 	public void testPrintBackTraceWithString() {
-		exception.set_backtrace(RubyArray.newArray(runtime, RubyString.newString(runtime, testLine(0))));
+		exception.set_backtrace(context, RubyArray.newArray(runtime, newString(context, testLine(0))));
 
 		String[] lines = printError();
 
@@ -104,16 +113,17 @@ public class TestRubyException extends TestCase {
 		String output = new String(byteArrayOutputStream.toByteArray());
 		if (output.trim().length() == 0) {
 		    return new String[0];
-	    	} else {
-		    return output.split("\n");
-        	}
+		} else {
+		    return output.split(System.lineSeparator());
+		}
 	}
 
 	private void setBackTrace(int lineCount) {
 		List traceLines = new ArrayList();
-		for (int i=0; i<lineCount; i++)
-			traceLines.add(RubyString.newString(runtime, testLine(i)));
-		exception.set_backtrace(RubyArray.newArray(runtime, traceLines));
+		for (int i=0; i<lineCount; i++) {
+			traceLines.add(newString(context, testLine(i)));
+		}
+		exception.set_backtrace(context, RubyArray.newArray(runtime, traceLines));
 	}
 	
 	private String expectedTraceLine(int index) {

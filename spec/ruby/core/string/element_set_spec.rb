@@ -1,11 +1,12 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 # TODO: Add missing String#[]= specs:
 #   String#[re, idx] = obj
 
-describe "String#[]= with Fixnum index" do
+describe "String#[]= with Integer index" do
   it "replaces the char at idx with other_str" do
     a = "hello"
     a[0] = "bam"
@@ -14,26 +15,16 @@ describe "String#[]= with Fixnum index" do
     a.should == "bamelo"
   end
 
-  it "taints self if other_str is tainted" do
-    a = "hello"
-    a[0] = "".taint
-    a.tainted?.should == true
-
-    a = "hello"
-    a[0] = "x".taint
-    a.tainted?.should == true
-  end
-
   it "raises an IndexError without changing self if idx is outside of self" do
     str = "hello"
 
-    lambda { str[20] = "bam" }.should raise_error(IndexError)
+    -> { str[20] = "bam" }.should.raise(IndexError)
     str.should == "hello"
 
-    lambda { str[-20] = "bam" }.should raise_error(IndexError)
+    -> { str[-20] = "bam" }.should.raise(IndexError)
     str.should == "hello"
 
-    lambda { ""[-1] = "bam" }.should raise_error(IndexError)
+    -> { ""[-1] = "bam" }.should.raise(IndexError)
   end
 
   # Behaviour is verified by matz in
@@ -46,15 +37,15 @@ describe "String#[]= with Fixnum index" do
 
   it "raises IndexError if the string index doesn't match a position in the string" do
     str = "hello"
-    lambda { str['y'] = "bam" }.should raise_error(IndexError)
+    -> { str['y'] = "bam" }.should.raise(IndexError)
     str.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a[0] = "bam" }.should raise_error(frozen_error_class)
+    -> { a[0] = "bam" }.should.raise(FrozenError)
   end
 
   it "calls to_int on index" do
@@ -78,17 +69,17 @@ describe "String#[]= with Fixnum index" do
   end
 
   it "raises a TypeError if other_str can't be converted to a String" do
-    lambda { "test"[1] = []        }.should raise_error(TypeError)
-    lambda { "test"[1] = mock('x') }.should raise_error(TypeError)
-    lambda { "test"[1] = nil       }.should raise_error(TypeError)
+    -> { "test"[1] = []        }.should.raise(TypeError)
+    -> { "test"[1] = mock('x') }.should.raise(TypeError)
+    -> { "test"[1] = nil       }.should.raise(TypeError)
   end
 
-  it "raises a TypeError if passed a Fixnum replacement" do
-    lambda { "abc"[1] = 65 }.should raise_error(TypeError)
+  it "raises a TypeError if passed an Integer replacement" do
+    -> { "abc"[1] = 65 }.should.raise(TypeError)
   end
 
   it "raises an IndexError if the index is greater than character size" do
-    lambda { "あれ"[4] = "a" }.should raise_error(IndexError)
+    -> { "あれ"[4] = "a" }.should.raise(IndexError)
   end
 
   it "calls #to_int to convert the index" do
@@ -100,18 +91,18 @@ describe "String#[]= with Fixnum index" do
     str.should == "あa"
   end
 
-  it "raises a TypeError if #to_int does not return an Fixnum" do
+  it "raises a TypeError if #to_int does not return an Integer" do
     index = mock("string element set")
     index.should_receive(:to_int).and_return('1')
 
-    lambda { "abc"[index] = "d" }.should raise_error(TypeError)
+    -> { "abc"[index] = "d" }.should.raise(TypeError)
   end
 
   it "raises an IndexError if #to_int returns a value out of range" do
     index = mock("string element set")
     index.should_receive(:to_int).and_return(4)
 
-    lambda { "ab"[index] = "c" }.should raise_error(IndexError)
+    -> { "ab"[index] = "c" }.should.raise(IndexError)
   end
 
   it "replaces a character with a multibyte character" do
@@ -134,15 +125,21 @@ describe "String#[]= with Fixnum index" do
 
   it "encodes the String in an encoding compatible with the replacement" do
     str = " ".force_encoding Encoding::US_ASCII
-    rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
+    rep = [160].pack('C').force_encoding Encoding::BINARY
     str[0] = rep
-    str.encoding.should equal(Encoding::ASCII_8BIT)
+    str.encoding.should.equal?(Encoding::BINARY)
+  end
+
+  it "updates the string to a compatible encoding" do
+    str = "  "
+    str[1] = [0xB9].pack("C*")
+    str.encoding.should == Encoding::ASCII_8BIT
   end
 
   it "raises an Encoding::CompatibilityError if the replacement encoding is incompatible" do
     str = "あれ"
     rep = "が".encode Encoding::EUC_JP
-    lambda { str[0] = rep }.should raise_error(Encoding::CompatibilityError)
+    -> { str[0] = rep }.should.raise(Encoding::CompatibilityError)
   end
 end
 
@@ -167,7 +164,7 @@ describe "String#[]= with String index" do
 
   it "raises an IndexError if the search String is not found" do
     str = "abcde"
-    lambda { str["g"] = "h" }.should raise_error(IndexError)
+    -> { str["g"] = "h" }.should.raise(IndexError)
   end
 
   it "replaces characters with a multibyte character" do
@@ -190,15 +187,15 @@ describe "String#[]= with String index" do
 
   it "encodes the String in an encoding compatible with the replacement" do
     str = " ".force_encoding Encoding::US_ASCII
-    rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
+    rep = [160].pack('C').force_encoding Encoding::BINARY
     str[" "] = rep
-    str.encoding.should equal(Encoding::ASCII_8BIT)
+    str.encoding.should.equal?(Encoding::BINARY)
   end
 
   it "raises an Encoding::CompatibilityError if the replacement encoding is incompatible" do
     str = "あれ"
     rep = "が".encode Encoding::EUC_JP
-    lambda { str["れ"] = rep }.should raise_error(Encoding::CompatibilityError)
+    -> { str["れ"] = rep }.should.raise(Encoding::CompatibilityError)
   end
 end
 
@@ -211,7 +208,7 @@ describe "String#[]= with a Regexp index" do
 
   it "raises IndexError if the regexp index doesn't match a position in the string" do
     str = "hello"
-    lambda { str[/y/] = "bam" }.should raise_error(IndexError)
+    -> { str[/y/] = "bam" }.should.raise(IndexError)
     str.should == "hello"
   end
 
@@ -228,7 +225,7 @@ describe "String#[]= with a Regexp index" do
     rep = mock("string element set regexp")
     rep.should_not_receive(:to_str)
 
-    lambda { "abc"[/def/] = rep }.should raise_error(IndexError)
+    -> { "abc"[/def/] = rep }.should.raise(IndexError)
   end
 
   describe "with 3 arguments" do
@@ -241,11 +238,11 @@ describe "String#[]= with a Regexp index" do
       str.should == "axc"
     end
 
-    it "raises a TypeError if #to_int does not return a Fixnum" do
+    it "raises a TypeError if #to_int does not return an Integer" do
       ref = mock("string element set regexp ref")
       ref.should_receive(:to_int).and_return(nil)
 
-      lambda { "abc"[/a(b)/, ref] = "x" }.should raise_error(TypeError)
+      -> { "abc"[/a(b)/, ref] = "x" }.should.raise(TypeError)
     end
 
     it "uses the 2nd of 3 arguments as which capture should be replaced" do
@@ -264,20 +261,20 @@ describe "String#[]= with a Regexp index" do
       rep = mock("string element set regexp")
       rep.should_not_receive(:to_str)
 
-      lambda { "abc"[/a(b)/, 2] = rep }.should raise_error(IndexError)
+      -> { "abc"[/a(b)/, 2] = rep }.should.raise(IndexError)
     end
 
     it "raises IndexError if the specified capture isn't available" do
       str = "aaa bbb ccc"
-      lambda { str[/a (bbb) c/,  2] = "ddd" }.should raise_error(IndexError)
-      lambda { str[/a (bbb) c/, -2] = "ddd" }.should raise_error(IndexError)
+      -> { str[/a (bbb) c/,  2] = "ddd" }.should.raise(IndexError)
+      -> { str[/a (bbb) c/, -2] = "ddd" }.should.raise(IndexError)
     end
 
     describe "when the optional capture does not match" do
       it "raises an IndexError before setting the replacement" do
         str1 = "a b c"
         str2 = str1.dup
-        lambda { str2[/a (b) (Z)?/,  2] = "d" }.should raise_error(IndexError)
+        -> { str2[/a (b) (Z)?/,  2] = "d" }.should.raise(IndexError)
         str2.should == str1
       end
     end
@@ -303,15 +300,15 @@ describe "String#[]= with a Regexp index" do
 
   it "encodes the String in an encoding compatible with the replacement" do
     str = " ".force_encoding Encoding::US_ASCII
-    rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
+    rep = [160].pack('C').force_encoding Encoding::BINARY
     str[/ /] = rep
-    str.encoding.should equal(Encoding::ASCII_8BIT)
+    str.encoding.should.equal?(Encoding::BINARY)
   end
 
   it "raises an Encoding::CompatibilityError if the replacement encoding is incompatible" do
     str = "あれ"
     rep = "が".encode Encoding::EUC_JP
-    lambda { str[/れ/] = rep }.should raise_error(Encoding::CompatibilityError)
+    -> { str[/れ/] = rep }.should.raise(Encoding::CompatibilityError)
   end
 end
 
@@ -361,11 +358,11 @@ describe "String#[]= with a Range index" do
   end
 
   it "raises a RangeError if negative Range begin is out of range" do
-    lambda { "abc"[-4..-2] = "x" }.should raise_error(RangeError)
+    -> { "abc"[-4..-2] = "x" }.should.raise(RangeError, "-4..-2 out of range")
   end
 
   it "raises a RangeError if positive Range begin is greater than String size" do
-    lambda { "abc"[4..2] = "x" }.should raise_error(RangeError)
+    -> { "abc"[4..2] = "x" }.should.raise(RangeError, "4..2 out of range")
   end
 
   it "uses the Range end as an index rather than a count" do
@@ -424,19 +421,19 @@ describe "String#[]= with a Range index" do
 
   it "encodes the String in an encoding compatible with the replacement" do
     str = " ".force_encoding Encoding::US_ASCII
-    rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
+    rep = [160].pack('C').force_encoding Encoding::BINARY
     str[0..1] = rep
-    str.encoding.should equal(Encoding::ASCII_8BIT)
+    str.encoding.should.equal?(Encoding::BINARY)
   end
 
   it "raises an Encoding::CompatibilityError if the replacement encoding is incompatible" do
     str = "あれ"
     rep = "が".encode Encoding::EUC_JP
-    lambda { str[0..1] = rep }.should raise_error(Encoding::CompatibilityError)
+    -> { str[0..1] = rep }.should.raise(Encoding::CompatibilityError)
   end
 end
 
-describe "String#[]= with Fixnum index, count" do
+describe "String#[]= with Integer index, count" do
   it "starts at idx and overwrites count characters before inserting the rest of other_str" do
     a = "hello"
     a[0, 2] = "xx"
@@ -485,16 +482,6 @@ describe "String#[]= with Fixnum index, count" do
     a.should == "hellobob"
   end
 
-  it "taints self if other_str is tainted" do
-    a = "hello"
-    a[0, 0] = "".taint
-    a.tainted?.should == true
-
-    a = "hello"
-    a[1, 4] = "x".taint
-    a.tainted?.should == true
-  end
-
   it "calls #to_int to convert the index and count objects" do
     index = mock("string element set index")
     index.should_receive(:to_int).and_return(-4)
@@ -511,14 +498,14 @@ describe "String#[]= with Fixnum index, count" do
     index = mock("string element set index")
     index.should_receive(:to_int).and_return("1")
 
-    lambda { "abc"[index, 2] = "xyz" }.should raise_error(TypeError)
+    -> { "abc"[index, 2] = "xyz" }.should.raise(TypeError)
   end
 
   it "raises a TypeError if #to_int for count does not return an Integer" do
     count = mock("string element set count")
     count.should_receive(:to_int).and_return("1")
 
-    lambda { "abc"[1, count] = "xyz" }.should raise_error(TypeError)
+    -> { "abc"[1, count] = "xyz" }.should.raise(TypeError)
   end
 
   it "calls #to_str to convert the replacement object" do
@@ -534,23 +521,23 @@ describe "String#[]= with Fixnum index, count" do
     r = mock("string element set replacement")
     r.should_receive(:to_str).and_return(nil)
 
-    lambda { "abc"[1, 1] = r }.should raise_error(TypeError)
+    -> { "abc"[1, 1] = r }.should.raise(TypeError)
   end
 
   it "raises an IndexError if |idx| is greater than the length of the string" do
-    lambda { "hello"[6, 0] = "bob"  }.should raise_error(IndexError)
-    lambda { "hello"[-6, 0] = "bob" }.should raise_error(IndexError)
+    -> { "hello"[6, 0] = "bob"  }.should.raise(IndexError)
+    -> { "hello"[-6, 0] = "bob" }.should.raise(IndexError)
   end
 
   it "raises an IndexError if count < 0" do
-    lambda { "hello"[0, -1] = "bob" }.should raise_error(IndexError)
-    lambda { "hello"[1, -1] = "bob" }.should raise_error(IndexError)
+    -> { "hello"[0, -1] = "bob" }.should.raise(IndexError)
+    -> { "hello"[1, -1] = "bob" }.should.raise(IndexError)
   end
 
   it "raises a TypeError if other_str is a type other than String" do
-    lambda { "hello"[0, 2] = nil  }.should raise_error(TypeError)
-    lambda { "hello"[0, 2] = []   }.should raise_error(TypeError)
-    lambda { "hello"[0, 2] = 33   }.should raise_error(TypeError)
+    -> { "hello"[0, 2] = nil  }.should.raise(TypeError)
+    -> { "hello"[0, 2] = []   }.should.raise(TypeError)
+    -> { "hello"[0, 2] = 33   }.should.raise(TypeError)
   end
 
   it "replaces characters with a multibyte character" do
@@ -584,19 +571,19 @@ describe "String#[]= with Fixnum index, count" do
   end
 
   it "raises an IndexError if the character index is out of range of a multibyte String" do
-    lambda { "あれ"[3, 0] = "り" }.should raise_error(IndexError)
+    -> { "あれ"[3, 0] = "り" }.should.raise(IndexError)
   end
 
   it "encodes the String in an encoding compatible with the replacement" do
     str = " ".force_encoding Encoding::US_ASCII
-    rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
+    rep = [160].pack('C').force_encoding Encoding::BINARY
     str[0, 1] = rep
-    str.encoding.should equal(Encoding::ASCII_8BIT)
+    str.encoding.should.equal?(Encoding::BINARY)
   end
 
   it "raises an Encoding::CompatibilityError if the replacement encoding is incompatible" do
     str = "あれ"
     rep = "が".encode Encoding::EUC_JP
-    lambda { str[0, 1] = rep }.should raise_error(Encoding::CompatibilityError)
+    -> { str[0, 1] = rep }.should.raise(Encoding::CompatibilityError)
   end
 end

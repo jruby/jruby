@@ -1,15 +1,43 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
+
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
 
-import org.jruby.MetaClass;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.SplitSuperCall;
+import org.jruby.internal.runtime.SplitSuperState;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -18,33 +46,59 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CompiledIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod>  {
-    private MethodHandle variable;
 
     private MethodHandle specific;
     private final int specificArity;
+    private final String encodedArgumentDescriptors;
+    private final boolean needsToFindImplementer;
 
-    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass) {
-        this(variable, null, -1, method, visibility, implementationClass);
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Visibility visibility,
+                            RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs, boolean needsToFindImplementer) {
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, encodedArgumentDescriptors, recievesKeywordArgs, needsToFindImplementer);
     }
 
+    // Used by spec:compiler
+    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors) {
+        this(variable, null, -1, method.getId(), method.getLine(), method.getStaticScope(),
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS)));
+    }
+
+    // Used by spec:compiler
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
+                            Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
+        this(variable, specific, specificArity, method.getId(), method.getLine(), method.getStaticScope(),
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS)));
+    }
+
+    // Ruby Class/Module constructor (feels like we should maybe have a subtype here...
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope,
                             Visibility visibility, RubyModule implementationClass) {
-        super(method, visibility, implementationClass);
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, "", false, false);
+    }
 
+    public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, String id, int line,
+                            StaticScope scope, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors, boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+            super(scope, id, line, visibility, implementationClass);
 
-        this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
-        this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
-        this.method.getStaticScope().determineModule();
+        this.specificArity = receivesKeywordArgs ? -1 : specificArity;
+        staticScope.determineModule();
 
-        assert method.hasExplicitCallProtocol();
+        this.encodedArgumentDescriptors = encodedArgumentDescriptors;
+        //assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
 
-        method.compilable = this;
+        this.needsToFindImplementer = needsToFindImplementer;
+
+        // FIXME: inliner breaks with this line commented out
+        // method.compilable = this;
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -56,7 +110,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     public void setVariable(MethodHandle variable) {
-        this.variable = variable;
+        super.setHandle(variable);
     }
 
     public void setSpecific(MethodHandle specific) {
@@ -65,30 +119,24 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return ((IRMethod)method).getArgumentDescriptors();
+        return ArgumentDescriptor.decode(implementationClass.getRuntime(), encodedArgumentDescriptors);
     }
 
     @Override
-    public void completeBuild(DynamicMethod buildResult) {
+    public void completeBuild(ThreadContext context, DynamicMethod buildResult) {
         // unused but part of compilable interface.  jit task uses setVariable and setSpecific to update code.
     }
 
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+    protected void printMethodIR() {
+        // no-op
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        prepareMethodCoverage(context);
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, clazz, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -98,6 +146,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
         try {
@@ -111,6 +160,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
 
         try {
@@ -124,6 +174,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
 
         try {
@@ -137,6 +188,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
 
         try {
@@ -150,8 +202,9 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        prepareMethodCoverage(context);
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -161,6 +214,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        prepareMethodCoverage(context);
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         try {
@@ -174,6 +228,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        prepareMethodCoverage(context);
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
 
         try {
@@ -187,6 +242,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        prepareMethodCoverage(context);
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
 
         try {
@@ -197,9 +253,10 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
             return null; // not reached
         }
     }
-
+    
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        prepareMethodCoverage(context);
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, Block.NULL_BLOCK);
 
         try {
@@ -211,17 +268,22 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         }
     }
 
-    public String getFile() {
-        return method.getFile();
-    }
-
-    public int getLine() {
-        return method.getLine();
+    public boolean needsToFindImplementer() {
+        return needsToFindImplementer;
     }
 
     @Override
-    public String toString() {
-        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
-    }
+    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
+            RubyModule clazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
+        Object previous = context.beginSplitSuperCapture(self, name);
+        try {
+            call(context, self, clazz, name, args, block);
+        } catch (SplitSuperCall split) {
+            return new SplitSuperState<>(split.getResult(), new MethodSplitState(ic));
+        } finally {
+            context.endSplitSuperCapture(previous);
+        }
 
+        throw new RuntimeException("BUG: compiled split constructor completed without captured super");
+    }
 }

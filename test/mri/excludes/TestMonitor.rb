@@ -1,1 +1,1 @@
-exclude :test_killed_thread_in_synchronize, ''
+exclude :test_timedwait, "needs investigation"

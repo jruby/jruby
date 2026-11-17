@@ -18,7 +18,8 @@ class HaveMethodMatcher < MethodMatcher
 end
 
 module MSpecMatchers
-  private def have_method(method, include_super=true)
+  private def have_method(method, include_super = true)
+    MSpec.deprecate __method__, '.should.respond_to?'
     HaveMethodMatcher.new method, include_super
   end
 end

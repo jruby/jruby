@@ -41,9 +41,9 @@ END
 
   it "is not able to h() or u() unless including ERB::Util" do
     input = "<%=h '<>' %>"
-    lambda {
+    -> {
       ERB.new(input).result()
-    }.should raise_error(NameError)
+    }.should.raise(NameError)
   end
 
 
@@ -79,8 +79,8 @@ END
     expected = '123'
     myerb2.new.main1().should == expected
 
-    lambda {
+    -> {
       myerb2.new.main2()
-    }.should raise_error(NameError)
+    }.should.raise(NameError)
   end
 end

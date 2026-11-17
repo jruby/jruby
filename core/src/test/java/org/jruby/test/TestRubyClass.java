@@ -8,6 +8,10 @@ package org.jruby.test;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.api.Access;
+
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Define.defineClass;
 
 /**
  *
@@ -38,20 +42,22 @@ public class TestRubyClass extends junit.framework.TestCase {
         public static Ruby currentRuntime;
         
         public MyRubyObjectSubclass() {
-            super(currentRuntime, currentRuntime.getClass("TestSetClassAllocatorClass"));
+            super(currentRuntime, Access.getClass(currentRuntime.getCurrentContext(), "TestSetClassAllocatorClass"));
         }
     }
 
     public void testSetClassAllocator() {
+        var context = runtime.getCurrentContext();
+        var Object = objectClass(context);
         // start out with a default RubyObject allocator
-        RubyClass newClass = runtime.defineClass("TestSetClassAllocatorClass", runtime.getObject(), runtime.getObject().getAllocator());
+        RubyClass newClass = defineClass(context, "TestSetClassAllocatorClass", Object, Object.getAllocator());
 
-        assertEquals(RubyObject.class, newClass.allocate().getClass());
+        assertEquals(RubyObject.class, newClass.allocate(context).getClass());
 
         // switch to an allocator based on a default constructor
         MyRubyObjectSubclass.currentRuntime = runtime;
         newClass.setClassAllocator(MyRubyObjectSubclass.class);
 
-        assertEquals(MyRubyObjectSubclass.class, newClass.allocate().getClass());
+        assertEquals(MyRubyObjectSubclass.class, newClass.allocate(context).getClass());
     }
 }

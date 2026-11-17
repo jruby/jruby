@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /** 
@@ -46,9 +45,14 @@ import org.jruby.parser.StaticScope;
 public class DefsNode extends MethodDefNode implements INameNode {
     private final Node receiverNode;
 
-    public DefsNode(ISourcePosition position, Node receiverNode, RubySymbol name, ArgsNode argsNode,
+    public DefsNode(int line, Node receiverNode, RubySymbol name, ArgsNode argsNode,
                     StaticScope scope, Node bodyNode, int endLine) {
-        super(position, name, argsNode, scope, bodyNode, endLine);
+        this(line, -1, receiverNode, name, argsNode, scope, bodyNode, endLine, -1);
+    }
+
+    public DefsNode(int line, int startColumn, Node receiverNode, RubySymbol name, ArgsNode argsNode,
+                    StaticScope scope, Node bodyNode, int endLine, int endColumn) {
+        super(line, startColumn, name, argsNode, scope, bodyNode, endLine, endColumn);
 
         assert receiverNode != null : "receiverNode is not null";
 

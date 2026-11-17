@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rbconfig'
 
 module JRuby
@@ -10,7 +11,7 @@ module JRuby
     # It is aware of single- and double-quotes as word delimiters, and use of backslash
     # as an escape character.
     def self.quote_sensitive_split(cmd)
-      parts = [""]
+      parts = [+""]
       in_quote = nil
       escape = false
       # this needed to handle weird cases of empty quoted strings,
@@ -23,7 +24,7 @@ module JRuby
             parts.last << c
           else
             # bare slash, not escaping quotes, add it back
-            parts.last << "\\" << c
+            parts.last << +"\\" << c
           end
           escape = false
         else
@@ -44,14 +45,14 @@ module JRuby
               parts.last << c
             else
               if (!parts.last.empty?)
-                parts << ""
+                parts << +""
               elsif (were_quotes)
                 if (parts.last.empty?)
                   # to workaround issue with launching jrubyc -p "",
                   # or java launching code would eat "".
                   parts.last << '""'
                 end
-                parts << ""
+                parts << +""
               end
               were_quotes = false
             end
@@ -68,7 +69,7 @@ module JRuby
 
     def self.find_file(exe)
       # puts "FindFile: looking for #{exe}"
-      if (WINDOWS && exe !~ /\.(exe|com|cmd|bat)$/i)
+      if (WINDOWS && !(/\.(exe|com|cmd|bat)$/i.match?(exe)))
         WINDOWS_EXE_SUFFIXES.each do |sfx|
           if find_file(exe + sfx)
             return true
@@ -77,7 +78,7 @@ module JRuby
       end
       # TODO: should we find files like 'foo' on Windows,
       # or should we only deal with .EXE/.BAT, etc.?
-      
+
       File.exist?(exe) && !File.directory?(exe)
     end
 
@@ -94,7 +95,7 @@ module JRuby
       orig_parts = quote_sensitive_split(cmd.strip)
       parts = orig_parts.dup
       exe = parts.shift.dup
-      if exe =~ %r{^([a-zA-Z]:)?[/\\]} && (!(found = find_file(exe)))
+      if %r{^([a-zA-Z]:)?[/\\]}.match?(exe) && (!(found = find_file(exe)))
         until (found)
           break if parts.empty?
           exe << " #{parts.shift}"

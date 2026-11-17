@@ -37,7 +37,7 @@ public enum Modifier {
     ABSTRACT("abstract"), FINAL("final"), NATIVE("native"), SYNCHRONIZED("synchronized"),
     TRANSIENT("transient"), VOLATILE("volatile"), STRICTFP("strictfp");
 
-    private String name;
+    private final String name;
 
     Modifier(String name) {
         this.name = name;

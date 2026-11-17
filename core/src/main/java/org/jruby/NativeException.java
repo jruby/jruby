@@ -29,21 +29,17 @@
 package org.jruby;
 
 import java.lang.reflect.Member;
-import java.util.Arrays;
 
-import com.headius.backport9.stack.StackWalker;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@Deprecated
+import static org.jruby.api.Define.defineClass;
+
+@Deprecated(since = "9.2.0.0")
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
 
@@ -71,26 +67,19 @@ public class NativeException extends RubyException {
         this.cause = new Throwable();
         this.messageAsJavaString = null;
     }
-    
-    private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = (runtime, klazz) -> new NativeException(runtime, klazz);
 
-    public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
-        RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NATIVE_EXCEPTION_ALLOCATOR);
-        runtime.getObject().deprecateConstant(runtime, CLASS_NAME);
+    public static RubyClass createClass(ThreadContext context, RubyClass baseClass, RubyClass Object) {
+        RubyClass NativeException = defineClass(context, CLASS_NAME, baseClass, NativeException::new).
+                defineMethods(context, NativeException.class);
 
-        exceptionClass.defineAnnotatedMethods(NativeException.class);
+        Object.deprecateConstant(context, CLASS_NAME);
 
-        return exceptionClass;
+        return NativeException;
     }
 
     @JRubyMethod
     public final IRubyObject cause() {
         return Java.getInstance(getRuntime(), getCause());
-    }
-
-    @Deprecated
-    public final IRubyObject cause(Block unusedBlock) {
-        return cause();
     }
 
     @Override
@@ -125,58 +114,19 @@ public class NativeException extends RubyException {
             final String className = element.getClassName();
             line.setLength(0);
             if (element.getFileName() == null) {
-                line.append(className).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
+                line.append(className).append(':').append(element.getLineNumber()).append(":in '").append(element.getMethodName()).append('\'');
             } else {
                 final int index = className.lastIndexOf('.');
                 if ( index > - 1 ) {
                     line.append(className.substring(0, index).replace('.', '/'));
                     line.append('/');
                 }
-                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
+                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in '").append(element.getMethodName()).append('\'');
             }
             trace[i] = RubyString.newString(runtime, line.toString());
         }
         System.arraycopy(rTrace.toJavaArrayMaybeUnsafe(), 0, trace, jTrace.length, rTrace.size());
         return RubyArray.newArrayMayCopy(runtime, trace);
-    }
-
-    @Deprecated // not used
-    public void trimStackTrace(Member target) {
-        Throwable t = new Throwable();
-        StackTraceElement[] origStackTrace = cause.getStackTrace();
-        StackTraceElement[] currentStackTrace = t.getStackTrace();
-        int skip = 0;
-        for (int i = 1;
-                i <= origStackTrace.length && i <= currentStackTrace.length;
-                ++i) {
-            StackTraceElement a = origStackTrace[origStackTrace.length - i];
-            StackTraceElement b = currentStackTrace[currentStackTrace.length - i];
-            if (a.equals(b)) {
-                skip += 1;
-            } else {
-                break;
-            }
-        }
-        // If we know what method was being called, strip everything
-        // before the call. This hides the JRuby and reflection internals.
-        if (target != null) {
-            String className = target.getDeclaringClass().getName();
-            String methodName = target.getName();
-            for (int i = origStackTrace.length - skip - 1; i >= 0; --i) {
-                StackTraceElement frame = origStackTrace[i];
-                if (frame.getClassName().equals(className) &&
-                    frame.getMethodName().equals(methodName)) {
-                    skip = origStackTrace.length - i - 1;
-                    break;
-                }
-            }
-        }
-        if (skip > 0) {
-            final int len = origStackTrace.length - skip;
-            StackTraceElement[] newStackTrace = new StackTraceElement[len];
-            System.arraycopy(origStackTrace, 0, newStackTrace, 0, len);
-            cause.setStackTrace(newStackTrace);
-        }
     }
 
     @Override

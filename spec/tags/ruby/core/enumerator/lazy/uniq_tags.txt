@@ -1,2 +1,2 @@
-fails:Enumerator::Lazy#uniq when yielded with multiple arguments returns all yield arguments as an array
-fails:Enumerator::Lazy#uniq when yielded with multiple arguments return same value after rewind
+fails:Enumerator::Lazy#uniq value packing of source yields (matches Enumerable#uniq) yields a single nil for a zero-argument source yield
+fails:Enumerator::Lazy#uniq value packing of source yields (matches Enumerable#uniq) yields a packed Array for a multi-argument source yield

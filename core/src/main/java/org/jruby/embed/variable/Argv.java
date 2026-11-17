@@ -32,18 +32,17 @@ package org.jruby.embed.variable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.jruby.Ruby;
+
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author yoko
- */
+import static org.jruby.api.Create.newArray;
+
 public class Argv extends AbstractVariable {
 
     private static final String VALID_NAME = "ARGV";
@@ -52,7 +51,7 @@ public class Argv extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when an ARGV
      * is put in {@link BiVariableMap}.
      *
-     * @param runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of Constant
@@ -112,31 +111,28 @@ public class Argv extends AbstractVariable {
     /**
      * Injects ARGV values to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
     @Override
-    public void inject() {
-        final Ruby runtime = getRuntime();
+    public synchronized void inject() {
+        var context = getRuntime().getCurrentContext();
 
-        final RubyArray argv = RubyArray.newArray(runtime);
+        final var argv = newArray(context);
         if ( javaObject instanceof Collection ) {
             argv.addAll( (Collection) javaObject );
         }
         else if ( javaObject instanceof String[] ) {
             for ( String str : (String[]) javaObject ) argv.add(str);
         }
-        this.irubyObject = argv; fromRuby = true;
+        this.rubyObject = argv; fromRuby = true;
 
-        RubyModule rubyModule = getRubyClass(runtime);
+        RubyModule rubyModule = getRubyClass(context.runtime);
         // SSS FIXME: With rubyclass stack gone, this needs a replacement
         if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
 
         if (rubyModule == null) return;
 
-        rubyModule.storeConstant(name, argv);
-        runtime.getConstantInvalidator(name).invalidate();
+        rubyModule.storeConstant(context, name, argv);
+        context.runtime.getConstantInvalidator(name).invalidate();
     }
 
     /**
@@ -144,7 +140,7 @@ public class Argv extends AbstractVariable {
      * this variable in top self.
      */
     @Override
-    public void remove() {
+    public synchronized void remove() {
         this.javaObject = new ArrayList();
         inject();
     }
@@ -152,19 +148,18 @@ public class Argv extends AbstractVariable {
    /**
      * Retrieves ARGV from Ruby after the evaluation or method invocation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved constants.
      */
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
-        if ( vars.isLazy() ) return;
-        updateARGV(receiver, vars);
+        if (vars.isLazy()) return;
+        updateARGV(receiver.getRuntime().getCurrentContext(), receiver, vars);
     }
 
-    private static void updateARGV(final IRubyObject receiver, final BiVariableMap vars) {
+    private static void updateARGV(ThreadContext context, IRubyObject receiver, final BiVariableMap vars) {
         final String name = "ARGV";
         final RubyObject topSelf = getTopSelf(receiver);
-        final IRubyObject argv = topSelf.getMetaClass().getConstant(name);
+        final IRubyObject argv = topSelf.getMetaClass().getConstant(context, name);
         if ( argv == null || (argv instanceof RubyNil) ) return;
         // ARGV constant should be only one
         if ( vars.containsKey(name) ) {
@@ -177,9 +172,9 @@ public class Argv extends AbstractVariable {
     }
 
     // ARGV appears to require special treatment, leaving javaType intact
-    protected void updateRubyObject(final IRubyObject rubyObject) {
+    protected synchronized void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
-        this.irubyObject = rubyObject;
+        this.rubyObject = rubyObject;
     }
 
     /**
@@ -191,16 +186,17 @@ public class Argv extends AbstractVariable {
      * @param key instace varible name
      */
     public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        var context = receiver.getRuntime().getCurrentContext();
         assert key.equals("ARGV");
-        updateARGV(receiver, vars);
+        updateARGV(context, receiver, vars);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object getJavaObject() {
-        if ( irubyObject == null || ! fromRuby ) return javaObject;
+    public synchronized Object getJavaObject() {
+        if ( rubyObject == null || ! fromRuby ) return javaObject;
 
-        final RubyArray ary = (RubyArray) irubyObject;
+        final RubyArray ary = (RubyArray) rubyObject;
         if (javaType == null) { // firstly retrieved from Ruby
             return javaObject = new ArrayList<String>(ary);
         }

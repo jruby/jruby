@@ -14,13 +14,18 @@
 # FIXME: Make Rubyspecs FAILED message appear?
 
 namespace :spec do
+  begin
+    gem 'rspec'
+    require 'rspec/core/rake_task'
+  rescue LoadError => e
+    warn "rspec tasks won't work, `bin/jruby -S bundle install` first: #{e.inspect}"
+  end
+
   # Put Rake on the load path for JI specs without requiring rubygems
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
-  gem 'rspec'
-  require 'rspec/core/rake_task'
 
   compile_flags = {
-    :default => :int,
+    :default => [],
     :int => ["-X-C"],
     :jit => ["-Xjit.threshold=0"],
     :aot => ["-X+C"],
@@ -32,6 +37,8 @@ namespace :spec do
     t.rspec_opts ||= []
     t.rspec_opts << "--options spec/java_integration/spec.quiet.opts"
     t.pattern = 'spec/java_integration/**/*_spec.rb'
+    classpath = %w[test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
+    t.ruby_opts << "-J-cp #{classpath}"
   end
 
   permute_specs "compiler", compile_flags do |t|
@@ -52,7 +59,7 @@ namespace :spec do
     t.pattern = 'spec/grammar/**/*_spec.rb'
   end
 
-  permute_specs "regression", compile_flags do |t|
+  permute_specs "regression", compile_flags, "test:compile" do |t|
     t.rspec_opts ||= []
     t.rspec_opts << '--color --format documentation '
     t.pattern = 'spec/regression/**/*_spec.rb'
@@ -64,5 +71,6 @@ namespace :spec do
 
   permute_specs "jrubyc", compile_flags do |t|
     t.pattern = 'spec/jrubyc/**/*_spec.rb'
+    t.ruby_opts << "-Xaot.loadClasses"
   end
 end

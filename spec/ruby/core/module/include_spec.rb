@@ -3,7 +3,7 @@ require_relative 'fixtures/classes'
 
 describe "Module#include" do
   it "is a public method" do
-    Module.should have_public_instance_method(:include, false)
+    Module.public_instance_methods(false).should.include?(:include)
   end
 
   it "calls #append_features(self) in reversed order on each module" do
@@ -33,24 +33,40 @@ describe "Module#include" do
   end
 
   it "adds all ancestor modules when a previously included module is included again" do
-    ModuleSpecs::MultipleIncludes.ancestors.should include(ModuleSpecs::MA, ModuleSpecs::MB)
+    ModuleSpecs::MultipleIncludes.ancestors.to_set.should >= Set[ModuleSpecs::MA, ModuleSpecs::MB]
     ModuleSpecs::MB.include(ModuleSpecs::MC)
     ModuleSpecs::MultipleIncludes.include(ModuleSpecs::MB)
-    ModuleSpecs::MultipleIncludes.ancestors.should include(ModuleSpecs::MA, ModuleSpecs::MB, ModuleSpecs::MC)
+    ModuleSpecs::MultipleIncludes.ancestors.to_set.should >= Set[ModuleSpecs::MA, ModuleSpecs::MB, ModuleSpecs::MC]
   end
 
   it "raises a TypeError when the argument is not a Module" do
-    lambda { ModuleSpecs::Basic.include(Class.new) }.should raise_error(TypeError)
+    -> { ModuleSpecs::Basic.include(Class.new) }.should.raise(TypeError)
   end
 
   it "does not raise a TypeError when the argument is an instance of a subclass of Module" do
-    lambda { ModuleSpecs::SubclassSpec.include(ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
+    class ModuleSpecs::SubclassSpec::AClass
+    end
+    -> { ModuleSpecs::SubclassSpec::AClass.include(ModuleSpecs::Subclass.new) }.should_not.raise(TypeError)
+  ensure
+    ModuleSpecs::SubclassSpec.send(:remove_const, :AClass)
+  end
+
+  it "raises a TypeError when the argument is a refinement" do
+    refinement = nil
+
+    Module.new do
+      refine String do
+        refinement = self
+      end
+    end
+
+    -> { ModuleSpecs::Basic.include(refinement) }.should.raise(TypeError, "Cannot include refinement")
   end
 
   it "imports constants to modules and classes" do
-    ModuleSpecs::A.constants.should include(:CONSTANT_A)
-    ModuleSpecs::B.constants.should include(:CONSTANT_A, :CONSTANT_B)
-    ModuleSpecs::C.constants.should include(:CONSTANT_A, :CONSTANT_B)
+    ModuleSpecs::A.constants.should.include?(:CONSTANT_A)
+    ModuleSpecs::B.constants.to_set.should >= Set[:CONSTANT_A, :CONSTANT_B]
+    ModuleSpecs::C.constants.to_set.should >= Set[:CONSTANT_A, :CONSTANT_B]
   end
 
   it "shadows constants from ancestors" do
@@ -68,9 +84,9 @@ describe "Module#include" do
   end
 
   it "imports instance methods to modules and classes" do
-    ModuleSpecs::A.instance_methods.should include(:ma)
-    ModuleSpecs::B.instance_methods.should include(:ma,:mb)
-    ModuleSpecs::C.instance_methods.should include(:ma,:mb)
+    ModuleSpecs::A.instance_methods.should.include?(:ma)
+    ModuleSpecs::B.instance_methods.to_set.should >= Set[:ma,:mb]
+    ModuleSpecs::C.instance_methods.to_set.should >= Set[:ma,:mb]
   end
 
   it "does not import methods to modules and classes" do
@@ -104,9 +120,9 @@ describe "Module#include" do
       class A; include M; end
       class B < A; include M; end
 
-      all = [A,B,M]
+      all = [A, B, M]
 
-      (B.ancestors & all).should == [B, A, M]
+      (B.ancestors.filter { |a| all.include?(a) }).should == [B, A, M]
     end
   end
 
@@ -130,7 +146,7 @@ describe "Module#include" do
 
       anc = B.ancestors
       [B, U, V, W, A, X].each do |i|
-        anc.include?(i).should be_true
+        anc.include?(i).should == true
       end
 
       class B; include V; end
@@ -138,7 +154,7 @@ describe "Module#include" do
       # the only new module is Y, it is added after U since it follows U in V mixin list:
       anc = B.ancestors
       [B, U, Y, V, W, A, X].each do |i|
-        anc.include?(i).should be_true
+        anc.include?(i).should == true
       end
     end
   end
@@ -158,19 +174,19 @@ describe "Module#include" do
   end
 
   it "detects cyclic includes" do
-    lambda {
+    -> {
       module ModuleSpecs::M
         include ModuleSpecs::M
       end
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "doesn't accept no-arguments" do
-    lambda {
+    -> {
       Module.new do
         include
       end
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "returns the class it's included into" do
@@ -234,6 +250,360 @@ describe "Module#include" do
       remove_const :C
     end
   end
+
+  it "updates the method when an included module is updated" do
+    a_class = Class.new do
+      def foo
+        'a'
+      end
+    end
+
+    m_module = Module.new
+
+    b_class = Class.new(a_class) do
+      include m_module
+    end
+
+    b = b_class.new
+
+    foo = -> { b.foo }
+
+    foo.call.should == 'a'
+
+    m_module.module_eval do
+      def foo
+        'm'
+      end
+    end
+
+    foo.call.should == 'm'
+  end
+
+
+  it "updates the method when a module included after a call is later updated" do
+    m_module = Module.new
+    a_class = Class.new do
+      def foo
+        'a'
+      end
+    end
+    b_class = Class.new(a_class)
+    b = b_class.new
+    foo = -> { b.foo }
+    foo.call.should == 'a'
+
+    b_class.include m_module
+    foo.call.should == 'a'
+
+    m_module.module_eval do
+      def foo
+        "m"
+      end
+    end
+    foo.call.should == 'm'
+  end
+
+  it "updates the method when a nested included module is updated" do
+    a_class = Class.new do
+      def foo
+        'a'
+      end
+    end
+
+    n_module = Module.new
+
+    m_module = Module.new  do
+      include n_module
+    end
+
+    b_class = Class.new(a_class) do
+      include m_module
+    end
+
+    b = b_class.new
+
+    foo = -> { b.foo }
+
+    foo.call.should == 'a'
+
+    n_module.module_eval do
+      def foo
+        'n'
+      end
+    end
+
+    foo.call.should == 'n'
+  end
+
+  it "updates the method when a new module is included" do
+    a_class = Class.new do
+      def foo
+        'a'
+      end
+    end
+
+    m_module = Module.new do
+      def foo
+        'm'
+      end
+    end
+
+    b_class = Class.new(a_class)
+    b = b_class.new
+
+    foo = -> { b.foo }
+
+    foo.call.should == 'a'
+
+    b_class.class_eval do
+      include m_module
+    end
+
+    foo.call.should == 'm'
+  end
+
+  it "updates the method when a new module with nested module is included" do
+    a_class = Class.new do
+      def foo
+        'a'
+      end
+    end
+
+    n_module = Module.new do
+      def foo
+        'n'
+      end
+    end
+
+    m_module = Module.new  do
+      include n_module
+    end
+
+    b_class = Class.new(a_class)
+    b = b_class.new
+
+    foo = -> { b.foo }
+
+    foo.call.should == 'a'
+
+    b_class.class_eval do
+      include m_module
+    end
+
+    foo.call.should == 'n'
+  end
+
+  it "updates the constant when an included module is updated" do
+    module ModuleSpecs::ConstUpdated
+      module A
+        FOO = 'a'
+      end
+
+      module M
+      end
+
+      module B
+        include A
+        include M
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      M.const_set(:FOO, 'm')
+      B.foo.should == 'm'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstUpdated)
+  end
+
+  it "updates the constant when a module included after a call is later updated" do
+    module ModuleSpecs::ConstLaterUpdated
+      module A
+        FOO = 'a'
+      end
+
+      module B
+        include A
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      module M
+      end
+      B.include M
+
+      B.foo.should == 'a'
+
+      M.const_set(:FOO, 'm')
+      B.foo.should == 'm'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstLaterUpdated)
+  end
+
+  it "updates the constant when a module included in another module after a call is later updated" do
+    module ModuleSpecs::ConstModuleLaterUpdated
+      module A
+        FOO = 'a'
+      end
+
+      module B
+        include A
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      module M
+      end
+      B.include M
+
+      B.foo.should == 'a'
+
+      M.const_set(:FOO, 'm')
+      B.foo.should == 'm'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstModuleLaterUpdated)
+  end
+
+  it "updates the constant when a nested included module is updated" do
+    module ModuleSpecs::ConstUpdatedNestedIncludeUpdated
+      module A
+        FOO = 'a'
+      end
+
+      module N
+      end
+
+      module M
+        include N
+      end
+
+      module B
+        include A
+        include M
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      N.const_set(:FOO, 'n')
+      B.foo.should == 'n'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstUpdatedNestedIncludeUpdated)
+  end
+
+  it "updates the constant when a new module is included" do
+    module ModuleSpecs::ConstUpdatedNewInclude
+      module A
+        FOO = 'a'
+      end
+
+      module M
+        FOO = 'm'
+      end
+
+      module B
+        include A
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      B.include(M)
+      B.foo.should == 'm'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstUpdatedNewInclude)
+  end
+
+  it "updates the constant when a new module with nested module is included" do
+    module ModuleSpecs::ConstUpdatedNestedIncluded
+      module A
+        FOO = 'a'
+      end
+
+      module N
+        FOO = 'n'
+      end
+
+      module M
+        include N
+      end
+
+      module B
+        include A
+        def self.foo
+          FOO
+        end
+      end
+
+      B.foo.should == 'a'
+
+      B.include M
+      B.foo.should == 'n'
+    end
+  ensure
+    ModuleSpecs.send(:remove_const, :ConstUpdatedNestedIncluded)
+  end
+
+  it "overrides a previous super method call" do
+    c1 = Class.new do
+      def foo
+        [:c1]
+      end
+    end
+    c2 = Class.new(c1) do
+      def foo
+        [:c2] + super
+      end
+    end
+    c2.new.foo.should == [:c2, :c1]
+    m = Module.new do
+      def foo
+        [:m1]
+      end
+    end
+    c2.include(m)
+    c2.new.foo.should == [:c2, :m1]
+  end
+
+  it "update a module when a nested module is updated and includes a module on its own" do
+    m1 = Module.new
+    m2 = Module.new do
+      def m2; [:m2]; end
+    end
+    m3 = Module.new do
+      def m3; [:m3]; end
+    end
+    m4 = Module.new do
+      def m4; [:m4]; end
+    end
+    c = Class.new
+
+    c.include(m1)
+    m1.include(m2)
+    m2.include(m3)
+    m3.include(m4)
+
+    c.new.m2.should == [:m2]
+    c.new.m3.should == [:m3]
+    c.new.m4.should == [:m4]
+  end
 end
 
 describe "Module#include?" do
@@ -252,7 +622,7 @@ describe "Module#include?" do
   end
 
   it "raises a TypeError when no module was given" do
-    lambda { ModuleSpecs::Child.include?("Test") }.should raise_error(TypeError)
-    lambda { ModuleSpecs::Child.include?(ModuleSpecs::Parent) }.should raise_error(TypeError)
+    -> { ModuleSpecs::Child.include?("Test") }.should.raise(TypeError)
+    -> { ModuleSpecs::Child.include?(ModuleSpecs::Parent) }.should.raise(TypeError)
   end
 end

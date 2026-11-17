@@ -1,19 +1,21 @@
-require_relative '../../spec_helper'
+require_relative 'spec_helper'
 
 describe "ENV.to_a" do
 
   it "returns the ENV as an array" do
-    ENV["foo"] = "bar"
     a = ENV.to_a
     a.is_a?(Array).should == true
-    a.find { |e| e.first == "foo" }.should == ["foo", "bar"]
-    ENV.delete "foo"
+    a.size.should == ENV.size
+    a.each { |k,v| ENV[k].should == v }
+
+    a.first.should.is_a?(Array)
+    a.first.size.should == 2
   end
 
   it "returns the entries in the locale encoding" do
     ENV.to_a.each do |key, value|
-      key.encoding.should == Encoding.find('locale')
-      value.encoding.should == Encoding.find('locale')
+      key.should.be_locale_env
+      value.should.be_locale_env
     end
   end
 end

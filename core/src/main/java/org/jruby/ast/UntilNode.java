@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents an until statement.
@@ -44,18 +43,17 @@ public class UntilNode extends Node {
     private final Node bodyNode;
     private final boolean evaluateAtStart;
 
-    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
-        this(position, conditionNode, bodyNode, true);
+    public UntilNode(int line, Node conditionNode, Node bodyNode) {
+        this(line, conditionNode, bodyNode, true);
     }
 
     public NodeType getNodeType() {
         return NodeType.UNTILNODE;
     }
 
-    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+    public UntilNode(int line, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
+        super(line, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
-        assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";
         
         this.conditionNode = conditionNode;
@@ -97,5 +95,41 @@ public class UntilNode extends Node {
      */
     public boolean evaluateAtStart() {
         return evaluateAtStart;
+    }
+
+    // ---- branch coverage: span of the loop body as written (a modifier loop's statement, including any
+    // begin/end around it), when it differs from the body node's own span ----
+
+    // null when the body node's own span will do, or positions are not recorded
+    private SourceSpan bodySpan() {
+        return (SourceSpan) getSourceDetail();
+    }
+
+    public void setBodySpan(long start, long end) {
+        setSourceDetail(SourceSpan.of(start, end));
+    }
+
+    public boolean hasBodySpan() {
+        return bodySpan() != null;
+    }
+
+    public int getBodyStartLine() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startLine();
+    }
+
+    public int getBodyStartColumn() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startColumn();
+    }
+
+    public int getBodyEndLine() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endLine();
+    }
+
+    public int getBodyEndColumn() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endColumn();
     }
 }

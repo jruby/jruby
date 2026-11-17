@@ -34,29 +34,35 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author  jpetersen
- */
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newSmallHash;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
+
 @JRubyClass(name="NilClass")
-public class RubyNil extends RubyObject implements Constantizable {
+public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
+    public static final int ID = 8;
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
-    public RubyNil(Ruby runtime) {
-        super(runtime, runtime.getNilClass(), false);
-        flags |= NIL_F | FALSE_F | FROZEN_F;
+    public RubyNil(Ruby runtime, RubyClass Nil) {
+        super(runtime, Nil, false);
+        flags |= NIL | FALSE;
+        setFrozen(true);
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -69,27 +75,11 @@ public class RubyNil extends RubyObject implements Constantizable {
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
-    public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            throw runtime.newTypeError("allocator undefined for NilClass");
-        }
-    };
-    
-    public static RubyClass createNilClass(Ruby runtime) {
-        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
-        runtime.setNilClass(nilClass);
-        nilClass.setClassIndex(ClassIndex.NIL);
-        nilClass.setReifiedClass(RubyNil.class);
-        
-        nilClass.defineAnnotatedMethods(RubyNil.class);
-        
-        nilClass.getMetaClass().undefineMethod("new");
-        
-        // FIXME: This is causing a verification error for some reason
-        //nilClass.dispatcher = callbackFactory.createDispatcher(nilClass);
-        
-        return nilClass;
+    public static void finishNilClass(ThreadContext context, RubyClass Nil) {
+        Nil.reifiedClass(RubyNil.class).
+                classIndex(ClassIndex.NIL).
+                defineMethods(context, RubyNil.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
     @Override
@@ -102,11 +92,10 @@ public class RubyNil extends RubyObject implements Constantizable {
         return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
-    
+
     @Override
     public Class<?> getJavaClass() {
         return void.class;
@@ -144,42 +133,43 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyString to_s(ThreadContext context, IRubyObject recv) {
-        return RubyString.newEmptyString(context.runtime);
+        return context.runtime.getNilString();
     }
     
-    /** nil_to_a
-     *
-     */
+    @CRuby(value = "nil_to_a", file = "object.c")
     @JRubyMethod
     public static RubyArray to_a(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newEmptyArray();
+        return newEmptyArray(context);
     }
     
     @JRubyMethod
     public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
-        return RubyHash.newSmallHash(context.runtime);
+        return newSmallHash(context);
     }
 
-    /** nil_inspect
-     *
-     */
-    @Override
+    @CRuby(value = "nil_inspect", file = "object.c")
     @JRubyMethod
-    public IRubyObject inspect() {
-        return RubyNil.inspect(getRuntime());
+    public IRubyObject inspect(ThreadContext context) {
+        return RubyNil.inspect(context.runtime);
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
-    private static final ByteList nil = new ByteList(nilBytes, USASCIIEncoding.INSTANCE);
+    static final ByteList nil = new ByteList(nilBytes, USASCIIEncoding.INSTANCE);
 
     static RubyString inspect(Ruby runtime) {
-        return RubyString.newStringShared(runtime, runtime.getString(), nil);
+        return RubyString.newStringShared(runtime, nil);
+    }
+
+    @Override
+    @JRubyMethod(name = "=~")
+    public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
+        return this; // nil
     }
 
     /** nil_and
      *
      */
-    @JRubyMethod(name = "&", required = 1)
+    @JRubyMethod(name = "&")
     public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.fals;
     }
@@ -187,27 +177,28 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_or
      *
      */
-    @JRubyMethod(name = "|", required = 1)
+    @JRubyMethod(name = "|")
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return asBoolean(context, obj.isTrue());
     }
     
     /** nil_xor
      *
      */
-    @JRubyMethod(name = "^", required = 1)
+    @JRubyMethod(name = "^")
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return asBoolean(context, obj.isTrue());
     }
 
+    @Override
     @JRubyMethod(name = "nil?")
-    public IRubyObject nil_p() {
-        return getRuntime().getTrue();
+    public RubyBoolean nil_p(ThreadContext context) {
+        return context.tru;
     }
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return context.runtime.getNilHash();
     }
 
     @Override
@@ -215,14 +206,15 @@ public class RubyNil extends RubyObject implements Constantizable {
         return hashCode;
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(8);
+        return metaClass.runtime.getNilID();
     }
-    
+
     @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
+    public RubyInteger __id__(ThreadContext context) {
+        return context.runtime.getNilID();
     }
 
     /** nilclass_to_c
@@ -244,8 +236,10 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nilclass_rationalize
      *
      */
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return to_r(context, recv);
     }
 
@@ -268,5 +262,11 @@ public class RubyNil extends RubyObject implements Constantizable {
             }
         }
         return null;
+    }
+
+    @Deprecated(since = "9.4.0.0")
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }

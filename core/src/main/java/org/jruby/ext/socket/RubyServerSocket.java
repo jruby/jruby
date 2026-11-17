@@ -29,13 +29,15 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelFD;
@@ -49,25 +51,24 @@ import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubyServerSocket extends RubySocket {
-    static void createServerSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("ServerSocket", runtime.getClass("Socket"), SERVER_SOCKET_ALLOCATOR);
-
-        rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
+    static void createServerSocket(ThreadContext context, RubyClass Socket) {
+        defineClass(context, "ServerSocket", Socket, RubyServerSocket::new).
+                defineMethods(context, RubyServerSocket.class);
     }
-
-    private static ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyServerSocket(runtime, klass);
-        }
-    };
 
     public RubyServerSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -77,9 +78,9 @@ public class RubyServerSocket extends RubySocket {
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         context.runtime.getWarnings().warnOnce(
                 IRubyWarnings.ID.LISTEN_SERVER_SOCKET,
-                "pass backlog to #bind instead of #listen (http://wiki.jruby.org/ServerSocket)");
+                "pass backlog to #bind instead of #listen (https://github.com/jruby/jruby/wiki/ServerSocket)");
 
-        return context.runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(notImplemented = true)
@@ -101,23 +102,43 @@ public class RubyServerSocket extends RubySocket {
     public IRubyObject bind(ThreadContext context, IRubyObject addr, IRubyObject backlog) {
         final InetSocketAddress iaddr;
 
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrInfo = (Addrinfo) addr;
-            if (!addrInfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
-            }
+        if (addr instanceof Addrinfo addrInfo) {
+            if (!addrInfo.ip_p(context).isTrue()) throw typeError(context, "not an INET or INET6 address: " + addrInfo);
             iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
         }
-        doBind(context, getChannel(), iaddr, RubyFixnum.fix2int(backlog));
+        doBind(context, getChannel(), iaddr, toInt(context, backlog));
 
-        return RubyFixnum.zero(context.runtime);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod()
     public IRubyObject accept(ThreadContext context) {
-        return doAccept(this, context, true);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerAccept(context, scheduler);
+
+        while (true) {
+            // :wait_readable when another thread or fiber has the channel nonblocking, so wait instead of raising EAGAIN
+            IRubyObject result = doAccept(this, context, false);
+            if (result instanceof RubyArray) return result;
+
+            if (!context.getThread().select(this, SelectionKey.OP_ACCEPT)) {
+                // we were woken up without being selected...poll for thread events and go back to sleep
+                context.pollThreadEvents();
+            }
+        }
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private IRubyObject schedulerAccept(ThreadContext context, IRubyObject scheduler) {
+        while (true) {
+            // [Socket, Addrinfo], or :wait_readable with the channel's blocking lock already released
+            IRubyObject result = doAcceptNonblock(this, context, false);
+            if (result instanceof RubyArray) return result;
+
+            schedulerWaitAcceptable(context, scheduler);
+        }
     }
 
     @JRubyMethod()
@@ -132,20 +153,14 @@ public class RubyServerSocket extends RubySocket {
 
     @Override
     protected ChannelFD initChannelFD(Ruby runtime) {
-        Channel channel;
-
         try {
-            if (soType == Sock.SOCK_STREAM) {
-                channel = ServerSocketChannel.open();
-            }
-            else {
-                throw runtime.newArgumentError("unsupported server socket type `" + soType + "'");
+            if (soType != Sock.SOCK_STREAM) {
+                throw argumentError(runtime.getCurrentContext(), "unsupported server socket type '" + soType + "'");
             }
 
-            return newChannelFD(runtime, channel);
-        }
-        catch (IOException e) {
-            throw sockerr(runtime, "initialize: " + e.toString(), e);
+            return newChannelFD(runtime, ServerSocketChannel.open());
+        } catch (IOException e) {
+            throw sockerr(runtime, "initialize: " + e, e);
         }
     }
 
@@ -166,9 +181,7 @@ public class RubyServerSocket extends RubySocket {
                         SocketChannel socketChannel = (SocketChannel)((RubySocket)socket).getChannel();
                         InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
 
-                        return context.runtime.newArray(
-                                socket,
-                                Sockaddr.packSockaddrFromAddress(context, addr));
+                        return newArray(context, socket, Sockaddr.packSockaddrFromAddress(context, addr));
                     } finally {
                         selectable.configureBlocking(oldBlocking);
                     }
@@ -198,20 +211,20 @@ public class RubyServerSocket extends RubySocket {
                     // This appears to be undocumented in JDK; null as a sentinel value
                     // for a nonblocking accept with nothing available. We raise for Ruby.
                     // indicates that no connection is available in non-blocking mode
-                    if (!ex) return runtime.newSymbol("wait_readable");
+                    if (!ex) return asSymbol(context, "wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                 }
 
-                RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
+                RubySocket rubySocket = new RubySocket(runtime, Access.getClass(context, "Socket"));
                 rubySocket.initFromServer(runtime, sock, socket);
 
-                return runtime.newArray(rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
+                return newArray(context, rubySocket, new Addrinfo(runtime, Access.getClass(context, "Addrinfo"), socket.getRemoteAddress()));
             }
             throw runtime.newErrnoENOPROTOOPTError();
         }
         catch (IllegalBlockingModeException e) {
             // indicates that no connection is available in non-blocking mode
-            if (!ex) return runtime.newSymbol("wait_readable");
+            if (!ex) return asSymbol(context, "wait_readable");
             throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
         }
         catch (IOException e) {

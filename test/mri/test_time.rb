@@ -62,6 +62,24 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
     assert_equal(true, t.utc?)
   end
 
+  def test_rfc2822_nonlinear
+    pre = ->(n) {"0 Feb 00 00 :00" + " " * n}
+    assert_linear_performance([100, 500, 5000, 50_000], pre: pre) do |s|
+      assert_raise(ArgumentError) do
+        Time.rfc2822(s)
+      end
+    end
+  end
+
+  if defined?(Ractor)
+    def test_rfc2822_ractor
+      assert_ractor(<<~RUBY, require: 'time')
+        actual = Ractor.new { Time.rfc2822("Fri, 21 Nov 1997 09:55:06 -0600") }.value
+        assert_equal(Time.utc(1997, 11, 21, 9, 55, 6) + 6 * 3600, actual)
+      RUBY
+    end
+  end
+
   def test_encode_rfc2822
     t = Time.utc(1)
     assert_equal("Mon, 01 Jan 0001 00:00:00 -0000", t.rfc2822)
@@ -495,6 +513,50 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
     assert_equal(true, t.utc?)
   end
 
+  def test_strptime_j
+    t = Time.strptime("2018-365", "%Y-%j")
+    assert_equal(2018, t.year)
+    assert_equal(12, t.mon)
+    assert_equal(31, t.day)
+    assert_equal(0, t.hour)
+    assert_equal(0, t.min)
+    assert_equal(0, t.sec)
+    t = Time.strptime("2018-091", "%Y-%j")
+    assert_equal(2018, t.year)
+    assert_equal(4, t.mon)
+    assert_equal(1, t.day)
+  end
+
+  def test_strptime_p
+    t = Time.strptime("3am", "%I%p")
+    assert_equal(3, t.hour)
+    t = Time.strptime("3pm", "%I%p")
+    assert_equal(15, t.hour)
+    t = Time.strptime("3a.m.", "%I%p")
+    assert_equal(3, t.hour)
+    t = Time.strptime("3p.m.", "%I%p")
+    assert_equal(15, t.hour)
+    t = Time.strptime("3AM", "%I%p")
+    assert_equal(3, t.hour)
+    t = Time.strptime("3PM", "%I%p")
+    assert_equal(15, t.hour)
+    t = Time.strptime("3A.M.", "%I%p")
+    assert_equal(3, t.hour)
+    t = Time.strptime("3P.M.", "%I%p")
+    assert_equal(15, t.hour)
+  end
+
+  def test_strptime_wuvg
+    assert_equal(Time.local(2019, 1, 30), Time.strptime("3 4 2019", "%w %W %Y"))
+    assert_equal(Time.local(2019, 2, 7), Time.strptime("4 5 2019", "%u %U %Y"))
+    assert_equal(Time.local(2019, 1, 28), Time.strptime("4 2019", "%W %Y"))
+    assert_equal(Time.local(2019, 2, 3), Time.strptime("5 2019", "%U %Y"))
+    assert_equal(Time.local(2019, 1, 1), Time.strptime("1 2 2019", "%V %w %G"))
+    assert_equal(Time.local(2016, 1, 1), Time.strptime("53 5 15", "%V %w %g"))
+    assert_equal(Time.local(2018, 12, 31), Time.strptime("1 2019", "%V %G"))
+    assert_equal(Time.local(2015, 12, 28), Time.strptime("53 15", "%V %g"))
+  end
+
   def test_nsec
     assert_equal(123456789, Time.parse("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
   end
@@ -512,5 +574,24 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
     test = $1
     define_method(test) {__send__(sub, :xmlschema)}
     define_method(test.sub(/xmlschema/, 'iso8601')) {__send__(sub, :iso8601)}
+  end
+
+  def test_parse_with_various_object
+    d  = Date.new(2010, 10, 28)
+    dt = DateTime.new(2010, 10, 28)
+    md = MyDate.new(10, 28, 2010)
+
+    t = Time.local(2010, 10, 28, 21, 26, 00)
+    assert_equal(t, Time.parse("21:26",  d))
+    assert_equal(t, Time.parse("21:26", dt))
+    assert_equal(t, Time.parse("21:26", md))
+  end
+
+  class MyDate
+    attr_reader :mon, :day, :year
+
+    def initialize(mon, day, year)
+      @mon, @day, @year = mon, day, year
+    end
   end
 end

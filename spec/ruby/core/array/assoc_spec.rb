@@ -6,18 +6,18 @@ describe "Array#assoc" do
     s1 = ["colors", "red", "blue", "green"]
     s2 = [:letters, "a", "b", "c"]
     s3 = [4]
-    s4 = ["colors", "cyan", "yellow", "magenda"]
+    s4 = ["colors", "cyan", "yellow", "magenta"]
     s5 = [:letters, "a", "i", "u"]
     s_nil = [nil, nil]
     a = [s1, s2, s3, s4, s5, s_nil]
-    a.assoc(s1.first).should equal(s1)
-    a.assoc(s2.first).should equal(s2)
-    a.assoc(s3.first).should equal(s3)
-    a.assoc(s4.first).should equal(s1)
-    a.assoc(s5.first).should equal(s2)
-    a.assoc(s_nil.first).should equal(s_nil)
-    a.assoc(4).should equal(s3)
-    a.assoc("key not in array").should be_nil
+    a.assoc(s1.first).should.equal?(s1)
+    a.assoc(s2.first).should.equal?(s2)
+    a.assoc(s3.first).should.equal?(s3)
+    a.assoc(s4.first).should.equal?(s1)
+    a.assoc(s5.first).should.equal?(s2)
+    a.assoc(s_nil.first).should.equal?(s_nil)
+    a.assoc(4).should.equal?(s3)
+    a.assoc("key not in array").should == nil
   end
 
   it "calls == on first element of each array" do
@@ -25,16 +25,28 @@ describe "Array#assoc" do
     key2 = mock('key2')
     items = [['not it', 1], [ArraySpecs::AssocKey.new, 2], ['na', 3]]
 
-    items.assoc(key1).should equal(items[1])
-    items.assoc(key2).should be_nil
+    items.assoc(key1).should.equal?(items[1])
+    items.assoc(key2).should == nil
   end
 
   it "ignores any non-Array elements" do
-    [1, 2, 3].assoc(2).should be_nil
+    [1, 2, 3].assoc(2).should == nil
     s1 = [4]
     s2 = [5, 4, 3]
     a = ["foo", [], s1, s2, nil, []]
-    a.assoc(s1.first).should equal(s1)
-    a.assoc(s2.first).should equal(s2)
+    a.assoc(s1.first).should.equal?(s1)
+    a.assoc(s2.first).should.equal?(s2)
+  end
+
+  it "calls to_ary on non-array elements" do
+    s1 = [1, 2]
+    s2 = ArraySpecs::ArrayConvertible.new(2, 3)
+    a = [s1, s2]
+
+    s1.should_not_receive(:to_ary)
+    a.assoc(s1.first).should.equal?(s1)
+
+    a.assoc(2).should == [2, 3]
+    s2.called.should.equal?(:to_ary)
   end
 end

@@ -53,7 +53,7 @@ class TestPack < Test::Unit::TestCase
   end
 
   def test_pack_m_0_RFC4648
-    tobe = "QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJD\n"
+    tobe = +"QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJD\n"
     if RUBY_VERSION >= "1.9"
       tobe.gsub!(/\n/, '')
     end
@@ -81,16 +81,6 @@ class TestPack < Test::Unit::TestCase
   # JRUBY-4967
   def test_pack_CC
     assert_raises(ArgumentError) { [0].pack('CC') }
-  end
-
-  # same as MRI's test_pack_infection
-  # except for 'P' and 'p' formats (aren't implemented)
-  def test_pack_infection
-    tainted_array_string = ["123456"]
-    tainted_array_string.first.taint
-    ['a', 'A', 'Z', 'B', 'b', 'H', 'h', 'u', 'M', 'm'].each do |f|
-      assert_predicate(tainted_array_string.pack(f), :tainted?)
-    end
   end
 
 end

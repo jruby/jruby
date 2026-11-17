@@ -1,2 +1,0 @@
-fails:Enumerable#group_by returns a tainted hash if self is tainted
-fails:Enumerable#group_by returns an untrusted hash if self is untrusted

@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 
 // These instructions show up in three contexts:
 // - To assign args in parenthesized units: |.., (a,b,c), .. |
@@ -26,5 +27,11 @@ public abstract class MultipleAsgnBase extends OneOperandResultBaseInstr {
 
     public int getIndex() {
         return index;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getIndex());
     }
 }

@@ -7,11 +7,11 @@ describe "Pathname#relative_path_from" do
   end
 
   it "raises an error when the two paths do not share a common prefix" do
-    lambda { relative_path_str('/usr', 'foo') }.should raise_error(ArgumentError)
+    -> { relative_path_str('/usr', 'foo') }.should.raise(ArgumentError)
   end
 
   it "raises an error when the base directory has .." do
-    lambda { relative_path_str('a', '..') }.should raise_error(ArgumentError)
+    -> { relative_path_str('a', '..') }.should.raise(ArgumentError)
   end
 
   it "returns a path relative from root" do
@@ -47,5 +47,9 @@ describe "Pathname#relative_path_from" do
     relative_path_str('.', '.').should == '.'
     relative_path_str('..', '..').should == '.'
     relative_path_str('..', '.').should == '..'
+  end
+
+  it 'converts string argument to Pathname' do
+    Pathname.new('/usr/bin/ls').relative_path_from('/usr').to_s.should == 'bin/ls'
   end
 end

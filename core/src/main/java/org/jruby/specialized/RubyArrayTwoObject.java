@@ -3,17 +3,21 @@ package org.jruby.specialized;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyClass;
 import org.jruby.RubyComparable;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
+import org.jruby.api.Create;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -35,7 +39,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
     public RubyArrayTwoObject(RubyClass otherClass, IRubyObject car, IRubyObject cdr) {
         // packed arrays are omitted from ObjectSpace
-        super(otherClass, false);
+        super(otherClass);
         this.car = car;
         this.cdr = cdr;
         this.realLength = 2;
@@ -71,20 +75,19 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray aryDup() {
+    public RubyArrayNative<?> aryDup() {
         if (!packed()) return super.aryDup();
         return new RubyArrayTwoObject(getRuntime().getArray(), this);
     }
 
     @Override
-    public IRubyObject rb_clear() {
-        if (!packed()) return super.rb_clear();
+    public IRubyObject rb_clear(ThreadContext context) {
+        if (!packed()) return super.rb_clear(context);
 
-        modifyCheck();
+        modifyCheck(context);
 
         // fail packing, but defer [] creation in case it is never needed
-        IRubyObject nil = getRuntime().getNil();
-        car = cdr = nil;
+        car = cdr = context.nil;
         values = IRubyObject.NULL_ARRAY;
         realLength = 0;
 
@@ -92,9 +95,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public void copyInto(IRubyObject[] target, int start) {
+    public void copyInto(ThreadContext context, IRubyObject[] target, int start) {
         if (!packed()) {
-            super.copyInto(target, start);
+            super.copyInto(context, target, start);
             return;
         }
         target[start] = car;
@@ -102,14 +105,14 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public void copyInto(IRubyObject[] target, int start, int len) {
+    public void copyInto(ThreadContext context, IRubyObject[] target, int start, int len) {
         if (!packed()) {
-            super.copyInto(target, start, len);
+            super.copyInto(context, target, start, len);
             return;
         }
         if (len != 2) {
-            unpack();
-            super.copyInto(target, start, len);
+            unpack(context);
+            super.copyInto(context, target, start, len);
             return;
         }
         target[start] = car;
@@ -117,9 +120,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject dup() {
-        if (!packed()) return super.dup();
-        return new RubyArrayTwoObject(this);
+    protected RubyArrayNative<?> dupImpl(Ruby runtime, RubyClass metaClass) {
+        if (!packed()) return super.dupImpl(runtime, metaClass);
+        return new RubyArrayTwoObject(metaClass, this);
     }
 
     @Override
@@ -152,25 +155,18 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
-        boolean tainted = isTaint();
 
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
-        if (s1.isTaint()) tainted = true;
-        else str.setEncoding(s1.getEncoding());
-        str.cat19(s1);
+        EncodingUtils.encAssociateIndex(str, s1.getEncoding());
+        str.catWithCodeRange(s1);
 
         ByteList bytes = str.getByteList();
-        bytes.ensure(2 + s2.size() + 1);
         bytes.append((byte) ',').append((byte) ' ');
 
-        if (s2.isTaint()) tainted = true;
-        else str.setEncoding(s2.getEncoding());
-        str.cat19(s2);
+        str.catWithCodeRange(s2);
 
         str.cat((byte) ']');
-
-        if (tainted) str.setTaint(true);
 
         return str;
     }
@@ -187,7 +183,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     protected IRubyObject internalRotateBang(ThreadContext context, int cnt) {
         if (!packed()) return super.internalRotateBang(context, cnt);
 
-        modifyCheck();
+        modifyCheck(context);
 
         if (cnt % 2 == 1) {
             IRubyObject tmp = car;
@@ -199,20 +195,20 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject op_plus(IRubyObject obj) {
-        if (!packed()) return super.op_plus(obj);
-        RubyArray y = obj.convertToArray();
-        if (y.size() == 0) return new RubyArrayTwoObject(this);
-        return super.op_plus(y);
+    public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
+        if (!packed()) return super.op_plus(context, obj);
+        var y = obj.convertToArray();
+        if (y.isEmpty()) return new RubyArrayTwoObject(this);
+        return super.op_plus(context, y);
     }
 
     @Override
-    public IRubyObject replace(IRubyObject orig) {
-        if (!packed()) return super.replace(orig);
+    public IRubyObject replace(ThreadContext context, IRubyObject orig) {
+        if (!packed()) return super.replace(context, orig);
 
-        modifyCheck();
+        modifyCheck(context);
 
-        RubyArray origArr = orig.convertToArray();
+        var origArr = orig.convertToArray();
 
         if (this == orig) return this;
 
@@ -222,15 +218,15 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
             return this;
         }
 
-        unpack();
+        unpack(context);
 
-        return super.replace(origArr);
+        return super.replace(context, origArr);
     }
 
     @Override
-    public IRubyObject reverse_bang() {
-        if (!packed()) return super.reverse_bang();
-
+    public IRubyObject reverse_bang(ThreadContext context) {
+        if (!packed()) return super.reverse_bang(context);
+        modifyCheck(context);
         IRubyObject tmp = car;
         car = cdr;
         cdr = tmp;
@@ -239,7 +235,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray safeReverse() {
+    protected RubyArray<?> safeReverse() {
         if (!packed()) return super.safeReverse();
 
         return new RubyArrayTwoObject(getMetaClass(), cdr, car);
@@ -249,11 +245,13 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     protected IRubyObject sortInternal(ThreadContext context, Block block) {
         if (!packed()) return super.sortInternal(context, block);
 
+        IRubyObject car = this.car;
+        IRubyObject cdr = this.cdr;
 
-        IRubyObject ret = block.yieldArray(context, newArray(context.runtime, car, cdr), null);
-        //TODO: ary_sort_check should be done here
+        IRubyObject ret = block.yieldArray(context, Create.newArray(context, car, cdr), null);
+        modifyCheck(context);
         int compare = RubyComparable.cmpint(context, ret, car, cdr);
-        if (compare > 0) reverse_bang();
+        if (compare > 0) reverse_bang(context);
         return this;
     }
 
@@ -265,36 +263,50 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         // One check per specialized fast-path to make the check invariant.
         JavaSites.Array2Sites sites = sites(context);
-        final boolean fixnumBypass = !honorOverride || sites.op_cmp_fixnum.retrieveCache(runtime.getFixnum()).method.isBuiltin();
-        final boolean stringBypass = !honorOverride || sites.op_cmp_string.retrieveCache(runtime.getString()).method.isBuiltin();
 
         IRubyObject o1 = car;
         IRubyObject o2 = cdr;
+
         int compare;
-        if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+        if (isFixnumBypass(context, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
             compare = compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-        } else if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
+        } else if (isStringBypass(context, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString &&
+                (!honorOverride || o1.getMetaClass() == runtime.getString() && o2.getMetaClass() == runtime.getString())) {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
+            modifyCheck(context);
         }
 
-        if (compare > 0) reverse_bang();
+        if (compare > 0) reverse_bang(context);
 
         return this;
     }
 
-    @Override
-    public IRubyObject store(long index, IRubyObject value) {
-        if (!packed()) return super.store(index, value);
+    private boolean isStringBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkStringCmp(context);
+    }
 
-        switch ((int) index) {
-            case 0: return car = value;
-            case 1: return cdr = value;
+    private boolean isFixnumBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkIntegerCmp(context);
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    protected void storeInternal(final int index, final IRubyObject value) {
+        storeInternal(getCurrentContext(), index, value);
+    }
+
+    @Override
+    protected void storeInternal(ThreadContext context, final int index, final IRubyObject value) {
+        if (packed()) {
+            switch (index) {
+                case 0: car = value; return;
+                case 1: cdr = value; return;
+            }
+            unpack(context);
         }
 
-        unpack();
-        return super.store(index, value);
+        super.storeInternal(context, index, value);
     }
 
     @Override
@@ -305,7 +317,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (beg > 2 || beg < 0 || len < 0) return runtime.getNil();
 
-        if (len == 0 || beg == 2) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY);
+        if (len == 0 || beg == 2) return RubyArray.newEmptyArray(runtime, metaClass);
 
         if (beg == 0) {
             if (len == 1) return new RubyArrayOneObject(metaClass, car);
@@ -317,8 +329,8 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject[] toJavaArray() {
-        if (!packed()) return super.toJavaArray();
+    public IRubyObject[] toJavaArray(ThreadContext context) {
+        if (!packed()) return super.toJavaArray(context);
 
         return arrayOf(car, cdr);
     }
@@ -327,6 +339,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject uniq(ThreadContext context) {
         if (!packed()) return super.uniq(context);
 
+        IRubyObject car = this.car;
+        IRubyObject cdr = this.cdr;
+
         if (invokedynamic(context, car, MethodNames.HASH).equals(invokedynamic(context, cdr, MethodNames.HASH)) &&
                 (car == cdr || invokedynamic(context, car, MethodNames.EQL, cdr).isTrue())) {
             // Use cdr because it would have been inserted into RubyArray#uniq's RubyHash last
@@ -334,6 +349,51 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         } else {
             return new RubyArrayTwoObject(this);
         }
+    }
+
+    @Override
+    public RubyArray<?> collectArray(ThreadContext context, Block block) {
+        if (!packed()) return super.collectArray(context, block);
+        if (!block.isGiven()) return makeShared();
+
+        IRubyObject newCar = block.yieldNonArray(context, this.car, null);
+
+        if (realLength == 2) { // no size change, yield last elt and return
+            return new RubyArrayTwoObject(context.runtime, newCar, block.yieldNonArray(context, cdr, null));
+        }
+
+        // size has changed, unpack and continue with loop form
+        unpack(context);
+
+        int currentLength = this.realLength;
+        if (currentLength == 0) return Create.newEmptyArray(context);
+
+        IRubyObject[] arr = IRubyObject.array(currentLength);
+        arr[0] = newCar;
+
+        int i = 1;
+        for (; i < this.realLength; i++) {
+            // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
+            // See JRUBY-5434
+            safeArraySet(context, arr, i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
+        }
+
+        // use iteration count as new size in case something was deleted along the way
+        return newArrayMayCopy(context.runtime, arr, 0, i);
+    }
+
+    @Override
+    protected RubyArrayNative<?> makeShared() {
+        if (!packed()) return super.makeShared();
+
+        return new RubyArrayTwoObject(this);
+    }
+
+    @Override
+    public IRubyObject[] toJavaArrayMaybeUnsafe() {
+        if (!packed()) return super.toJavaArrayMaybeUnsafe();
+
+        return new IRubyObject[] { car, cdr };
     }
 
     private static final JavaSites.Array2Sites sites(ThreadContext context) {

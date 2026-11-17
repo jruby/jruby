@@ -16,14 +16,25 @@ describe "IO.pipe" do
 
   it "returns two IO objects" do
     @r, @w = IO.pipe
-    @r.should be_kind_of(IO)
-    @w.should be_kind_of(IO)
+    @r.should.is_a?(IO)
+    @w.should.is_a?(IO)
   end
 
   it "returns instances of a subclass when called on a subclass" do
     @r, @w = IOSpecs::SubIO.pipe
-    @r.should be_an_instance_of(IOSpecs::SubIO)
-    @w.should be_an_instance_of(IOSpecs::SubIO)
+    @r.should.instance_of?(IOSpecs::SubIO)
+    @w.should.instance_of?(IOSpecs::SubIO)
+  end
+
+  it "does not use IO.new method to create pipes and allows its overriding" do
+    ScratchPad.record []
+
+    # so redefined .new is not called, but original #initialize is
+    @r, @w = IOSpecs::SubIOWithRedefinedNew.pipe
+    ScratchPad.recorded.should == [:call_original_initialize, :call_original_initialize] # called 2 times - for each pipe (r and w)
+
+    @r.should.instance_of?(IOSpecs::SubIOWithRedefinedNew)
+    @w.should.instance_of?(IOSpecs::SubIOWithRedefinedNew)
   end
 end
 
@@ -31,8 +42,8 @@ describe "IO.pipe" do
   describe "passed a block" do
     it "yields two IO objects" do
       IO.pipe do |r, w|
-        r.should be_kind_of(IO)
-        w.should be_kind_of(IO)
+        r.should.is_a?(IO)
+        w.should.is_a?(IO)
       end
     end
 
@@ -44,21 +55,21 @@ describe "IO.pipe" do
       r, w = IO.pipe do |_r, _w|
         [_r, _w]
       end
-      r.closed?.should == true
-      w.closed?.should == true
+      r.should.closed?
+      w.should.closed?
     end
 
     it "closes both IO objects when the block raises" do
       r = w = nil
-      lambda do
+      -> do
         IO.pipe do |_r, _w|
           r = _r
           w = _w
           raise RuntimeError
         end
-      end.should raise_error(RuntimeError)
-      r.closed?.should == true
-      w.closed?.should == true
+      end.should.raise(RuntimeError)
+      r.should.closed?
+      w.should.closed?
     end
 
     it "allows IO objects to be closed within the block" do
@@ -67,8 +78,8 @@ describe "IO.pipe" do
         _w.close
         [_r, _w]
       end
-      r.closed?.should == true
-      w.closed?.should == true
+      r.should.closed?
+      w.should.closed?
     end
   end
 end
@@ -89,7 +100,7 @@ describe "IO.pipe" do
 
     IO.pipe do |r, w|
       r.external_encoding.should == Encoding::ISO_8859_1
-      r.internal_encoding.should be_nil
+      r.internal_encoding.should == nil
     end
   end
 
@@ -109,14 +120,14 @@ describe "IO.pipe" do
 
     IO.pipe do |r, w|
       r.external_encoding.should == Encoding::UTF_8
-      r.internal_encoding.should be_nil
+      r.internal_encoding.should == nil
     end
   end
 
   it "sets the external encoding of the read end when passed an Encoding argument" do
     IO.pipe(Encoding::UTF_8) do |r, w|
       r.external_encoding.should == Encoding::UTF_8
-      r.internal_encoding.should be_nil
+      r.internal_encoding.should == nil
     end
   end
 
@@ -130,14 +141,14 @@ describe "IO.pipe" do
   it "sets the external encoding of the read end when passed the name of an Encoding" do
     IO.pipe("UTF-8") do |r, w|
       r.external_encoding.should == Encoding::UTF_8
-      r.internal_encoding.should be_nil
+      r.internal_encoding.should == nil
     end
   end
 
   it "accepts 'bom|' prefix for external encoding" do
     IO.pipe("BOM|UTF-8") do |r, w|
       r.external_encoding.should == Encoding::UTF_8
-      r.internal_encoding.should be_nil
+      r.internal_encoding.should == nil
     end
   end
 
@@ -179,7 +190,7 @@ describe "IO.pipe" do
   it "calls #to_hash to convert an options argument" do
     options = mock("io pipe encoding options")
     options.should_receive(:to_hash).and_return({ invalid: :replace })
-    IO.pipe("UTF-8", "ISO-8859-1", options) { |r, w| }
+    IO.pipe("UTF-8", "ISO-8859-1", **options) { |r, w| }
   end
 
   it "calls #to_str to convert the first argument to a String" do
@@ -202,13 +213,13 @@ describe "IO.pipe" do
 
   it "sets no external encoding for the write end" do
     IO.pipe(Encoding::UTF_8) do |r, w|
-      w.external_encoding.should be_nil
+      w.external_encoding.should == nil
     end
   end
 
   it "sets no internal encoding for the write end" do
     IO.pipe(Encoding::UTF_8) do |r, w|
-      w.external_encoding.should be_nil
+      w.external_encoding.should == nil
     end
   end
 end

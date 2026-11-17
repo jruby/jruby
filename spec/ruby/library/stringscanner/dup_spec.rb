@@ -12,10 +12,10 @@ describe "StringScanner#dup" do
     s.string.should == @string
   end
 
-  it "copies the passed StringSCanner's position to self" do
+  it "copies the passed StringScanner's position to self" do
     @orig_s.pos = 5
     s = @orig_s.dup
-    s.pos.should eql(5)
+    s.pos.should.eql?(5)
   end
 
   it "copies previous match state" do
@@ -34,6 +34,6 @@ describe "StringScanner#dup" do
   it "copies the passed StringScanner scan pointer to self" do
     @orig_s.terminate
     s = @orig_s.dup
-    s.eos?.should be_true
+    s.eos?.should == true
   end
 end

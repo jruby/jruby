@@ -1,0 +1,8 @@
+fails:ObjectSpace.dump dumps the content of object as JSON
+fails:ObjectSpace.dump dumps to string when passed output: :string
+fails:ObjectSpace.dump dumps to string when :output not specified
+fails:ObjectSpace.dump dumps to a temporary file when passed output: :file
+fails:ObjectSpace.dump dumps to a temporary file when passed output: :nil
+fails:ObjectSpace.dump dumps to stdout when passed output: :stdout
+fails:ObjectSpace.dump dumps to provided IO when passed output: IO
+fails:ObjectSpace.dump raises ArgumentError when passed not supported :output value

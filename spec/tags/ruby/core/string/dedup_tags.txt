@@ -1,0 +1,2 @@
+fails(spec removed in future revision of specs, https://github.com/ruby/spec/issues/1249):String#-@ interns the provided string if it is frozen
+fails(spec removed in future revision of specs, https://github.com/ruby/spec/issues/1249):String#dedup interns the provided string if it is frozen

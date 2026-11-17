@@ -1,1 +1,0 @@
-exclude :test_replay, "SnakeYAML always sends default tags to implicit document start"

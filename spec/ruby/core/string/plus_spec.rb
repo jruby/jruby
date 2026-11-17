@@ -3,6 +3,9 @@ require_relative 'fixtures/classes'
 require_relative 'shared/concat'
 
 describe "String#+" do
+  it_behaves_like :string_concat_encoding, :+
+  it_behaves_like :string_concat_type_coercion, :+
+
   it "returns a new string containing the given string concatenated to self" do
     ("" + "").should == ""
     ("" + "Hello").should == "Hello"
@@ -18,30 +21,17 @@ describe "String#+" do
   end
 
   it "raises a TypeError when given any object that fails #to_str" do
-    lambda { "" + Object.new }.should raise_error(TypeError)
-    lambda { "" + 65 }.should raise_error(TypeError)
+    -> { "" + Object.new }.should.raise(TypeError)
+    -> { "" + 65 }.should.raise(TypeError)
   end
 
   it "doesn't return subclass instances" do
-    (StringSpecs::MyString.new("hello") + "").should be_an_instance_of(String)
-    (StringSpecs::MyString.new("hello") + "foo").should be_an_instance_of(String)
-    (StringSpecs::MyString.new("hello") + StringSpecs::MyString.new("foo")).should be_an_instance_of(String)
-    (StringSpecs::MyString.new("hello") + StringSpecs::MyString.new("")).should be_an_instance_of(String)
-    (StringSpecs::MyString.new("") + StringSpecs::MyString.new("")).should be_an_instance_of(String)
-    ("hello" + StringSpecs::MyString.new("foo")).should be_an_instance_of(String)
-    ("hello" + StringSpecs::MyString.new("")).should be_an_instance_of(String)
+    (StringSpecs::MyString.new("hello") + "").should.instance_of?(String)
+    (StringSpecs::MyString.new("hello") + "foo").should.instance_of?(String)
+    (StringSpecs::MyString.new("hello") + StringSpecs::MyString.new("foo")).should.instance_of?(String)
+    (StringSpecs::MyString.new("hello") + StringSpecs::MyString.new("")).should.instance_of?(String)
+    (StringSpecs::MyString.new("") + StringSpecs::MyString.new("")).should.instance_of?(String)
+    ("hello" + StringSpecs::MyString.new("foo")).should.instance_of?(String)
+    ("hello" + StringSpecs::MyString.new("")).should.instance_of?(String)
   end
-
-  it "taints the result when self or other is tainted" do
-    strs = ["", "OK", StringSpecs::MyString.new(""), StringSpecs::MyString.new("OK")]
-    strs += strs.map { |s| s.dup.taint }
-
-    strs.each do |str|
-      strs.each do |other|
-        (str + other).tainted?.should == (str.tainted? | other.tainted?)
-      end
-    end
-  end
-
-  it_behaves_like :string_concat_encoding, :+
 end

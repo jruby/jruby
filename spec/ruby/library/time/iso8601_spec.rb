@@ -1,7 +1,8 @@
 require_relative '../../spec_helper'
-require_relative 'shared/xmlschema'
 require 'time'
 
-describe "Time.xmlschema" do
-  it_behaves_like :time_xmlschema, :iso8601
+describe "Time.iso8601" do
+  it "is an alias of Time.xmlschema" do
+    Time.method(:iso8601).should == Time.method(:xmlschema)
+  end
 end

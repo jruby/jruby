@@ -35,7 +35,7 @@ import java.util.Locale;
 
 
 public class JsonProfilePrinter extends ProfilePrinter {
-    private static Locale JSON_LOCALE = Locale.ROOT;
+    private static final Locale JSON_LOCALE = Locale.ROOT;
 
     public JsonProfilePrinter(ProfileData profileData) {
         super(profileData);

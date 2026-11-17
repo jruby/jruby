@@ -10,6 +10,16 @@ module CompilerSpecUtils
   ensure
     $VERBOSE = verb
   end
+
+  # Create interpreted block bodies even when the host uses forced compilation or a zero JIT threshold.
+  def without_compilation
+    config = JRuby.runtime.instance_config
+    previous_mode = config.compile_mode
+    config.compile_mode = org.jruby.RubyInstanceConfig::CompileMode::OFF
+    yield
+  ensure
+    config.compile_mode = previous_mode
+  end
 end
 
 module InterpreterSpecUtils
@@ -20,10 +30,69 @@ module InterpreterSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield eval(src, TOPLEVEL_BINDING, filename, line) unless (ENV['INTERPRETER_TEST'] == 'false')
+    result = without_compilation { eval(src, TOPLEVEL_BINDING, filename, line) }
+    yield result
   end
 
   def self.name; "interpreter"; end
+end
+
+module PersistenceSpecUtils
+  include CompilerSpecUtils
+
+  def initialize(*x, **y)
+    super
+    @persist_runtime = org.jruby.Ruby.newInstance
+  end
+
+  attr_reader :persist_runtime
+
+  def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    run( "def __temp; #{src}; end; __temp", filename, line)
+  end
+
+  def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    result = without_compilation { encode_decode_run(src, filename, line) }
+    yield result
+  end
+
+  def self.name; "persistence"; end
+
+  private
+
+  def encode_decode_run(src, filename, line)
+    # persist with separate runtime
+    jruby_module = persist_runtime.eval_scriptlet("require 'jruby'; JRuby")
+    persist_context = persist_runtime.current_context
+    persist_src = persist_runtime.new_string(src)
+    persist_filename = persist_runtime.new_string(src)
+    persist_line = persist_runtime.new_fixnum(line - 1)
+    method = org.jruby.ext.jruby.JRubyLibrary.compile_ir(
+      persist_context,
+      jruby_module,
+      [persist_src,
+       persist_filename,
+       persist_runtime.false,
+       persist_line].to_java(org.jruby.runtime.builtin.IRubyObject),
+      org.jruby.runtime.Block::NULL_BLOCK)
+
+    # encode and decode
+    baos = java.io.ByteArrayOutputStream.new
+    writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
+    org.jruby.ir.persistence.IRWriter.persist(writer, method)
+
+    # interpret with test runtime
+    runtime = JRuby.runtime
+    context = runtime.get_current_context
+    manager = runtime.getIRManager()
+    top_self = runtime.top_self
+
+    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, filename.to_java)
+    method = org.jruby.ir.persistence.IRReader.load(manager, reader)
+
+    interpreter = org.jruby.ir.interpreter.Interpreter.new
+    interpreter.execute(context, method, top_self)
+  end
 end
 
 module JITSpecUtils
@@ -34,7 +103,7 @@ module JITSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield compile_run(src, filename, line) unless (ENV['COMPILER_TEST'] == 'false')
+    yield compile_run(src, filename, line)
   end
 
   def self.name; "jit"; end
@@ -54,12 +123,13 @@ module JITSpecUtils
       scope.setModule currModule = runtime.top_self.class
     end
 
-    method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+    method = org.jruby.ir.builder.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = org.jruby.ir.targets.JVMVisitor.new(runtime)
+    compiler = new_visitor(runtime)
     compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
-    scriptMethod = compiled.getMethod("RUBY$script",
+    scriptMethod = compiled.getMethod(
+        org.jruby.util.JavaNameMangler::SCRIPT_METHOD_NAME,
         org.jruby.runtime.ThreadContext.java_class,
         org.jruby.parser.StaticScope.java_class,
         org.jruby.runtime.builtin.IRubyObject.java_class,
@@ -68,12 +138,22 @@ module JITSpecUtils
         org.jruby.RubyModule.java_class,
         java.lang.String.java_class)
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
+    if method.kind_of?(org.jruby.ir.IRMethod) || method.kind_of?(org.jruby.ir.IRClosure)
+      descriptors = org.jruby.runtime.ArgumentDescriptor.encode(method.argument_descriptors)
+    else
+      descriptors = ""
+    end
 
     return org.jruby.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
         org.jruby.runtime.Visibility::PUBLIC,
-        currModule)
+        currModule,
+        descriptors)
+  end
+
+  def new_visitor(runtime)
+    org.jruby.ir.targets.JVMVisitor.newForJIT(runtime)
   end
 
   def compile_run(src, filename, line)
@@ -89,9 +169,21 @@ module JITSpecUtils
   end
 end
 
+module AOTSpecUtils
+  include JITSpecUtils
+
+  def new_visitor(runtime)
+    org.jruby.ir.targets.JVMVisitor.newForAOT(runtime)
+  end
+
+  def self.name; "aot"; end
+end
+
 modes = []
 modes << InterpreterSpecUtils unless (ENV['INTERPRETER_TEST'] == 'false')
+modes << PersistenceSpecUtils unless (ENV['PERSISTENCE_TEST'] == 'false')
 modes << JITSpecUtils unless (ENV['COMPILER_TEST'] == 'false')
+modes << AOTSpecUtils unless (ENV['AOT_TEST'] == 'false')
 
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -111,15 +203,117 @@ modes.each do |mode|
       run("a = {:foo => {:bar => 5.5}}; a") {|result| expect(result).to eq({:foo => {:bar => 5.5}}) }
       run("a = /foo/; a") {|result| expect(result).to eq(/foo/) }
       run("1..2") {|result| expect(result).to eq (1..2) }
+      run("1...2") {|result| expect(result).to eq (1...2) }
       run("1r") {|result| expect(result).to eq (Rational(1, 1))}
       run("1.1r") {|result| expect(result).to eq (Rational(11, 10))}
       run("1i") {|result| expect(result).to eq (Complex(0, 1))}
       run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))}
     end
 
+    it "compiles Complex literals with integer, float, bignum, and rational imaginary parts" do
+      run('[1i, -1i, 1.1i, -1.1i, 18446744073709551616i, -18446744073709551616i, 1.1ri]') do |result|
+        expect(result).to eq [Complex(0, 1), Complex(0, -1), Complex(0, 1.1), Complex(0, -1.1),
+                             Complex(0, 18446744073709551616), Complex(0, -18446744073709551616),
+                             Complex(0, Rational(11, 10))]
+      end
+    end
+
+    it "reuses Complex literals on repeated evaluation" do
+      run('a = []; 2.times { a << [1i, 1.1i, 18446744073709551616i, 1ri, 1.1ri, 18446744073709551616ri, 0.00000000000000000001ri] }; a') do |result|
+        first, second = result
+        first.each_index do |index|
+          expect(first[index]).to equal(second[index])
+          expect(first[index]).to be_frozen
+        end
+      end
+    end
+
+    it "caches Rational literals with large numerators and denominators" do
+      run('a = []; 2.times { a << [1r, 1.1r, 18446744073709551616r, 0.00000000000000000001r] }; a') do |result|
+        first, second = result
+        expect(first).to eq [Rational(1), Rational(11, 10), Rational(18446744073709551616), Rational(1, 100000000000000000000)]
+        first.each_index { |index| expect(first[index]).to equal(second[index]) }
+      end
+    end
+
+    it "caches normalized Rational literals with small and large numerators and denominators" do
+      forms = {
+        '0.5000000000000000000000000000' => [1, 2],
+        '0.00000000000000000001' => [1, 100000000000000000000],
+        '100000000000000000000.5000000000000000000000' => [200000000000000000001, 2],
+        '1.23456789012345678901' => [123456789012345678901, 100000000000000000000],
+        '-9223372036854775808' => [-9223372036854775808, 1],
+        '0.0000000000000000000000000000' => [0, 1]
+      }
+      forms.each do |literal, parts|
+        run("a = []; 2.times { a << [#{literal}r, #{literal}ri] }; a") do |result|
+          first, second = result
+          first_rational, first_complex = first
+          second_rational, second_complex = second
+          expect(first_rational).to equal(second_rational)
+          expect(first_complex).to equal(second_complex)
+          expect(first_rational).to be_frozen
+          expect(first_complex).to be_frozen
+          expect([first_rational.numerator, first_rational.denominator]).to eq parts
+          expect([first_complex.imaginary.numerator, first_complex.imaginary.denominator]).to eq parts
+        end
+      end
+    end
+
+    it "preserves the numeric types of Complex imaginary parts" do
+      run('[1i, 1.0i, 1ri].map { |c| c.imaginary.class }') do |result|
+        expect(result).to eq [Integer, Float, Rational]
+      end
+      run('[18446744073709551616ri, -0.00000000000000000001ri]') do |result|
+        expect(result).to eq [Complex(0, Rational(18446744073709551616)), Complex(0, Rational(-1, 100000000000000000000))]
+      end
+    end
+
+    it "preserves the sign of zero in Complex float literals" do
+      run('[0.0i, -0.0i].map { |c| 1.0 / c.imaginary }') do |result|
+        expect(result).to eq [Float::INFINITY, -Float::INFINITY]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9823
+    it "compiles a range with an Integer begin and a non-Integer literal end" do
+      run('[(1..2.0), (1...2.5).include?(2), (1..2r), (1..18446744073709551616).size]') do |x|
+        expect(x).to eq [1..2.0, true, 1..2r, 18446744073709551616]
+      end
+      run('[(1..2.0).exclude_end?, (1...2.0).exclude_end?, (1.0...2.0).exclude_end?]') do |x|
+        expect(x).to eq [false, true, true]
+      end
+    end
+
     it "compiles interpolated strings" do
       run('a = "hello#{42}"; a') {|result| expect(result).to eq('hello42') }
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
+      # same cases in presence of refinements
+      run('class NoToS; end; module AddToS; refine(NoToS){def to_s; "42"; end}; end; class TryToS; using AddToS; def self.a; "hello#{NoToS.new}"; end; end; TryToS.a') {|result| expect(result).to eq('hello42') }
+
+      # https://github.com/jruby/jruby/issues/8847
+      pid_dstr_32_times = '#{$$}' * 32
+      pid_32_times = ([$$] * 32).join('')
+      run("\"hello#{pid_dstr_32_times}\"") {|result| expect(result).to eq('hello' + pid_32_times) }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9822
+    it "compiles a range with one string literal endpoint" do
+      run('x = "c"; ["a"..x, x..."e", ("a"..), (.."b")]') do |x|
+        expect(x).to eq ["a".."c", "c"..."e", ("a"..), (.."b")]
+      end
+    end
+
+    it "raises from building a range of incomparable literals where the range appears" do
+      run('begin; (1.."3"); rescue ArgumentError; :rescued; end') do |x|
+        expect(x).to eq :rescued
+      end
+      run('def __range_error = yield rescue $!.class; [__range_error { (1.."3") }, __range_error { (:a..1) }, __range_error { (true..false) }]') do |x|
+        expect(x).to eq [ArgumentError, ArgumentError, ArgumentError]
+      end
+      run('[(:a..:c), (1r..2), (nil.."a"), ("a"..nil)]') do |x|
+        expect(x).to eq [:a..:c, 1r..2, nil.."a", "a"..nil]
+      end
     end
 
     it "compiles calls" do
@@ -185,6 +379,13 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9825
+    it "compiles __ENCODING__ on one side of a branch" do
+      run('v = true; [v ? __ENCODING__ : nil, v && __ENCODING__]') do |x|
+        expect(x).to eq [Encoding::UTF_8, Encoding::UTF_8]
+      end
+    end
+
     it "compiles backrefs" do
       base = "'0123456789A' =~ /(1)(2)(3)(4)(5)(6)(7)(8)(9)/; "
       run(base + "$~") {|result| expect(result).to be_a_kind_of MatchData }
@@ -232,7 +433,7 @@ modes.each do |mode|
         }
         arr << x
         arr
-        EOS
+      EOS
       run(blocks_code) {|result| expect(result).to eq([1,2,3,4,5,6]) }
     end
 
@@ -247,7 +448,7 @@ modes.each do |mode|
           yield
         end
         foo { 1 }
-        EOS
+      EOS
       run(yield_in_block) {|result| expect(result).to eq 1}
 
       yield_in_proc = <<-EOS
@@ -256,7 +457,7 @@ modes.each do |mode|
         end
         p = foo { 1 }
         p.call
-        EOS
+      EOS
       run(yield_in_proc) {|result| expect(result).to eq 1 }
     end
 
@@ -288,7 +489,7 @@ modes.each do |mode|
           end
         end
         CompiledClass1.new.foo
-        EOS
+      EOS
       run(class_string) {|result| expect(result).to eq 'cc1' }
     end
 
@@ -370,13 +571,13 @@ modes.each do |mode|
     end
 
     it "compiles singleton method definitions" do
-      run("a = 'bar'; def a.foo; 'foo'; end; a.foo") {|result| expect(result).to eq "foo" }
+      run("a = +'bar'; def a.foo; 'foo'; end; a.foo") {|result| expect(result).to eq "foo" }
       run("class Integer; def self.foo; 'foo'; end; end; Integer.foo") {|result| expect(result).to eq "foo" }
       run("def String.foo; 'foo'; end; String.foo") {|result| expect(result).to eq "foo" }
     end
 
     it "compiles singleton class definitions" do
-      run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar") {|result| expect(result).to eq "bar" }
+      run("a = +'bar'; class << a; def bar; 'bar'; end; end; a.bar") {|result| expect(result).to eq "bar" }
       run("class Integer; class << self; def bar; 'bar'; end; end; end; Integer.bar") {|result| expect(result).to eq "bar" }
       run("class Integer; def self.metaclass; class << self; self; end; end; end; Integer.metaclass") do |result|
         expect(result).to eq class << Integer; self; end
@@ -412,7 +613,7 @@ modes.each do |mode|
     end
 
     it "compiles splatted element assignment" do
-      run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a") {|result| expect(result).to match "fasdfo" }
+      run("a = +'foo'; y = ['o']; a[*y] = 'asdf'; a") {|result| expect(result).to match "fasdfo" }
     end
 
     it "compiles constant access" do
@@ -527,6 +728,91 @@ modes.each do |mode|
       end
     end
 
+    it "handles optimized homogeneous case/when" do
+      run('
+        ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"].map do |x|
+          case x
+          when "a"
+            1
+          when "b"
+            2
+          when "c"
+            3
+          when "d"
+            4
+          when "e"
+            5
+          when "f"
+            6
+          when "g"
+            7
+          when "h"
+            8
+          when "i"
+            9
+          when "j"
+            10
+          else
+            fail
+          end
+        end
+      ') do |result|
+        expect(result).to eq [1,2,3,4,5,6,7,8,9,10]
+      end
+
+      run('
+        [:zxcvbnmzxcvbnm, :qwertyuiopqwertyuiop, :asdfghjklasdfghjkl, :a, :z].map do |x|
+          case x
+          when :zxcvbnmzxcvbnm
+            1
+          when :qwertyuiopqwertyuiop
+            2
+          when :asdfghjklasdfghjkl
+            3
+          when :a
+            4
+          when :z
+            5
+          else
+            fail
+          end
+          end
+      ') do |result|
+        expect(result).to eq [1,2,3,4,5]
+      end
+
+      run('
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map do |x|
+          case x
+          when 1
+            1
+          when 2
+            2
+          when 3
+            3
+          when 4
+            4
+          when 5
+            5
+          when 6
+            6
+          when 7
+            7
+          when 8
+            8
+          when 9
+            9
+          when 10
+            10
+          else
+            fail
+          end
+        end
+      ') do |result|
+        expect(result).to eq [1,2,3,4,5,6,7,8,9,10]
+      end
+    end     
+
     it "handles 0-4 arg and splatted whens in a caseless case/when" do
       run('
         case
@@ -547,6 +833,21 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9827
+    it "compiles a splatted when clause in the presence of refinements" do
+      run(<<~'RUBY') do |x|
+        module RefineEqqForSplat; refine(String) { def ===(other) = other == :hit }; end
+        class SplatWhenWithUsing
+          using RefineEqqForSplat
+          WORDS = ["x"]
+          def self.go(v) = case v; when *WORDS then :matched; else :unmatched; end
+        end
+        [SplatWhenWithUsing.go(:hit), SplatWhenWithUsing.go("x")]
+      RUBY
+        expect(x).to eq [:matched, :unmatched]
+      end
+    end
+
     it "matches any true value for a caseless case/when with > 3 args" do
       result = run('
         case
@@ -555,6 +856,21 @@ modes.each do |mode|
         end
       ') do |result|
         expect(result).to eq 42
+      end
+    end
+
+    it "evaluates every statement of a parenthesized when value" do
+      run('
+        n = 0
+        r = case "a"
+            when (n += 1; "b")
+              :b
+            when (n += 10; "a")
+              :a
+            end
+        [r, n]
+      ') do |result|
+        expect(result).to eq [:a, 11]
       end
     end
 
@@ -666,11 +982,29 @@ modes.each do |mode|
 
     it "properly resets $! to nil upon normal exit from a rescue" do
       # test that $! is getting reset/cleared appropriately
-      $! = nil
       run("begin; raise; rescue; end; $!") {|result| expect(result).to be_nil }
       run("1.times { begin; raise; rescue; next; end }; $!") {|result| expect(result).to be_nil }
       run("begin; raise; rescue; begin; raise; rescue; end; $!; end") {|result| expect(result).to_not be_nil }
       run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end") {|result| expect(result).to_not be_nil }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9828
+    it "checks the operator's visibility in element operator assignment on self" do
+      run(<<~'RUBY') do |x|
+        class PrivatePlusElement; private def +(other) = :private_plus; end
+        class PrivatePlusBox
+          def [](i) = PrivatePlusElement.new
+          def []=(i, v); end
+          def bump
+            self[0] += 1
+          rescue NoMethodError => e
+            e.message
+          end
+        end
+        PrivatePlusBox.new.bump
+      RUBY
+        expect(x).to match(/private method '\+' called/)
+      end
     end
 
     it "executes ensure wrapping a while body that breaks after the loop has terminated" do
@@ -682,6 +1016,12 @@ modes.each do |mode|
       # JRUBY-1388, Foo::Bar broke in the compiler
       silence_warnings do
         run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      end
+    end
+
+    it "assigns a scoped constant with ||= when only a top-level constant has the same name" do
+      run('m = Module.new; m::String ||= :assigned; m::String') do |result|
+        expect(result).to eq :assigned
       end
     end
 
@@ -719,24 +1059,24 @@ modes.each do |mode|
 
     it "assigns the result of a terminated loop to LHS variable" do
       # variable assignment of various types from loop results
-      run("a = while true; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = while true; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = while true; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = while true; break 1; end; $a") {|result| expect(result).to eq 1 }
-      run("a = until false; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = until false; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = until false; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = until false; break 1; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = while true; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = while true; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = while true; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = while true; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = until false; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = until false; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = until false; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = until false; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # same assignments but loop is within a begin
-      run("a = begin; while true; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; while true; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; while true; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; while true; break 1; end; end; $a") {|result| expect(result).to eq 1 }
-      run("a = begin; until false; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; until false; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; until false; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; until false; break 1; end; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; while true; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; while true; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; while true; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; while true; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; until false; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; until false; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; until false; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; until false; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # other contexts that require while to preserve stack
       run("1 + while true; break 1; end") {|result| expect(result).to eq 2 }
@@ -792,6 +1132,44 @@ modes.each do |mode|
       run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo") {|result| expect(result).to eq 3 }
     end
 
+    # See https://github.com/jruby/jruby/issues/9834
+    it "compiles array patterns" do
+      run('[([1] in [1]), ([1, 2] in [_, 2]), ([1, 2, 3] in [1, *r]) && r, (case [3]; in [x] then x; end)]') do |x|
+        expect(x).to eq [true, true, [2, 3], 3]
+      end
+    end
+
+    it "compiles array patterns with elements after a rest" do
+      run('case [1, 2, 3, 4]; in [a, *r, c, d] then [a, r, c, d]; end') do |x|
+        expect(x).to eq [1, [2], 3, 4]
+      end
+    end
+
+    it "compiles find patterns" do
+      run('[(case [1, 2, 3, 4]; in [*pre, 2, 3, *post] then [pre, post]; end), ([1, 2] in [*, 3, *])]') do |x|
+        expect(x).to eq [[[1], [4]], false]
+      end
+    end
+
+    it "compiles local variables with non-ASCII names" do
+      run('ä = 1; [ä, binding.local_variable_get(:ä)]') {|x| expect(x).to eq [1, 1] }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9854
+    it "raises the length mismatch error of a single array pattern" do
+      run('[(begin; [1] => [_, _]; rescue NoMatchingPatternError => e; [e.class, e.message]; end), ' \
+          '(begin; [1] => [_, _, *]; rescue NoMatchingPatternError => e; [e.class, e.message]; end)]') do |x|
+        expect(x).to eq [[NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2)"],
+                         [NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2+)"]]
+      end
+    end
+
+    it "raises the missing key error of a single hash pattern" do
+      run('begin; {a: 1} => {b:}; rescue NoMatchingPatternKeyError => e; [e.class, e.message, e.key]; end') do |x|
+        expect(x).to eq [NoMatchingPatternKeyError, "{a: 1}: key not found: :b", :b]
+      end
+    end
+
     it "assigns named groups in regular expressions to local variables" do
       # named groups with capture
       run("
@@ -839,9 +1217,10 @@ modes.each do |mode|
       end
       "){}}.to_not raise_error
 
+      # Enumerator.new without a block
       expect {
         JRuby5871A.new("foo", :each_byte)
-      }.to_not raise_error
+      }.to raise_error(ArgumentError)
 
       expect{run("
       class JRuby5871B < #{enumerable}
@@ -851,9 +1230,10 @@ modes.each do |mode|
       end
       "){}}.to_not raise_error
 
+      # Enumerator.new without a block
       expect {
         JRuby5871B.new("foo", :each_byte)
-      }.to_not raise_error
+      }.to raise_error(ArgumentError)
     end
 
     it "allows colon2 const assignment on LHS of masgn" do
@@ -960,6 +1340,61 @@ modes.each do |mode|
       expect {run('def foo(a:); end; foo'){}}.to raise_error(ArgumentError)
     end
 
+    # See https://github.com/jruby/jruby/issues/9814
+    it "compiles calls with braceless hash arguments whose keys are not plain symbols" do
+      run <<~'RUBY' do |x|
+        def foo(*a, **kw) = [a, kw]
+        k = :k
+        y = 1
+        [
+          {}.merge("a" => 1),
+          {}.merge(1 => 1),
+          {}.merge(k => 1),
+          {}.merge(a: 1, "b" => 2),
+          {}.merge("a-b": 1),
+          {}.merge("a#{y}": 1),
+          foo("a" => 1),
+          foo(1, a: 2, "b" => 3),
+          [1].map { {}.merge("a" => 1) }
+        ]
+      RUBY
+        expect(x).to eq [
+          {"a" => 1},
+          {1 => 1},
+          {k: 1},
+          {a: 1, "b" => 2},
+          {"a-b": 1},
+          {a1: 1},
+          [[], {"a" => 1}],
+          [[1], {a: 2, "b" => 3}],
+          [{"a" => 1}]
+        ]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9820
+    it "compiles calls with keyword arguments and a block-pass argument" do
+      run(<<~'RUBY') do |x|
+        def kw_block_pass(*a, **kw, &b) = [a, kw, b&.call(2)]
+        pr = proc { |v| v * 10 }
+        [
+          kw_block_pass(a: 1, &:to_s),
+          kw_block_pass(1, a: 2, &pr),
+          kw_block_pass(a: 1, &nil),
+          kw_block_pass(a: 1, &method(:Integer)),
+          [1].map { kw_block_pass(a: 3, &pr) }
+        ]
+      RUBY
+        expect(x).to eq [
+          [[], {a: 1}, "2"],
+          [[1], {a: 2}, 20],
+          [[], {a: 1}, nil],
+          [[], {a: 1}, 2],
+          [[[], {a: 3}, 20]]
+        ]
+      end
+    end
+
     it "passes keyrest arguments through zsuper correctly" do
       run '
         class C
@@ -1007,6 +1442,13 @@ modes.each do |mode|
     it "handles literal arrays in case/when" do
       run('$case_ary = [1,2,3]; case $case_ary; when [1,2,3]; true; else; false; end') do |x|
         expect(x).to eq(true)
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9829
+    it "compiles a case/in with several in clauses inside a block" do
+      run('[0, 1, 2].map { |v| case v; in 0 then :zero; in 1 then :one; else :other; end }') do |x|
+        expect(x).to eq [:zero, :one, :other]
       end
     end
 
@@ -1076,29 +1518,6 @@ modes.each do |mode|
       end
     end
 
-    it "handles circular optional argument assignment" do
-      begin
-        verbose = $VERBOSE
-        $VERBOSE = nil
-
-        run('def foo(a = a, b = b, c = c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-
-        run('def foo(a: a, b: b, c: c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a: a, b: b, c: c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-      ensure
-        $VERBOSE = verbose
-      end
-    end
-
     it "combines optional args and zsuper properly" do
       begin
         verbose = $VERBOSE
@@ -1147,6 +1566,42 @@ modes.each do |mode|
     end
 
     # jruby/jruby#4148
+    # See https://github.com/jruby/jruby/issues/9824
+    it "compiles operator calls on self with a literal Integer or Float argument" do
+      run(<<~'RUBY') do |x|
+        class Integer
+          def __self_op_spec = [self + 1, self == 0, self > 0.5, self * 2.0]
+        end
+        class SelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self == 3, self * 2.0]
+          def +(other) = @v + other
+          def ==(other) = @v == other
+          def *(other) = @v * other
+        end
+        result = [3.__self_op_spec, 0.__self_op_spec, SelfOperatorBox.new(3).ops]
+        Integer.send(:remove_method, :__self_op_spec)
+        result
+      RUBY
+        expect(x).to eq [[4, false, true, 6.0], [1, true, false, 0.0], [4, true, 6.0]]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9836
+    it "calls a private operator on self with a literal argument" do
+      run(<<~'RUBY') do |x|
+        class PrivateSelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self * 2.0]
+          private def +(other) = @v + other
+          private def *(other) = @v * other
+        end
+        PrivateSelfOperatorBox.new(3).ops
+      RUBY
+        expect(x).to eq [4, 6.0]
+      end
+    end
+
     it "binds variable-arity calls to attributes properly" do
       run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
         expect(x).to eq(1)
@@ -1155,6 +1610,11 @@ modes.each do |mode|
 
     it "handles defined? super forms" do
       run('a = Class.new { def a; end }; b = Class.new(a) { def a; [defined? super, defined? super()]; end }.new; b.a') do |x|
+        expect(x).to eq(["super", "super"])
+      end
+
+      # inside a block
+      run('a = Class.new { def a; end }; b = Class.new(a) { def a; proc { [defined? super, defined? super()] }.call; end }.new; b.a') do |x|
         expect(x).to eq(["super", "super"])
       end
     end
@@ -1167,7 +1627,7 @@ modes.each do |mode|
 
     it "handles defined? a.b= forms" do
       run('a = Class.new { attr_writer :b; def []=(_,_); end; def a; [defined? self.b=0, defined? self[0]=0]; end }.new; [a.a, defined? a.b = 0, defined? a[0] = 0]') do |x|
-        expect(x).to eq([["assignment", "assignment"], "assignment", "assignment"])
+        expect(x).to eq([["method", "method"], "method", "method"])
       end
     end
 
@@ -1187,6 +1647,286 @@ modes.each do |mode|
       run('defined? $"') do |x|
         expect(x).to eq("global-variable")
       end
+    end
+
+    it "handles refined AsString constructs" do
+      run('
+          class ThingToRefine; end
+          module RefineForAsString; refine(ThingToRefine) { def to_s; "foo"; end }; end
+          class AsStringWithUsing; using RefineForAsString; def go; /#{ThingToRefine.new}/; end; end
+          AsStringWithUsing.new.go') do |x|
+        expect(x).to eq(/foo/)
+      end
+    end
+
+    it "handles method_missing dispatch forms" do
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo()') {|x| expect(x).to eq([:foo])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1)') {|x| expect(x).to eq([:foo, 1])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2)') {|x| expect(x).to eq([:foo, 1, 2])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3)') {|x| expect(x).to eq([:foo, 1, 2, 3])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3,4)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 1.upto(4).to_a; obj.foo(*ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 2.upto(4).to_a; obj.foo(1, *ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+    end
+
+    it "handles send dispatch forms" do
+      run('obj = Class.new { def foo(*args); args; end }.new; obj.send(:foo,1)') {|x| expect(x).to eq([1])}
+      run('obj = Class.new { def foo(*args); args; end }.new; obj.send(:foo,1,2,3,4)') {|x| expect(x).to eq([1, 2, 3, 4])}
+      run('obj = Class.new { def foo(*args); args; end }.new; ary = 1.upto(4).to_a; obj.send(:foo,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
+      run('obj = Class.new { def foo(*args); args; end }.new; ary = 2.upto(4).to_a; obj.send(:foo,1,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
+    end
+
+    it "calls compiled methods of all arities with and without block" do
+      run('Class.new { def foo; 1; end; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); a; end; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); a; end; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { def foo; yield 1; end; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls interpreted methods of all arities with and without block" do
+      run('Class.new { eval "def foo; 1; end"; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); a; end"; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { eval "def foo; yield 1; end"; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls root package methods with and without block" do
+      run('java') {|x| expect(x).to eq(java)}
+      run('javax') {|x| expect(x).to eq(javax)}
+      run('javafx') {|x| expect(x).to eq(javafx)}
+      run('org') {|x| expect(x).to eq(org)}
+      run('com') {|x| expect(x).to eq(com)}
+    end
+
+    # See jruby/jruby#7246, test must loop twice to hit optimized dispatch
+    it "dispatches to Java using a block to implement an interface" do
+      run('ary = []; 2.times { java.util.ArrayList.new([1]).forEach { |e| ary << e } }; ary') {|ary| ary.should == [1, 1]}
+    end
+
+    it "calls struct field methods" do
+      run('StructTest1 = Struct.new(:foo); st1 = StructTest1.new; st1.foo = 1; st1.foo') {|x| expect(x).to eq(1)}
+      run('StructTest2 = Struct.new(:foo); class StructTest2; def do_foo; self.foo = 1; foo; end; end; StructTest2.new.do_foo') {|x| expect(x).to eq(1)}
+    end
+
+    it "calls aref with string key" do
+      # optimized case for hash receiver
+      run('def foo; {"a" => 1}; end; ary = foo; ary["a"] = 5; ary["a"]') {|val| expect(val).to eq(5)}
+      # normal case for non-hash
+      run('def foo; "abcd"; end; str = foo; str["a"]') {|val| expect(val).to eq("a")}
+      # method_missing case
+      run('o = Object.new; def o.method_missing(sym, a); :ok; end; o["a"]') {|val| expect(val).to eq(:ok)}
+      # failed call site case, calls twice to trigger monomorphic cache in fail path
+      run('10.times.map {o = Object.new; def o.[](a); 1; end; o}.map{|o| 2.times {o["a"]}; o["a"]}.sum') {|val| expect(val).to eq(10)}
+      # failed call site with method_missing
+      run(<<-AREF) {|val| expect(val).to eq(10)}
+        ary = 10.times.map do |i|
+          o = Object.new
+          if i < 9
+            def o.[](a); 1; end
+          else
+            def o.method_missing(sym, a); 1; end;
+          end
+          o
+        end
+        ary.map{|o| o["a"]}.sum
+      AREF
+      # compare_by_identity after usage
+      run('h = {"a" => 1}; val = nil; 2.times { val = h["a"]; h.compare_by_identity }; val') {|val| expect(val).to eq(nil)}
+    end
+
+    it "handles instance super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def instance_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def instance_super
+            super {1}
+          end
+        end
+        BInstanceSuper.new.instance_super
+      SUPER
+    end
+
+    it "handles module super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+          class AModuleSuper
+            def module_super
+              yield
+            end
+          end
+          module BModuleSuper
+            def module_super
+              super {1}
+            end
+          end
+          class CModuleSuper < AModuleSuper
+            include BModuleSuper
+          end
+          CModuleSuper.new.module_super
+      SUPER
+    end
+
+    it "handles class super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def self.class_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def self.class_super
+            super {1}
+          end
+        end
+        BInstanceSuper.class_super
+      SUPER
+    end
+
+    it "handles zsuper calls" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AZSuper
+          def z_super
+            1
+          end
+        end
+        class BZSuper < AZSuper
+          def z_super
+            1.times { super }
+          end
+        end
+        BZSuper.new.z_super
+      SUPER
+    end
+
+    it "compiles debug chilled strings that can be modified without impacting other strings" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~CHILLED) {|val| expect(val).to eq("")}
+        str = ""
+        str << "hello"
+        ""
+      CHILLED
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
+
+    it "compiles debug string ranges that know where their endpoints were created" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~RANGE) do |val|
+        range = ("a"..
+                 "z")
+        [range.begin, range.end].map do |s|
+          s << "!"
+        rescue => e
+          e.message
+        end
+      RANGE
+        expect(val).to all(match(/created at .+:\d+\z/m))
+        begin_line, end_line = val.map { it[/\d+\z/].to_i }
+        expect(end_line - begin_line).to eq(1)
+      end
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
+
+    it "compiles very long dynamic strings" do
+      run('"a#{$$}a#{$$}a#{$$}a#{$$}"') do
+        expect(it).to eq("a#{$$}" * 4)
+      end
+      run('"a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}"') do
+        expect(it).to eq("a#{$$}" * 24)
+      end
+    end
+
+    it "can invoke java.lang.reflect.Proxy dynamic proxy objects" do
+      run(<<~RUBY) { expect(it).to eq [1].to_java }
+        proxy = java.lang.reflect.Proxy.newProxyInstance(JRuby.runtime.jruby_class_loader, [java.util.function.Function].to_java(java.lang.Class)) {|o, m, x| x}
+        proxy.apply(1)
+      RUBY
+    end
+
+    # See https://github.com/jruby/jruby/issues/9531
+    it "propagates keywords through multi-dispatch Class#new + #initialize" do
+      looped = 3.times.map { Time.new("2023-05-08 10:21:21", in: "UTC")}
+      nonlooped = [
+        Time.new("2023-05-08 10:21:21", in: "UTC"),
+        Time.new("2023-05-08 10:21:21", in: "UTC"),
+        Time.new("2023-05-08 10:21:21", in: "UTC")
+      ]
+
+      expect(looped).to eq nonlooped
     end
   end
 end

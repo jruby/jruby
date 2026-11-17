@@ -45,6 +45,6 @@ namespace :maven do
 
   desc "Deploy release and bump version"
   task :deploy_release do
-    system "mvn clean deploy -Psonatype-oss-release,release"
+    system "./mvnw clean deploy -Psonatype-oss-release,release"
   end
 end

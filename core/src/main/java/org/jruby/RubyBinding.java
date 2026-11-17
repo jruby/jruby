@@ -34,24 +34,34 @@
 
 package org.jruby;
 
-import java.util.HashSet;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.ripper.RubyLexer;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.IdUtil;
+import org.jruby.runtime.marshal.DataType;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
-/**
- * @author  jpetersen
- */
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.nameError;
+import static org.jruby.util.RubyStringBuilder.str;
+
 @JRubyClass(name="Binding")
-public class RubyBinding extends RubyObject {
+public class RubyBinding extends RubyObject implements DataType {
     private Binding binding;
 
     public RubyBinding(Ruby runtime, RubyClass rubyClass, Binding binding) {
@@ -63,27 +73,13 @@ public class RubyBinding extends RubyObject {
     private RubyBinding(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-    
-    private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyBinding instance = new RubyBinding(runtime, klass);
-            
-            return instance;
-        }
-    };
-    
-    public static RubyClass createBindingClass(Ruby runtime) {
-        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
-        runtime.setBinding(bindingClass);
 
-        bindingClass.setClassIndex(ClassIndex.BINDING);
-        bindingClass.setReifiedClass(RubyBinding.class);
-        
-        bindingClass.defineAnnotatedMethods(RubyBinding.class);
-        bindingClass.getSingletonClass().undefineMethod("new");
-        
-        return bindingClass;
+    public static RubyClass createBindingClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Binding", Object, RubyBinding::new).
+                reifiedClass(RubyBinding.class).
+                classIndex(ClassIndex.BINDING).
+                defineMethods(context, RubyBinding.class).
+                tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
     public Binding getBinding() {
@@ -96,16 +92,6 @@ public class RubyBinding extends RubyObject {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
-    @Deprecated
-    public static RubyBinding newBinding(Ruby runtime) {
-        return newBinding(runtime, runtime.getCurrentContext().currentBinding());
-    }
-
-    @Deprecated
-    public static RubyBinding newBinding(Ruby runtime, IRubyObject self) {
-       return newBinding(runtime, runtime.getCurrentContext().currentBinding(self));
-    }
-    
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context) {
@@ -113,26 +99,34 @@ public class RubyBinding extends RubyObject {
         
         return this;
     }
-    
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject other) {
-        RubyBinding otherBinding = (RubyBinding)other;
-        
-        binding = otherBinding.binding.clone();
+
+    @JRubyMethod
+    public IRubyObject dup(ThreadContext context) {
+        RubyBinding newBinding = newBinding(context.runtime, binding.dup(context));
+
+        copyInstanceVariablesInto(newBinding);
+
+        return newBinding;
+    }
+
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
+        binding = ((RubyBinding) other).binding.clone();
         
         return this;
     }
 
     // c: bind_eval
-    @JRubyMethod(name = "eval", required=1, optional=2)
+    @JRubyMethod(name = "eval", required = 1, optional = 2, checkArity = false)
     public IRubyObject eval(ThreadContext context, IRubyObject[] args) {
-        IRubyObject[] newArgs = new IRubyObject[args.length+1];
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
+        IRubyObject[] newArgs = new IRubyObject[argc+1];
         newArgs[0] = args[0]; // eval string
         newArgs[1] = this; // binding
-        if(args.length>1) {
+        if (argc > 1) {
             newArgs[2] = args[1]; // file
-            if(args.length>2) {
+            if (argc > 2) {
                 newArgs[3] = args[2]; // line
             }
         }
@@ -142,56 +136,136 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
-        return context.runtime.newBoolean(binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
+        String id = checkLocalId(context, symbol);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefinedOrImplicit(id) >= 0);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
-        String name = symbol.asJavaString().intern();
-        DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(name);
+        String id = checkLocalId(context, symbol);
+        DynamicScope scope = findLocalScope(binding.getEvalScope(context.runtime), id);
+        int slot = scope == null ? -1 : scope.getStaticScope().existsOrImplicit(id);
 
-        if (slot == -1) throw context.runtime.newNameError("local variable `" + name +  "' not defined for " + inspect(), name);
+        if (slot < 0) throw undefinedVariableError(context, symbol);
 
-        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+        return scope.getValueOrNil(slot, 0, context.nil);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_set(ThreadContext context, IRubyObject symbol, IRubyObject value) {
-        String name = symbol.asJavaString().intern();
+        String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(name);
+        DynamicScope scope = findLocalScope(evalScope, id);
 
-        if (slot == -1) { // Yay! New variable associated with this binding
-            slot = evalScope.getStaticScope().addVariable(name.intern());
+        if (scope == null) { // Yay! New variable associated with this binding
+            int slot = evalScope.getStaticScope().addVariable(id.intern());
             evalScope.growIfNeeded();
+
+            return evalScope.setValue(unpackLowChar(slot), value, unpackHighChar(slot));
         }
 
-        return evalScope.setValue(slot & 0xffff, value, slot >> 16);
+        int slot = scope.getStaticScope().existsOrImplicit(id);
+
+        // for the implicit "it" variable
+        if (slot == StaticScope.IMPLICIT) throw undefinedVariableError(context, symbol);
+
+        return scope.setValue(slot, value, 0);
+    }
+
+    /**
+     * Find the dynamic scope that holds a local variable, or null if none does.
+     *
+     * This walks the dynamic scopes rather than taking a depth from the static ones, because the two
+     * chains don't always line up: in the interpreter, a for loop body gets a dynamic scope of its own,
+     * but a block inside it has the enclosing method's static scope as its parent.
+     */
+    private static DynamicScope findLocalScope(DynamicScope scope, String id) {
+        for (DynamicScope current = scope; current != null; current = current.getParentScope()) {
+            StaticScope staticScope = current.getStaticScope();
+
+            if (staticScope.existsOrImplicit(id) != -1) return current;
+            if (staticScope.getType() == StaticScope.Type.LOCAL) break;
+        }
+
+        return null;
+    }
+
+    @JRubyMethod(name = "implicit_parameter_defined?")
+    public IRubyObject implicit_parameter_defined_p(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        return asBoolean(context, binding.getDynamicScope().getStaticScope().isDefinedImplicitParameter(id) != -1);
+    }
+
+    @JRubyMethod
+    public IRubyObject implicit_parameter_get(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        DynamicScope dynamicScope = binding.getDynamicScope();
+        StaticScope staticScope = dynamicScope.getStaticScope();
+        int slot = staticScope.isDefinedImplicitParameter(id);
+
+        if (slot != StaticScope.IMPLICIT) throw undefinedImplicitVariableError(context, symbol);
+
+        slot = staticScope.isDefined(id);
+
+        return dynamicScope.getValueOrNil(unpackLowChar(slot), unpackHighChar(slot), context.nil);
+    }
+
+    private static boolean isNumberedVariable(String id) {
+        return id.length() == 2 && id.charAt(0) == '_' && Character.isDigit(id.charAt(1));
+    }
+
+    private RaiseException numberedParameterError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "numbered parameter '", symbol, "' is not a local variable"), symbol);
+    }
+
+    private RaiseException undefinedVariableError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "local variable '", symbol, "' not defined for " + inspect(context)), symbol);
+    }
+
+    private RaiseException undefinedImplicitVariableError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "'", symbol, "' is not an implicit parameter"), symbol);
+    }
+
+    @CRuby(value = "check_local_id", file = "proc.c")
+    private String checkLocalId(ThreadContext context, IRubyObject obj) {
+        String id = RubySymbol.idStringFromObject(context, obj);
+
+        if (isNumberedVariable(id)) throw numberedParameterError(context, obj);
+
+        if (!RubyLexer.isIdentifierChar(id.charAt(0))) {
+            throw nameError(context, str(context.runtime, "wrong local variable name '", obj, "' for ", this), id);
+        }
+
+        return id;
+    }
+
+    private String checkImplicitId(ThreadContext context, IRubyObject obj) {
+        String id = RubySymbol.idStringFromObject(context, obj);
+
+        if (!isNumberedVariable(id) && !id.equals("it")) throw undefinedImplicitVariableError(context, obj);
+
+        return id;
     }
 
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        HashSet<String> encounteredLocalVariables = new HashSet<>();
-        RubyArray allLocalVariables = runtime.newArray();
-        DynamicScope currentScope = binding.getEvalScope(context.runtime);
+        return binding.getEvalScope(context.runtime).getStaticScope().getLocalVariables(context);
+    }
 
-        while (currentScope != null) {
-            for (String name : currentScope.getStaticScope().getVariables()) {
-                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(runtime.newSymbol(name));
-                    encounteredLocalVariables.add(name);
-                }
-            }
-            currentScope = currentScope.getParentScope();
-        }
-
-        return allLocalVariables;
+    @JRubyMethod
+    public IRubyObject implicit_parameters(ThreadContext context) {
+        return binding.getEvalScope(context.runtime).getStaticScope().getEnclosingScope().getImplicitParameters(context);
     }
 
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
         return binding.getSelf();
+    }
+
+    @JRubyMethod
+    public IRubyObject source_location(ThreadContext context) {
+        IRubyObject filename = newString(context, binding.getFile()).freeze(context);
+        RubyFixnum line = asFixnum(context, binding.getLine() + 1); /* zero-based */
+        return newArray(context, filename, line);
     }
 }

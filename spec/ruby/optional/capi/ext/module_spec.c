@@ -34,6 +34,11 @@ static VALUE module_specs_const_set(VALUE self, VALUE klass, VALUE name, VALUE v
   return Qnil;
 }
 
+static VALUE module_specs_rb_deprecate_constant(VALUE self, VALUE cls, VALUE str_name) {
+  rb_deprecate_constant(cls, RSTRING_PTR(str_name));
+  return Qnil;
+}
+
 static VALUE module_specs_rb_define_alias(VALUE self, VALUE obj,
   VALUE new_name, VALUE old_name) {
 
@@ -74,6 +79,27 @@ static VALUE module_specs_rb_define_global_function(VALUE self, VALUE str_name) 
 static VALUE module_specs_rb_define_method(VALUE self, VALUE cls, VALUE str_name) {
   rb_define_method(cls, RSTRING_PTR(str_name), module_specs_test_method, 0);
   return Qnil;
+}
+
+static VALUE module_specs_method_var_args_1(int argc, VALUE *argv, VALUE self) {
+  VALUE ary = rb_ary_new();
+  int i;
+  for (i = 0; i < argc; i++) {
+    rb_ary_push(ary, argv[i]);
+  }
+  return ary;
+}
+
+static VALUE module_specs_method_var_args_2(VALUE self, VALUE argv) {
+  return argv;
+}
+
+static VALUE module_specs_rb_define_method_1required(VALUE self, VALUE arg1) {
+    return arg1;
+}
+
+static VALUE module_specs_rb_define_method_2required(VALUE self, VALUE arg1, VALUE arg2) {
+    return arg2;
 }
 
 static VALUE module_specs_rb_define_module_function(VALUE self, VALUE cls, VALUE str_name) {
@@ -122,27 +148,29 @@ void Init_module_spec(void) {
   rb_define_method(cls, "rb_const_get_at", module_specs_const_get_at, 2);
   rb_define_method(cls, "rb_const_get_from", module_specs_const_get_from, 2);
   rb_define_method(cls, "rb_const_set", module_specs_const_set, 3);
+  rb_define_method(cls, "rb_deprecate_constant", module_specs_rb_deprecate_constant, 2);
+
   rb_define_method(cls, "rb_define_alias", module_specs_rb_define_alias, 3);
   rb_define_method(cls, "rb_alias", module_specs_rb_alias, 3);
   rb_define_method(cls, "rb_define_module", module_specs_rb_define_module, 1);
   rb_define_method(cls, "rb_define_module_under", module_specs_rb_define_module_under, 2);
   rb_define_method(cls, "rb_define_const", module_specs_define_const, 3);
   rb_define_method(cls, "rb_define_global_const", module_specs_define_global_const, 2);
-  rb_define_method(cls, "rb_define_global_function",
-      module_specs_rb_define_global_function, 1);
+  rb_define_method(cls, "rb_define_global_function", module_specs_rb_define_global_function, 1);
 
   rb_define_method(cls, "rb_define_method", module_specs_rb_define_method, 2);
-  rb_define_method(cls, "rb_define_module_function",
-      module_specs_rb_define_module_function, 2);
+  rb_define_method(cls, "rb_define_method_varargs_1", module_specs_method_var_args_1, -1);
+  rb_define_method(cls, "rb_define_method_varargs_2", module_specs_method_var_args_2, -2);
+  rb_define_method(cls, "rb_define_method_1required", module_specs_rb_define_method_1required, 1);
+  rb_define_method(cls, "rb_define_method_2required", module_specs_rb_define_method_2required, 2);
 
-  rb_define_method(cls, "rb_define_private_method",
-      module_specs_rb_define_private_method, 2);
+  rb_define_method(cls, "rb_define_module_function", module_specs_rb_define_module_function, 2);
 
-  rb_define_method(cls, "rb_define_protected_method",
-      module_specs_rb_define_protected_method, 2);
+  rb_define_method(cls, "rb_define_private_method", module_specs_rb_define_private_method, 2);
 
-  rb_define_method(cls, "rb_define_singleton_method",
-      module_specs_rb_define_singleton_method, 2);
+  rb_define_method(cls, "rb_define_protected_method", module_specs_rb_define_protected_method, 2);
+
+  rb_define_method(cls, "rb_define_singleton_method", module_specs_rb_define_singleton_method, 2);
 
   rb_define_method(cls, "rb_undef_method", module_specs_rb_undef_method, 2);
   rb_define_method(cls, "rb_undef", module_specs_rb_undef, 2);

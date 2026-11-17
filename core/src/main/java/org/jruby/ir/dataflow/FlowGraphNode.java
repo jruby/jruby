@@ -22,7 +22,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         this.basicBlock = basicBlock;
 
         // Cache the rescuer node for easy access
-        rescuer = problem.getScope().getCFG().getRescuerBBFor(basicBlock);
+        rescuer = problem.getFIC().getCFG().getRescuerBBFor(basicBlock);
     }
 
     /**
@@ -47,7 +47,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
      * is a predecessor of the current node!  The choice of "IN/OUT" is
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(Edge e, U pred);
+    public abstract void compute_MEET(Edge<BasicBlock, CFG.EdgeType> e, U pred);
 
     /**
      * Any setting up of state/initialization before applying transfer function
@@ -77,7 +77,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
      * Get the control flow graph
      */
     public CFG getCFG() {
-        return problem.scope.getCFG();
+        return problem.fic.getCFG();
     }
 
     /** Builds the data-flow variables (or facts) for a particular node.
@@ -118,7 +118,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
     }
 
     public void computeDataFlowInfoBackward(List<U> workList, BitSet bbSet) {
-        for (Edge<BasicBlock> e: getCFG().getOutgoingEdges(basicBlock)) {
+        for (Edge<BasicBlock, CFG.EdgeType> e: getCFG().getOutgoingEdges(basicBlock)) {
             compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getData()));
         }
 
@@ -145,7 +145,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
     }
 
     public void computeDataFlowInfoForward(List<U> workList, BitSet bbSet) {
-        for (Edge<BasicBlock> e: getCFG().getIncomingEdges(basicBlock)) {
+        for (Edge<BasicBlock, CFG.EdgeType> e: getCFG().getIncomingEdges(basicBlock)) {
             compute_MEET(e, problem.getFlowGraphNode(e.getSource().getData()));
         }
 

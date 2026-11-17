@@ -8,6 +8,16 @@ describe "C-API Symbol function" do
     @s = CApiSymbolSpecs.new
   end
 
+  describe "SYMBOL_P" do
+    it "returns true for a Symbol" do
+      @s.SYMBOL_P(:foo).should == true
+    end
+
+    it "returns false for non-Symbols" do
+      @s.SYMBOL_P('bar').should == false
+    end
+  end
+
   describe "rb_intern" do
     it "converts a string to a symbol, uniquely" do
       @s.rb_intern("test_symbol").should == :test_symbol
@@ -51,6 +61,10 @@ describe "C-API Symbol function" do
     it "converts a symbol to a C char array" do
       @s.rb_id2name(:test_symbol).should == "test_symbol"
     end
+
+    it "returns (char*) NULL for (ID) 0" do
+      @s.rb_id2name_id_zero.should == nil
+    end
   end
 
   describe "rb_id2str" do
@@ -62,12 +76,29 @@ describe "C-API Symbol function" do
       str = "test_symbol".encode(Encoding::UTF_16LE)
       @s.rb_id2str(str.to_sym).encoding.should == Encoding::UTF_16LE
     end
+
+    it "returns (VALUE) 0 = Qfalse for (ID) 0" do
+      @s.rb_id2str_id_zero.should == false
+    end
   end
 
   describe "rb_intern_str" do
     it "converts a Ruby String to a Symbol" do
       str = "test_symbol"
       @s.rb_intern_str(str).should == :test_symbol
+    end
+  end
+
+  describe "rb_check_symbol_cstr" do
+    it "returns a Symbol if a Symbol already exists for the given C string" do
+      sym = :test_symbol
+      @s.rb_check_symbol_cstr('test_symbol').should == sym
+    end
+
+    it "returns nil if the Symbol does not exist yet and does not create it" do
+      str = "symbol_does_not_exist_#{Object.new.object_id}_#{rand}"
+      @s.rb_check_symbol_cstr(str).should == nil # does not create the Symbol
+      @s.rb_check_symbol_cstr(str).should == nil
     end
   end
 
@@ -128,6 +159,22 @@ describe "C-API Symbol function" do
   describe "rb_sym2str" do
     it "converts a Symbol to a String" do
       @s.rb_sym2str(:bacon).should == "bacon"
+    end
+  end
+
+  describe "rb_to_symbol" do
+    it "returns a Symbol for a Symbol" do
+      @s.rb_to_symbol(:foo).should == :foo
+    end
+
+    it "returns a Symbol for a String" do
+      @s.rb_to_symbol("foo").should == :foo
+    end
+
+    it "coerces to Symbol using to_str" do
+      o = mock('o')
+      o.should_receive(:to_str).and_return("foo")
+      @s.rb_to_symbol(o).should == :foo
     end
   end
 end

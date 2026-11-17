@@ -17,6 +17,8 @@ import org.jruby.util.io.ChannelHelper;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 
+import static org.jruby.api.Create.newString;
+
 /**
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
  */
@@ -65,7 +67,8 @@ public class GetsLexerSource extends LexerSource {
 
     @Override
     public ByteList gets() {
-        IRubyObject result = io.callMethod(io.getRuntime().getCurrentContext(), "gets");
+        var context = io.getRuntime().getCurrentContext();
+        IRubyObject result = io.callMethod(context, "gets");
         
         if (result.isNil()) return null;
         
@@ -73,7 +76,7 @@ public class GetsLexerSource extends LexerSource {
         offset += bytelist.getRealSize();
         bytelist.setEncoding(encoding);
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), bytelist));
+        if (scriptLines != null) scriptLines.append(context, newString(context, bytelist));
 
         return bytelist;
     }

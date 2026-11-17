@@ -12,15 +12,12 @@
 #include <string.h>
 typedef void* ptr;
 typedef void* pointer;
-#ifdef _WIN32
-typedef char* caddr_t;
-#endif
 
 #define RET(T) T ptr_ret_##T(void* arg1, int offset) { \
-    T tmp; memcpy(&tmp, (caddr_t) arg1 + offset, sizeof(tmp)); return tmp; \
+    T tmp; memcpy(&tmp, (char *) arg1 + offset, sizeof(tmp)); return tmp; \
 }
 #define SET(T) void ptr_set_##T(void* arg1, int offset, T value) { \
-    memcpy((caddr_t) arg1 + offset, &value, sizeof(value)); \
+    memcpy((char *) arg1 + offset, &value, sizeof(value)); \
 }
 #define TEST(T) SET(T) RET(T)
 
@@ -33,19 +30,19 @@ TEST(double);
 TEST(pointer);
 
 void*
-ptr_return_array_element(void **ptrArray, int arrayIndex) 
+ptr_return_array_element(void **ptrArray, int arrayIndex)
 {
     return ptrArray[arrayIndex];
 }
 
 void
 ptr_set_array_element(void **ptrArray, int arrayIndex, void *value)
-{    
+{
     ptrArray[arrayIndex] = value;
 }
 
 void*
-ptr_malloc(int size) 
+ptr_malloc(int size)
 {
     return calloc(1, size);
 }

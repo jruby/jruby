@@ -14,9 +14,11 @@ import jnr.posix.util.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ShellLauncherTest extends TestCase {
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newString;
 
-    private Ruby runtime;
+public class ShellLauncherTest extends TestCase {
+    private ThreadContext context;
     private ShellLauncher launcher;
     private File testDir;
     private File testFile;
@@ -24,7 +26,7 @@ public class ShellLauncherTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.newInstance();
+        context = Ruby.newInstance().getCurrentContext();
     }
 
     @Override
@@ -66,9 +68,9 @@ public class ShellLauncherTest extends TestCase {
     public void testSingleArgumentCommandOnWindowsIsOnlyRunByShellIfCommandContainsSpaces() {
         if (Platform.IS_WINDOWS) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
+            RubyString cmd = newString(context, "nonexistentcmd");
             try {
-                ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
+                ShellLauncher.runAndWait(context.runtime, new IRubyObject[]{cmd}, baos);
                 fail("should have raised an exception");
             } catch (RaiseException re) {
             }
@@ -89,10 +91,10 @@ public class ShellLauncherTest extends TestCase {
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            int result = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
-                RubyString.newString(runtime, "ls"),
-                RubyString.newString(runtime, "-1"),
-                RubyString.newString(runtime, testDir.getName()),
+            int result = ShellLauncher.runAndWait(context.runtime, new IRubyObject[] {
+                newString(context, "ls"),
+                newString(context, "-1"),
+                newString(context, testDir.getName()),
             }, baos);
 
             if (result == 0) {
@@ -105,21 +107,20 @@ public class ShellLauncherTest extends TestCase {
         }
     }
     public void testUsesRubyEnvPathToRunShellPrograms() {
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        RubyString path = runtime.newString("PATH");
-        RubyString utilPath = runtime.newString(System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
-        ThreadContext context = runtime.getCurrentContext();
-        env.op_aset(context, path, 
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
+        RubyString path = newString(context, "PATH");
+        RubyString utilPath = newString(context, System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
+        env.op_aset(context, path,
                 env.op_aref(context, path).convertToString()
-                .op_plus(context, runtime.newString(File.pathSeparator)).convertToString()
+                .op_plus(context, newString(context, File.pathSeparator)).convertToString()
                 .op_plus(context, utilPath));
 
         String cmd = "shell_launcher_test";
         if (Platform.IS_WINDOWS) {
             cmd += ".bat";
         }
-        int code = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
-           RubyString.newString(runtime, cmd)
+        int code = ShellLauncher.runAndWait(context.runtime, new IRubyObject[] {
+           newString(context, cmd)
         });
         assertEquals(0, code);
     }

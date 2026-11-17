@@ -36,44 +36,46 @@ describe "BigDecimal#sqrt" do
     BigDecimal('121').sqrt(5).should be_close(11, 0.00001)
   end
 
-  it "returns square root of 0.9E-99999 with desired precision" do
-    @frac_2.sqrt(1).to_s.should =~ /\A0\.3E-49999\z/i
+  platform_is_not c_long_size: 32 do # fails on i686
+    it "returns square root of 0.9E-99999 with desired precision" do
+      @frac_2.sqrt(1).to_s.should =~ /\A0\.3E-49999\z/i
+    end
   end
 
   it "raises ArgumentError when no argument is given" do
-    lambda {
+    -> {
       @one.sqrt
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises ArgumentError if a negative number is given" do
-    lambda {
+    -> {
       @one.sqrt(-1)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises ArgumentError if 2 arguments are given" do
-    lambda {
+    -> {
       @one.sqrt(1, 1)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "raises TypeError if nil is given" do
-    lambda {
+    -> {
       @one.sqrt(nil)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises TypeError if a string is given" do
-    lambda {
+    -> {
       @one.sqrt("stuff")
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises TypeError if a plain Object is given" do
-    lambda {
+    -> {
       @one.sqrt(Object.new)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "returns 1 if precision is 0 or 1" do
@@ -82,9 +84,9 @@ describe "BigDecimal#sqrt" do
   end
 
   it "raises FloatDomainError on negative values" do
-    lambda {
+    -> {
       BigDecimal('-1').sqrt(10)
-    }.should raise_error(FloatDomainError)
+    }.should.raise(FloatDomainError)
   end
 
   it "returns positive infinity for infinity" do
@@ -92,15 +94,15 @@ describe "BigDecimal#sqrt" do
   end
 
   it "raises FloatDomainError for negative infinity" do
-    lambda {
+    -> {
       @infinity_minus.sqrt(1)
-    }.should raise_error(FloatDomainError)
+    }.should.raise(FloatDomainError)
   end
 
   it "raises FloatDomainError for NaN" do
-    lambda {
+    -> {
       @nan.sqrt(1)
-    }.should raise_error(FloatDomainError)
+    }.should.raise(FloatDomainError)
   end
 
   it "returns 0 for 0, +0.0 and -0.0" do

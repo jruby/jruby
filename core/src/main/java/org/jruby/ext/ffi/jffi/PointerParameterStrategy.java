@@ -5,9 +5,6 @@ import com.kenai.jffi.ObjectParameterType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 abstract public class PointerParameterStrategy extends ObjectParameterStrategy {
     private final boolean isReferenceRequired;
 

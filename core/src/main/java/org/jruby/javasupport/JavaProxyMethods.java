@@ -26,91 +26,134 @@
 
 package org.jruby.javasupport;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
-import org.jruby.RubyFixnum;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineModule;
+
 public class JavaProxyMethods {
 
     private JavaProxyMethods() { /* no instances */ }
 
     public static RubyModule createJavaProxyMethods(ThreadContext context) {
-        RubyModule JavaProxyMethods = context.runtime.defineModule("JavaProxyMethods");
-        JavaProxyMethods.defineAnnotatedMethods(JavaProxyMethods.class);
-        return JavaProxyMethods;
+        return defineModule(context, "JavaProxyMethods").defineMethods(context, JavaProxyMethods.class);
     }
     
     @JRubyMethod
     public static IRubyObject java_class(ThreadContext context, IRubyObject recv) {
-        return recv.getMetaClass().getRealClass().getInstanceVariable("@java_class");
+        return JavaProxy.getJavaClass(recv.getMetaClass().getRealClass());
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = { "java_object", "to_java_object" })
     public static IRubyObject java_object(ThreadContext context, IRubyObject recv) {
-        return (IRubyObject) recv.dataGetStruct();
-    }
-
-    @JRubyMethod(name = "java_object=")
-    public static IRubyObject java_object_set(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        // XXX: Check if it's appropriate type?
-        recv.dataWrapStruct(obj);
-        return obj;
-    }
-
-    @JRubyMethod
-    public static IRubyObject to_java_object(IRubyObject recv) {
-        return (JavaObject) recv.dataGetStruct();
+        Object javaObj = recv.dataGetStruct();
+        if (javaObj instanceof IRubyObject) {
+            return (IRubyObject) javaObj;
+        }
+        return Java.getInstance(context.runtime, javaObj);
     }
 
     @JRubyMethod(name = "eql?")
-    public static IRubyObject op_eql(IRubyObject recv, IRubyObject obj) {
-        return op_equal(recv, obj);
+    public static IRubyObject op_eql(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return op_equal(context, recv, obj);
     }
 
     @JRubyMethod(name = "==")
-    public static IRubyObject op_equal(IRubyObject recv, IRubyObject rhs) {
+    @SuppressWarnings("deprecation")
+    public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (recv instanceof JavaProxy) {
-            return JavaObject.op_equal((JavaProxy) recv, rhs);
+            return equals(context.runtime, ((JavaProxy) recv).getObject(), other);
         }
-        return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
+        // NOTE: only JavaProxy includes JavaProxyMethods
+        // these is only here for 'manual' JavaObject wrapping :
+        if (recv.dataGetStruct() instanceof RubyBasicObject) {
+            return ((RubyBasicObject) recv.dataGetStruct()).op_equal(context, other);
+        }
+        return context.nil;
     }
-    
-    @JRubyMethod
-    public static IRubyObject to_s(IRubyObject recv) {
-        if (recv instanceof JavaProxy) {
-            return JavaObject.to_s(recv.getRuntime(), ((JavaProxy) recv).getObject());
+
+    static RubyBoolean equals(final Ruby runtime, final Object thisValue, final IRubyObject other) {
+        final Object otherValue = JavaUtil.unwrapJava(other, RubyBasicObject.NEVER);
+
+        if ( otherValue == RubyBasicObject.NEVER ) { // not a wrapped object
+            return runtime.getFalse();
         }
-        final Object unwrap = recv.dataGetStruct();
-        if (unwrap != null) return ((JavaObject) unwrap).to_s();
-        return ((RubyBasicObject) recv).to_s();
+
+        if ( thisValue == null ) {
+            return runtime.newBoolean(otherValue == null);
+        }
+
+        return runtime.newBoolean(thisValue.equals(otherValue));
     }
 
     @JRubyMethod
+    public static IRubyObject to_s(ThreadContext context, IRubyObject recv) {
+        if (recv instanceof JavaProxy) return to_s(context, ((JavaProxy) recv).getObject());
+
+        // NOTE: only JavaProxy includes JavaProxyMethods these is only here for 'manual' JavaObject wrapping :
+        var data = recv.dataGetStruct();
+        return data instanceof IRubyObject ?
+            ((RubyBasicObject) data).to_s(context) : ((RubyBasicObject) recv).to_s(context);
+    }
+
+    static IRubyObject to_s(ThreadContext context, Object javaObject) {
+        if (javaObject == null) return newEmptyString(context);
+
+        final String stringValue = javaObject.toString();
+        return stringValue == null ? context.nil : RubyString.newUnicodeString(context.runtime, stringValue);
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    static IRubyObject to_s(Ruby runtime, Object javaObject) {
+        return to_s(runtime.getCurrentContext(), javaObject);
+    }
+
+    /**
+     * @param recv
+     * @return
+     * @deprecated Use {@link JavaProxyMethods#inspect(ThreadContext, IRubyObject)} instead
+     */
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject inspect(IRubyObject recv) {
-        if (recv instanceof RubyBasicObject) {
-            return ((RubyBasicObject) recv).hashyInspect();
-        }
-        return recv.inspect();
+        return inspect(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @JRubyMethod
+    public static IRubyObject inspect(ThreadContext context, IRubyObject recv) {
+        return recv instanceof RubyBasicObject basic ? basic.hashyInspect(context) : recv.inspect(context);
     }
     
     @JRubyMethod
-    public static IRubyObject hash(IRubyObject recv) {
-        if (recv instanceof JavaProxy) {
-            return RubyFixnum.newFixnum(recv.getRuntime(), ((JavaProxy) recv).getObject().hashCode());
-        }
-        return ((JavaObject) recv.dataGetStruct()).hash();
+    public static IRubyObject hash(ThreadContext context, IRubyObject recv) {
+        if (recv instanceof JavaProxy proxy) return asFixnum(context, proxy.getObject().hashCode());
+
+        // NOTE: only JavaProxy includes JavaProxyMethods these are only here for 'manual' JavaObject wrapping
+        return recv.dataGetStruct() instanceof IRubyObject dataStruct ?
+                ((RubyBasicObject) dataStruct).hash(context) : ((RubyBasicObject) recv).hash(context);
     }
     
     @JRubyMethod(name = "synchronized")
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, Block block) {
-        if (recv instanceof JavaProxy) {
-            return JavaObject.ruby_synchronized(context, ((JavaProxy) recv).getObject(), block);
+        final Object lock;
+        final IRubyObject value;
+        if (recv instanceof JavaProxy proxy) {
+            lock = proxy.getObject();
+            value = recv;
+        } else {
+            // NOTE: only JavaProxy includes JavaProxyMethods
+            // these is only here for 'manual' JavaObject wrapping :
+            lock = value = recv.dataGetStruct() instanceof IRubyObject dataStruct ? dataStruct : recv;
         }
-        return ((JavaObject) recv.dataGetStruct()).ruby_synchronized(context, block);
+        synchronized (lock) { return block.yield(context, value); }
     }
 }

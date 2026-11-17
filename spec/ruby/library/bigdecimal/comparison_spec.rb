@@ -18,7 +18,7 @@ describe "BigDecimal#<=>" do
       def coerce(other)
         return [other, BigDecimal('123')]
       end
-      def >= (other)
+      def >=(other)
         BigDecimal('123') >= other
       end
     end
@@ -41,6 +41,12 @@ describe "BigDecimal#<=>" do
     (@zero <=> @zero).should == 0
     (@infinity <=> @infinity).should == 0
     (@infinity_neg <=> @infinity_neg).should == 0
+  end
+
+  it "compares Float values using at most 16 significant decimal digits" do
+    (BigDecimal("8.03") <=> 8.03).should == 0
+    (BigDecimal("0.84551240822557006") <=> 0.84551240822557006).should == -1
+    (BigDecimal("1.2345678901234567") <=> 1.2345678901234567).should == 1
   end
 
   it "returns 1 if a > b" do

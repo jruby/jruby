@@ -45,44 +45,49 @@ import org.jruby.RubyException;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newString;
 
 /**
  * Unit test for the ruby class.
  * 
  * @author Benoit
 */
-public class TestRuby extends TestRubyBase {
+public class TestRuby extends Base {
     
     public TestRuby(String name) {
         super(name);
     }
     
     public void testArgvIsNonNil() throws Exception {
-        assert(!runtime.getObject().getConstant("ARGV").isNil());
-        assert(!runtime.getGlobalVariables().get("$*").isNil());
+        assert(!objectClass(context).getConstant(context, "ARGV").isNil());
+        assert(!globalVariables(context).get("$*").isNil());
     }
     
     public void testNativeENVSetting() throws Exception {
-        if (Platform.IS_WINDOWS) {
-            return;             // posix.getenv() not currently implemented
-        }
-        runtime = Ruby.newInstance();
+        if (Platform.IS_WINDOWS) return;             // posix.getenv() not currently implemented
+
+        var runtime = Ruby.newInstance();
         runtime.evalScriptlet("ENV['ham'] = 'biscuit'");
         assertEquals("biscuit", runtime.getPosix().getenv("ham"));
     }
     
     public void testNativeENVSettingWhenItIsDisabledOnTheRuntime() throws Exception {
-        if (Platform.IS_WINDOWS) {
-            return;             // posix.getenv() not currently implemented
-        }
+        if (Platform.IS_WINDOWS) return;             // posix.getenv() not currently implemented
+
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setUpdateNativeENVEnabled(false);
-        runtime = Ruby.newInstance(cfg);
+        var runtime = Ruby.newInstance(cfg);
         runtime.evalScriptlet("ENV['biscuit'] = 'gravy'");
         assertNull(runtime.getPosix().getenv("biscuit"));
     }
@@ -90,7 +95,7 @@ public class TestRuby extends TestRubyBase {
     public void testNativeENVSettingWhenNativeIsDisabledGlobally() throws Exception {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setNativeEnabled(false);
-        runtime = Ruby.newInstance(cfg);
+        var runtime = Ruby.newInstance(cfg);
         runtime.evalScriptlet("ENV['gravy'] = 'with sausage'");
         assertNull(runtime.getPosix().getenv("gravy"));
     }
@@ -99,7 +104,7 @@ public class TestRuby extends TestRubyBase {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setNativeEnabled(false);
         cfg.setUpdateNativeENVEnabled(true);
-        runtime = Ruby.newInstance(cfg);
+        var runtime = Ruby.newInstance(cfg);
         runtime.evalScriptlet("ENV['sausage'] = 'biscuits'");
         assertNull(runtime.getPosix().getenv("sausage"));
     }
@@ -107,8 +112,7 @@ public class TestRuby extends TestRubyBase {
     @SuppressWarnings("deprecation")
     public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
-        cfg.setCextEnabled(false);
-        runtime = Ruby.newInstance(cfg);
+        var runtime = Ruby.newInstance(cfg);
         
         String extensionSuffix;
         if (Platform.IS_WINDOWS) {
@@ -123,7 +127,7 @@ public class TestRuby extends TestRubyBase {
             runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '" + extensionSuffix + "']); file.close; require file.path");
             fail();
         } catch (RaiseException re) {
-            assertEquals(re.getException().getType(), runtime.getLoadError());
+            assertEquals(runtime.getLoadError(), re.getException().getType());
         }
     }
     
@@ -136,21 +140,22 @@ public class TestRuby extends TestRubyBase {
     }
     
     private void testPrintErrorWithBacktrace(String backtrace) throws Exception {
-        RubyIO oldStderr = (RubyIO)runtime.getGlobalVariables().get("$stderr");
+        var globals = globalVariables(context);
+        RubyIO oldStderr = (RubyIO) globals.get("$stderr");
         try {
             ByteArrayOutputStream stderrOutput = new ByteArrayOutputStream();
-            RubyIO newStderr = new RubyIO(runtime, stderrOutput);
-            runtime.getGlobalVariables().set("$stderr", newStderr);
+            RubyIO newStderr = new RubyIO(context.runtime, stderrOutput);
+            globals.set("$stderr", newStderr);
             
             try {
                 eval("class MyError < StandardError ; def backtrace ; " + backtrace + " ; end ; end ; raise MyError.new ");
                 fail("Expected MyError to be raised");
             } catch (RaiseException re) {
                 //No ClassCastException!
-                runtime.printError(re.getException());
+                context.runtime.printError(re.getException());
             }
         } finally {
-            runtime.getGlobalVariables().set("$stderr", oldStderr);
+            globals.set("$stderr", oldStderr);
         }
     }
     
@@ -161,15 +166,12 @@ public class TestRuby extends TestRubyBase {
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
-        RubyString[] lines = new RubyString[]{
-            RubyString.newString(ruby, "Line 1"),
-            RubyString.newString(ruby, "Line 2"),
-        };
+        RubyException exception = (RubyException) Access.getClass(context, "NameError").newInstance(context, new IRubyObject[]{ newString(context, "A message")},  Block.NULL_BLOCK);
+        RubyString[] lines = new RubyString[] { newString(context, "Line 1"), newString(context, "Line 2") };
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
-        exception.set_backtrace(backtrace);
+        exception.set_backtrace(context, backtrace);
         ruby.printError(exception);
-        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", err.toString());
+        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", CRLFToNL(err.toString()));
     }
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {
@@ -180,7 +182,7 @@ public class TestRuby extends TestRubyBase {
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException) Access.getClass(context, "NameError").newInstance(context, new IRubyObject[]{newString(context, "A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }
@@ -193,5 +195,11 @@ public class TestRuby extends TestRubyBase {
         assertTrue(ruby.getExecutor().isShutdown());
         assertTrue(ruby.getFiberExecutor().isShutdown());
         assertTrue(ruby.getJITCompiler().isShutdown());
+    }
+
+    // Test that the revision is being populated correctly. jruby/jruby#6090
+    public void testRevision() {
+        assertTrue(Constants.REVISION.length() == 40);
+        assertFalse(Constants.REVISION.equals(Constants.BOGUS_REVISION));
     }
 }

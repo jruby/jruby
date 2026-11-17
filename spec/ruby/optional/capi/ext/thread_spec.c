@@ -8,18 +8,23 @@
 #include <unistd.h>
 #endif
 #if defined(_WIN32)
-#define pipe(p) rb_w32_pipe(p)
+#include "ruby/win32.h"
+#define read rb_w32_read
+#define write rb_w32_write
+#define pipe rb_w32_pipe
+#endif
+
+#ifndef _WIN32
+#include <pthread.h>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static VALUE thread_spec_rb_thread_alone() {
+static VALUE thread_spec_rb_thread_alone(VALUE self) {
   return rb_thread_alone() ? Qtrue : Qfalse;
 }
-
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 /* This is unblocked by unblock_func(). */
 static void* blocking_gvl_func(void* data) {
@@ -62,7 +67,7 @@ static VALUE thread_spec_rb_thread_call_without_gvl(VALUE self) {
 }
 
 /* This is unblocked by a signal. */
-static void* blocking_gvl_func_for_udf_io(void *data) {
+static void* blocking_gvl_func_for_ubf_io(void *data) {
   int rfd = (int)(size_t)data;
   char dummy;
 
@@ -82,14 +87,14 @@ static VALUE thread_spec_rb_thread_call_without_gvl_with_ubf_io(VALUE self) {
     rb_raise(rb_eRuntimeError, "could not create pipe");
   }
 
-  ret = rb_thread_call_without_gvl(blocking_gvl_func_for_udf_io,
+  ret = rb_thread_call_without_gvl(blocking_gvl_func_for_ubf_io,
                                   (void*)(size_t)fds[0], RUBY_UBF_IO, 0);
   close(fds[0]);
   close(fds[1]);
   return (VALUE)ret;
 }
 
-static VALUE thread_spec_rb_thread_current() {
+static VALUE thread_spec_rb_thread_current(VALUE self) {
   return rb_thread_current();
 }
 
@@ -113,8 +118,8 @@ static VALUE thread_spec_rb_thread_wait_for(VALUE self, VALUE s, VALUE ms) {
   return Qnil;
 }
 
-
-VALUE thread_spec_call_proc(VALUE arg_array) {
+VALUE thread_spec_call_proc(void *arg_ptr) {
+  VALUE arg_array = (VALUE)arg_ptr;
   VALUE arg = rb_ary_pop(arg_array);
   VALUE proc = rb_ary_pop(arg_array);
   return rb_funcall(proc, rb_intern("call"), 1, arg);
@@ -128,6 +133,71 @@ static VALUE thread_spec_rb_thread_create(VALUE self, VALUE proc, VALUE arg) {
   return rb_thread_create(thread_spec_call_proc, (void*)args);
 }
 
+static VALUE thread_spec_ruby_native_thread_p(VALUE self) {
+  if (ruby_native_thread_p()) {
+    return Qtrue;
+  } else {
+    return Qfalse;
+  }
+}
+
+#ifndef _WIN32
+static VALUE false_result = Qfalse;
+static VALUE true_result = Qtrue;
+
+static void *new_thread_check(void *args) {
+  if (ruby_native_thread_p()) {
+    return &true_result;
+  } else {
+    return &false_result;
+  }
+}
+#endif
+
+static VALUE thread_spec_ruby_native_thread_p_new_thread(VALUE self) {
+#ifndef _WIN32
+    pthread_t t;
+    void *result = &true_result;
+    pthread_create(&t, NULL, new_thread_check, NULL);
+    pthread_join(t, &result);
+    return *(VALUE *)result;
+#else
+    return Qfalse;
+#endif
+}
+
+#ifdef RUBY_VERSION_IS_4_0
+static VALUE thread_spec_ruby_thread_has_gvl_p(VALUE self) {
+  return ruby_thread_has_gvl_p() ? Qtrue : Qfalse;
+}
+#endif
+
+#ifdef RUBY_VERSION_IS_4_1
+struct nogvl_pending_intr_fail_data {
+  int called;
+};
+
+static void *nogvl_pending_intr_fail_func(void *ptr) {
+  struct nogvl_pending_intr_fail_data *data = ptr;
+
+  data->called = 1;
+
+  return (void *)Qtrue;
+}
+
+static VALUE thread_spec_rb_nogvl_pending_intr_fail(VALUE self) {
+  struct nogvl_pending_intr_fail_data data = {0};
+  void *ret;
+  int saved_errno;
+
+  errno = 0;
+  ret = rb_nogvl(nogvl_pending_intr_fail_func, &data, RUBY_UBF_IO, 0,
+      RB_NOGVL_PENDING_INTR_FAIL);
+  saved_errno = errno;
+
+  return rb_ary_new_from_args(3, data.called ? Qtrue : Qfalse, (VALUE)ret, INT2FIX(saved_errno));
+}
+#endif
 
 void Init_thread_spec(void) {
   VALUE cls = rb_define_class("CApiThreadSpecs", rb_cObject);
@@ -140,6 +210,14 @@ void Init_thread_spec(void) {
   rb_define_method(cls,  "rb_thread_wakeup", thread_spec_rb_thread_wakeup, 1);
   rb_define_method(cls,  "rb_thread_wait_for", thread_spec_rb_thread_wait_for, 2);
   rb_define_method(cls,  "rb_thread_create", thread_spec_rb_thread_create, 2);
+  rb_define_method(cls,  "ruby_native_thread_p", thread_spec_ruby_native_thread_p, 0);
+  rb_define_method(cls,  "ruby_native_thread_p_new_thread", thread_spec_ruby_native_thread_p_new_thread, 0);
+#ifdef RUBY_VERSION_IS_4_0
+  rb_define_method(cls,  "ruby_thread_has_gvl_p", thread_spec_ruby_thread_has_gvl_p, 0);
+#endif
+#ifdef RUBY_VERSION_IS_4_1
+  rb_define_method(cls,  "rb_nogvl_pending_intr_fail", thread_spec_rb_nogvl_pending_intr_fail, 0);
+#endif
 }
 
 #ifdef __cplusplus

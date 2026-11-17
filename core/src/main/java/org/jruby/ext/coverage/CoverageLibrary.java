@@ -27,13 +27,13 @@
 package org.jruby.ext.coverage;
 
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.runtime.load.Library;
+
+import static org.jruby.api.Define.defineModule;
 
 public class CoverageLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
-        RubyModule coverage = runtime.defineModule("Coverage");
-        
-        coverage.defineAnnotatedMethods(CoverageModule.class);
+        var context = runtime.getCurrentContext();
+        defineModule(context, "Coverage").defineMethods(context, CoverageModule.class);
     }
 }

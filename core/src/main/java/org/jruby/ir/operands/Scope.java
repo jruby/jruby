@@ -21,7 +21,7 @@ import java.util.List;
  * no longer exists.  In this case, we need replace CurrentScope with a Scope.
  */
 public class Scope extends Operand {
-    private IRScope scope;
+    private final IRScope scope;
 
     public Scope(IRScope scope) {
         this.scope = scope;

@@ -1,16 +1,20 @@
 package org.jruby.ir;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -23,7 +27,6 @@ import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
-import org.objectweb.asm.Handle;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
@@ -46,32 +49,35 @@ public class IRClosure extends IRScope {
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
 
-    /** Added for JIT purposes */
-    private Handle handle;
-
     // Used by other constructions and by IREvalScript as well
-    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
-        super(manager, lexicalParent, null, lineNumber, staticScope);
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix, int coverageMode) {
+        super(manager, lexicalParent, null, lineNumber, staticScope, coverageMode);
 
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
-        name.append(Integer.toString(closureId).getBytes());
+        name.append(java.lang.Integer.toString(closureId).getBytes());
         setByteName(name);
-        this.body = null;
     }
 
-    /** Used by cloning code */
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, prefix, CoverageData.NONE);
+    }
+
+    // Used by IREvalScript
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, int closureId, ByteList fullName) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
+
+        this.closureId = closureId;
+        super.setByteName(fullName);
+    }
+
+    /** Used by cloning code for inlining */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
     protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
         this.closureId = closureId;
         super.setByteName(fullName);
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
-        }
+
         isEND = c.isEND;
 
         this.signature = c.signature;
@@ -85,51 +91,46 @@ public class IRClosure extends IRScope {
     }
 
     // Used by iter + lambda by IRBuilder
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, boolean needsCoverage) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, CLOSURE, false, needsCoverage);
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int coverageMode) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, CLOSURE, false, coverageMode);
     }
 
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix, int coverageMode) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false, coverageMode);
+    }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix, boolean isBeginEndBlock) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, isBeginEndBlock, false);
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, isBeginEndBlock, CoverageData.NONE);
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
-                     Signature signature, ByteList prefix, boolean isBeginEndBlock, boolean needsCoverage) {
-        this(manager, lexicalParent, lineNumber, staticScope, prefix);
+                     Signature signature, ByteList prefix, boolean isBeginEndBlock, int coverageMode) {
+        this(manager, lexicalParent, lineNumber, staticScope, prefix, coverageMode);
         this.signature = signature;
         lexicalParent.addClosure(this);
 
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            boolean shouldJit = manager.getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
-            if (staticScope != null && !isBeginEndBlock) {
-                staticScope.setIRScope(this);
-                staticScope.setScopeType(this.getScopeType());
-            }
+        if (staticScope != null) {
+            staticScope.setIRScope(this);
+            staticScope.setScopeType(this.getScopeType());
         }
-
-        if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
     }
 
 
     @Override
-    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
-        interpreterContext = new ClosureInterpreterContext(this, instructions);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount, flags);
 
         return interpreterContext;
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         try {
-            interpreterContext = new ClosureInterpreterContext(this, instructions);
+            interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount, flags);
         } catch (Exception e) {
             Helpers.throwException(e);
         }
@@ -145,24 +146,13 @@ public class IRClosure extends IRScope {
         return isEND;
     }
 
+    public boolean isWhereFlipFlopStateVariableIs() {
+        return false;
+    }
+
     @Override
     public int getNextClosureId() {
         return getLexicalParent().getNextClosureId();
-    }
-
-    @Override
-    public TemporaryLocalVariable createTemporaryVariable() {
-        return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
-    }
-
-    @Override
-    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
-        if (type == TemporaryVariableType.CLOSURE) {
-            temporaryVariableIndex++;
-            return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
-        }
-
-        return super.getNewTemporaryVariable(type);
     }
 
     @Override
@@ -185,7 +175,12 @@ public class IRClosure extends IRScope {
     }
 
     public BlockBody getBlockBody() {
-        return body;
+        BlockBody body = this.body;
+
+        if (body != null) return body;
+
+        boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
+        return this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
     }
 
     // FIXME: This is too strict.  We can use any closure which does not dip below the define_method closure.  This
@@ -195,14 +190,15 @@ public class IRClosure extends IRScope {
             if (!closure.isNestedClosuresSafeForMethodConversion()) return false;
         }
 
-        return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+        return !accessesParentsLocalVariables();
     }
 
     public IRMethod convertToMethod(ByteList name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
-            getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) ||  // Built methods cannot search down past method scope
-            getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG) ||            // we pass in captured block at define_method as block so explicits ones not supported
+            accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
+            receivesClosureArg() ||             // we pass in captured block at define_method as block so explicits ones not supported
+            usesZSuper() ||                     // methods defined from closures cannot use zsuper
             !isNestedClosuresSafeForMethodConversion()) {
             source = null;
             return null;
@@ -211,7 +207,15 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
+        // FIXME: PRISM: Explicit check for ast.IterNode prevents source from being set so this cannot be hit from prism.
+        LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
+        IRMethod method = new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
+        method.setSourceSpan(getStartColumn(), getEndLine(), getEndColumn());
+        return method;
+    }
+
+    public void setSignature(Signature signature) {
+        this.signature = signature;
     }
 
     public void setSource(IterNode iter) {
@@ -228,7 +232,7 @@ public class IRClosure extends IRScope {
         if (newDepth >= 0) {
             lvar = getLexicalParent().findExistingLocalVariable(name, newDepth);
 
-            if (lvar != null) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+            if (lvar != null) setAccessesParentsLocalVariables();
         }
 
         return lvar;
@@ -241,7 +245,7 @@ public class IRClosure extends IRScope {
             return lvar;
         } else {
             // IRFor does not have it's own state
-            if (!(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+            if (!(this instanceof IRFor)) setAccessesParentsLocalVariables();
             IRScope s = this;
             int     d = depth;
             do {
@@ -275,7 +279,7 @@ public class IRClosure extends IRScope {
         LocalVariable lvar;
         IRScope s = this;
         int d = depth;
-        if (depth > 0 && !(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+        if (depth > 0 && !(this instanceof IRFor)) setAccessesParentsLocalVariables();
 
         if (depth == 0) return s.getNewLocalVariable(name, 0);
 
@@ -312,6 +316,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
+    // FIXME: This is all using interpreterContext but it should be using Full????
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
@@ -324,7 +329,7 @@ public class IRClosure extends IRScope {
             newInstrs.add(i.clone(clonedII));
         }
 
-        clone.allocateInterpreterContext(newInstrs);
+        clone.allocateInterpreterContext(newInstrs, interpreterContext.getTemporaryVariableCount(), interpreterContext.getFlags());
 
 //        }
 
@@ -332,19 +337,20 @@ public class IRClosure extends IRScope {
     }
 
     private static final ByteList CLOSURE_CLONE =
-            new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'});
+            new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'}, false);
 
     public IRClosure cloneForInlining(CloneInfo ii) {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();
 
-        if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
+        if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo) ii).isEnsureBlockCloneMode()) {
             clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
             int id = lexicalParent.getNextClosureId();
-            ByteList fullName = lexicalParent.getByteName().dup();
+            ByteList fullName = lexicalParent.getByteName();
+            fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
-            fullName.append(new Integer(id).toString().getBytes());
+            fullName.append(java.lang.Integer.toString(id).getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 
@@ -355,34 +361,13 @@ public class IRClosure extends IRScope {
         return cloneForInlining(ii, clonedClosure);
     }
 
-    @Override
-    public void setByteName(ByteList name) {
-        ByteList newName = getLexicalParent().getByteName();
-
-        if (newName == null) newName = new ByteList();
-
-        newName = newName.dup();
-        newName.append(name);
-
-        super.setByteName(newName);
-    }
-
     public Signature getSignature() {
         return signature;
-    }
-
-    public void setHandle(Handle handle) {
-        this.handle = handle;
-    }
-
-    public Handle getHandle() {
-        return handle;
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argDesc;
     }
-
 
     /**
      * Set upon completion of IRBuild of this IRClosure.
@@ -394,7 +379,11 @@ public class IRClosure extends IRScope {
     public void persistScopeHeader(IRWriterEncoder file) {
         super.persistScopeHeader(file);
 
-        file.encode(isEND());
+        if (getScopeType() == IRScopeType.CLOSURE) {
+            if (IRWriter.shouldLog(file)) System.out.println("IRClosure.persistScopeHeader: type       = " + isEND());
+            file.encode(isEND());
+        }
+        if (IRWriter.shouldLog(file)) System.out.println("IRClosure.persistScopeHeader: type       = " + getSignature());
         file.encode(getSignature());
     }
 }

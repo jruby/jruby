@@ -9,7 +9,7 @@ describe "Regexp.try_convert" do
 
   it "returns nil if given an argument that can't be converted to a Regexp" do
     ['', 'glark', [], Object.new, :pat].each do |arg|
-      Regexp.try_convert(arg).should be_nil
+      Regexp.try_convert(arg).should == nil
     end
   end
 
@@ -17,5 +17,11 @@ describe "Regexp.try_convert" do
     rex = mock('regexp')
     rex.should_receive(:to_regexp).and_return(/(p(a)t[e]rn)/)
     Regexp.try_convert(rex).should == /(p(a)t[e]rn)/
+  end
+
+  it "raises a TypeError if the object does not return an Regexp from #to_regexp" do
+    obj = mock("regexp")
+    obj.should_receive(:to_regexp).and_return("string")
+    -> { Regexp.try_convert(obj) }.should raise_consistent_error(TypeError, "can't convert MockObject into Regexp (MockObject#to_regexp gives String)")
   end
 end

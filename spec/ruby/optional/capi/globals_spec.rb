@@ -9,7 +9,7 @@ describe "CApiGlobalSpecs" do
   end
 
   it "correctly gets global values" do
-    @f.sb_gv_get("$BLAH").should == nil
+    suppress_warning { @f.sb_gv_get("$BLAH") }.should == nil
     @f.sb_gv_get("$\\").should == nil
     @f.sb_gv_get("\\").should == nil # rb_gv_get should change \ to $\
   end
@@ -21,7 +21,7 @@ describe "CApiGlobalSpecs" do
   end
 
   it "correctly sets global values" do
-    @f.sb_gv_get("$BLAH").should == nil
+    suppress_warning { @f.sb_gv_get("$BLAH") }.should == nil
     @f.sb_gv_set("$BLAH", 10)
     begin
       @f.sb_gv_get("$BLAH").should == 10
@@ -41,10 +41,19 @@ describe "CApiGlobalSpecs" do
     @f.sb_get_global_value.should == "XYZ"
   end
 
+  run = 0
+
   it "rb_define_readonly_variable should define a new readonly global variable" do
-    @f.rb_define_readonly_variable("ro_gvar", 15)
-    $ro_gvar.should == 15
-    lambda { $ro_gvar = 10 }.should raise_error(NameError)
+    name = "ro_gvar#{run += 1}"
+    eval <<~RUBY
+    # Check the gvar doesn't exist and ensure rb_gv_get doesn't implicitly declare the gvar,
+    # otherwise the rb_define_readonly_variable call will conflict.
+    suppress_warning { @f.sb_gv_get("#{name}") }.should == nil
+
+    @f.rb_define_readonly_variable("#{name}", 15)
+    $#{name}.should == 15
+    -> { $#{name} = 10 }.should.raise(NameError)
+    RUBY
   end
 
   it "rb_define_hooked_variable should define a C hooked global variable" do
@@ -53,13 +62,78 @@ describe "CApiGlobalSpecs" do
     $hooked_gvar.should == 4
   end
 
+  it "rb_define_hooked_variable should use default accessors if NULL ones are supplied" do
+    @f.rb_define_hooked_variable_default_accessors("$hooked_gvar_default_accessors")
+    $hooked_gvar_default_accessors = 10
+    $hooked_gvar_default_accessors.should == 10
+  end
+
+  it "rb_define_hooked_variable with default accessors should return nil for NULL variables" do
+    @f.rb_define_hooked_variable_null_var("$hooked_gvar_null_value")
+    $hooked_gvar_null_value.should == nil
+  end
+
+  describe "rb_define_virtual_variable" do
+    describe "with default accessors" do
+      before :all do
+        @f.rb_define_virtual_variable_default_accessors("$virtual_variable_default_accessors")
+      end
+
+      it "is read-only" do
+        -> { $virtual_variable_default_accessors = 10 }.should.raise(NameError, /read-only/)
+      end
+
+      it "returns false with the default getter" do
+        $virtual_variable_default_accessors.should == false
+        $virtual_variable_default_accessors.should == false
+      end
+    end
+
+    describe "with supplied accessors" do
+      before :all do
+        @f.rb_define_virtual_variable_incrementing_accessors("$virtual_variable_incrementing_accessors")
+      end
+
+      it "returns a dynamically changing value" do
+        $virtual_variable_incrementing_accessors = 20
+        $virtual_variable_incrementing_accessors.should == 20
+        $virtual_variable_incrementing_accessors.should == 21
+        $virtual_variable_incrementing_accessors.should == 22
+
+        $virtual_variable_incrementing_accessors = 100
+        $virtual_variable_incrementing_accessors.should == 100
+        $virtual_variable_incrementing_accessors.should == 101
+        $virtual_variable_incrementing_accessors.should == 102
+      end
+    end
+  end
+
+  describe "rb_fs" do
+    before :each do
+      @field_separator = $;
+    end
+
+    after :each do
+      suppress_warning { $; = @field_separator }
+    end
+
+    it "returns nil by default" do
+      @f.rb_fs.should == nil
+    end
+
+    it "returns the value of $;" do
+      suppress_warning { $; = "foo" }
+      @f.rb_fs.should == "foo"
+    end
+  end
+
   describe "rb_rs" do
     before :each do
       @dollar_slash = $/
     end
 
     after :each do
-      $/ = @dollar_slash
+      suppress_warning { $/ = @dollar_slash }
     end
 
     it "returns \\n by default" do
@@ -67,7 +141,7 @@ describe "CApiGlobalSpecs" do
     end
 
     it "returns the value of $/" do
-      $/ = "foo"
+      suppress_warning { $/ = "foo" }
       @f.rb_rs.should == "foo"
     end
   end
@@ -90,7 +164,7 @@ describe "CApiGlobalSpecs" do
 
       it "returns $stdin" do
         $stdin = @stream
-        @f.rb_stdin.should equal($stdin)
+        @f.rb_stdin.should.equal?($stdin)
       end
     end
 
@@ -101,7 +175,7 @@ describe "CApiGlobalSpecs" do
 
       it "returns $stdout" do
         $stdout = @stream
-        @f.rb_stdout.should equal($stdout)
+        @f.rb_stdout.should.equal?($stdout)
       end
     end
 
@@ -112,7 +186,7 @@ describe "CApiGlobalSpecs" do
 
       it "returns $stderr" do
         $stderr = @stream
-        @f.rb_stderr.should equal($stderr)
+        @f.rb_stderr.should.equal?($stderr)
       end
     end
 
@@ -121,9 +195,9 @@ describe "CApiGlobalSpecs" do
         $stdout = STDOUT
       end
 
-      it "returns $stdout" do
+      it "is an alias of rb_stdout" do
         $stdout = @stream
-        @f.rb_defout.should equal($stdout)
+        @f.rb_defout.should.equal?($stdout)
       end
     end
   end
@@ -140,15 +214,15 @@ describe "CApiGlobalSpecs" do
     end
 
     after :each do
-      $\ = @dollar_backslash
+      suppress_warning {$\ = @dollar_backslash}
     end
 
     it "returns nil by default" do
-      @f.rb_output_rs.should be_nil
+      @f.rb_output_rs.should == nil
     end
 
     it "returns the value of $\\" do
-      $\ = "foo"
+      suppress_warning {$\ = "foo"}
       @f.rb_output_rs.should == "foo"
     end
   end
@@ -163,7 +237,7 @@ describe "CApiGlobalSpecs" do
     end
 
     it "returns nil by default" do
-      @f.rb_output_fs.should be_nil
+      @f.rb_output_fs.should == nil
     end
 
     it "returns the value of $\\" do
@@ -189,7 +263,7 @@ describe "CApiGlobalSpecs" do
       end
 
       Thread.pass while thr.status and !running
-      $_.should be_nil
+      $_.should == nil
 
       thr.join
     end
@@ -216,7 +290,7 @@ describe "CApiGlobalSpecs" do
       end
 
       Thread.pass while thr.status and !running
-      $_.should be_nil
+      $_.should == nil
 
       thr.join
     end

@@ -41,12 +41,10 @@ import org.jruby.RubyProc;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.TriConsumer;
 
-/**
- *
- * @author jpetersen
- */
 public class GlobalVariables {
     private final Ruby runtime;
     private final Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
@@ -97,37 +95,33 @@ public class GlobalVariables {
             throw RaiseException.from(runtime, runtime.getRuntimeError(), "can't alias in tracer");
         }
 
+        if (variable != null) variable.invalidate();
+
         globalVariables.put(name, oldVariable);
     }
 
     public IRubyObject get(String name) {
-	    assert name != null;
-	    assert name.startsWith("$");
+        assert name != null;
+        assert name.startsWith("$");
 
-	    GlobalVariable variable = globalVariables.get(name);
-	    if (variable != null) return variable.getAccessor().getValue();
+        GlobalVariable variable = globalVariables.get(name);
+        if (variable != null) return variable.getAccessor().getValue();
 
-	    if (runtime.isVerbose()) {
-	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
-	    }
-		return runtime.getNil();
-	}
+        if (runtime.isVerbose()) {
+            runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable '" + name + "' not initialized");
+        }
+        return runtime.getNil();
+    }
 
     public GlobalVariable getVariable(String name) {
-	    assert name != null;
-	    assert name.startsWith("$");
-
-	    GlobalVariable variable = globalVariables.get(name);
-        if (variable != null) return variable;
+        assert name != null;
+        assert name.startsWith("$");
 
         return createIfNotDefined(name);
     }
 
     public IRubyObject set(String name, IRubyObject value) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        GlobalVariable variable = createIfNotDefined(name);
+        GlobalVariable variable = getVariable(name);
         IRubyObject result = variable.getAccessor().setValue(value);
         variable.trace(value);
         variable.invalidate();
@@ -139,11 +133,7 @@ public class GlobalVariables {
     }
 
     public void setTraceVar(String name, RubyProc proc) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        GlobalVariable variable = createIfNotDefined(name);
-        variable.addTrace(proc);
+        getVariable(name).addTrace(proc);
     }
 
     public boolean untraceVar(String name, IRubyObject command) {
@@ -171,13 +161,12 @@ public class GlobalVariables {
         return globalVariables.keySet();
     }
 
+    public <State> void eachName(ThreadContext context, State state, TriConsumer<ThreadContext, State, String> consumer) {
+        globalVariables.forEach((s, g) -> consumer.accept(context, state, s));
+    }
+
     private GlobalVariable createIfNotDefined(String name) {
-        GlobalVariable variable = globalVariables.get(name);
-        if (variable == null) {
-            variable = GlobalVariable.newUndefined(runtime, name);
-            globalVariables.put(name, variable);
-        }
-        return variable;
+        return globalVariables.computeIfAbsent(name, (n) -> GlobalVariable.newUndefined(runtime, n));
     }
 
     private IRubyObject defaultSeparator;
@@ -188,5 +177,9 @@ public class GlobalVariables {
 
     public void setDefaultSeparator(IRubyObject defaultSeparator) {
         this.defaultSeparator = defaultSeparator;
+    }
+
+    public int size() {
+        return globalVariables.size();
     }
 }

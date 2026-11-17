@@ -1,10 +1,15 @@
 package org.jruby.util.io;
 
+import jnr.constants.platform.Errno;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.RubySystemCallError;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -19,17 +24,20 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.jruby.api.Convert.toInt;
+
 /**
 * Created by headius on 5/24/14.
 */
 public class ChannelFD implements Closeable {
-    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil) {
+    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil, int flags) {
         assert fd != null;
         this.ch = fd;
         this.posix = posix;
         this.filenoUtil = filenoUtil;
+        this.openflags = flags;
 
-        initFileno();
+        initFileno(false);
         initChannelTypes();
 
         refs = new AtomicInteger(1);
@@ -38,8 +46,22 @@ public class ChannelFD implements Closeable {
         filenoUtil.registerWrapper(fakeFileno, this);
     }
 
-    private void initFileno() {
+    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil) {
+        this(fd, posix, filenoUtil, -1);
+    }
+
+    private void initFileno(boolean allocate) {
         realFileno = FilenoUtil.filenoFrom(ch);
+        if (Platform.IS_WINDOWS && realFileno == -1 && openflags >= 0) {
+            if (allocate) {
+                // TODO: ensure we aren't leaking multiple handles for the same channel/handle
+                realFileno = filenoUtil.filenoFromHandleIn(ch, openflags); // TODO: ensure these flags are correct for windows
+                needsClosing = realFileno != -1;
+                maybeHandle = false;
+            } else {
+                maybeHandle = true;
+            }
+        }
         if (realFileno == -1) {
             fakeFileno = filenoUtil.getNewFileno();
         } else {
@@ -75,7 +97,7 @@ public class ChannelFD implements Closeable {
         // TODO: not sure how well this combines native and non-native streams
         // simulate dup2 by forcing filedes's channel into filedes2
         this.ch = dup2Source.ch;
-        initFileno();
+        initFileno(false);
         initChannelTypes();
 
         this.refs = dup2Source.refs;
@@ -95,15 +117,22 @@ public class ChannelFD implements Closeable {
         return realFileno == -1 ? fakeFileno : realFileno;
     }
 
+    // lazily create windows resources
+    public int bestFileno(boolean forceFileno) {
+        if (maybeHandle && forceFileno) {
+            initFileno(true);
+            assert maybeHandle == false : "lazy handle creation state changed";
+            // Hopefully we don't overwrite existing files
+            filenoUtil.registerWrapper(realFileno, this);
+            filenoUtil.registerWrapper(fakeFileno, this);
+        }
+        return bestFileno();
+    }
+
     private void finish() throws IOException {
         synchronized (refs) {
             // if refcount is at or below zero, we're no longer valid
             if (refs.get() <= 0) {
-                throw new ClosedChannelException();
-            }
-
-            // if channel is already closed, we're no longer valid
-            if (!ch.isOpen()) {
                 throw new ClosedChannelException();
             }
 
@@ -113,10 +142,16 @@ public class ChannelFD implements Closeable {
             if (count <= 0) {
                 // if we're the last referrer, close the channel
                 try {
-                    ch.close();
+                    // The JDK closes an interruptible channel when the thread blocked on it is
+                    // interrupted, which is how Thread#kill unblocks IO, so Ruby never closed
+                    // that stream and there is nothing left for us to close.
+                    if (ch.isOpen()) ch.close();
+                    if (needsClosing) {
+                        filenoUtil.closeFilenoHandle(realFileno);
+                    }
                 } finally {
-                    filenoUtil.unregisterWrapper(realFileno);
-                    filenoUtil.unregisterWrapper(fakeFileno);
+                    filenoUtil.unregisterWrapper(realFileno, this);
+                    filenoUtil.unregisterWrapper(fakeFileno, this);
                 }
             }
         }
@@ -141,8 +176,21 @@ public class ChannelFD implements Closeable {
 
         if (chNative != null) {
             // we have an ENXIO channel, but need to know if it's a regular file to skip selection
-            FileStat stat = posix.fstat(chNative.getFD());
-            if (stat.isFile()) {
+            boolean isFile = false;
+            try {
+                isFile = posix.fstat(chNative.getFD()).isFile();
+            } catch (SystemCallError e) {
+                // We check for EPERM due to GH-6129, and because it has only been seen on WSL inotify file descriptors
+                // we assume that it means this is not a normal file.
+                IRubyObject errno = ((RubySystemCallError) e.getException()).errno();
+                var context = errno.getRuntime().getCurrentContext();
+                if (errno.isNil() || toInt(context, errno) != Errno.EPERM.intValue()) {
+                    // rethrow anything not EPERM
+                    throw e;
+                }
+            }
+
+            if (isFile) {
                 chSelect = null;
                 isNativeFile = true;
             }
@@ -160,8 +208,11 @@ public class ChannelFD implements Closeable {
     public int realFileno;
     public int fakeFileno;
     private AtomicInteger refs;
-    public FileLock currentLock;
+    public ThreadLocal<FileLock> currentLock = new ThreadLocal<>();
     private final POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;
+    private boolean needsClosing = false;
+    private boolean maybeHandle = false;
+    private final int openflags;
 }

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
@@ -19,6 +20,14 @@ public class BTrueInstr extends OneOperandBranchInstr implements FixedArityInstr
     @Override
     public Instr clone(CloneInfo ii) {
         return new BTrueInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii));
+    }
+
+    @Override
+    public Instr simplifyInstr(IRManager manager) {
+        if (getArg1().isTruthyImmediate()) return new JumpInstr(getJumpTarget());
+        if (getArg1().isFalseyImmediate()) return NopInstr.NOP;
+
+        return super.simplifyInstr(manager);
     }
 
     public static BTrueInstr decode(IRReaderDecoder d) {

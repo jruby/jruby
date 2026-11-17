@@ -1,9 +1,7 @@
 require_relative '../../spec_helper'
-require_relative 'fixtures/classes'
-require_relative 'shared/find_all'
 
-ruby_version_is "2.6" do
-  describe "Enumerable#filter" do
-    it_behaves_like(:enumerable_find_all , :filter)
+describe "Enumerable#filter" do
+  it "is an alias of Enumerable#select" do
+    Enumerable.instance_method(:filter).should == Enumerable.instance_method(:select)
   end
 end

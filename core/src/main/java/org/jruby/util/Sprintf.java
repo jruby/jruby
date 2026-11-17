@@ -39,17 +39,25 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
+import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Access.fixnumClass;
+import static org.jruby.api.Access.integerClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asInteger;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.Helpers.arrayOf;
 
-/**
- * @author Bill Dortch
- *
- */
 public class Sprintf {
     private static final int FLAG_NONE        = 0;
     private static final int FLAG_SPACE       = 1;
@@ -105,7 +113,7 @@ public class Sprintf {
             if (rubyObject instanceof RubyArray) {
                 this.rubyArray = (RubyArray)rubyObject;
 
-                if (rubyArray.last() instanceof RubyHash) {
+                if (rubyArray.last(rubyArray.getRuntime().getCurrentContext()) instanceof RubyHash) {
                     this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
                 } else {
                     this.rubyHash = null;
@@ -140,7 +148,7 @@ public class Sprintf {
         }
 
         void raiseArgumentError(String message) {
-            throw runtime.newArgumentError(message);
+            throw argumentError(runtime.getCurrentContext(), message);
         }
 
         void raiseKeyError(String message, IRubyObject recv, IRubyObject key) {
@@ -149,10 +157,6 @@ public class Sprintf {
 
         void warn(ID id, String message) {
             runtime.getWarnings().warn(id, message);
-        }
-
-        void warning(ID id, String message) {
-            if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
 
         private IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
@@ -171,10 +175,10 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    RubyString nameStr = RubyString.newString(runtime, name);
+                    RubyString nameStr = newString(runtime.getCurrentContext(), name);
                     raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
                 } else if (rubyHash.hasDefaultProc()) {
-                    object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
+                    object = object.callMethod(runtime.getCurrentContext(), "call", arrayOf(rubyHash, nameSym));
                 }
 
                 if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found", rubyHash, nameSym);
@@ -195,7 +199,7 @@ public class Sprintf {
         }
 
 
-        // MRI: GETARG
+        @CRuby(value = "GETARG", file = "sprintf.c")
         private IRubyObject getArg() {
             final IRubyObject nextObject = this.nextObject;
             if (nextObject != null) {
@@ -209,34 +213,35 @@ public class Sprintf {
             return getNextArg();
         }
 
-        // MRI: GETNEXTARG
+        @CRuby(value = "GETNEXTARG", file = "sprintf.c")
         private IRubyObject getNextArg() {
             checkNextArg();
             positionIndex = nextIndex++;
             return getNthArg(positionIndex);
         }
 
-        // MRI: GETPOSARG
+        @CRuby(value = "GETPOSARG", file = "sprintf.c")
         private IRubyObject getPositionArg(int index) {
             checkPositionArg(index);
             positionIndex = -1;
             return getNthArg(index);
         }
 
-        // MRI: check_next_arg
+        @CRuby(value = "check_next_arg", file = "sprintf.c")
         private void checkNextArg() {
             if (positionIndex == -1) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with numbered");
             if (positionIndex == -2) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with named");
         }
 
-        // MRI: check_pos_arg
+        @CRuby(value = "check_pos_arg", file = "sprintf.c")
         private void checkPositionArg(int nthArg) {
             if (positionIndex > 0) raiseArgumentError("numbered(" + nthArg + ") after unnumbered(" + positionIndex + ")");
             if (positionIndex == -2) raiseArgumentError("numbered(" + nthArg + ") after named");
             if (nthArg < 1) raiseArgumentError("invalid index - " + nthArg + "$");
         }
 
-        // MRI: check_name_arg, CHECKNAMEARG
+        @CRuby(value = "check_name_arg", file = "sprintf.c")
+        @CRuby(value = "CHECKNAMEARG", file = "sprintf.c")
         private void checkNameArg(ByteList name, char startDelim, char endDelim) {
             if (positionIndex > 0) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after unnumbered(" + positionIndex + ")");
             if (positionIndex == -1) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after numbered");
@@ -244,70 +249,12 @@ public class Sprintf {
             positionIndex = -2;
         }
 
-        @Deprecated
-        IRubyObject next(ByteList name) {
-            // for 1.9 hash args
-            if (name != null) {
-                if (rubyHash == null && positionIndex == -1) raiseArgumentError("positional args mixed with named args");
-
-                RubySymbol nameSym = runtime.newSymbol(name);
-                IRubyObject object = rubyHash.fastARef(nameSym);
-
-                // if not found, try dispatching to pick up default hash value
-                // MRI: spliced together bits from rb_hash_default_value
-                if (object == null) {
-                    object = rubyHash.getIfNone();
-                    if (object == RubyBasicObject.UNDEF) {
-                        RubyString nameStr = RubyString.newString(runtime, name);
-                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
-                    } else if (rubyHash.hasDefaultProc()) {
-                        object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
-                    }
-
-                    if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
-                    }
-                }
-
-                return object;
-            } else if (rubyHash != null) {
-                raiseArgumentError("positional args mixed with named args");
-            }
-
-            // this is the order in which MRI does these two tests
-            if (positionIndex == -1) raiseArgumentError("unnumbered" + (positionIndex + 1) + "mixed with numbered");
-            if (positionIndex >= length) raiseArgumentError("too few arguments");
-            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(positionIndex);
-            positionIndex++;
-            return object;
-        }
-
-        @Deprecated
-        IRubyObject get(int index) {
-            return getPositionArg(index);
-        }
-
-        @Deprecated
-        IRubyObject getNth(int formatIndex) {
-            return getPositionArg(formatIndex);
-        }
-
-        @Deprecated
-        int nextInt() {
-            return intValue(next(null));
-        }
-
-        @Deprecated
-        int getNthInt(int formatIndex) {
-            return intValue(get(formatIndex - 1));
-        }
-
-        int intValue(IRubyObject obj) {
-            if (obj instanceof RubyNumeric) return (int)((RubyNumeric)obj).getLongValue();
+        int intValue(ThreadContext context, IRubyObject obj) {
+            if (obj instanceof RubyNumeric num) return num.asInt(context);
 
             // basically just forcing a TypeError here to match MRI
-            obj = TypeConverter.convertToType(obj, obj.getRuntime().getFixnum(), "to_int", true);
-            return (int)((RubyFixnum)obj).getLongValue();
+            obj = TypeConverter.convertToType(obj, fixnumClass(context), "to_int", true);
+            return ((RubyFixnum)obj).asInt(context);
         }
 
         byte getDecimalSeparator() {
@@ -318,50 +265,59 @@ public class Sprintf {
     // static methods only
     private Sprintf () {}
 
-    // Special form of sprintf that returns a RubyString and handles
-    // tainted strings correctly.
+    // Special form of sprintf that returns a RubyString.
     public static boolean sprintf(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
-        return rubySprintfToBuffer(to, format, new Args(locale, args));
+        rubySprintfToBuffer(to, format, new Args(locale, args));
+        return false;
     }
 
-    // Special form of sprintf that returns a RubyString and handles
-    // tainted strings correctly. Version for 1.9.
+    // Special form of sprintf that returns a RubyString. Version for 1.9.
     public static boolean sprintf1_9(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
-        return rubySprintfToBuffer(to, format, new Args(locale, args), false);
+        rubySprintfToBuffer(to, format, new Args(locale, args), false);
+        return false;
     }
 
     public static boolean sprintf(ByteList to, CharSequence format, IRubyObject args) {
-        return rubySprintf(to, format, new Args(args));
+        rubySprintf(to, format, new Args(args));
+        return false;
+    }
+
+    public static ByteList sprintf(Encoding encoding, CharSequence format, IRubyObject args) {
+        ByteList to = new ByteList(16, encoding);
+        rubySprintfToBuffer(to, format, new Args(args), false);
+        return to;
     }
 
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, int arg) {
-        return rubySprintf(to, format, new Args(runtime, (long)arg));
+        rubySprintf(to, format, new Args(runtime, (long)arg));
+        return false;
     }
 
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, long arg) {
-        return rubySprintf(to, format, new Args(runtime, arg));
+        rubySprintf(to, format, new Args(runtime, arg));
+        return false;
     }
 
     public static boolean sprintf(ByteList to, RubyString format, IRubyObject args) {
-        return rubySprintf(to, format.getByteList(), new Args(args));
+        rubySprintf(to, format.getByteList(), new Args(args));
+        return false;
     }
 
-    private static boolean rubySprintf(ByteList to, CharSequence charFormat, Args args) {
-        return rubySprintfToBuffer(to, charFormat, args);
+    private static void rubySprintf(ByteList to, CharSequence charFormat, Args args) {
+        rubySprintfToBuffer(to, charFormat, args);
     }
 
-    private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args) {
-        return rubySprintfToBuffer(buf, charFormat, args, true);
+    private static void rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args) {
+        rubySprintfToBuffer(buf, charFormat, args, true);
     }
 
-    private static boolean rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
+    private static void rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
                                                final Args args, final boolean usePrefixForZero) {
-        final Ruby runtime = args.runtime;
-        boolean tainted = false;
+        ThreadContext context = args.runtime.getCurrentContext();
         final byte[] format;
-        final Encoding encoding;
+        Encoding encoding;
 
-        int offset, length, mark;
+        int offset, length;
 
         if (charFormat instanceof ByteList) {
             ByteList list = (ByteList)charFormat;
@@ -398,19 +354,10 @@ public class Sprintf {
             for ( ; incomplete && offset < length ; ) {
                 switch (fchar = format[offset]) {
                 default:
-                    if (fchar == '\0' && flags == FLAG_NONE) {
-                        // MRI 1.8.6 behavior: null byte after '%'
-                        // leads to "%" string. Null byte in
-                        // other places, like "%5\0", leads to error.
-                        buf.append('%');
-                        buf.append(fchar);
-                        incomplete = false;
-                        offset++;
-                        break;
-                    } else if (isPrintable(fchar)) {
-                        raiseArgumentError(args,"malformed format string - %" + (char)fchar);
+                    if (isPrintable(fchar)) {
+                        raiseArgumentError(args, "malformed format string - %" + (char)fchar);
                     } else {
-                        raiseArgumentError(args,ERR_MALFORMED_FORMAT);
+                        raiseArgumentError(args, ERR_MALFORMED_FORMAT);
                     }
                     break;
 
@@ -458,7 +405,7 @@ public class Sprintf {
                         offset++;
                         break;
                     }
-                    // CHECK_FOR_WIDTH(flags);
+                    if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     width = number;
                     flags |= FLAG_WIDTH;
                     break;
@@ -477,7 +424,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
                     ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    if (name != null) raiseArgumentError(args, "named<" + RubyString.newString(runtime, newName) + "> after <" + RubyString.newString(runtime, name) + ">");
+                    if (name != null) raiseArgumentError(args, "named<" + newString(context, newName) + "> after <" + newString(context, name) + ">");
                     name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
                     args.nextObject = args.getHashValue(name, '<', '>');
@@ -500,23 +447,61 @@ public class Sprintf {
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
                     ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    buf.append(args.getHashValue(localName, '{', '}').asString().getByteList());
-                    incomplete = false;
+                    IRubyObject value = args.getHashValue(localName, '{', '}');
+                    RubyString str = (RubyString) TypeConverter.convertToType(value, stringClass(context), "to_s");
+                    ByteList bytes = str.getByteList();
+
+                    // peek to see if it has a format specifier.  If not we need to handle it now.
+                    if (offset < length && !isFormatSpecifier(format[offset]) || offset == length) {
+                        int len = bytes.length();
+                        Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
+                        if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
+                            int strLen = str.strLength();
+                            if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
+                                strLen = precision;
+                                len = StringSupport.nth(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize(), precision);
+                                if (len == -1) len = 0; // we might return -1 but MRI's rb_enc_nth does 0 for not-found
+                                len = len - bytes.begin();
+                            }
+                            /* need to adjust multi-byte string pos */
+                            if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
+                                width -= strLen;
+                                if ((flags & FLAG_MINUS) == 0) {
+                                    buf.fill(' ', width);
+                                    width = 0;
+                                }
+                                buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                                if ((flags & FLAG_MINUS) != 0) {
+                                    buf.fill(' ', width);
+                                }
+                                buf.setEncoding(enc);
+
+                                offset++;
+                                incomplete = false;
+                                break;
+                            }
+                        } else {
+                            buf.append(bytes);
+                            incomplete = false;
+                        }
+                    } else {
+                        buf.append(bytes);
+                        incomplete = false;
+
+                    }
 
                     break;
                 }
 
                 case '*':
-                    if ((flags & FLAG_WIDTH) != 0) {
-                        raiseArgumentError(args,"width given twice");
-                    }
+                    if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     flags |= FLAG_WIDTH;
-                    int[] p_width = GETASTER(args, format, offset, length, true);
+                    int[] p_width = GETASTER(context, args, format, offset, length, true);
                     offset = p_width[0]; width = p_width[1];
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
-                        if (width < 0) throw runtime.newArgumentError("width too big");
+                        if (width < 0) throw argumentError(context, "width too big");
                     }
                     break;
 
@@ -528,7 +513,7 @@ public class Sprintf {
                     checkOffset(args, ++offset, length, ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        int[] p_prec = GETASTER(args, format, offset, length, false);
+                        int[] p_prec = GETASTER(context, args, format, offset, length, false);
                         offset = p_prec[0]; precision = p_prec[1];
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
@@ -545,9 +530,6 @@ public class Sprintf {
                     precision = number;
                     //
                     break;
-
-                case '\n':
-                    offset--;
                 case '%':
                     if (flags != FLAG_NONE) {
                         raiseArgumentError(args, ERR_ILLEGAL_FORMAT_CHAR);
@@ -563,64 +545,151 @@ public class Sprintf {
                     int c; int n;
                     IRubyObject tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
-                        if (((RubyString) tmp).strLength() != 1) {
-                            throw runtime.newArgumentError("%c requires a character");
+                        // like CRuby, a String is formatted as %.1s, so it keeps its own encoding
+                        ByteList bytes = ((RubyString) tmp).getByteList();
+                        Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
+                        int len = 0;
+                        int strLen = 0;
+                        if (bytes.realSize() > 0) {
+                            len = StringSupport.nth(enc, bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize(), 1) - bytes.begin();
+                            strLen = 1;
                         }
-                        ByteList bl = ((RubyString) tmp).getByteList();
-                        c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
-                        n = StringSupport.codeLength(bl.getEncoding(), c);
-                    }
-                    else {
-                        // unsigned bits
-                        c = (int) arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
-                        try {
-                            n = StringSupport.codeLength(encoding, c);
-                        } catch (EncodingException e) {
+                        int padding = (flags & FLAG_WIDTH) != 0 && width > strLen ? width - strLen : 0;
+                        if ((flags & FLAG_MINUS) == 0) buf.fill(' ', padding);
+                        buf.append(bytes.unsafeBytes(), bytes.begin(), len);
+                        if ((flags & FLAG_MINUS) != 0) buf.fill(' ', padding);
+                        buf.setEncoding(enc);
+
+                        offset++;
+                        incomplete = false;
+                        break;
+                    } else {
+                        c = (int) toLong(context, arg) & 0xFFFFFFFF;
+                        if (c >= 0) {
+                            try {
+                                n = StringSupport.codeLength(encoding, c);
+                            } catch (EncodingException e) {
+                                n = -1;
+                            }
+                        } else {
                             n = -1;
                         }
                     }
-                    if (n <= 0) {
-                        throw runtime.newArgumentError("invalid character");
+                    if (n <= 0) throw argumentError(context, "invalid character");
+                    Encoding appendableEncoding = EncodingUtils.rbAscii8bitAppendableEncodingIndex(context, encoding, c);
+                    if (appendableEncoding != null && appendableEncoding != encoding) {
+                        buf.setEncoding(appendableEncoding);
+                        encoding = appendableEncoding;
                     }
+
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
-                    }
-                    else if ((flags & FLAG_MINUS) != 0) {
+                    } else if ((flags & FLAG_MINUS) != 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
-                        buf.fill(' ', width - 1);
-                    }
-                    else {
-                        buf.fill(' ', width - 1);
+                        buf.fill(' ', width - n);
+                    } else {
+                        buf.fill(' ', width - n);
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
                     offset++;
                     incomplete = false;
                     break;
                 }
+
+
+                case 'a':
+                case 'A': {
+                    arg = args.getArg();
+
+                    ByteList bytes = new ByteList();
+                    final boolean positive = isPositive(context, arg);
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
+                    boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
+                    boolean isnan = Double.isNaN(fval);
+                    boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
+
+                    if (isnan || isinf) {
+                        printSpecialValue(buf, flags, width, isnan, negative);
+
+                        offset++;
+                        incomplete = false;
+                        break;
+                    }
+
+                    if ((flags & FLAG_MINUS) != 0) {
+                        if (!positive) {
+                            bytes.append('-');
+                        } else if ((flags & FLAG_PLUS) != 0) {
+                            bytes.append('+');
+                        } else if ((flags & FLAG_SPACE) != 0) {
+                            bytes.append(' ');
+                        }
+
+                        bytes.append('0');
+                        bytes.append(fchar == 'a' ? 'x' : 'X');
+                    }
+                    precision = generateBinaryFloat(context, flags, precision, fchar, bytes, arg);
+                    int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
+
+                    if ((flags & FLAG_MINUS) == 0) {
+                        if (!positive) {
+                            buf.append('-');
+                        } else if ((flags & FLAG_PLUS) != 0) {
+                            buf.append('+');
+                        } else if ((flags & FLAG_SPACE) != 0) {
+                            buf.append(' ');
+                        }
+                    }
+
+                    if ((flags & FLAG_MINUS) == 0 && width <= bytesLength) {
+                        buf.append('0');
+                        buf.append(fchar == 'a' ? 'x' : 'X');
+                    } else if (width > bytesLength) {
+                        if ((flags & FLAG_ZERO) != 0) {
+                            buf.append('0');
+                            buf.append(fchar == 'a' ? 'x' : 'X');
+                            buf.fill('0', width - bytesLength - 2);
+                        } else if ((flags & FLAG_MINUS) == 0) {
+                            buf.fill(' ', width - bytesLength - 2);
+                            buf.append('0');
+                            buf.append(fchar == 'a' ? 'x' : 'X');
+                        }
+                    }
+
+                    buf.append(bytes);
+
+                    if (width > bytesLength && ((flags & FLAG_MINUS) != 0)) {
+                        buf.fill(' ', width - bytesLength);
+                    }
+
+                    offset++;
+                    incomplete = false;
+                    break;
+                    }
                 case 'p':
                 case 's': { // format_s:
                     arg = args.getArg();
 
                     if (fchar == 'p') {
-                        arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
+                        arg = arg.callMethod(context, "inspect");
                     }
                     RubyString str = arg.asString();
-                    if (arg.isTaint()) tainted = true;
                     ByteList bytes = str.getByteList();
                     int len = bytes.length();
-                    Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
+                    Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
                     if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
                         int strLen = str.strLength();
                         if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
                             strLen = precision;
                             len = StringSupport.nth(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize(), precision);
                             if (len == -1) len = 0; // we might return -1 but MRI's rb_enc_nth does 0 for not-found
+                            len = len - bytes.begin();
                         }
                         /* need to adjust multi-byte string pos */
                         if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
@@ -661,16 +730,14 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
+                        arg = asInteger(context, ((RubyFloat) arg).asDouble(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
                         break;
                     default:
-                        arg = TypeConverter.convertToInteger(runtime.getCurrentContext(), arg, 0);
-                        if (!(arg instanceof RubyInteger)) { // NOTE: likely redundant
-                            throw runtime.newTypeError(arg, runtime.getInteger());
-                        }
+                        arg = TypeConverter.convertToInteger(context, arg, 0);
+                        if (!(arg instanceof RubyInteger)) throw typeError(context, arg, integerClass(context));
                         break;
                     }
                     byte[] bytes;
@@ -709,8 +776,8 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (arg instanceof RubyFixnum) {
-                        final long v = ((RubyFixnum) arg).getLongValue();
+                    if (arg instanceof RubyFixnum fixnum) {
+                        final long v = fixnum.getValue();
                         negative = v < 0;
                         zero = v == 0;
                         if (negative && fchar == 'u') {
@@ -733,7 +800,7 @@ public class Sprintf {
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
                             switch (fchar) {
-                            case 'o': prefix = PREFIX_OCTAL; break;
+                            case 'o': if (!negative) prefix = PREFIX_OCTAL; break;
                             case 'x': prefix = PREFIX_HEX_LC; break;
                             case 'X': prefix = PREFIX_HEX_UC; break;
                             case 'b': prefix = PREFIX_BINARY_LC; break;
@@ -757,7 +824,7 @@ public class Sprintf {
                         }
                     } else if (negative) {
                         if (base == 10) {
-                            warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
+                            Warn.warning(context, "negative number for %u specifier");
                             leadChar = '.';
                             len += 2;
                         } else {
@@ -782,7 +849,16 @@ public class Sprintf {
                             if (leadChar != 0) len++;
                         }
                     }
+
                     int numlen = bytes.length - first;
+                    switch (fchar) {
+                    case 'd': case 'i': case 'u':
+                        // If the precision is 0 and the value is 0, nothing is written.
+                        if ((flags & FLAG_PRECISION) != 0 && precision == 0 && zero) {
+                            numlen = 0;
+                        }
+                    }
+
                     len += numlen;
 
                     if ((flags & (FLAG_ZERO|FLAG_PRECISION)) == FLAG_ZERO) {
@@ -842,7 +918,7 @@ public class Sprintf {
                     byte sign = (flags & FLAG_PLUS) != 0 ? (byte) 1 : (byte) 0; int zero = 0;
 
                     if (arg instanceof RubyInteger) {
-                        den = RubyFixnum.one(runtime);
+                        den = asFixnum(context, 1);
                         num = (RubyInteger) arg;
                     }
                     else if (arg instanceof RubyRational) {
@@ -858,14 +934,12 @@ public class Sprintf {
                     if (num != null) { // else -> goto float_value;
                         if ((flags & FLAG_PRECISION) == 0) precision = 6; // default_float_precision;
 
-                        ThreadContext context = runtime.getCurrentContext();
-
-                        if (num.isNegative()) {
+                        if (num.isNegativeNumber(context)) {
                             num = (RubyInteger) num.op_uminus(context);
                             sign = -1;
                         }
 
-                        if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) {
+                        if (!(den instanceof RubyFixnum fixnum) || fixnum.getValue() != 1) {
                             num = (RubyInteger) num.op_mul(context, Numeric.int_pow(context, 10, precision));
                             num = (RubyInteger) num.op_plus(context, den.idiv(context, 2));
                             num = (RubyInteger) num.idiv(context, den);
@@ -874,7 +948,7 @@ public class Sprintf {
                             zero = precision;
                         }
 
-                        RubyString val = num.to_s();
+                        RubyString val = num.to_s(context);
                         int len = val.length() + zero;
                         if (precision >= len) len = precision + 1; // integer part 0
                         if (sign != 0 || (flags & FLAG_SPACE) != 0) ++len;
@@ -930,13 +1004,11 @@ public class Sprintf {
                 case 'e':
                 case 'G':
                 case 'g':
-                //case 'a':
-                //case 'A':
                 float_value: {
                     arg = args.getArg();
 
-                    double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
-                    boolean isnan = fval != fval;
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
+                    boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
 
@@ -948,35 +1020,7 @@ public class Sprintf {
                     byte sign;
 
                     if (isnan || isinf) {
-                        if (isnan) {
-                            digits = NAN_VALUE;
-                            len = NAN_VALUE.length;
-                        } else {
-                            digits = INFINITY_VALUE;
-                            len = INFINITY_VALUE.length;
-                        }
-                        if (negative) {
-                            sign = '-';
-                            width--;
-                        } else if ((flags & FLAG_PLUS) != 0) {
-                            sign = '+';
-                            width--;
-                        } else if ((flags & FLAG_SPACE) != 0) {
-                            sign = ' ';
-                            width--;
-                        } else {
-                            sign = 0;
-                        }
-                        width -= len;
-
-                        if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                            buf.fill(' ', width);
-                            width = 0;
-                        }
-                        if (sign != 0) buf.append(sign);
-
-                        buf.append(digits);
-                        if (width > 0) buf.fill(' ', width);
+                        printSpecialValue(buf, flags, width, isnan, negative);
 
                         offset++;
                         incomplete = false;
@@ -1286,6 +1330,7 @@ public class Sprintf {
                                 }
                                 if ((flags & FLAG_SHARP) != 0 && precision > 0) {
                                     buf.fill('0', precision);
+                                    precision = 0;
                                 }
                             }
                             if ((flags & FLAG_SHARP) != 0 && precision > 0) buf.fill('0', precision);
@@ -1468,15 +1513,99 @@ public class Sprintf {
         } // main while loop (offset < length)
 
         // MRI behavior: validate only the unnumbered arguments
-        if (args.positionIndex >= 0 && args.nextIndex < args.length) {
-            if (args.runtime.isDebug()) {
+        if (args.rubyHash == null && args.positionIndex >= 0 && args.nextIndex <= args.length) {
+            if (context.runtime.isDebug()) {
                 args.raiseArgumentError("too many arguments for format string");
-            } else if (args.runtime.isVerbose()) {
-                args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
+            } else if (context.runtime.isVerbose()) {
+                warn(context, "too many arguments for format string");
+            }
+        }
+    }
+
+    private static boolean isFormatSpecifier(byte b) {
+        return "aAbBcdeEfgGiopsuxX".contains(""+b);
+    }
+
+    private static int generateBinaryFloat(ThreadContext context, int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
+        long exponent = getExponent(context, arg);
+        final byte[] mantissaBytes = getMantissaBytes(context, arg);
+
+        if (mantissaBytes[0] == 0) {
+            exponent = 0;
+            bytes.append('0');
+            if (precision > 0 || (flags & FLAG_SPACE) != 0) {
+                bytes.append('.');
+                while (precision > 0) {
+                    bytes.append('0');
+                    precision--;
+                }
+            }
+        } else {
+            int i = 0;
+            int digit = getDigit(i++, mantissaBytes);
+            if (digit == 0) {
+                digit = getDigit(i++, mantissaBytes);
+            }
+            assert digit == 1;
+            bytes.append('1');
+            int digits = getNumberOfDigits(mantissaBytes);
+            if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
+                bytes.append('.');
+            }
+
+            if ((flags & FLAG_PRECISION) == 0) {
+                precision = -1;
+            }
+
+            while ((precision < 0 && i < digits) || precision > 0) {
+                digit = getDigit(i++, mantissaBytes);
+                bytes.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
+                precision--;
             }
         }
 
-        return tainted;
+        bytes.append(fchar == 'a' ? 'p' : 'P');
+        if (exponent >= 0) {
+            bytes.append('+');
+        }
+        bytes.append(Long.toString(exponent).getBytes());
+        return precision;
+    }
+
+    // prints nan or inf
+    private static void printSpecialValue(ByteList buf, int flags, int width, boolean isnan, boolean negative) {
+        byte sign;
+        byte[] digits;
+        int len;
+        if (isnan) {
+            digits = NAN_VALUE;
+            len = NAN_VALUE.length;
+        } else {
+            digits = INFINITY_VALUE;
+            len = INFINITY_VALUE.length;
+        }
+        if (negative) {
+            sign = '-';
+            width--;
+        } else if ((flags & FLAG_PLUS) != 0) {
+            sign = '+';
+            width--;
+        } else if ((flags & FLAG_SPACE) != 0) {
+            sign = ' ';
+            width--;
+        } else {
+            sign = 0;
+        }
+        width -= len;
+
+        if (width > 0 && (flags & FLAG_MINUS) == 0) {
+            buf.fill(' ', width);
+            width = 0;
+        }
+        if (sign != 0) buf.append(sign);
+
+        buf.append(digits);
+        if (width > 0) buf.fill(' ', width);
     }
 
     public static NumberFormat getNumberFormat(Locale locale) {
@@ -1557,18 +1686,14 @@ public class Sprintf {
         args.raiseArgumentError(message);
     }
 
-    private static void warning(ID id, Args args, String message) {
-        args.warning(id, message);
-    }
-
     private static void checkOffset(Args args, int offset, int length, String message) {
         if (offset >= length) {
             raiseArgumentError(args, message);
         }
     }
 
-    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length,
-                                  final boolean width) {
+    private static int[] GETASTER(ThreadContext context, final Args args, final byte[] format, int offset,
+                                  final int length, final boolean width) {
         checkOffset(args, ++offset, length, ERR_MALFORMED_STAR_NUM);
 
         final int mark = offset;
@@ -1587,7 +1712,7 @@ public class Sprintf {
             tmp = args.getNextArg();
             offset = mark;
         }
-        return new int[] { offset, args.intValue(tmp) }; // [ offset, prec/width ]
+        return new int[] { offset, args.intValue(context, tmp) }; // [ offset, prec/width ]
     }
 
     private static int extendWidth(Args args, int oldWidth, byte newChar, final String errMessage) {
@@ -1715,13 +1840,7 @@ public class Sprintf {
     }
 
     private static byte[] getUnsignedNegativeBytes(final long val) {
-        // calculation for negatives when %u specified
-        // for values >= Integer.MIN_VALUE * 2, MRI uses (the equivalent of)
-        //   long neg_u = (((long)Integer.MAX_VALUE + 1) << 1) + val
-        // for smaller values, BigInteger math is required to conform to MRI's
-        // result.
-        // relatively cheap test for 32-bit values
-        if (val >= Long.MIN_VALUE << 1) {
+        if (val < 0) {
             return ConvertBytes.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + val);
         }
         return getUnsignedNegativeBytes(BigInteger.valueOf(val));
@@ -1756,6 +1875,98 @@ public class Sprintf {
 
     private static byte[] stringToBytes(CharSequence s) {
         return ByteList.plain(s);
+    }
+
+    private static int getNumberOfDigits(byte[] bytes) {
+        int digits = bytes.length * 2;
+        if (getDigit(digits - 1, bytes) == 0) {
+            digits--;
+        }
+        return digits;
+    }
+
+    private static byte getDigit(int position, byte[] bytes) {
+        int index = position / 2;
+        if (index < bytes.length) {
+            byte twoDigits = bytes[index];
+            if (position % 2 == 0) {
+                return (byte) ((twoDigits >> 4) & 0xf);
+            } else {
+                return (byte) (twoDigits & 0xf);
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    private static boolean isPositive(ThreadContext context, Object value) {
+        return switch (value) {
+            case RubyFloat flote -> (Double.doubleToRawLongBits(flote.asDouble(context)) & SIGN_MASK) == 0;
+            case RubyFixnum fixnum -> fixnum.getValue() >= 0;
+            case RubyBignum bignum -> bignum.signum(context) >= 0;
+            default -> true;
+        };
+    }
+
+    private static final long SIGN_MASK = 1L << 63;
+    private static final long BIASED_EXP_MASK = 0x7ffL << 52;
+    private static final long MANTISSA_MASK = ~(SIGN_MASK | BIASED_EXP_MASK);
+    private static final byte[] HEX_DIGITS = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+    private static byte[] getMantissaBytes(ThreadContext context, IRubyObject value) {
+        BigInteger bi;
+        if (value instanceof RubyFloat) {
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
+            long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
+            long mantissaBits = bits & MANTISSA_MASK;
+            if (biasedExp > 0) {
+                mantissaBits = mantissaBits | 0x10000000000000L;
+            }
+            bi = BigInteger.valueOf(mantissaBits);
+        } else if (value instanceof RubyFixnum fixnum) {
+            bi = BigInteger.valueOf(fixnum.getValue());
+        } else if (value instanceof RubyBignum bignum) {
+            bi = bignum.getValue();
+        } else {
+            bi = BigInteger.ZERO;
+        }
+        bi = bi.abs();
+        if (BigInteger.ZERO.equals(bi)) {
+            return new byte[1];
+        }
+
+        // Shift things to get rid of all the trailing zeros.
+        bi = bi.shiftRight(bi.getLowestSetBit() - 1);
+
+        // We want the bit length to be 4n + 1 so that things line up nicely for the printing routine.
+        int bitLength = bi.bitLength() % 4;
+        if (bitLength != 1) {
+            bi = bi.shiftLeft(5 - bitLength);
+        }
+        return bi.toByteArray();
+    }
+
+    private static long getExponent(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyBignum bignum) {
+            return bignum.getValue().abs().bitLength() - 1;
+        } else if (value instanceof RubyFixnum fixnum) {
+            long lval = fixnum.getValue();
+            return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
+        } else if (value instanceof RubyFloat flote) {
+            final long bits = Double.doubleToRawLongBits(flote.getValue());
+            long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
+            long mantissaBits = bits & MANTISSA_MASK;
+            if (biasedExp == 0) {
+                // Sub normal cases are a little special.
+                // Find the most significant bit in the mantissa
+                final int lz = Long.numberOfLeadingZeros(mantissaBits);
+                // Adjust the exponent to reflect this.
+                biasedExp = biasedExp - (lz - 12);
+            }
+            return biasedExp - 1023;
+        }
+        return 0;
     }
 
 }

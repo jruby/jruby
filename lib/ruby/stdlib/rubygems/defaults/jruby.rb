@@ -2,26 +2,32 @@
 require 'rbconfig'
 require 'jruby/util'
 
-module Gem
-
-  class << self
-    alias_method :__ruby__, :ruby
-    def ruby
-      ruby_path = __ruby__
-      ruby_path = JRuby::Util.classpath_launcher if jarred_path?(ruby_path)
-      ruby_path
-    end
-
-    def jarred_path?(p)
-      p =~ /^(file|uri|jar|classpath):/
-    end
+# Because this file redefines several methods from RubyGems, we do the
+# alias dance to avoid method redefinition warnings.
+# See https://github.com/jruby/jruby/pull/9979
+class << Gem
+  alias_method :__ruby__, :ruby
+  def ruby
+    ruby_path = __ruby__
+    ruby_path = JRuby::Util.classpath_launcher if jarred_path?(ruby_path)
+    ruby_path
   end
 
-  def self.platform_defaults
-    return {
-        'install' => '--no-rdoc --no-ri --env-shebang',
-        'update' => '--no-rdoc --no-ri --env-shebang'
-    }
+  private def jarred_path?(p)
+    p =~ /^(file|uri|jar|classpath):/
+  end
+
+  unless RbConfig::CONFIG['host_os'].match?(/linux/)
+    alias _old_platform_defaults platform_defaults
+    def platform_defaults
+      return {
+          'install' => '--env-shebang',
+          'update' => '--env-shebang',
+          'setup' => '--env-shebang',
+          'pristine' => '--env-shebang'
+      }
+    end
+    undef _old_platform_defaults
   end
 
   # Default home directory path to be used if an alternate value is not
@@ -29,43 +35,48 @@ module Gem
   #
   # JRuby: We don't want gems installed in lib/jruby/gems, but rather
   # to preserve the old location: lib/ruby/gems.
-  def self.default_dir
+  alias _old_default_dir default_dir
+  def default_dir
     dir = RbConfig::CONFIG["default_gem_home"]
-    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', 'shared')
+    dir ||= File.join(RbConfig::CONFIG['libdir'], 'ruby', 'gems', 'shared')
     dir
   end
+  undef _old_default_dir
 
   # Default locations for RubyGems' .rb and bin files
-  def self.default_rubygems_dirs
+  alias _old_default_rubygems_dirs default_rubygems_dirs
+  def default_rubygems_dirs
     [
-        File.join(ConfigMap[:libdir], 'ruby', 'stdlib'),
-        ConfigMap[:bindir]
+        File.join(RbConfig::CONFIG['libdir'], 'ruby', 'stdlib'),
+        RbConfig::CONFIG['bindir']
     ]
   end
-
-  ##
-  # Is this a windows platform?
-  #
-  # JRuby: Look in CONFIG['host_os'] as well.
-  def self.win_platform?
-    if @@win_platform.nil? then
-      @@win_platform = !!WIN_PATTERNS.find { |r| RUBY_PLATFORM =~ r || RbConfig::CONFIG["host_os"] =~ r }
-    end
-
-    @@win_platform
-  end
+  undef _old_default_rubygems_dirs
 
   # Allow specifying jar and classpath type gem path entries
-  def self.path_separator
+  alias _old_path_separator path_separator
+  def path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
     /#{JRuby::Util::SEPARATOR}/
   end
+  undef _old_path_separator
 end
 
 ## JAR FILES: Allow gem path entries to contain jar files
 class Gem::Specification
+  ##
+  # Ignore missing extensions on JRuby
+  #
+  # See https://github.com/ruby/rubygems/issues/3520
+  alias _old_missing_extensions? missing_extensions?
+  def missing_extensions?
+    false
+  end
+  undef _old_missing_extensions?
+
   class << self
     # Replace existing dirs
+    alias _old_dirs dirs
     def dirs
       @@dirs ||= Gem.path.collect {|dir|
         if File.file?(dir) && dir =~ /\.jar$/
@@ -75,23 +86,18 @@ class Gem::Specification
         end
       }.compact + spec_directories_from_classpath
     end
-
-    def add_dir dir
-      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub(/.specifications/, '') }
-      self.reset
-
-      # ugh
-      @@dirs = new_dirs.map { |d| File.join d, "specifications" }
-    end
+    undef _old_dirs
 
     # Replace existing dirs=
+    alias _old_dirs= dirs=
     def dirs= dirs
       self.reset
 
-      # ugh
       @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
+    undef _old_dirs=
 
+    private
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
       JRuby::Util.extra_gem_paths.each do |path|
@@ -106,14 +112,6 @@ class Gem::Specification
 end
 ## END JAR FILES
 
-if (Gem::win_platform?)
-  module Process
-    def self.uid
-      0
-    end
-  end
-end
-
 # Check for jruby_native and load it if present. jruby_native
 # indicates the native launcher is installed and will override
 # env-shebang and possibly other options.
@@ -124,7 +122,13 @@ begin
 rescue LoadError
 end
 
-begin
-  require 'jar_install_post_install_hook'
-rescue LoadError
+if defined?(JRUBY_VERSION) && Gem.post_install_hooks.empty?
+  Gem.post_install do |gem_installer|
+    unless (ENV['JARS_SKIP'] || ENV_JAVA['jars.skip']) == 'true'
+      require 'jars/installer'
+      jars = Jars::Installer.new(gem_installer.spec)
+      jars.ruby_maven_install_options = gem_installer.options || {}
+      jars.vendor_jars
+    end
+  end
 end

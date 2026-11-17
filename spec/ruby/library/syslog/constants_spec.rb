@@ -4,7 +4,7 @@ platform_is_not :windows do
   require 'syslog'
 
   describe "Syslog::Constants" do
-    platform_is_not :windows, :solaris, :aix do
+    platform_is_not :windows, :aix do
       before :all do
         @constants = %w(LOG_AUTHPRIV LOG_USER LOG_LOCAL2 LOG_NOTICE LOG_NDELAY
                       LOG_SYSLOG LOG_ALERT LOG_FTP LOG_LOCAL5 LOG_ERR LOG_AUTH
@@ -17,7 +17,7 @@ platform_is_not :windows do
 
       it "includes the Syslog constants" do
         @constants.each do |c|
-          Syslog::Constants.should have_constant(c)
+          Syslog::Constants.should.const_defined?(c, true)
         end
       end
     end

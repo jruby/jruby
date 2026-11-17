@@ -76,6 +76,34 @@ public class TestHelper {
         return "Original";
     }
 
+    public static String testOverriddenMethod(String arg0) {
+        return "String";
+    }
+
+    public static String testOverriddenMethod(String[] arg0) {
+        return "String[]";
+    }
+
+    public static String testOverriddenMethod(String arg0, Boolean arg1) {
+        return "StringBoolean";
+    }
+
+    public static String testOverriddenMethod(Object arg0, Boolean arg1) {
+        return "ObjectBoolean";
+    }
+
+    public static String testOverriddenMethod(CharSequence arg0, Boolean arg1, Integer arg2) {
+        return "CharSequenceBooleanInteger";
+    }
+
+    public static String testOverriddenMethod(CharSequence[] arg0, Boolean arg1, Integer arg2) {
+        return "CharSequence[]BooleanInteger";
+    }
+
+    public static String testOverriddenMethod(Object arg0, Boolean arg1, Integer arg2) {
+        return "ObjectBooleanInteger";
+    }
+
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
@@ -116,17 +144,10 @@ public class TestHelper {
         public String doStuff() {
             return "stuff done";
         }
-        
+
         public String dispatchObject(Object iObject) {
             return iObject == null ? null : iObject.toString();
         }
-    }
-
-
-    public static Class loadAlternateClass() throws ClassNotFoundException {
-        AlternateLoader loader = new AlternateLoader();
-        Class klass = loader.loadClass("org.jruby.test.TestHelper");
-        return klass;
     }
 
     /**
@@ -139,7 +160,7 @@ public class TestHelper {
         Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
         Ruby runtime = self.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
-        
+
         try {
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
@@ -173,63 +194,6 @@ public class TestHelper {
             return cl;
         }
 
-    }
-    private static class AlternateLoader extends ClassLoader {
-
-        protected Class findModClass(String name) throws ClassNotFoundException {
-           byte[] classBytes = loadClassBytes(name);
-           replace(classBytes, "Original", "ABCDEFGH");
-           return defineClass(name, classBytes, 0, classBytes.length);
-        }
-        private void replace(byte[] classBytes, String find, String replaceWith) {
-            byte[] findBytes = find.getBytes();
-            byte[] replaceBytes = replaceWith.getBytes();
-            for (int i=0; i<classBytes.length; i++) {
-                boolean match = true;
-                for (int j=0; j<findBytes.length; j++) {
-                    if (classBytes[i+j] != findBytes[j]) {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) {
-                    for (int j=0; j<findBytes.length; j++)
-                        classBytes[i+j] = replaceBytes[j];
-                    return;
-                }
-            }
-        }
-        @Override
-        public Class loadClass(String name) throws ClassNotFoundException {
-            if (name.equals("org.jruby.test.TestHelper"))
-                return findModClass(name);
-            return super.loadClass(name);
-        }
-        private byte[] loadClassBytes(String name) throws ClassNotFoundException {
-            InputStream stream = null;
-            try {
-                String fileName = name.replaceAll("\\.", "/");
-                fileName += ".class";
-                byte[] buf = new byte[1024];
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                int bytesRead = 0;
-                stream = getClass().getResourceAsStream("/" + fileName);
-                while ((bytesRead = stream.read(buf)) != -1) {
-                    bytes.write(buf, 0, bytesRead);
-                }
-                return bytes.toByteArray();
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new ClassNotFoundException(e.getMessage(),e);
-            } finally {
-                if (stream != null)
-                    try {
-                        stream.close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-            }
-        }
     }
 
     private static class TestHelperException extends RuntimeException {

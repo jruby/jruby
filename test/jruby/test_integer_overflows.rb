@@ -537,7 +537,7 @@ class VVT < Test::Unit::TestCase
         else
           first_diff_indexv = nil
         end
-        resultv = "["
+        resultv = +"["
         if valuev.size > 0 then
           iidiff_indexv = if first_diff_indexes.kind_of?(Array) then
                             first_diff_indexes[first_diff_indexv]

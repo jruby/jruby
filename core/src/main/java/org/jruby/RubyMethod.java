@@ -32,24 +32,34 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.parser.StaticScope;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -69,21 +79,11 @@ public class RubyMethod extends AbstractRubyMethod {
         super(runtime, rubyClass);
     }
 
-    /** Create the RubyMethod class and add it to the Ruby runtime.
-     * 
-     */
-    public static RubyClass createMethodClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setMethod(methodClass);
-
-        methodClass.setClassIndex(ClassIndex.METHOD);
-        methodClass.setReifiedClass(RubyMethod.class);
-
-        methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
-        methodClass.defineAnnotatedMethods(RubyMethod.class);
-        
-        return methodClass;
+    public static RubyClass createMethodClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Method", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyMethod.class).
+                classIndex(ClassIndex.METHOD).
+                defineMethods(context, AbstractRubyMethod.class, RubyMethod.class);
     }
 
     public static RubyMethod newMethod(
@@ -111,24 +111,34 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        arg = dupIfKeywordRestAtCallsite(context, arg);
+
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length > 0) {
+            args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+        }
+
         return method.call(context, receiver, sourceModule, methodName, args, block);
     }
 
@@ -137,30 +147,28 @@ public class RubyMethod extends AbstractRubyMethod {
      * @return the number of arguments of a method.
      */
     @JRubyMethod
-    public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
+    @CRuby(value = "method_arity_m", file = "proc.c")
+    public RubyFixnum arity(ThreadContext context) {
+        Signature signature = method.getAritySignature();
+        int min = signature.min();
+        int max = signature.max();
 
-        return getRuntime().newFixnum(value);
+        return asFixnum(context, min == max ? min : -min-1);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }
@@ -178,7 +186,7 @@ public class RubyMethod extends AbstractRubyMethod {
         }
 
         RubyMethod otherMethod = (RubyMethod)other;
-        return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
+        return receiver == otherMethod.receiver &&
             ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
     }
 
@@ -193,7 +201,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCodeImpl());
+        return asFixnum(context, hashCodeImpl());
     }
 
     @Override
@@ -209,8 +217,16 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     public RubyMethod rbClone() {
         RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
-        newMethod.setMetaClass(getMetaClass());
-        return newMethod;
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        return (RubyMethod) cloneSetup(context, newMethod, context.nil);
+    }
+
+    @JRubyMethod
+    public RubyMethod dup(ThreadContext context) {
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
+
+        return (RubyMethod) dupSetup(context, newMethod);
     }
 
     /** Create a Proc object.
@@ -218,96 +234,53 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        MethodBlockBody body;
-        Signature signature;
-        ArgumentDescriptor[] argsDesc;
-        if (method instanceof IRMethodArgs) {
-            signature = ((IRMethodArgs) method).getSignature();
-            argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
-        } else {
-            signature = Signature.from(method.getArity());
-            argsDesc = Helpers.methodToArgumentDescriptors(method);
-        }
+        Signature signature = method.getSignature();
+        ArgumentDescriptor[] argsDesc = method instanceof IRMethodArgs ?
+                ((IRMethodArgs) method).getArgumentDescriptors() :
+                Helpers.methodToArgumentDescriptors(context, method);
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
+
+        // The proc's binding gets a scope of its own, so variables set through it stay with it, and
+        // constants resolve where the method was defined, as they would inside it.
+        StaticScope scope = context.runtime.getStaticScopeFactory().newLocalScope(null);
+        scope.setModule(lexicalModule());
+        // eval in the binding needs an IR scope, which for a Ruby method is the method's own
+        if (method.getRealMethod() instanceof AbstractIRMethod irMethod) {
+            scope.setIRScope(irMethod.getIRScope());
+        } else {
+            new IRScriptBody(context.runtime.getIRManager(), "", scope); // registers itself with the scope
+        }
+
+        MethodBlockBody body = new MethodBlockBody(scope, signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
-        
-        return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+
+        RubyProc proc = RubyProc.newMethodProc(context.runtime, b);
+        return proc;
+    }
+
+    // the module a Ruby method was defined in, as its code sees it, or else the one it belongs to
+    private RubyModule lexicalModule() {
+        if (method.getRealMethod() instanceof AbstractIRMethod irMethod) {
+            StaticScope enclosing = irMethod.getStaticScope().getEnclosingScope();
+            RubyModule module = enclosing == null ? null : enclosing.getModule();
+            if (module != null) return module;
+        }
+        return method.getImplementationClass();
     }
 
     @JRubyMethod
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
-        unboundMethod.infectBy(this);
-        
+
         return unboundMethod;
     }
     
     @JRubyMethod(name = {"inspect", "to_s"})
-    @Override
-    public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-
-        RubyString str = RubyString.newString(runtime, "#<");
-        String sharp = "#";
-        
-        str.catString(getType().getName()).catString(": ");
-
-        RubyModule definedClass;
-        RubyModule mklass = originModule;
-
-        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
-            definedClass = method.getRealMethod().getDefinedClass();
-        }
-        else {
-            definedClass = method.getDefinedClass();
-        }
-
-        if (definedClass.isIncluded()) {
-            definedClass = definedClass.getMetaClass();
-        }
-
-        if (mklass.isSingleton()) {
-            IRubyObject attached = ((MetaClass) mklass).getAttached();
-            if (receiver == null) {
-                str.cat19(inspect(context, mklass).convertToString());
-            } else if (receiver == attached) {
-                str.cat19(inspect(context, attached).convertToString());
-                sharp = ".";
-            } else {
-                str.cat19(inspect(context, receiver).convertToString());
-                str.catString("(");
-                str.cat19(inspect(context, attached).convertToString());
-                str.catString(")");
-                sharp = ".";
-            }
-        } else {
-            str.catString(mklass.getName());
-            if (definedClass != mklass) {
-                str.catString("(");
-                str.catString(definedClass.getName());
-                str.catString(")");
-            }
-        }
-        str.catString(sharp);
-        str.catString(this.methodName);
-        if (!methodName.equals(method.getName())) {
-            str.catString("(");
-            str.catString(method.getName());
-            str.catString(")");
-        }
-        if (method.isNotImplemented()) {
-            str.catString(" (not-implemented)");
-        }
-        str.catString(">");
-
-        return str;
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect(receiver);
     }
 
     @JRubyMethod
@@ -317,55 +290,54 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         String filename = getFilename();
-        if (filename != null) {
-            return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
-        }
-
-        return context.nil;
-    }
-
-    public String getFilename() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getFile();
-        }
-        return null;
-    }
-
-    public int getLine() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine() + 1;
-        }
-        return -1;
+        return filename == null ? context.nil :
+                newArray(context, newString(context, filename), asFixnum(context, getLine()));
     }
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context).callMethod(context, "curry", args);
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc);
+    }
+
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context, IRubyObject arg0) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, arg0);
     }
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        return super_method(context, receiver, sourceModule.getSuperClass());
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod || method instanceof AliasMethod) {
+            RubyModule definedClass = method.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) superClass = module.getSuperClass();
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, receiver, superClass);
     }
 
-    @JRubyMethod
-    public IRubyObject original_name(ThreadContext context) {
-        if (method instanceof AliasMethod) {
-            return context.runtime.newSymbol(((AliasMethod)method).getOldName());
-        }
-        return name(context);
+    public IRubyObject getReceiver() {
+        return receiver;
+    }
+
+    @Deprecated(since = "9.4.6.0")
+    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, args);
+    }
+
+    private static JavaSites.MethodSites sites(ThreadContext context) {
+        return context.sites.Method;
     }
 
 }

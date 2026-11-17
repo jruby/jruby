@@ -1,0 +1,2 @@
+windows:Warning.[]= emits and suppresses warnings for :deprecated
+windows:Warning.[]= :experimental emits and suppresses warnings for :experimental

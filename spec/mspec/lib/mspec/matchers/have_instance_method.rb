@@ -18,7 +18,8 @@ class HaveInstanceMethodMatcher < MethodMatcher
 end
 
 module MSpecMatchers
-  private def have_instance_method(method, include_super=true)
+  private def have_instance_method(method, include_super = true)
+    MSpec.deprecate __method__, '.should.method_defined?'
     HaveInstanceMethodMatcher.new method, include_super
   end
 end

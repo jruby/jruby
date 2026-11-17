@@ -4,12 +4,17 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.ArgReceiver;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.CoverBranchInstr;
+import org.jruby.ir.instructions.CoverMethodInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.FrameNameCallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
@@ -17,17 +22,15 @@ import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.PushMethodFrameInstr;
-import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReceiveMethodCoverageInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
-import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
-import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
 import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
@@ -65,8 +68,10 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.ProfilingCachingCallSite;
-import org.jruby.runtime.opto.ConstantCache;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.runtimeError;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
@@ -115,12 +120,8 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
-
-        // Blocks with explicit call protocol shouldn't do this before args are prepared
-        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
-        }
+        boolean   usesKeywords = interpreterContext.receivesKeywordArguments();
+        boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -154,11 +155,11 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords, currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;
                     case RET_OP:
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
@@ -192,7 +193,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
                             break;
                         case PREPARE_BLOCK_ARGS:
-                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, usesKeywords, ruby2Keywords);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -223,7 +224,7 @@ public class InterpreterEngine {
         }
 
         // Control should never get here!
-        throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
+        throw runtimeError(context, "BUG: interpreter fell through to end unexpectedly");
     }
 
     protected static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {
@@ -263,18 +264,22 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject self,
+                                     IRubyObject[] args, boolean ruby2Keywords, StaticScope currScope,
+                                     DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
         switch(operation) {
             case RECV_PRE_REQD_ARG:
-                int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
-                result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
+                ReceivePreReqdArgInstr receivePre = (ReceivePreReqdArgInstr) instr;
+                // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+                IRubyObject keywords = (IRubyObject) receivePre.getOperand1().retrieve(context, self, currScope, currDynScope, temp);
+                result = IRRuntimeHelpers.getPreArgSafe(context, args, keywords, receivePre.getArgIndex());
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, acceptsKeywordArgument);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, self, currDynScope, currScope, temp, args);
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
@@ -287,18 +292,19 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
             default:
-                result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
+                result = ((ArgReceiver) instr).receiveArg(context, self, currDynScope, currScope, temp, args, ruby2Keywords);
                 setResult(temp, currDynScope, instr.getResult(), result);
         }
     }
 
-    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self) {
+    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self, String name) {
         Object result;
 
         switch(operation) {
             case CALL_1F: {
                 OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFixnumArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -306,6 +312,7 @@ public class InterpreterEngine {
             case CALL_1D: {
                 OneFloatArgNoBlockCallInstr call = (OneFloatArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFloatArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -314,6 +321,7 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -323,6 +331,7 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o1, o2);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -334,6 +343,7 @@ public class InterpreterEngine {
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
                 CallSite callSite = call.getCallSite();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.hasLiteralClosure() ?
                         callSite.callIter(context, self, r, o, preparedBlock) :
                         callSite.call(context, self, r, o, preparedBlock);
@@ -343,6 +353,7 @@ public class InterpreterEngine {
             case CALL_0O: {
                 ZeroOperandArgNoBlockCallInstr call = (ZeroOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -351,11 +362,15 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockNoResultCallInstr call = (OneOperandArgNoBlockNoResultCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 call.getCallSite().call(context, self, r, o);
                 break;
             }
             case NORESULT_CALL:
                 instr.interpret(context, currScope, currDynScope, self, temp);
+                break;
+            case FRAME_NAME_CALL:
+                setResult(temp, currDynScope, instr, ((FrameNameCallInstr) instr).getFrameName(context, self, name));
                 break;
             case CALL:
             default:
@@ -384,8 +399,12 @@ public class InterpreterEngine {
                 context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, blockArg);
-                context.setCurrentVisibility(((PushMethodFrameInstr) instr).getVisibility());
+                context.preMethodFrameOnly(
+                        implClass,
+                        name,
+                        self,
+                        ((PushMethodFrameInstr) instr).getVisibility(),
+                        blockArg);
                 break;
             case PUSH_BACKREF_FRAME:
                 context.preBackrefMethod();
@@ -404,25 +423,31 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
+                ((CheckArityInstr) instr).checkArity(context, self, currScope, currDynScope, args, block, temp);
                 break;
             case LINE_NUM:
-                context.setLine(((LineNumberInstr)instr).lineNumber);
+                LineNumberInstr line = (LineNumberInstr) instr;
+                context.setLine(line.lineNumber);
+                if (line.coverage) {
+                    boolean covered = IRRuntimeHelpers.coverLine(context, currScope.getFile(), line.lineNumber);
+                    if (covered && line.oneshot) line.coverage = false;
+                }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
-            case TRACE: {
-                if (context.runtime.hasEventHooks()) {
-                    TraceInstr trace = (TraceInstr) instr;
-                    // FIXME: Try and statically generate END linenumber instead of hacking it.
-                    int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                    context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                            trace.getFilename(), linenumber);
-                }
+            case RECV_METHOD_COVERAGE:
+                setResult(temp, currDynScope, ((ReceiveMethodCoverageInstr) instr).getResult(), context.takePendingMethodCoverage());
                 break;
-            }
+            case COVER_METHOD:
+                ((CoverMethodInstr) instr).cover(context, currScope, currDynScope, self, temp);
+                break;
+            case COVER_BRANCH:
+                ((CoverBranchInstr) instr).cover(context);
+                break;
+            case TRACE:
+                instr.interpret(context, currScope, currDynScope, self, temp);
+                break;
         }
     }
 
@@ -478,18 +503,6 @@ public class InterpreterEngine {
                 break;
             }
 
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                if (!ConstantCache.isCached(cache)) {
-                    result = sci.cache(context, currScope, currDynScope, self, temp);
-                } else {
-                    result = cache.value;
-                }
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
-
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
@@ -508,41 +521,37 @@ public class InterpreterEngine {
             }
 
             case BOX_FIXNUM: {
-                RubyFixnum f = context.runtime.newFixnum(getFixnumArg(fixnums, ((BoxFixnumInstr) instr).getValue()));
+                RubyFixnum f = asFixnum(context, getFixnumArg(fixnums, ((BoxFixnumInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = asBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }
 
             case UNBOX_FLOAT: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
-                } else {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                floats[((TemporaryLocalVariable)ui.getResult()).offset] = val.asDouble(context);
                 break;
             }
 
             case UNBOX_FIXNUM: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getLongValue();
-                } else {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getLongValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = val.asLong(context);
                 break;
             }
 
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
 
             // ---------- All the rest ---------

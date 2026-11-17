@@ -35,12 +35,11 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Explicit block argument (on caller side):
- *   foobar(1, 2, &foo)
- *   foobar(1, 2, &lhs_which_returns_something_block/proc_like)
+ *   foobar(1, 2, &amp;foo)
+ *   foobar(1, 2, &amp;lhs_which_returns_something_block/proc_like)
  *
  * bodyNode is any expression which can return something which is ultimately
  * coercible to a proc.
@@ -54,8 +53,8 @@ public class BlockPassNode extends Node {
      */
     private Node argsNode;
 
-    public BlockPassNode(ISourcePosition position, Node bodyNode) {
-        super(position, bodyNode != null && bodyNode.containsVariableAssignment());
+    public BlockPassNode(int line, Node bodyNode) {
+        super(line, bodyNode != null && bodyNode.containsVariableAssignment());
         this.bodyNode = bodyNode;
     }
 

@@ -47,10 +47,14 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     private void allocate() {
-        if(variableValues == null) {
-            int size = staticScope.getNumberOfVariables();
-            variableValues = new IRubyObject[size];
-        }
+        if(variableValues == null) variableValues = IRubyObject.array(staticScope.getNumberOfVariables());
+    }
+
+    // WARNING:  This is used when dup'ing an eval scope.  We know the size and that it will 100% always be
+    // a ManyVarsDynamicScope.  This should not be used by anything else.  If there ever ends up being another
+    // use then it should be documented in this warning.
+    public void setVariableValues(IRubyObject[] variableValues) {
+        this.variableValues = variableValues;
     }
 
     public IRubyObject[] getValues() {
@@ -216,42 +220,42 @@ public class ManyVarsDynamicScope extends DynamicScope {
     public void setValueFourDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 4) : failSet(this, value, 4);
 
         variableValues[4] = value;
     }
     public void setValueFiveDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 5) : failSet(this, value, 5);
 
         variableValues[5] = value;
     }
     public void setValueSixDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 6) : failSet(this, value, 6);
 
         variableValues[6] = value;
     }
     public void setValueSevenDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 7) : failSet(this, value, 7);
 
         variableValues[7] = value;
     }
     public void setValueEightDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 8) : failSet(this, value, 8);
 
         variableValues[8] = value;
     }
     public void setValueNineDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 9) : failSet(this, value, 9);
 
         variableValues[9] = value;
     }
@@ -292,11 +296,5 @@ public class ManyVarsDynamicScope extends DynamicScope {
             
             variableValues = values;
         }
-    }
-
-    @Deprecated
-    public DynamicScope cloneScope() {
-        // we construct new rather than clone to avoid sharing variableValues
-        return new ManyVarsDynamicScope(staticScope, parent);
     }
 }

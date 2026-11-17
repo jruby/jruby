@@ -3,9 +3,6 @@ package org.jruby.ir.operands;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-/**
- *
- */
 public class TemporaryCurrentModuleVariable extends TemporaryLocalVariable {
     // First four scopes are so common and this operand is immutable so we share them.
     public static final TemporaryCurrentModuleVariable[] CURRENT_MODULE_VARIABLE = {
@@ -14,8 +11,8 @@ public class TemporaryCurrentModuleVariable extends TemporaryLocalVariable {
             new TemporaryCurrentModuleVariable(4)
     };
 
-    public static TemporaryCurrentModuleVariable ModuleVariableFor(int depth) {
-        return depth < CURRENT_MODULE_VARIABLE.length ? CURRENT_MODULE_VARIABLE[depth] : new TemporaryCurrentModuleVariable(depth);
+    public static TemporaryCurrentModuleVariable ModuleVariableFor(int index) {
+        return index < CURRENT_MODULE_VARIABLE.length ? CURRENT_MODULE_VARIABLE[index] : new TemporaryCurrentModuleVariable(index);
     }
     
     public TemporaryCurrentModuleVariable(int offset) {

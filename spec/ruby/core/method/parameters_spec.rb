@@ -7,18 +7,30 @@ describe "Method#parameters" do
     def one_keyrest(**a); end
 
     def one_keyreq(a:); end
+    def one_nokey(**nil); end
 
     def one_splat_one_req(*a,b); end
     def one_splat_two_req(*a,b,c); end
     def one_splat_one_req_with_block(*a,b,&blk); end
 
-    def one_opt_with_stabby(a=->(b){true}); end
+    def one_opt_with_stabby(a=-> b { true }); end
 
     def one_unnamed_splat(*); end
+    def one_unnamed_keyrest(**); end
 
     def one_splat_one_block(*args, &block)
       local_is_not_parameter = {}
     end
+
+    ruby_version_is "4.1" do
+      eval <<-RUBY
+        def one_noblock(&nil); end
+      RUBY
+    end
+
+    def forward_parameters(...) end
+
+    def underscore_parameters(_, _, _ = 1, *_, _:, _: 2, **_, &_); end
 
     define_method(:one_optional_defined_method) {|x = 1|}
   end
@@ -176,6 +188,18 @@ describe "Method#parameters" do
     m.parameters.should == [[:keyreq,:a]]
   end
 
+  it "returns [[:nokey]] for a method with a single **nil parameter" do
+    m = MethodSpecs::Methods.instance_method(:one_nokey)
+    m.parameters.should == [[:nokey]]
+  end
+
+  ruby_version_is "4.1" do
+    it "returns [[:noblock]] for a method with a single &nil parameter" do
+      m = MethodSpecs::Methods.instance_method(:one_noblock)
+      m.parameters.should == [[:noblock]]
+    end
+  end
+
   it "works with ->(){} as the value of an optional argument" do
     m = MethodSpecs::Methods.instance_method(:one_opt_with_stabby)
     m.parameters.should == [[:opt,:a]]
@@ -222,9 +246,27 @@ describe "Method#parameters" do
     m.method(:handled_via_method_missing).parameters.should == [[:rest]]
   end
 
-  it "adds nameless rest arg for \"star\" argument" do
+  it "adds rest arg with name * for \"star\" argument" do
     m = MethodSpecs::Methods.new
-    m.method(:one_unnamed_splat).parameters.should == [[:rest]]
+    m.method(:one_unnamed_splat).parameters.should == [[:rest, :*]]
+  end
+
+  it "adds keyrest arg with ** as a name for \"double star\" argument" do
+    m = MethodSpecs::Methods.new
+    m.method(:one_unnamed_keyrest).parameters.should == [[:keyrest, :**]]
+  end
+
+  it "adds block arg with name & for anonymous block argument" do
+    object = Object.new
+    def object.foo(&)
+    end
+
+    object.method(:foo).parameters.should == [[:block, :&]]
+  end
+
+  it "returns [:rest, :*], [:keyrest, :**], [:block, :&] for forward parameters operator" do
+    m = MethodSpecs::Methods.new
+    m.method(:forward_parameters).parameters.should == [[:rest, :*], [:keyrest, :**], [:block, :&]]
   end
 
   it "returns the args and block for a splat and block argument" do
@@ -242,6 +284,20 @@ describe "Method#parameters" do
     m.method(:writer=).parameters.should == [[:req]]
   end
 
+  it "returns all parameters defined with the name _ as _" do
+    m = MethodSpecs::Methods.instance_method(:underscore_parameters)
+    m.parameters.should == [
+      [:req, :_],
+      [:req, :_],
+      [:opt, :_],
+      [:rest, :_],
+      [:keyreq, :_],
+      [:key, :_],
+      [:keyrest, :_],
+      [:block, :_]
+    ]
+  end
+
   it "returns [[:rest]] for core methods with variable-length argument lists" do
     # delete! takes rest args
     "foo".method(:delete!).parameters.should == [[:rest]]
@@ -252,7 +308,7 @@ describe "Method#parameters" do
     [
       [[:rest]],
       [[:opt]]
-    ].should include([].method(:pop).parameters)
+    ].should.include?([].method(:pop).parameters)
   end
 
   it "returns [[:req]] for each parameter for core methods with fixed-length argument lists" do

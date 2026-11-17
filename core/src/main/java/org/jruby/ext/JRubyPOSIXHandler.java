@@ -24,6 +24,8 @@ import jnr.posix.POSIXHandler;
 
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.objectClass;
+
 public class JRubyPOSIXHandler implements POSIXHandler {
     private final Ruby runtime;
     private final boolean isVerbose;
@@ -48,7 +50,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     }
 
     public void unimplementedError(String method) {
-        throw runtime.newNotImplementedError(method + " unsupported or native support failed to load; see http://wiki.jruby.org/Native-Libraries");
+        throw runtime.newNotImplementedError(method + " unsupported or native support failed to load; see https://github.com/jruby/jruby/wiki/Native-Libraries");
     }
 
     public void warn(WARNING_ID id, String message, Object... data) {
@@ -71,7 +73,8 @@ public class JRubyPOSIXHandler implements POSIXHandler {
 
     @SuppressWarnings("unchecked")
     public String[] getEnv() {
-        RubyHash hash = (RubyHash) runtime.getObject().getConstant("ENV");
+        var context = runtime.getCurrentContext();
+        RubyHash hash = (RubyHash) objectClass(context).getConstant(context, "ENV");
 
         String[] env = new String[hash.size()];
         if (env.length == 0) return env;

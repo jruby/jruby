@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyException;
 import org.jruby.RubyKernel;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -15,8 +16,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// Right now, this is primarily used by the JRuby implementation.
-// Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
+import static org.jruby.api.Access.kernelModule;
+
 public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityInstr {
     public ThrowExceptionInstr(Operand exception) {
         super(Operation.THROW, exception);
@@ -43,20 +44,18 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        if (getException() instanceof IRException) {
-            throw ((IRException) getException()).getException(context.runtime);
-        }
+        if (getException() instanceof IRException exc) throw exc.getException(context.runtime);
 
         Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (excObj instanceof IRubyObject) {
-            RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
-        } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
-            Helpers.throwException((Throwable)excObj);
+        if (excObj instanceof Throwable) {
+            excObj = Helpers.wrapJavaException(context.runtime, (Throwable) excObj); // IRubyObject
         }
 
+        RubyException.raise(context, (IRubyObject) excObj);
+
         // should never get here
-        throw new RuntimeException("Control shouldn't have reached here in ThrowExceptionInstr.  excObj is: " + excObj);
+        throw new AssertionError("Control shouldn't have reached here in ThrowEx");
     }
 
     @Override

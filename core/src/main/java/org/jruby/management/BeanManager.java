@@ -14,6 +14,8 @@ public interface BeanManager {
 
     void register(Runtime runtime);
 
+    void register(InlineStats stats);
+
     void unregisterCompiler();
 
     void unregisterConfig();
@@ -23,6 +25,8 @@ public interface BeanManager {
     void unregisterParserStats();
     
     void unregisterRuntime();
+
+    void unregisterInlineStats();
 
     /**
      * Attempt to shut down the current JVM's JMX agent. Uses reflection tricks,

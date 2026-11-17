@@ -21,9 +21,16 @@ describe "Struct#[]=" do
   it "fails when trying to assign attributes which don't exist" do
     car = StructClasses::Car.new('Ford', 'Ranger')
 
-    lambda { car[:something] = true }.should raise_error(NameError)
-    lambda { car[3] = true          }.should raise_error(IndexError)
-    lambda { car[-4] = true         }.should raise_error(IndexError)
-    lambda { car[Object.new] = true }.should raise_error(TypeError)
+    -> { car[:something] = true }.should.raise(NameError)
+    -> { car[3] = true          }.should.raise(IndexError)
+    -> { car[-4] = true         }.should.raise(IndexError)
+    -> { car[Object.new] = true }.should.raise(TypeError)
+  end
+
+  it "raises a FrozenError on a frozen struct" do
+    car = StructClasses::Car.new('Ford', 'Ranger')
+    car.freeze
+
+    -> { car[:model] = 'Escape' }.should.raise(FrozenError)
   end
 end

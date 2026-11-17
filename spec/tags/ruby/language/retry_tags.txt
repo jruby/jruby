@@ -1,1 +1,0 @@
-fails:The retry statement raises a SyntaxError when used outside of a begin statement

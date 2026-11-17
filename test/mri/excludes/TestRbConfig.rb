@@ -1,1 +1,1 @@
-exclude :test_sitearchdirs, "needs investigation"
+exclude :test_sitearchdirs, "different path structure in JRuby"

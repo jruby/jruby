@@ -30,10 +30,6 @@ package org.jruby.embed.osgi.internal;
 import org.jruby.embed.osgi.utils.OSGiBundleClassLoaderHelper;
 import org.osgi.framework.Bundle;
 
-/**
- * @author awj
- *
- */
 public class ReflectiveOSGiClassLoaderAdapter implements IOSGiClassLoaderAdapter {
 
     /**

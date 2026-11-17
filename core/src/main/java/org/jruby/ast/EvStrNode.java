@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an #{} expression in a string. This Node is always a subnode
  * of a DStrNode, DXStrNode or a DRegexpNode.
@@ -47,8 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class EvStrNode extends Node {
     private final Node body;
 
-    public EvStrNode(ISourcePosition position, Node body) {
-        super(position,  body != null && body.containsVariableAssignment());
+    public EvStrNode(int line, Node body) {
+        super(line,  body != null && body.containsVariableAssignment());
         this.body = body;
     }
 

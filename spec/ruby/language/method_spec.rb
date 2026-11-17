@@ -1,4 +1,5 @@
 require_relative '../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "A method send" do
   evaluate <<-ruby do
@@ -19,7 +20,7 @@ describe "A method send" do
       x = mock("splat argument")
       x.should_not_receive(:to_ary)
 
-      m(*x).should equal(x)
+      m(*x).should.equal?(x)
     end
 
     it "calls #to_a" do
@@ -40,7 +41,7 @@ describe "A method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { m(*x) }.should raise_error(TypeError)
+      -> { m(*x) }.should.raise(TypeError)
     end
   end
 
@@ -74,7 +75,7 @@ describe "A method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { m(*x, 2, 3) }.should raise_error(TypeError)
+      -> { m(*x, 2, 3) }.should.raise(TypeError)
     end
   end
 
@@ -108,13 +109,13 @@ describe "A method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { m(1, *x, 2, 3) }.should raise_error(TypeError)
+      -> { m(1, *x, 2, 3) }.should.raise(TypeError)
     end
 
     it "copies the splatted array" do
       args = [3, 4]
       m(1, 2, *args, 4, 5).should == [1, 2, [3, 4], 4, 5]
-      m(1, 2, *args, 4, 5)[2].should_not equal(args)
+      m(1, 2, *args, 4, 5)[2].should_not.equal?(args)
     end
 
     it "allows an array being splatted to be modified by another argument" do
@@ -153,7 +154,27 @@ describe "A method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { m(1, 2, *x) }.should raise_error(TypeError)
+      -> { m(1, 2, *x) }.should.raise(TypeError)
+    end
+  end
+
+  context "with a block argument" do
+    before :all do
+      def m(x)
+        if block_given?
+          [true, yield(x + 'b')]
+        else
+          [false]
+        end
+      end
+    end
+
+    it "that refers to a proc passes the proc as the block" do
+      m('a', &-> y { y + 'c'}).should == [true, 'abc']
+    end
+
+    it "that is nil passes no block" do
+      m('a', &nil).should == [false]
     end
   end
 end
@@ -197,7 +218,7 @@ describe "An element assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o[*x] = 1 }.should raise_error(TypeError)
+      -> { @o[*x] = 1 }.should.raise(TypeError)
     end
   end
 
@@ -235,7 +256,7 @@ describe "An element assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o[*x, 2, 3] = 4 }.should raise_error(TypeError)
+      -> { @o[*x, 2, 3] = 4 }.should.raise(TypeError)
     end
   end
 
@@ -273,7 +294,7 @@ describe "An element assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o[1, 2, *x, 3] = 4 }.should raise_error(TypeError)
+      -> { @o[1, 2, *x, 3] = 4 }.should.raise(TypeError)
     end
   end
 
@@ -311,7 +332,7 @@ describe "An element assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o[1, 2, 3, *x] = 4 }.should raise_error(TypeError)
+      -> { @o[1, 2, 3, *x] = 4 }.should.raise(TypeError)
     end
   end
 end
@@ -348,7 +369,7 @@ describe "An attribute assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o.send :m=, *x, 1 }.should raise_error(TypeError)
+      -> { @o.send :m=, *x, 1 }.should.raise(TypeError)
     end
   end
 
@@ -383,7 +404,7 @@ describe "An attribute assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o.send :m=, *x, 2, 3, 4 }.should raise_error(TypeError)
+      -> { @o.send :m=, *x, 2, 3, 4 }.should.raise(TypeError)
     end
   end
 
@@ -418,7 +439,7 @@ describe "An attribute assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o.send :m=, 1, 2, *x, 3, 4 }.should raise_error(TypeError)
+      -> { @o.send :m=, 1, 2, *x, 3, 4 }.should.raise(TypeError)
     end
   end
 
@@ -453,7 +474,7 @@ describe "An attribute assignment method send" do
       x = mock("splat argument")
       x.should_receive(:to_a).and_return(1)
 
-      lambda { @o.send :m=, 1, 2, 3, *x, 4 }.should raise_error(TypeError)
+      -> { @o.send :m=, 1, 2, 3, *x, 4 }.should.raise(TypeError)
     end
   end
 end
@@ -467,7 +488,7 @@ describe "A method" do
         end
       ruby
 
-      m.should be_nil
+      m.should == nil
     end
 
     evaluate <<-ruby do
@@ -475,7 +496,7 @@ describe "A method" do
         end
       ruby
 
-      m.should be_nil
+      m.should == nil
     end
   end
 
@@ -484,7 +505,7 @@ describe "A method" do
         def m(a) a end
       ruby
 
-      m((args = 1, 2, 3)).should equal(args)
+      m((args = 1, 2, 3)).should.equal?(args)
     end
 
     evaluate <<-ruby do
@@ -515,18 +536,18 @@ describe "A method" do
         def m() end
       ruby
 
-      m().should be_nil
-      m(*[]).should be_nil
-      m(**{}).should be_nil
+      m().should == nil
+      m(*[]).should == nil
+      m(**{}).should == nil
     end
 
     evaluate <<-ruby do
         def m(*) end
       ruby
 
-      m().should be_nil
-      m(1).should be_nil
-      m(1, 2, 3).should be_nil
+      m().should == nil
+      m(1).should == nil
+      m(1, 2, 3).should == nil
     end
 
     evaluate <<-ruby do
@@ -544,9 +565,18 @@ describe "A method" do
         def m(a:) a end
       ruby
 
-      lambda { m() }.should raise_error(ArgumentError)
+      -> { m() }.should.raise(ArgumentError)
       m(a: 1).should == 1
-      lambda { m("a" => 1, a: 1) }.should raise_error(ArgumentError)
+      suppress_keyword_warning do
+        -> { m("a" => 1, a: 1) }.should.raise(ArgumentError)
+      end
+    end
+
+    evaluate <<-ruby do
+        def m(a:, **kw) [a, kw] end
+      ruby
+
+      -> { m(b: 1) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -561,9 +591,9 @@ describe "A method" do
         def m(**) end
       ruby
 
-      m().should be_nil
-      m(a: 1, b: 2).should be_nil
-      lambda { m(1) }.should raise_error(ArgumentError)
+      m().should == nil
+      m(a: 1, b: 2).should == nil
+      -> { m(1) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -574,15 +604,24 @@ describe "A method" do
       m(a: 1, b: 2).should == { a: 1, b: 2 }
       m(*[]).should == {}
       m(**{}).should == {}
-      m(**{a: 1, b: 2}, **{a: 4, c: 7}).should == { a: 4, b: 2, c: 7 }
-      lambda { m(2) }.should raise_error(ArgumentError)
+      suppress_warning {
+        eval "m(**{a: 1, b: 2}, **{a: 4, c: 7})"
+      }.should == { a: 4, b: 2, c: 7 }
+      -> { m(2) }.should.raise(ArgumentError)
+    end
+
+    evaluate <<-ruby do
+      def m(**k); k end;
+      ruby
+
+      m("a" => 1).should == { "a" => 1 }
     end
 
     evaluate <<-ruby do
         def m(&b) b end
       ruby
 
-      m { }.should be_an_instance_of(Proc)
+      m { }.should.instance_of?(Proc)
     end
 
     evaluate <<-ruby do
@@ -612,9 +651,9 @@ describe "A method" do
         def m((*), (*)) end
       ruby
 
-      m(2, 3).should be_nil
-      m([2, 3, 4], [5, 6]).should be_nil
-      lambda { m a: 1 }.should raise_error(ArgumentError)
+      m(2, 3).should == nil
+      m([2, 3, 4], [5, 6]).should == nil
+      -> { m a: 1 }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -706,7 +745,9 @@ describe "A method" do
       ruby
 
       m(1, b: 2).should == [1, 2]
-      lambda { m("a" => 1, b: 2) }.should raise_error(ArgumentError)
+      suppress_keyword_warning do
+        -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -715,7 +756,7 @@ describe "A method" do
 
       m(2).should == [2, 1]
       m(1, b: 2).should == [1, 2]
-      m("a" => 1, b: 2).should == [{"a" => 1, b: 2}, 1]
+      -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -724,7 +765,7 @@ describe "A method" do
 
       m(1).should == 1
       m(1, a: 2, b: 3).should == 1
-      m("a" => 1, b: 2).should == {"a" => 1, b: 2}
+      -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -733,7 +774,7 @@ describe "A method" do
 
       m(1).should == [1, {}]
       m(1, a: 2, b: 3).should == [1, {a: 2, b: 3}]
-      m("a" => 1, b: 2).should == [{"a" => 1, b: 2}, {}]
+      -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -808,8 +849,8 @@ describe "A method" do
         def m(a=1, (*b), (*c)) [a, b, c] end
       ruby
 
-      lambda { m() }.should raise_error(ArgumentError)
-      lambda { m(2) }.should raise_error(ArgumentError)
+      -> { m() }.should.raise(ArgumentError)
+      -> { m(2) }.should.raise(ArgumentError)
       m(2, 3).should == [1, [2], [3]]
       m(2, [3, 4], [5, 6]).should == [2, [3, 4], [5, 6]]
     end
@@ -850,7 +891,7 @@ describe "A method" do
 
       m(b: 2).should == [1, 2]
       m(2, b: 1).should == [2, 1]
-      m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -860,7 +901,7 @@ describe "A method" do
       m().should == [1, 2]
       m(2).should == [2, 2]
       m(b: 3).should == [1, 3]
-      m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      -> { m("a" => 1, b: 2) }.should.raise(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -869,7 +910,7 @@ describe "A method" do
 
       m().should == 1
       m(2, a: 1, b: 0).should == 2
-      m("a" => 1, a: 2).should == {"a" => 1}
+      m("a" => 1, a: 2).should == 1
     end
 
     evaluate <<-ruby do
@@ -910,157 +951,12 @@ describe "A method" do
     end
 
     evaluate <<-ruby do
-        def m(*, a:) a end
-      ruby
-
-      m(a: 1).should == 1
-      m(1, 2, a: 3).should == 3
-      m("a" => 1, a: 2).should == 2
-    end
-
-    evaluate <<-ruby do
-        def m(*a, b:) [a, b] end
-      ruby
-
-      m(b: 1).should == [[], 1]
-      m(1, 2, b: 3).should == [[1, 2], 3]
-      m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
-    end
-
-    evaluate <<-ruby do
-        def m(*, a: 1) a end
-      ruby
-
-      m().should == 1
-      m(1, 2).should == 1
-      m(a: 2).should == 2
-      m(1, a: 2).should == 2
-      m("a" => 1, a: 2).should == 2
-    end
-
-    evaluate <<-ruby do
-        def m(*a, b: 1) [a, b] end
-      ruby
-
-      m().should == [[], 1]
-      m(1, 2, 3, b: 4).should == [[1, 2, 3], 4]
-      m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
-
-      a = mock("splat")
-      a.should_not_receive(:to_ary)
-      m(*a).should == [[a], 1]
-    end
-
-    evaluate <<-ruby do
-        def m(*, **) end
-      ruby
-
-      m().should be_nil
-      m(a: 1, b: 2).should be_nil
-      m(1, 2, 3, a: 4, b: 5).should be_nil
-
-      h = mock("keyword splat")
-      h.should_receive(:to_hash).and_return({a: 1})
-      m(h).should be_nil
-
-      h = mock("keyword splat")
-      error = RuntimeError.new("error while converting to a hash")
-      h.should_receive(:to_hash).and_raise(error)
-      lambda { m(h) }.should raise_error(error)
-    end
-
-    evaluate <<-ruby do
-        def m(*a, **) a end
-      ruby
-
-      m().should == []
-      m(1, 2, 3, a: 4, b: 5).should == [1, 2, 3]
-      m("a" => 1, a: 1).should == [{"a" => 1}]
-      m(1, **{a: 2}).should == [1]
-
-      h = mock("keyword splat")
-      h.should_receive(:to_hash)
-      lambda { m(**h) }.should raise_error(TypeError)
-    end
-
-    evaluate <<-ruby do
-        def m(*, **k) k end
-      ruby
-
-      m().should == {}
-      m(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
-      m("a" => 1, a: 1).should == {a: 1}
-
-      h = mock("keyword splat")
-      h.should_receive(:to_hash).and_return({a: 1})
-      m(h).should == {a: 1}
-    end
-
-    evaluate <<-ruby do
-        def m(a = nil, **k) [a, k] end
-      ruby
-
-      m().should == [nil, {}]
-      m("a" => 1).should == [{"a" => 1}, {}]
-      m(a: 1).should == [nil, {a: 1}]
-      m("a" => 1, a: 1).should == [{"a" => 1}, {a: 1}]
-      m({ "a" => 1 }, a: 1).should == [{"a" => 1}, {a: 1}]
-      m({a: 1}, {}).should == [{a: 1}, {}]
-
-      h = {"a" => 1, b: 2}
-      m(h).should == [{"a" => 1}, {b: 2}]
-      h.should == {"a" => 1, b: 2}
-
-      h = {"a" => 1}
-      m(h).first.should == h
-
-      h = {}
-      r = m(h)
-      r.first.should be_nil
-      r.last.should == {}
-
-      hh = {}
-      h = mock("keyword splat empty hash")
-      h.should_receive(:to_hash).and_return(hh)
-      r = m(h)
-      r.first.should be_nil
-      r.last.should == {}
-
-      h = mock("keyword splat")
-      h.should_receive(:to_hash).and_return({"a" => 1, a: 2})
-      m(h).should == [{"a" => 1}, {a: 2}]
-    end
-
-    evaluate <<-ruby do
-        def m(*a, **k) [a, k] end
-      ruby
-
-      m().should == [[], {}]
-      m(1).should == [[1], {}]
-      m(a: 1, b: 2).should == [[], {a: 1, b: 2}]
-      m(1, 2, 3, a: 2).should == [[1, 2, 3], {a: 2}]
-
-      m("a" => 1).should == [[{"a" => 1}], {}]
-      m(a: 1).should == [[], {a: 1}]
-      m("a" => 1, a: 1).should == [[{"a" => 1}], {a: 1}]
-      m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
-      m({a: 1}, {}).should == [[{a: 1}], {}]
-      m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
-
-      bo = BasicObject.new
-      def bo.to_a; [1, 2, 3]; end
-      def bo.to_hash; {:b => 2, :c => 3}; end
-
-      m(*bo, **bo).should == [[1, 2, 3], {:b => 2, :c => 3}]
-    end
-
-    evaluate <<-ruby do
         def m(*, &b) b end
       ruby
 
-      m().should be_nil
-      m(1, 2, 3, 4).should be_nil
-      m(&(l = ->{})).should equal(l)
+      m().should == nil
+      m(1, 2, 3, 4).should == nil
+      m(&(l = ->{})).should.equal?(l)
     end
 
     evaluate <<-ruby do
@@ -1077,7 +973,9 @@ describe "A method" do
       ruby
 
       m(a: 1, b: 2).should == [1, 2]
-      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+      suppress_keyword_warning do
+        -> { m("a" => 1, a: 1, b: 2) }.should.raise(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -1086,7 +984,9 @@ describe "A method" do
 
       m(a: 1).should == [1, 1]
       m(a: 1, b: 2).should == [1, 2]
-      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+      suppress_keyword_warning do
+        -> { m("a" => 1, a: 1, b: 2) }.should.raise(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -1095,7 +995,7 @@ describe "A method" do
 
       m(a: 1).should == 1
       m(a: 1, b: 2).should == 1
-      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+      m("a" => 1, a: 1, b: 2).should == 1
     end
 
     evaluate <<-ruby do
@@ -1104,7 +1004,7 @@ describe "A method" do
 
       m(a: 1).should == [1, {}]
       m(a: 1, b: 2, c: 3).should == [1, {b: 2, c: 3}]
-      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+      m("a" => 1, a: 1, b: 2).should == [1, {"a" => 1, b: 2}]
     end
 
     evaluate <<-ruby do
@@ -1202,6 +1102,28 @@ describe "A method" do
     end
 
     evaluate <<-ruby do
+      def m(**nil); :ok; end;
+      ruby
+
+      m().should == :ok
+      -> { m(a: 1) }.should.raise(ArgumentError, 'no keywords accepted')
+      -> { m(**{a: 1}) }.should.raise(ArgumentError, 'no keywords accepted')
+      -> { m("a" => 1) }.should.raise(ArgumentError, 'no keywords accepted')
+    end
+
+    evaluate <<-ruby do
+      def m(a, **nil); a end;
+      ruby
+
+      m({a: 1}).should == {a: 1}
+      m({"a" => 1}).should == {"a" => 1}
+
+      -> { m(a: 1) }.should.raise(ArgumentError, 'no keywords accepted')
+      -> { m(**{a: 1}) }.should.raise(ArgumentError, 'no keywords accepted')
+      -> { m("a" => 1) }.should.raise(ArgumentError, 'no keywords accepted')
+    end
+
+    evaluate <<-ruby do
         def m(a, b = nil, c = nil, d, e: nil, **f)
           [a, b, c, d, e, f]
         end
@@ -1211,23 +1133,92 @@ describe "A method" do
       result.should == [1, nil, nil, 2, nil, {}]
 
       result = m(1, 2, {foo: :bar})
-      result.should == [1, nil, nil, 2, nil, {foo: :bar}]
+      result.should == [1, 2, nil, {foo: :bar}, nil, {}]
 
       result = m(1, {foo: :bar})
       result.should == [1, nil, nil, {foo: :bar}, nil, {}]
     end
+
+    ruby_version_is "4.1" do
+      evaluate <<-ruby do
+        def m(a, &nil); a end;
+        ruby
+
+        m(1).should == 1
+
+        -> { m(1) {} }.should.raise(ArgumentError, 'no block accepted')
+        -> { m(1, &proc {}) }.should.raise(ArgumentError, 'no block accepted')
+      end
+    end
   end
 
-  context "assigns keyword arguments from a passed Hash without modifying it" do
+  context 'when passing an empty keyword splat to a method that does not accept keywords' do
+    evaluate <<-ruby do
+        def m(*a); a; end
+      ruby
+
+      h = {}
+      m(**h).should == []
+    end
+  end
+
+  context 'when passing an empty keyword splat to a method that does not accept keywords' do
+    evaluate <<-ruby do
+        def m(a); a; end
+      ruby
+      h = {}
+
+      -> do
+        m(**h).should == {}
+      end.should.raise(ArgumentError)
+    end
+  end
+
+  context "raises ArgumentError if passing hash as keyword arguments" do
     evaluate <<-ruby do
         def m(a: nil); a; end
       ruby
 
       options = {a: 1}.freeze
-      lambda do
-        m(options).should == 1
-      end.should_not raise_error
-      options.should == {a: 1}
+      -> do
+        m(options)
+      end.should.raise(ArgumentError)
+    end
+  end
+
+  it "assigns the last Hash to the last optional argument if the Hash contains non-Symbol keys and is not passed as keywords" do
+    def m(a = nil, b = {}, v: false)
+      [a, b, v]
+    end
+
+    h = { "key" => "value" }
+    m(:a, h).should == [:a, h, false]
+    m(:a, h, v: true).should == [:a, h, true]
+    m(v: true).should == [nil, {}, true]
+  end
+end
+
+context "when passing **nil into a method that accepts keyword arguments" do
+  ruby_version_is ""..."3.4" do
+    it "raises TypeError" do
+      def m(**kw) kw; end
+
+      h = nil
+      -> { m(a: 1, **h) }.should.raise(TypeError, "no implicit conversion of nil into Hash")
+      -> { m(a: 1, **nil) }.should.raise(TypeError, "no implicit conversion of nil into Hash")
+    end
+  end
+
+  ruby_version_is "3.4" do
+    it "expands nil using ** into {}" do
+      def m(**kw) kw; end
+
+      h = nil
+      m(**h).should == {}
+      m(a: 1, **h).should == {a: 1}
+
+      m(**nil).should == {}
+      m(a: 1, **nil).should == {a: 1}
     end
   end
 end
@@ -1250,22 +1241,48 @@ describe "A method call with a space between method name and parentheses" do
     end
   end
 
-  context "when a single argument provided" do
-    it "assigns it" do
+  context "when a single argument is provided" do
+    it "assigns a simple expression" do
+      args = m (1)
+      args.should == [1]
+    end
+
+    it "assigns an expression consisting of multiple statements" do
+      args = m ((0; 1))
+      args.should == [1]
+    end
+
+    it "assigns one single statement, without the need of parentheses" do
       args = m (1 == 1 ? true : false)
       args.should == [true]
     end
+
+    it "supports multiple statements" do
+      eval("m (1; 2)").should == [2]
+    end
   end
 
-  context "when 2+ arguments provided" do
-    it "raises a syntax error" do
-      lambda {
-        eval("m (1, 2)")
-      }.should raise_error(SyntaxError)
+  context "when multiple arguments are provided" do
+    it "assigns simple expressions" do
+      args = m (1), (2)
+      args.should == [1, 2]
+    end
 
-      lambda {
+    it "assigns expressions consisting of multiple statements" do
+      args = m ((0; 1)), ((2; 3))
+      args.should == [1, 3]
+    end
+  end
+
+  context "when the argument looks like an argument list" do
+    it "raises a syntax error" do
+      -> {
+        eval("m (1, 2)")
+      }.should.raise(SyntaxError)
+
+      -> {
         eval("m (1, 2, 3)")
-      }.should raise_error(SyntaxError)
+      }.should.raise(SyntaxError)
     end
   end
 
@@ -1318,6 +1335,393 @@ describe "An array-dereference method ([])" do
       self['foo', &pr].should == :ok
       self.[](&pr).should == :ok
       self.[]('foo', &pr).should == :ok
+    end
+  end
+end
+
+describe "An endless method definition" do
+  context "without arguments" do
+    evaluate <<-ruby do
+        def m() = 42
+      ruby
+
+      m.should == 42
+    end
+
+    context "without parenthesis" do
+      evaluate <<-ruby do
+        def m = 42
+      ruby
+
+        m.should == 42
+      end
+    end
+  end
+
+  context "with arguments" do
+    evaluate <<-ruby do
+        def m(a, b) = a + b
+      ruby
+
+      m(1, 4).should == 5
+    end
+  end
+
+  context "with multiline body" do
+    evaluate <<-ruby do
+        def m(n) =
+          if n > 2
+            m(n - 2) + m(n - 1)
+          else
+            1
+          end
+      ruby
+
+      m(6).should == 8
+    end
+  end
+
+  # tested more thoroughly in language/delegation_spec.rb
+  context "with args forwarding" do
+    evaluate <<-ruby do
+        def mm(word, num:)
+          word * num
+        end
+
+        def m(...) = mm(...) + mm(...)
+      ruby
+
+      m("meow", num: 2).should == "meow" * 4
+    end
+  end
+
+  ripper_errors = -> source {
+    require 'ripper'
+    errors = []
+    parser = Class.new(Ripper) do
+      define_method(:on_parse_error) { |msg| errors << msg }
+    end
+    parser.new(source).parse
+    errors
+  }
+
+  context "with an operator name ending in `=`" do
+    it "defines the operator methods" do
+      eval <<-ruby
+        class LanguageSpecs::OpEndlessOperator
+          def ==(other) = "equal"
+          def ===(other) = "case-equal"
+          def !=(other) = "not-equal"
+          def <=(other) = "less-or-equal"
+          def >=(other) = "greater-or-equal"
+        end
+      ruby
+
+      obj = LanguageSpecs::OpEndlessOperator.new
+      obj.send(:==, 1).should == "equal"
+      obj.send(:===, 1).should == "case-equal"
+      obj.send(:!=, 1).should == "not-equal"
+      obj.send(:<=, 1).should == "less-or-equal"
+      obj.send(:>=, 1).should == "greater-or-equal"
+    end
+
+    it "is not reported as a parse error by Ripper" do
+      %w[== === != <= >=].each do |op|
+        ripper_errors.("class Example; def #{op}(other) = true; end").should == []
+      end
+    end
+  end
+
+  context "with a setter name" do
+    it "raises a SyntaxError" do
+      -> {
+        eval("class SetterEndless; def foo=(x) = x; end")
+      }.should.raise(SyntaxError, /setter method cannot be defined in an endless method definition/)
+      -> {
+        eval("class SetterEndless; def []=(k, v) = v; end")
+      }.should.raise(SyntaxError, /setter method cannot be defined in an endless method definition/)
+    end
+
+    ruby_version_is "3.4" do
+      it "is reported as a parse error by Ripper" do
+        ["def foo=(v) = v", "def []=(k, v) = v"].each do |src|
+          ripper_errors.("class Example; #{src}; end").should ==
+            ["setter method cannot be defined in an endless method definition"]
+        end
+      end
+    end
+  end
+end
+
+describe "Keyword arguments are now separated from positional arguments" do
+  context "when the method has only positional parameters" do
+    it "treats incoming keyword arguments as positional for compatibility" do
+      def foo(a, b, c, hsh)
+        hsh[:key]
+      end
+
+      foo(1, 2, 3, key: 42).should == 42
+    end
+  end
+
+  context "when the method takes a ** parameter" do
+    it "captures the passed literal keyword arguments" do
+      def foo(a, b, c, **hsh)
+        hsh[:key]
+      end
+
+      foo(1, 2, 3, key: 42).should == 42
+    end
+
+    it "captures the passed ** keyword arguments" do
+      def foo(a, b, c, **hsh)
+        hsh[:key]
+      end
+
+      h = { key: 42 }
+      foo(1, 2, 3, **h).should == 42
+    end
+
+    it "does not convert a positional Hash to keyword arguments" do
+      def foo(a, b, c, **hsh)
+        hsh[:key]
+      end
+
+      -> {
+        foo(1, 2, 3, { key: 42 })
+      }.should.raise(ArgumentError, 'wrong number of arguments (given 4, expected 3)')
+    end
+  end
+
+  context "when the method takes a key: parameter" do
+    context "when it's called with a positional Hash and no **" do
+      it "raises ArgumentError" do
+        def foo(a, b, c, key: 1)
+          key
+        end
+
+        -> {
+          foo(1, 2, 3, { key: 42 })
+        }.should.raise(ArgumentError, 'wrong number of arguments (given 4, expected 3)')
+      end
+    end
+
+    context "when it's called with **" do
+      it "captures the passed keyword arguments" do
+        def foo(a, b, c, key: 1)
+          key
+        end
+
+        h = { key: 42 }
+        foo(1, 2, 3, **h).should == 42
+      end
+    end
+  end
+end
+
+describe "kwarg with omitted value in a method call" do
+  context "accepts short notation 'kwarg' in method call" do
+    evaluate <<-ruby do
+        def call(*args, **kwargs) = [args, kwargs]
+      ruby
+
+      a, b, c = 1, 2, 3
+      arr, h = call(a:)
+      h.should == {a: 1}
+      arr.should == []
+
+      arr, h = call(a:, b:, c:)
+      h.should == {a: 1, b: 2, c: 3}
+      arr.should == []
+
+      arr, h = call(a:, b: 10, c:)
+      h.should == {a: 1, b: 10, c: 3}
+      arr.should == []
+    end
+  end
+
+  context "with methods and local variables" do
+    evaluate <<-ruby do
+        def call(*args, **kwargs) = [args, kwargs]
+
+        def bar
+          "baz"
+        end
+
+        def foo(val)
+          call bar:, val:
+        end
+      ruby
+
+      foo(1).should == [[], {bar: "baz", val: 1}]
+    end
+  end
+end
+
+describe "Inside 'endless' method definitions" do
+  it "allows method calls without parenthesis" do
+    def greet(person) = "Hi, ".dup.concat person
+
+    greet("Homer").should == "Hi, Homer"
+  end
+end
+
+describe "warning about not used block argument" do
+  ruby_version_is "3.4" do
+    it "warns when passing a block argument to a method that never uses it" do
+      def m_that_does_not_use_block
+        42
+      end
+
+      -> {
+        m_that_does_not_use_block { }
+      }.should complain(
+        /#{__FILE__}:#{__LINE__ - 2}: warning: the block passed to 'm_that_does_not_use_block' defined at #{__FILE__}:#{__LINE__ - 7} may be ignored/,
+        verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that declares a block parameter" do
+      def m_with_block_parameter(&block)
+        42
+      end
+
+      -> { m_with_block_parameter { } }.should_not complain(verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that declares an anonymous block parameter" do
+      def m_with_anonymous_block_parameter(&)
+        42
+      end
+
+      -> { m_with_anonymous_block_parameter { } }.should_not complain(verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that yields an implicit block parameter" do
+      def m_with_yield
+        yield 42
+      end
+
+      -> { m_with_yield { } }.should_not complain(verbose: true)
+    end
+
+    it "warns when passing a block argument to a method that calls #block_given?" do
+      def m_with_block_given
+        block_given?
+      end
+
+      -> {
+        m_with_block_given { }
+      }.should complain(
+        /#{__FILE__}:#{__LINE__ - 2}: warning: the block passed to 'm_with_block_given' defined at #{__FILE__}:#{__LINE__ - 7} may be ignored/,
+        verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that calls super" do
+      parent = Class.new do
+        def m
+        end
+      end
+
+      child = Class.new(parent) do
+        def m
+          super
+        end
+      end
+
+      obj = child.new
+      -> { obj.m { } }.should_not complain(verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that calls super(...)" do
+      parent = Class.new do
+        def m(a)
+        end
+      end
+
+      child = Class.new(parent) do
+        def m(...)
+          super(...)
+        end
+      end
+
+      obj = child.new
+      -> { obj.m(42) { } }.should_not complain(verbose: true)
+    end
+
+    it "does not warn when called #initialize()" do
+      klass = Class.new do
+        def initialize
+        end
+      end
+
+      -> { klass.new {} }.should_not complain(verbose: true)
+    end
+
+    it "does not warn when passing a block argument to a method that calls super()" do
+      parent = Class.new do
+        def m
+        end
+      end
+
+      child = Class.new(parent) do
+        def m
+          super()
+        end
+      end
+
+      obj = child.new
+      -> { obj.m { } }.should_not complain(verbose: true)
+    end
+
+    it "warns only once per call site" do
+      def m_that_does_not_use_block
+        42
+      end
+
+      def call_m_that_does_not_use_block
+        m_that_does_not_use_block {}
+      end
+
+      -> {
+        m_that_does_not_use_block { }
+      }.should complain(/the block passed to 'm_that_does_not_use_block' defined at .+ may be ignored/, verbose: true)
+
+      -> {
+        m_that_does_not_use_block { }
+      }.should_not complain(verbose: true)
+    end
+
+    it "can be disabled with :strict_unused_block warning category" do
+      def m_that_does_not_use_block
+        42
+      end
+
+      # ensure that warning is emitted
+      -> { m_that_does_not_use_block { } }.should complain(verbose: true)
+
+      warn_strict_unused_block = Warning[:strict_unused_block]
+      Warning[:strict_unused_block] = false
+      begin
+        -> { m_that_does_not_use_block { } }.should_not complain(verbose: true)
+      ensure
+        Warning[:strict_unused_block] = warn_strict_unused_block
+      end
+    end
+
+    it "can be enabled with :strict_unused_block = true warning category in not verbose mode" do
+      def m_that_does_not_use_block
+        42
+      end
+
+      warn_strict_unused_block = Warning[:strict_unused_block]
+      Warning[:strict_unused_block] = true
+      begin
+        -> {
+          m_that_does_not_use_block { }
+      }.should complain(/the block passed to 'm_that_does_not_use_block' defined at .+ may be ignored/)
+      ensure
+        Warning[:strict_unused_block] = warn_strict_unused_block
+      end
     end
   end
 end

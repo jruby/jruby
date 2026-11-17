@@ -35,28 +35,25 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaProxyClass")
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.typeError;
+
 public class JavaProxyReflectionObject extends RubyObject {
 
     public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass, false);
     }
 
-    protected static void registerRubyMethods(Ruby runtime, RubyClass klass) {
-        klass.defineAnnotatedMethods(JavaProxyReflectionObject.class);
-        klass.getMetaClass().defineAlias("__j_allocate", "allocate");
-    }
-
-    @Deprecated
-    public IRubyObject op_equal(IRubyObject other) {
-        return op_eqq(getRuntime().getCurrentContext(), other);
+    protected static void registerRubyMethods(ThreadContext context, RubyClass klass) {
+        klass.defineMethods(context, JavaProxyReflectionObject.class);
+        klass.getMetaClass().defineAlias(context, "__j_allocate", "allocate");
     }
 
     @Override
@@ -64,17 +61,12 @@ public class JavaProxyReflectionObject extends RubyObject {
     public RubyBoolean op_eqq(final ThreadContext context, IRubyObject obj) {
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean( this.equals(obj) );
-    }
-
-    @Deprecated
-    public IRubyObject same(IRubyObject other) {
-        return op_equal(getRuntime().getCurrentContext(), other);
+        return asBoolean(context, this.equals(obj));
     }
 
     @Override
@@ -84,12 +76,12 @@ public class JavaProxyReflectionObject extends RubyObject {
 
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean(this == obj);
+        return asBoolean(context, this == obj);
     }
 
     @Override
@@ -97,10 +89,9 @@ public class JavaProxyReflectionObject extends RubyObject {
         return this == other;
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @Override
@@ -110,8 +101,8 @@ public class JavaProxyReflectionObject extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
-        return getRuntime().newString(toString());
+    public IRubyObject to_s(ThreadContext context) {
+        return newString(context, toString());
     }
 
     @Override
@@ -119,46 +110,80 @@ public class JavaProxyReflectionObject extends RubyObject {
         return getClass().getName();
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0.0.0")
     public RubyString java_type() {
-        return getRuntime().newString(getJavaClass().getName());
+        return java_type(getCurrentContext());
     }
 
     @JRubyMethod
-    public JavaClass java_class() {
-        return JavaClass.get(getRuntime(), getJavaClass());
+    public RubyString java_type(ThreadContext context) {
+        return newString(context, getJavaClass().getName());
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject java_class() {
+        return java_class(getCurrentContext());
     }
 
     @JRubyMethod
+    public IRubyObject java_class(ThreadContext context) {
+        return Java.getInstance(context.runtime, getJavaClass());
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum length() {
-        throw getRuntime().newTypeError("not a java array");
+        return length(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyFixnum length(ThreadContext context) {
+        throw typeError(context, "not a java array");
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject aref(IRubyObject index) {
+        return aref(getCurrentContext(), index);
     }
 
     @JRubyMethod(name = "[]")
-    public IRubyObject aref(IRubyObject index) {
-        throw getRuntime().newTypeError("not a java array");
+    public IRubyObject aref(ThreadContext context, IRubyObject index) {
+        throw typeError(context, "not a java array");
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
+        return aset(getCurrentContext(), index, someValue);
     }
 
     @JRubyMethod(name = "[]=")
-    public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
-        throw getRuntime().newTypeError("not a java array");
+    public IRubyObject aset(ThreadContext context, IRubyObject index, IRubyObject someValue) {
+        throw typeError(context, "not a java array");
+    }
+
+    @Deprecated(since = "10.0.0.0")
+    public IRubyObject is_java_proxy() {
+        return is_java_proxy(getCurrentContext());
     }
 
     @JRubyMethod(name = "java_proxy?")
-    public IRubyObject is_java_proxy() {
-        return getRuntime().getFalse();
+    public IRubyObject is_java_proxy(ThreadContext context) {
+        return context.fals;
     }
 
     //
     // utility methods
     //
 
-    final RubyArray toRubyArray(final IRubyObject[] elements) {
-        return RubyArray.newArrayMayCopy(getRuntime(), elements);
+    final RubyArray toRubyArray(ThreadContext context, final IRubyObject[] elements) {
+        return RubyArray.newArrayMayCopy(context.runtime, elements);
     }
 
-    final RubyArray toRubyArray(final Class<?>[] classes) {
-        return JavaClass.toRubyArray(getRuntime(), classes);
+    static RubyArray toClassArray(ThreadContext context, final Class<?>[] classes) {
+        IRubyObject[] javaClasses = new IRubyObject[classes.length];
+        for ( int i = classes.length; --i >= 0; ) {
+            javaClasses[i] = Java.getProxyClass(context, classes[i]);
+        }
+        return RubyArray.newArrayMayCopy(context.runtime, javaClasses);
     }
 
 }

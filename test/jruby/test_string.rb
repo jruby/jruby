@@ -42,10 +42,10 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_scan_string_pattern_match
-    str = 'it_aj-ty_i-ty_it'
+    str = +'it_aj-ty_i-ty_it'
     str.sub!(/hello/, '')
     str.gsub!(/\-|_/, '-')
-    assert_equal ['-ty-', '-ty-'], str.scan(pat = '-ty-')
+    assert_equal ['-ty-', '-ty-'], str.scan(pat = +'-ty-')
     pat[2] = 'i'
     $~.inspect # failed with a NPE or might have recycled previous $~ pattern
     assert_equal /\-ty\-/, $~.regexp
@@ -55,14 +55,14 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_regexp_match
-    ''.sub!(/foo/, '')
+    (+'').sub!(/foo/, '')
     # assert ! $~.nil?
     /bar/.match(nil)
     assert $~.nil?
   end
 
   def test_regexp_source_string
-    regexp = Regexp.new(str = 'StrinG')
+    regexp = Regexp.new(str = +'StrinG')
     assert regexp.eql?(/StrinG/)
     str[0] = 's'
     assert_equal 'StrinG', regexp.source
@@ -213,4 +213,90 @@ class TestString < Test::Unit::TestCase
     end
   end
 
+  def test_dedup_survives_gc_while_string_is_alive
+    first = -("dedup " + "survives gc")
+    5.times { java.lang.System.gc }
+    assert_same first, -("dedup " + "survives gc")
+  end
+
+end
+
+class TestStringPrintf < Test::Unit::TestCase
+
+  ##### binary (%b) #####
+  def test_binary
+    assert_equal("101", "%b" % 5)
+    assert_equal("101", "%b" % "5")
+    assert_equal("1011010111100110001000001111010010000000000101", "%b" % 50000000000005)
+    assert_equal("101111000001010000111111101001001110001001010000111010110011000100010111110110010101010110100000000000000000000000000000000000101", "%b" % 500000000000000000000000000000000000005)
+    assert_equal(" 101", "% b" % 5)
+    assert_equal("-101", "% b" % -5)
+    assert_equal(" -101", "% 5b" % -5)
+    assert_equal("101", "%1b" % 5)
+    assert_equal("00101", "%.5b" % 5)
+    assert_equal("00101", "%05b" % 5)
+    #assert_equal("..1011", "%05b" % -5)
+    assert_equal("..1011", "%5b" % -5)
+    assert_equal("101", "%b" % 5.5)
+    assert_equal("0b101", "%#b" % 5)
+    assert_equal("0b..1011", "%#b" % -5)
+    assert_equal("+101", "%+b" % 5)
+    assert_equal("101  ", "%-5b" % 5)
+    assert_raises(TypeError) { "%b" % {'A' => 1} }
+    assert_raises(ArgumentError) { "%b" % "a" }
+    assert_raises(TypeError) { "%b" % true }
+    assert_raises(TypeError) { "%b" % [[1, 2]] }
+  end
+
+  ##### char (%c) #####
+  def test_char
+    assert_equal("A", "%c" % 65)
+    assert_equal("ŭ", "%c" % 365)
+    assert_raises(ArgumentError) {"%c" % -165}
+    assert_equal("A", "% c" % 65)
+    assert_equal("A", "%0c" % 65)
+    assert_equal("A", "%.5c" % 65)
+    assert_equal("A", "%#c" % 65)
+    assert_equal("A", "%+c" % 65)
+    assert_equal("    A", "%5c" % 65)
+    assert_equal("    A", "%05c" % 65)
+    assert_equal("A    ", "%-5c" % 65)
+    assert_equal("A", "%c" % 65.8)
+    assert_raises(TypeError) {"%c" % true}
+    assert_raises(TypeError) {"%c" % nil}
+    assert_raises(TypeError) {"%c" % [[1, 2]]}
+    assert_raises(RangeError) {"%c" % 500000000000000000000000000000000000005}
+  end
+
+  ##### inspect (%p) #####
+  def test_inspect
+    assert_equal('"howdy"', "%p" % 'howdy')
+    assert_equal(":howdy", "%p" % :howdy)
+    assert_equal("[1, 2]", "%p" % [[1,2]])
+    assert_equal("  nil", "%5p" % nil)
+  end
+
+  def test_strange_printf
+    opponent = '41181 jpa:awh'.scan("jpa")[0]
+    assert_equal('jpa', sprintf("%s", opponent))
+  end
+
+  def test_strip_gb18030_four_byte
+    # Issue #9776: String#strip raises ArrayIndexOutOfBoundsException on four-byte GB18030 characters
+    s = "\u{10000}".encode("GB18030")
+    assert_equal(s, s.strip)
+    assert_equal(s, s.lstrip)
+    assert_equal(s, s.rstrip)
+
+    s2 = "\x81\x30\x81\x30".force_encoding("GB18030")
+    assert_equal(s2, s2.strip)
+    assert_equal(s2, s2.lstrip)
+    assert_equal(s2, s2.rstrip)
+
+    # Surrounded by ASCII whitespace
+    s3 = "   " + s + "   "
+    assert_equal(s, s3.strip)
+    assert_equal(s + "   ", s3.lstrip)
+    assert_equal("   " + s, s3.rstrip)
+  end
 end

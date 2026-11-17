@@ -33,11 +33,9 @@ import java.util.WeakHashMap;
 
 /**
  * A simple set that uses weak references to ensure that its elements can be garbage collected.
- *
  * @see java.util.WeakHashMap
  * @see java.util.HashSet
- *
- * @author <a href="http://www.cs.auckland.ac.nz/~robert/">Robert Egglestone</a>
+ * @param <T> type
  */
 public class WeakHashSet<T> implements Set<T>, Cloneable {
 

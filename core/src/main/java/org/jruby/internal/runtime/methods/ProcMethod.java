@@ -33,22 +33,21 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class ProcMethod extends DynamicMethod implements PositionAware, IRMethodArgs {
-    private RubyProc proc;
+    private final RubyProc proc;
 
     /**
      * Constructor for ProcMethod.
@@ -61,7 +60,17 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return proc.call(context, args, self, klazz, block);
+        if (methodCoverage == null) return proc.call(context, args, self, klazz, block);
+
+        // A def checks arity inside its body, after ReceiveMethodCoverageInstr has taken the counter. A lambda checks
+        // arity in Java, before the body runs. If that check fails, the counter must not stay pending on the thread.
+        // Otherwise the next run of this block, such as a plain call of the proc, would take it.
+        prepareMethodCoverage(context);
+        try {
+            return proc.call(context, args, self, klazz, block);
+        } finally {
+            context.setPendingMethodCoverage(null);
+        }
     }
     
     public DynamicMethod dup() {
@@ -73,11 +82,6 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
         if (!(method instanceof ProcMethod)) return false;
 
         return ((ProcMethod) method).proc == proc;
-    }
-    
-    @Override
-    public Arity getArity() {
-        return proc.getBlock().getSignature().arity();
     }
 
     public String getFile() {
@@ -94,8 +98,22 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     }
 
     @Override
+    @CRuby(value = "method_def_min_max_arity", file = "proc.c", note = "VM_METHOD_TYPE_BMETHOD case")
+    public Signature getAritySignature() {
+        return proc.getBlock().getBody().getAritySignature();
+    }
+
+    @Override
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return proc.getBlock().getBody().getArgumentDescriptors();
+    }
+
+    @Override
+    public void setRuby2Keywords() {
+        BlockBody body = proc.getBlock().getBody();
+        if (body.isRubyBlock()) {
+            ((IRBlockBody) body).getScope().setRuby2Keywords();
+        }
     }
 
     public RubyProc getProc() {

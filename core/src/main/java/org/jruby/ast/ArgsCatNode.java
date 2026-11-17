@@ -35,16 +35,14 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
-public class ArgsCatNode extends Node {
+public class ArgsCatNode extends Node implements TwoValueNode {
 	private final Node firstNode;
     private final Node secondNode;
 
-    public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
+    public ArgsCatNode(int line, Node firstNode, Node secondNode) {
+        super(line, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
 
-        assert firstNode != null : "ArgsCatNode.first == null";
         assert secondNode != null : "ArgsCatNode.second == null";
 
         this.firstNode = firstNode;

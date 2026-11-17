@@ -35,6 +35,9 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
 
+import static org.jruby.api.Access.*;
+import static org.jruby.api.Create.newHash;
+
 /**
  * A factory that can create a FFI Provider
  */
@@ -57,7 +60,7 @@ public abstract class Factory {
             providerNames.add(prefix + ".jffi.Factory");
             for (String className : providerNames) {
                 try {
-                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
+                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).getConstructor().newInstance();
                     break;
                 } catch (Throwable ex) {
                     errors.add(ex);
@@ -80,9 +83,9 @@ public abstract class Factory {
     }
 
     /**
-     * Gets an instance of <tt>FFIProvider</tt>
+     * Gets an instance of <code>FFIProvider</code>
      * 
-     * @return an instance of <tt>FFIProvider</tt>
+     * @return an instance of <code>FFIProvider</code>
      */
     public static final Factory getInstance() {
         return SingletonHolder.INSTANCE;
@@ -91,102 +94,82 @@ public abstract class Factory {
     /**
      * Registers FFI ruby classes/modules
      * 
-     * @param module the module to register the classes under
+     * @param runtime The ruby runtime
+     * @param FFI the module to register the classes under
      */
-    public void init(Ruby runtime, RubyModule ffi) {
-        synchronized (ffi) {
-            if (ffi.getClass("Type") == null) {
-                Type.createTypeClass(runtime, ffi);
-            }
-            DataConverter.createDataConverterModule(runtime, ffi);
+    public void init(Ruby runtime, RubyModule FFI) {
+        synchronized (FFI) {
+            var context = runtime.getCurrentContext();
+            var Object = objectClass(context);
+            var _Type = FFI.getClass(context, "Type");
+            var _Struct = FFI.getClass(context, "Struct");
+            var _AbstractMemory = FFI.getClass(context, AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS);
+            var _Pointer = FFI.getClass(context, "Pointer");
+            var _DataConverter = DataConverter.createDataConverterModule(context, FFI);
 
-            if (ffi.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
-                AbstractMemory.createAbstractMemoryClass(runtime, ffi);
+            if (_Type == null) _Type = Type.createTypeClass(context, FFI, Object);
+            if (_AbstractMemory == null) _AbstractMemory = AbstractMemory.createAbstractMemoryClass(context, FFI, Object);
+            if (FFI.getClass(context, "Buffer") == null) Buffer.createBufferClass(context, FFI, _AbstractMemory);
+            if (_Pointer == null) _Pointer = Pointer.createPointerClass(context, FFI, _AbstractMemory);
+            if (FFI.getClass(context, "AutoPointer") == null) AutoPointer.createAutoPointerClass(context, FFI, _Pointer);
+            if (FFI.getClass(context, "MemoryPointer") == null) MemoryPointer.createMemoryPointerClass(context, FFI, _Pointer);
+            if (_Struct == null) _Struct = Struct.createStructClass(context, FFI);
+            if (FFI.getClass(context, StructLayout.CLASS_NAME) == null) {
+                StructLayout.createStructLayoutClass(context, FFI, Object, enumerableModule(context), _Type, _Struct);
             }
-            if (ffi.getClass("Buffer") == null) {
-                Buffer.createBufferClass(runtime, ffi);
+            if (FFI.getClass(context, "StructByValue") == null) StructByValue.createStructByValueClass(context, FFI, _Type);
+            if (FFI.getClass(context, AbstractInvoker.CLASS_NAME) == null) {
+                AbstractInvoker.createAbstractInvokerClass(context, FFI, _Pointer);
             }
-            if (ffi.getClass("Pointer") == null) {
-                Pointer.createPointerClass(runtime, ffi);
-            }
-            if (ffi.getClass("AutoPointer") == null) {
-                AutoPointer.createAutoPointerClass(runtime, ffi);
-            }
-            if (ffi.getClass("MemoryPointer") == null) {
-                MemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
-            if (ffi.getClass("Struct") == null) {
-                Struct.createStructClass(runtime, ffi);
-            }
-            if (ffi.getClass(StructLayout.CLASS_NAME) == null) {
-                StructLayout.createStructLayoutClass(runtime, ffi);
-            }
-            if (ffi.getClass("StructByValue") == null) {
-                StructByValue.createStructByValueClass(runtime, ffi);
-            }
-            if (ffi.getClass(AbstractInvoker.CLASS_NAME) == null) {
-                AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
-            }
-            if (ffi.getClass(CallbackInfo.CLASS_NAME) == null) {
-                CallbackInfo.createCallbackInfoClass(runtime, ffi);
-            }
-            if (ffi.getClass("Enum") == null) {
-                Enum.createEnumClass(runtime, ffi);
-            }
-            if (ffi.getClass("Enums") == null) {
-                Enums.createEnumsClass(runtime, ffi);
-            }
-            if (ffi.getClass("Type").getClass("Mapped") == null) {
-                MappedType.createConverterTypeClass(runtime, ffi);
-            }
-            if (ffi.getClass(FileDescriptorIO.CLASS_NAME) == null) {
-                FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
+            if (FFI.getClass(context, CallbackInfo.CLASS_NAME) == null) CallbackInfo.createCallbackInfoClass(context, FFI, _Type);
+            if (FFI.getClass(context, "Enums") == null) Enums.createEnumsClass(context, FFI, Object, _DataConverter);
+            if (_Type.getClass(context, "Mapped") == null) MappedType.createConverterTypeClass(context, _Type);
+            if (FFI.getClass(context, FileDescriptorIO.CLASS_NAME) == null) {
+                FileDescriptorIO.createFileDescriptorIOClass(context, FFI, ioClass(context));
             }
 
-            ffi.setConstant("TypeDefs", RubyHash.newHash(runtime));
+            FFI.defineConstant(context, "TypeDefs", newHash(context));
 
-            Platform.createPlatformModule(runtime, ffi);
-            IOModule.createIOModule(runtime, ffi);
-            
-            StructByReference.createStructByReferenceClass(runtime, ffi);
+            Platform.createPlatformModule(context, FFI);
+            IOModule.createIOModule(context, FFI);
         }
     }
     
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
-     * Allocates transient native memory (not from C heap) and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates transient native memory (not from C heap) and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
-     * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
+     * Wraps a  native C memory address in a <code>MemoryIO</code> accessor.
      *
      * @param address The native address to wrap.
      * 
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public abstract MemoryIO wrapDirectMemory(Ruby runtime, long address);
 

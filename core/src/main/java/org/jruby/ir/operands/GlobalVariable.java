@@ -9,6 +9,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.globalVariables;
+
 public class GlobalVariable extends Reference {
     public GlobalVariable(RubySymbol name) {
         super(name);
@@ -29,7 +31,7 @@ public class GlobalVariable extends Reference {
     @Interp
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.getGlobalVariables().get(getId());
+        return globalVariables(context).get(getId());
     }
 
     public static GlobalVariable decode(IRReaderDecoder d) {

@@ -1,1 +1,0 @@
-fails:WeakRef#__send__ delegates to protected methods of the weakly-referenced object

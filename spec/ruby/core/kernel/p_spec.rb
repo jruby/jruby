@@ -13,7 +13,7 @@ describe "Kernel#p" do
   end
 
   it "is a private method" do
-    Kernel.should have_private_instance_method(:p)
+    Kernel.private_instance_methods(false).should.include?(:p)
   end
 
   # TODO: fix
@@ -42,10 +42,10 @@ describe "Kernel#p" do
     o = mock("Inspector Gadget")
     o.should_receive(:inspect).any_number_of_times.and_return "Next time, Gadget, NEXT TIME!"
 
-    lambda { p(o) }.should output("Next time, Gadget, NEXT TIME!\n")
-    lambda { p(*[o]) }.should output("Next time, Gadget, NEXT TIME!\n")
-    lambda { p(*[o, o]) }.should output("Next time, Gadget, NEXT TIME!\nNext time, Gadget, NEXT TIME!\n")
-    lambda { p([o])}.should output("[#{o.inspect}]\n")
+    -> { p(o) }.should output("Next time, Gadget, NEXT TIME!\n")
+    -> { p(*[o]) }.should output("Next time, Gadget, NEXT TIME!\n")
+    -> { p(*[o, o]) }.should output("Next time, Gadget, NEXT TIME!\nNext time, Gadget, NEXT TIME!\n")
+    -> { p([o])}.should output("[#{o.inspect}]\n")
   end
 
   it "is not affected by setting $\\, $/ or $," do
@@ -55,29 +55,54 @@ describe "Kernel#p" do
     suppress_warning {
       $, = " *helicopter sound*\n"
     }
-    lambda { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
+    -> { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
 
-    $\ = " *helicopter sound*\n"
-    lambda { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
+    suppress_warning {
+      $\ = " *helicopter sound*\n"
+    }
+    -> { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
 
-    $/ = " *helicopter sound*\n"
-    lambda { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
+    suppress_warning {
+      $/ = " *helicopter sound*\n"
+    }
+    -> { p(o) }.should output_to_fd("Next time, Gadget, NEXT TIME!\n")
   end
 
   it "prints nothing if no argument is given" do
-    lambda { p }.should output("")
+    -> { p.should == nil }.should output("")
   end
 
   it "prints nothing if called splatting an empty Array" do
-    lambda { p(*[]) }.should output("")
+    -> { p(*[]).should == nil }.should output("")
   end
 
-=begin Not sure how to spec this, but wanted to note the behavior here
-  it "does not flush if receiver is not a TTY or a File" do
+  it "returns the argument if a single argument is given" do
+    o = mock("Inspector Gadget")
+    o.should_receive(:inspect).any_number_of_times.and_return "Next time, Gadget, NEXT TIME!"
+
+    -> { p(o).should.equal?(o) }.should output("Next time, Gadget, NEXT TIME!\n")
   end
-=end
+
+  it "returns the argument if called splatting a single-element Array" do
+    o = mock("Inspector Gadget")
+    o.should_receive(:inspect).any_number_of_times.and_return "Next time, Gadget, NEXT TIME!"
+
+    -> { p(*[o]).should.equal?(o) }.should output("Next time, Gadget, NEXT TIME!\n")
+  end
+
+  it "returns an Array of the arguments if multiple arguments are given" do
+    o = mock("Inspector Gadget")
+    o.should_receive(:inspect).any_number_of_times.and_return "Next time, Gadget, NEXT TIME!"
+
+    -> { p(o, o).should == [o, o] }.should output("Next time, Gadget, NEXT TIME!\nNext time, Gadget, NEXT TIME!\n")
+  end
+
+  # Not sure how to spec this, but wanted to note the behavior here
+  it "does not flush if receiver is not a TTY or a File"
 end
 
 describe "Kernel.p" do
-  it "needs to be reviewed for spec completeness"
+  it "is a public method" do
+    Kernel.public_methods(false).should.include?(:p)
+  end
 end

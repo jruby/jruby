@@ -114,19 +114,6 @@ module Win32
   end
 end
 
-nt = Module.new do
-  break true if [nil].pack("p").size > 4
-  extend Importer
-  dlload "kernel32.dll"
-  getv = extern "int GetVersionExA(void *)", :stdcall
-  info = [ 148, 0, 0, 0, 0 ].pack('V5') + "\0" * 128
-  getv.call(info)
-  break info.unpack('V5')[4] == 2  # VER_PLATFORM_WIN32_NT
-end
-if not nt
-  require_relative 'resolv9x'
-  # return # does not work yet
-else
 module Win32
 #====================================================================
 # Windows NT
@@ -170,9 +157,9 @@ module Win32
           if add_search = search.nil?
             search = []
             begin
-              nvdom = reg.read_s('NV Domain')
+              nvdom = reg.read_s('Domain')
               unless nvdom.empty?
-                @search = [ nvdom ]
+                search = [ nvdom ]
                 if reg.read_i('UseDomainNameDevolution') != 0
                   if /^\w+\./ =~ nvdom
                     devo = $'
@@ -217,5 +204,4 @@ module Win32
       end
     end
   end
-end
 end

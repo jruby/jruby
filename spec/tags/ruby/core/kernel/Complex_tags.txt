@@ -1,1 +1,1 @@
-fails:Kernel.Complex() when passed a single non-Numeric coerces the passed argument using #to_c
+fails:Kernel#Complex raises an ArgumentError if exception: is not true or false

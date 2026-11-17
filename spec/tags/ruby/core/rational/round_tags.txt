@@ -1,1 +1,0 @@
-fails:Rational#round with half option returns a Rational when the precision is greater than 0

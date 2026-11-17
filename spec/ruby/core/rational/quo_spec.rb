@@ -1,5 +1,7 @@
-require_relative '../../shared/rational/divide'
+require_relative "../../spec_helper"
 
 describe "Rational#quo" do
-  it_behaves_like :rational_divide, :quo
+  it "is an alias of Rational#/" do
+    Rational.instance_method(:quo).should == Rational.instance_method(:/)
+  end
 end

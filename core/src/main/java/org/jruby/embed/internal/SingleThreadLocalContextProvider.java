@@ -34,10 +34,6 @@ import org.jruby.embed.LocalVariableBehavior;
 
 import java.util.Map;
 
-/**
- *
- * @author Yoko Harada <yokolet@gmail.com>
- */
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
 
     private final LocalContext instance;

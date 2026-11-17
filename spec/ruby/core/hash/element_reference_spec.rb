@@ -12,7 +12,7 @@ describe "Hash#[]" do
     h[[]].should == "baz"
   end
 
-  it "returns nil as default default value" do
+  it "returns nil as default value" do
     { 0 => 0 }[5].should == nil
   end
 
@@ -30,13 +30,13 @@ describe "Hash#[]" do
   end
 
   it "does not create copies of the immediate default value" do
-    str = "foo"
+    str = +"foo"
     h = Hash.new(str)
     a = h[:a]
     b = h[:b]
     a << "bar"
 
-    a.should equal(b)
+    a.should.equal?(b)
     a.should == "foobar"
     b.should == "foobar"
   end
@@ -84,11 +84,11 @@ describe "Hash#[]" do
   it "does not compare keys with different #hash values via #eql?" do
     x = mock('x')
     x.should_not_receive(:eql?)
-    x.stub!(:hash).and_return(0)
+    x.stub!(:hash).and_return(7)
 
     y = mock('y')
     y.should_not_receive(:eql?)
-    y.stub!(:hash).and_return(1)
+    y.stub!(:hash).and_return(8)
 
     { y => 1 }[x].should == nil
   end
@@ -117,4 +117,18 @@ describe "Hash#[]" do
     key = HashSpecs::KeyWithPrivateHash.new
     { key => 42 }[key].should == 42
   end
+
+  it "does not dispatch to hash for Boolean, Integer, Float, String, or Symbol" do
+    code = <<-EOC
+      load '#{fixture __FILE__, "name.rb"}'
+      hash = { true => 42, false => 42, 1 => 42, 2.0 => 42, "hello" => 42, :ok => 42 }
+      [true, false, 1, 2.0, "hello", :ok].each do |value|
+        raise "incorrect value" unless hash[value] == 42
+      end
+      puts "Ok."
+    EOC
+    result = ruby_exe(code, args: "2>&1")
+    result.should == "Ok.\n"
+  end
+
 end

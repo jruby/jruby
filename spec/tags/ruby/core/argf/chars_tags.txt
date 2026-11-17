@@ -1,3 +1,0 @@
-windows:ARGF.chars yields each char of all streams to the passed block
-windows:ARGF.chars returns an Enumerator when passed no block
-windows:ARGF.chars when no block is given returns an Enumerator

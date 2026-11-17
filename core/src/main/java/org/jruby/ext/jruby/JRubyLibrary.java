@@ -31,16 +31,17 @@
 
 package org.jruby.ext.jruby;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ast.Node;
-import org.jruby.ast.RootNode;
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.javasupport.Java;
@@ -52,32 +53,43 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.loadService;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.parser.ParserType.INLINE;
+
 /**
  * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
  * object and the Java-integration-wrapped reference.
  *
- * Parts of JRuby name-space are loaded even without <code>require 'jruby'<code/>, those live under JRuby::Util.
+ * Parts of JRuby name-space are loaded even without <code>require 'jruby'</code>, those live under JRuby::Util.
  * @see JRubyUtilLibrary
  */
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
+        ThreadContext context = runtime.getCurrentContext();
+        var Object = objectClass(context);
+
         // load Ruby parts of the 'jruby' library
-        runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
+        loadService(context).loadFromClassLoader("jruby/jruby.rb", false);
 
-        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
+        var JRuby = defineModule(context, "JRuby").
+                defineMethods(context, JRubyLibrary.class).defineMethods(context, JRubyUtilLibrary.class);
 
-        JRuby.defineAnnotatedMethods(JRubyLibrary.class);
-        JRuby.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRuby.defineClassUnder(context, "ThreadLocal", Object, JRubyThreadLocal::new)
+             .defineMethods(context, JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR)
-             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
+        JRuby.defineClassUnder(context, "FiberLocal", Object, JRubyFiberLocal::new)
+             .defineMethods(context, JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
-             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
-
-        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
-        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
+        JRuby.defineModuleUnder(context, "CONFIG").
+                tap(m -> m.singletonClass(context).defineMethods(context, JRubyConfig.class));
     }
 
     /**
@@ -86,12 +98,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+            return asBoolean(context, instanceConfig(context).isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return asBoolean(context, instanceConfig(context).isDisableDidYouMean());
         }
     }
 
@@ -111,12 +123,12 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return Java.wrapJavaObject(context.runtime, obj);
+        return Java.wrapJavaObject(context, obj);
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
-        return Java.wrapJavaObject(context.runtime, context.runtime); // context.nil.getRuntime()
+        return Java.wrapJavaObject(context, context.runtime);
     }
 
     /**
@@ -126,13 +138,9 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = {"dereference", "deref"})
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped = JavaUtil.unwrapIfJavaObject(obj);
-        if (unwrapped == obj) {
-            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected wrapped Java object");
-        }
-        if (!(unwrapped instanceof IRubyObject)) {
-            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected Java-wrapped Ruby object");
-        }
-        return (IRubyObject) unwrapped;
+        if (unwrapped == obj) throw typeError(context, "got " + obj.inspect(context) + ", expected wrapped Java object");
+        if (unwrapped instanceof IRubyObject robj) return robj;
+        throw typeError(context, "got " + obj.inspect(context) + ", expected Java-wrapped Ruby object");
     }
 
     /**
@@ -156,7 +164,7 @@ public class JRubyLibrary implements Library {
         }
     }
 
-    @JRubyMethod(module = true, rest = true, optional = 1) // (loader = JRuby.runtime.jruby_class_loader)
+    @JRubyMethod(module = true, rest = true) // (loader = JRuby.runtime.jruby_class_loader)
     public static IRubyObject set_context_class_loader(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final ClassLoader loader;
         if (args.length == 0 || args[0] == context.nil) {
@@ -166,13 +174,17 @@ public class JRubyLibrary implements Library {
             loader = JavaUtil.unwrapJavaObject(args[0]);
         }
         java.lang.Thread.currentThread().setContextClassLoader(loader);
-        return Java.wrapJavaObject(context.runtime, loader); // reference0
+        return Java.wrapJavaObject(context, loader); // reference0
     }
 
     @JRubyMethod(name = "security_restricted?", module = true)
+    public static RubyBoolean is_security_restricted(ThreadContext context, IRubyObject recv) {
+        return asBoolean(context, Ruby.isSecurityRestricted());
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean is_security_restricted(IRubyObject recv) {
-        final Ruby runtime = recv.getRuntime();
-        return RubyBoolean.newBoolean(runtime, Ruby.isSecurityRestricted());
+        return is_security_restricted(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     // NOTE: its probably too late to set this when jruby library is booted (due the java library) ?
@@ -191,23 +203,29 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newFixnum(System.identityHashCode(obj));
+        return asFixnum(context, System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3, checkArity = false)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
-        return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block));
+        return Java.wrapJavaObject(context, parseImpl(context, args, block).getAST());
     }
 
-    private static Node parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(module = true, name = "parse_result", required = 1, optional = 3, checkArity = false)
+    public static IRubyObject parse_result(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
+        return Java.wrapJavaObject(context, parseImpl(context, args, block));
+    }
+
+    private static ParseResult parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newNotImplementedError("JRuby.parse with block returning AST no longer supported");
         }
 
         final RubyString content = args[0].convertToString();
         final String filename;
-        boolean extra_position_info = false; int lineno = 0;
+        boolean inlineSource = false; int lineno = 0;
 
         switch (args.length) {
             case 1 :
@@ -218,79 +236,69 @@ public class JRubyLibrary implements Library {
                 break;
             case 3 :
                 filename = args[1].convertToString().toString();
-                extra_position_info = args[2].isTrue();
+                inlineSource = args[2].isTrue();
                 break;
             case 4 :
                 filename = args[1].convertToString().toString();
-                extra_position_info = args[2].isTrue();
-                lineno = args[3].convertToInteger().getIntValue();
+                inlineSource = args[2].isTrue();
+                lineno = toInt(context, args[3]);
                 break;
             default :
                 throw new AssertionError("unexpected arguments: " + java.util.Arrays.toString(args));
         }
 
         final ByteList bytes = content.getByteList();
-        final DynamicScope scope = null;
+        ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+        Encoding encoding = content.getEncoding() == ASCIIEncoding.INSTANCE ? context.runtime.setupSourceEncoding(UTF8Encoding.INSTANCE) : bytes.getEncoding();
 
-        final Node parseResult;
-        if (content.getEncoding() == ASCIIEncoding.INSTANCE) {
-            // binary content, parse as though from a stream
-            ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
-            parseResult = context.runtime.parseFile(stream, filename, scope, lineno);
+        if (inlineSource) {
+            return context.runtime.getParserManager().parseMainFile(filename, lineno, stream, encoding, context.getCurrentScope(), INLINE);
+        } else {
+            return context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding);
         }
-        else {
-            parseResult = context.runtime.parse(bytes, filename, scope, lineno, extra_position_info);
-        }
-
-        return parseResult;
     }
 
-    @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3, checkArity = false)
     public static IRubyObject compile_ir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-        return Java.wrapJavaObject(context.runtime, compileIR(context, args, block));
+        return Java.wrapJavaObject(context, compileIR(context, args, block));
     }
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
-        RootNode node = (RootNode) parseImpl(context, args, block);
-        IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
-        manager.setDryRun(true);
-        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
-        scope.setScriptDynamicScope(node.getScope());
+        ParseResult result = parseImpl(context, args, block);
+        IRManager manager = new IRManager(context.runtime, instanceConfig(context));
+        manager.setBuilderFactory(context.runtime.getIRManager().getBuilderFactory());
+        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, result).getScope();
+        scope.setScriptDynamicScope(result.getDynamicScope());
+        scope.getStaticScope().setIRScope(scope);
         return scope;
     }
 
-    @JRubyMethod(module = true, name = "compile", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "compile", required = 1, optional = 3, checkArity = false)
     public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         final Ruby runtime = context.runtime;
 
         final RubyString content = args[0].convertToString();
         args[0] = content;
-        final RubyString filename = args.length > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
+        final RubyString filename = argc > 1 ? args[1].convertToString() : newEmptyString(context);
 
         IRScriptBody scope = compileIR(context, args, block);
 
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         byte[] bytes = visitor.compileToBytecode(scope, methodContext);
 
-        scope.getStaticScope().setModule( runtime.getTopSelf().getMetaClass() );
+        scope.getStaticScope().setModule(runtime.getTopSelf().getMetaClass());
 
-        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
+        RubyClass CompiledScript = Access.getClass(context, "JRuby", "CompiledScript");
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
-        return CompiledScript.newInstance(context, new IRubyObject[] {
-                filename,
-                runtime.newSymbol(scope.getId()),
-                content,
-                Java.getInstance(runtime, bytes)
-        }, Block.NULL_BLOCK);
-    }
-
-    @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
-        CoreExt.loadStringExtensions(context.runtime);
-        return context.nil;
+        return CompiledScript.newInstance(context,
+                new IRubyObject[] {filename, asSymbol(context, scope.getId()), content, Java.getInstance(runtime, bytes)},
+                Block.NULL_BLOCK);
     }
 
     @JRubyMethod(module = true)
@@ -301,9 +309,9 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
         boolean recurseAll = false;
-        opts = ArgsUtil.getOptionsArg(context.runtime, opts);
+        opts = ArgsUtil.getOptionsArg(context, opts);
         if (opts != context.nil) {
-            IRubyObject all = ((RubyHash) opts).fastARef(context.runtime.newSymbol("all"));
+            IRubyObject all = ((RubyHash) opts).fastARef(asSymbol(context, "all"));
             if (all != null) recurseAll = all.isTrue();
         }
         return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);
@@ -312,9 +320,9 @@ public class JRubyLibrary implements Library {
     private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
                                         final RubyClass klass, final boolean recurseAll) {
 
-        final RubyArray subclasses = RubyArray.newArray(context.runtime);
+        final var subclasses = newArray(context);
 
-        RubyClass singletonClass = klass.getSingletonClass();
+        RubyClass singletonClass = klass.singletonClass(context);
         RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },
                 new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
 
@@ -326,12 +334,8 @@ public class JRubyLibrary implements Library {
                     @Override
                     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
                         if (klass != value) {
-                            if (recurseAll) {
-                                return subclasses.append(value);
-                            }
-                            if (((RubyClass) value).superclass(context) == klass) {
-                                return subclasses.append(value);
-                            }
+                            if (recurseAll) return subclasses.append(context, value);
+                            if (((RubyClass) value).superclass(context) == klass) return subclasses.append(context, value);
                         }
                         return context.nil;
                     }

@@ -1,14 +1,26 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
-describe "Kernel.srand" do
+describe "Kernel#srand" do
+  before :each do
+    @seed = srand
+  end
+
+  after :each do
+    srand(@seed)
+  end
+
   it "is a private method" do
-    Kernel.should have_private_instance_method(:srand)
+    Kernel.private_instance_methods(false).should.include?(:srand)
   end
 
   it "returns the previous seed value" do
     srand(10)
     srand(20).should == 10
+  end
+
+  it "returns the system-initialized seed value on the first call" do
+    ruby_exe('print srand(10)', options: '--disable-gems').should =~ /\A\d+\z/
   end
 
   it "seeds the RNG correctly and repeatably" do
@@ -19,7 +31,7 @@ describe "Kernel.srand" do
   end
 
   it "defaults number to a random value" do
-    lambda { srand }.should_not raise_error
+    -> { srand }.should_not.raise
     srand.should_not == 0
   end
 
@@ -33,7 +45,7 @@ describe "Kernel.srand" do
     srand.should == -17
   end
 
-  it "accepts a Bignum as a seed" do
+  it "accepts an Integer as a seed" do
     srand(0x12345678901234567890)
     srand.should == 0x12345678901234567890
   end
@@ -48,14 +60,16 @@ describe "Kernel.srand" do
   end
 
   it "raises a TypeError when passed nil" do
-    lambda { srand(nil) }.should raise_error(TypeError)
+    -> { srand(nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when passed a String" do
-    lambda { srand("7") }.should raise_error(TypeError)
+    -> { srand("7") }.should.raise(TypeError)
   end
 end
 
-describe "Kernel#srand" do
-  it "needs to be reviewed for spec completeness"
+describe "Kernel.srand" do
+  it "is a public method" do
+    Kernel.public_methods(false).should.include?(:srand)
+  end
 end

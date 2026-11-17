@@ -64,8 +64,68 @@ describe "Socket::IPSocket#recvfrom" do
 
     data.size.should == 2
     data.first.should == "hel"
-    # This does not apply to every platform, dependant on recvfrom(2)
+    # This does not apply to every platform, dependent on recvfrom(2)
     # data.last.should == nil
+  end
+end
+
+describe "Socket::IPSocket#recvfrom" do
+  context "when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown)" do
+    describe "stream socket" do
+      before :each do
+        @server = TCPServer.new("127.0.0.1", 0)
+        port = @server.addr[1]
+        @client = TCPSocket.new("127.0.0.1", port)
+      end
+
+      after :each do
+        @server.close unless @server.closed?
+        @client.close unless @client.closed?
+      end
+
+      it "returns nil on a closed stream socket" do
+        t = Thread.new do
+          client = @server.accept
+          message = client.recvfrom(10)
+          message
+        ensure
+          client.close if client
+        end
+
+        Thread.pass while t.status and t.status != "sleep"
+        t.status.should_not == nil
+
+        @client.close
+
+        t.value.should == nil
+      end
+    end
+
+    describe "datagram socket" do
+      SocketSpecs.each_ip_protocol do |family, ip_address|
+        before :each do
+          @server = UDPSocket.new(family)
+          @client = UDPSocket.new(family)
+        end
+
+        after :each do
+          @server.close unless @server.closed?
+          @client.close unless @client.closed?
+        end
+
+        it "returns an empty String as received data" do
+          @server.bind(ip_address, 0)
+          addr = @server.connect_address
+          @client.connect(addr.ip_address, addr.ip_port)
+
+          @client.send('', 0)
+          message = @server.recvfrom(1)
+
+          message.should.is_a? Array
+          message[0].should == ""
+        end
+      end
+    end
   end
 end
 

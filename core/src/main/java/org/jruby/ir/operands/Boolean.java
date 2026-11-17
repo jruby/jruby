@@ -1,9 +1,12 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyBoolean;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.asBoolean;
 
 public class Boolean extends ImmutableLiteral {
     private final boolean truthy;
@@ -21,7 +24,7 @@ public class Boolean extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newBoolean(isTrue());
+        return asBoolean(context, isTrue());
     }
 
     public boolean isTrue()  {
@@ -61,5 +64,15 @@ public class Boolean extends ImmutableLiteral {
     @Override
     public String toString() {
         return isTrue() ? "true" : "false";
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return truthy;
+    }
+
+    @Override
+    public boolean isFalseyImmediate() {
+        return !truthy;
     }
 }

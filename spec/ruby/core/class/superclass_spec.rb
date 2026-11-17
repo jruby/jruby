@@ -3,12 +3,12 @@ require_relative 'fixtures/classes'
 
 describe "Class#superclass" do
   it "returns the superclass of self" do
-    BasicObject.superclass.should be_nil
+    BasicObject.superclass.should == nil
     Object.superclass.should == BasicObject
     Class.superclass.should == Module
     Class.new.superclass.should == Object
     Class.new(String).superclass.should == String
-    Class.new(Fixnum).superclass.should == Fixnum
+    Class.new(Integer).superclass.should == Integer
   end
 
   # redmine:567

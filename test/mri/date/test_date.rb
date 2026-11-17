@@ -6,6 +6,19 @@ class DateSub < Date; end
 class DateTimeSub < DateTime; end
 
 class TestDate < Test::Unit::TestCase
+  def test_range_infinite_float
+    today = Date.today
+    r = today...Float::INFINITY
+    assert_equal today, r.begin
+    assert_equal Float::INFINITY, r.end
+    assert_equal true, r.cover?(today+1)
+    assert_equal false, r.cover?(today-1)
+    r = (-Float::INFINITY)...today
+    assert_equal(-Float::INFINITY, r.begin)
+    assert_equal today, r.end
+    assert_equal false, r.cover?(today+1)
+    assert_equal true, r.cover?(today-1)
+  end
 
   def test__const
     assert_nil(Date::MONTHNAMES[0])
@@ -122,6 +135,10 @@ class TestDate < Test::Unit::TestCase
     assert_equal(9, h[DateTime.new(1999,5,25)])
 
     h = {}
+    h[Date.new(3171505571716611468830131104691,2,19)] = 0
+    assert_equal(true, h.key?(Date.new(3171505571716611468830131104691,2,19)))
+
+    h = {}
     h[DateTime.new(1999,5,23)] = 0
     h[DateTime.new(1999,5,24)] = 1
     h[DateTime.new(1999,5,25)] = 2
@@ -150,4 +167,45 @@ class TestDate < Test::Unit::TestCase
     assert_equal(1, d2 <=> d1)
   end
 
+  def test_infinity_comparison
+    assert_equal(0, Float::INFINITY <=> Date::Infinity.new)
+    assert_equal(0, Date::Infinity.new <=> Float::INFINITY)
+    assert_equal(0, -Float::INFINITY <=> -Date::Infinity.new)
+    assert_equal(0, -Date::Infinity.new <=> -Float::INFINITY)
+
+    assert_equal(1, Float::INFINITY <=> -Date::Infinity.new)
+    assert_equal(1, Date::Infinity.new <=> -Float::INFINITY)
+
+    assert_equal(-1, -Float::INFINITY <=> Date::Infinity.new)
+    assert_equal(-1, -Date::Infinity.new <=> Float::INFINITY)
+  end
+
+  def test_deconstruct_keys
+    d = Date.new(1999,5,23)
+    assert_equal({year: 1999, month: 5, day: 23, wday: 0, yday: 143}, d.deconstruct_keys(nil))
+    assert_equal({year: 1999}, d.deconstruct_keys([:year, :century]))
+    assert_equal(
+      {year: 1999, month: 5, day: 23, wday: 0, yday: 143},
+      d.deconstruct_keys([:year, :month, :day, :wday, :yday])
+    )
+
+    dt = DateTime.new(1999, 5, 23, 4, 20, Rational(1, 10000))
+
+    assert_equal(
+      {year: 1999, month: 5, day: 23, wday: 0, yday: 143,
+       hour: 4, min: 20, sec: 0, sec_fraction: Rational(1, 10000), zone: "+00:00"},
+      dt.deconstruct_keys(nil)
+    )
+
+    assert_equal({year: 1999}, dt.deconstruct_keys([:year, :century]))
+
+    assert_equal(
+      {year: 1999, month: 5, day: 23, wday: 0, yday: 143,
+       hour: 4, min: 20, sec: 0, sec_fraction: Rational(1, 10000), zone: "+00:00"},
+      dt.deconstruct_keys([:year, :month, :day, :wday, :yday, :hour, :min, :sec, :sec_fraction, :zone])
+    )
+
+    dtz = DateTime.parse('3rd Feb 2001 04:05:06+03:30')
+    assert_equal({zone: '+03:30'}, dtz.deconstruct_keys([:zone]))
+  end
 end

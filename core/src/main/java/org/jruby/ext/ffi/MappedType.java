@@ -7,15 +7,15 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+
+import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A type which represents a conversion to/from a native type.
@@ -28,14 +28,9 @@ public final class MappedType extends Type {
     private final CachingCallSite toNativeCallSite = new FunctionalCachingCallSite("to_native");
     private final CachingCallSite fromNativeCallSite = new FunctionalCachingCallSite("from_native");
 
-    public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
-        final RubyClass Type = ffiModule.getClass("Type");
-        RubyClass convClass = Type.defineClassUnder("Mapped", Type, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        convClass.defineAnnotatedMethods(MappedType.class);
-        convClass.defineAnnotatedConstants(MappedType.class);
-
-
-        return convClass;
+    public static RubyClass createConverterTypeClass(ThreadContext context, RubyClass Type) {
+        return Type.defineClassUnder(context, "Mapped", Type, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, MappedType.class).defineConstants(context, MappedType.class);
     }
 
     private MappedType(Ruby runtime, RubyClass klass, Type nativeType, IRubyObject converter, boolean isRefererenceRequired) {
@@ -55,7 +50,7 @@ public final class MappedType extends Type {
         try {
             nativeType = (Type) converter.callMethod(context, "native_type");
         } catch (ClassCastException ex) {
-            throw context.runtime.newTypeError("native_type did not return instance of FFI::Type");
+            throw typeError(context, "native_type did not return instance of FFI::Type");
         }
 
         boolean isReferenceRequired;
@@ -75,6 +70,7 @@ public final class MappedType extends Type {
                 case ULONG:
                 case LONG_LONG:
                 case ULONG_LONG:
+//                case LONGDOUBLE:
                 case FLOAT:
                 case DOUBLE:
                     isReferenceRequired = false;

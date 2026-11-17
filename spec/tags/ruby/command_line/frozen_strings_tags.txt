@@ -1,3 +1,2 @@
-fails:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content
-fails:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content in different files
-fails:The --debug flag produces debugging info on attempted frozen string modification
+fails:The --debug flag produces debugging info on mutating chilled string
+fails:With neither --enable-frozen-string-literal nor --disable-frozen-string-literal flag set if file has no frozen_string_literal comment complain about modification of produced mutable strings

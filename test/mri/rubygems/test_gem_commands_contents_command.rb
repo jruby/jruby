@@ -1,16 +1,16 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
-require 'rubygems/commands/contents_command'
+
+require_relative "helper"
+require "rubygems/commands/contents_command"
 
 class TestGemCommandsContentsCommand < Gem::TestCase
-
   def setup
     super
 
     @cmd = Gem::Commands::ContentsCommand.new
   end
 
-  def gem name, version = 2
+  def gem(name, version = 2)
     spec = quick_gem name, version do |gem|
       gem.files = %W[lib/#{name}.rb Rakefile]
     end
@@ -21,58 +21,58 @@ class TestGemCommandsContentsCommand < Gem::TestCase
   def test_execute
     @cmd.options[:args] = %w[foo]
 
-    gem 'foo'
+    gem "foo"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_match %r|lib/foo\.rb|, @ui.output
-    assert_match %r|Rakefile|, @ui.output
+    assert_match %r{lib/foo\.rb}, @ui.output
+    assert_match(/Rakefile/, @ui.output)
     assert_equal "", @ui.error
   end
 
   def test_execute_all
     @cmd.options[:all] = true
 
-    gem 'foo'
-    gem 'bar'
+    gem "foo"
+    gem "bar"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_match %r|lib/foo\.rb|, @ui.output
-    assert_match %r|lib/bar\.rb|, @ui.output
-    assert_match %r|Rakefile|, @ui.output
+    assert_match %r{lib/foo\.rb}, @ui.output
+    assert_match %r{lib/bar\.rb}, @ui.output
+    assert_match(/Rakefile/, @ui.output)
     assert_equal "", @ui.error
   end
 
   def test_execute_bad_gem
     @cmd.options[:args] = %w[foo]
 
-    assert_raises Gem::MockGemUi::TermError do
+    assert_raise Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
     end
 
-    assert_match %r|Unable to find gem 'foo' in default gem paths|, @ui.output
-    assert_match %r|Directories searched:|, @ui.output
+    assert_match(/Unable to find gem 'foo' in default gem paths/, @ui.output)
+    assert_match(/Directories searched:/, @ui.output)
     assert_equal "", @ui.error
   end
 
   def test_execute_exact_match
     @cmd.options[:args] = %w[foo]
-    gem 'foo'
-    gem 'bar'
+    gem "foo"
+    gem "bar"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_match %r|lib/foo\.rb|, @ui.output
-    assert_match %r|Rakefile|, @ui.output
+    assert_match %r{lib/foo\.rb}, @ui.output
+    assert_match(/Rakefile/, @ui.output)
     assert_equal "", @ui.error
   end
 
@@ -80,22 +80,79 @@ class TestGemCommandsContentsCommand < Gem::TestCase
     @cmd.options[:args] = %w[foo]
     @cmd.options[:lib_only] = true
 
-    gem 'foo'
+    gem "foo"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_match %r|lib/foo\.rb|, @ui.output
-    refute_match %r|Rakefile|, @ui.output
+    assert_match %r{lib/foo\.rb}, @ui.output
+    refute_match(/Rakefile/, @ui.output)
 
     assert_equal "", @ui.error
+  end
+
+  def test_files_in_gem_with_glob_metacharacters_in_install_path
+    base_dir = File.join @tempdir, "dir[1]"
+    spec = util_spec "foo"
+    spec.loaded_from = File.join base_dir, "specifications", spec.spec_name
+
+    write_file File.join(spec.full_gem_path, "lib", "foo.rb")
+
+    files = @cmd.files_in_gem spec
+
+    assert_includes files, [spec.full_gem_path, "lib/foo.rb"]
+  end
+
+  def test_files_in_gem_lib_only_stays_inside_gem_dir_with_extensions
+    @cmd.options[:lib_only] = true
+
+    spec = util_spec "foo" do |s|
+      s.extensions = %w[ext/foo/extconf.rb]
+    end
+
+    write_file File.join(spec.full_gem_path, "lib", "foo.rb")
+    write_file File.join(spec.extension_dir, "foo.so")
+
+    files = @cmd.files_in_gem spec
+
+    assert_includes files, [spec.full_gem_path, "lib/foo.rb"]
+    files.each do |_prefix, relative|
+      refute File.absolute_path?(relative), "#{relative} escapes the gem directory"
+    end
+  end
+
+  def test_files_in_gem_lib_only_without_require_paths
+    @cmd.options[:lib_only] = true
+
+    spec = util_spec "foo"
+    spec.require_paths = []
+
+    write_file File.join(spec.full_gem_path, "lib", "foo.rb")
+
+    assert_empty @cmd.files_in_gem(spec)
   end
 
   def test_execute_missing_single
     @cmd.options[:args] = %w[foo]
 
-    assert_raises Gem::MockGemUi::TermError do
+    assert_raise Gem::MockGemUi::TermError do
+      use_ui @ui do
+        @cmd.execute
+      end
+    end
+
+    assert_match "Unable to find gem 'foo'", @ui.output
+    assert_empty @ui.error
+  end
+
+  def test_execute_missing_version
+    @cmd.options[:args] = %w[foo]
+    @cmd.options[:version] = Gem::Requirement.new "= 2"
+
+    gem "foo", 1
+
+    assert_raise Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
@@ -108,7 +165,7 @@ class TestGemCommandsContentsCommand < Gem::TestCase
   def test_execute_missing_multiple
     @cmd.options[:args] = %w[foo bar]
 
-    gem 'foo'
+    gem "foo"
 
     use_ui @ui do
       @cmd.execute
@@ -123,16 +180,16 @@ class TestGemCommandsContentsCommand < Gem::TestCase
   def test_execute_multiple
     @cmd.options[:args] = %w[foo bar]
 
-    gem 'foo'
-    gem 'bar'
+    gem "foo"
+    gem "bar"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_match %r|lib/foo\.rb|, @ui.output
-    assert_match %r|lib/bar\.rb|, @ui.output
-    assert_match %r|Rakefile|, @ui.output
+    assert_match %r{lib/foo\.rb}, @ui.output
+    assert_match %r{lib/bar\.rb}, @ui.output
+    assert_match(/Rakefile/, @ui.output)
     assert_equal "", @ui.error
   end
 
@@ -140,13 +197,30 @@ class TestGemCommandsContentsCommand < Gem::TestCase
     @cmd.options[:args] = %w[foo]
     @cmd.options[:show_install_dir] = true
 
-    gem 'foo'
+    gem "foo"
 
     use_ui @ui do
       @cmd.execute
     end
 
-    expected = File.join @gemhome, 'gems', 'foo-2'
+    expected = File.join @gemhome, "gems", "foo-2"
+
+    assert_equal "#{expected}\n", @ui.output
+    assert_equal "", @ui.error
+  end
+
+  def test_execute_show_install_dir_latest_version
+    @cmd.options[:args] = %w[foo]
+    @cmd.options[:show_install_dir] = true
+
+    gem "foo", 1
+    gem "foo", 2
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = File.join @gemhome, "gems", "foo-2"
 
     assert_equal "#{expected}\n", @ui.output
     assert_equal "", @ui.error
@@ -155,16 +229,16 @@ class TestGemCommandsContentsCommand < Gem::TestCase
   def test_execute_show_install_dir_version
     @cmd.options[:args] = %w[foo]
     @cmd.options[:show_install_dir] = true
-    @cmd.options[:version] = Gem::Requirement.new '= 1'
+    @cmd.options[:version] = Gem::Requirement.new "= 1"
 
-    gem 'foo', 1
-    gem 'foo', 2
+    gem "foo", 1
+    gem "foo", 2
 
     use_ui @ui do
       @cmd.execute
     end
 
-    expected = File.join @gemhome, 'gems', 'foo-1'
+    expected = File.join @gemhome, "gems", "foo-1"
 
     assert_equal "#{expected}\n", @ui.output
     assert_equal "", @ui.error
@@ -174,7 +248,7 @@ class TestGemCommandsContentsCommand < Gem::TestCase
     @cmd.options[:args] = %w[foo]
     @cmd.options[:prefix] = false
 
-    gem 'foo'
+    gem "foo"
 
     use_ui @ui do
       @cmd.execute
@@ -194,8 +268,7 @@ lib/foo.rb
     default_gem_spec = new_default_spec("default", "2.0.0.0",
                                         nil, "default/gem.rb")
     default_gem_spec.executables = ["default_command"]
-    default_gem_spec.files += ["default_gem.so"]
-    install_default_specs(default_gem_spec)
+    install_default_gems(default_gem_spec)
 
     @cmd.options[:args] = %w[default]
 
@@ -204,10 +277,9 @@ lib/foo.rb
     end
 
     expected = [
-      [RbConfig::CONFIG['bindir'], 'default_command'],
-      [RbConfig::CONFIG['rubylibdir'], 'default/gem.rb'],
-      [RbConfig::CONFIG['archdir'], 'default_gem.so']
-    ].sort.map{|a|File.join a}.join "\n"
+      [File.join(@gemhome, "bin"), "default_command"],
+      [File.join(@tempdir, "default_gems", "lib"), "default/gem.rb"],
+    ].sort.map {|a|File.join a }.join "\n"
 
     assert_equal expected, @ui.output.chomp
     assert_equal "", @ui.error
@@ -232,9 +304,7 @@ lib/foo.rb
     assert @cmd.options[:lib_only]
     refute @cmd.options[:prefix]
     assert_equal %w[foo], @cmd.options[:specdirs]
-    assert_equal Gem::Requirement.new('0.0.2'), @cmd.options[:version]
+    assert_equal Gem::Requirement.new("0.0.2"), @cmd.options[:version]
     assert @cmd.options[:show_install_dir]
   end
-
 end
-

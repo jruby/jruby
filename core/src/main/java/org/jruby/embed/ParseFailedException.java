@@ -34,7 +34,7 @@ package org.jruby.embed;
  * Checked exceptions, for example, java.io.FileNotFoundException, are also wrapped
  * by this exception.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ParseFailedException extends RuntimeException {
     public ParseFailedException(Throwable cause) {

@@ -1,1 +1,1 @@
-exclude :test_parse_big_integers, "needs work in json lib to gracefully handle Bignum (flori/json#336)"
+exclude :test_mutating_source_string_during_parsing, "parser reads the source bytes without sharing them; fixed in ruby/json#1122"

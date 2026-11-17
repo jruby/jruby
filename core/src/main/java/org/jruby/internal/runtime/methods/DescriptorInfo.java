@@ -12,6 +12,8 @@ import java.util.List;
 public class DescriptorInfo {
     private int min;
     private int max;
+    // Will this method be able to potentially process or forward keywords.  Gives access to ThreadContext#callInfo.
+    private boolean keywords;
     private boolean frame;
     private boolean rest;
     private boolean block;
@@ -31,9 +33,6 @@ public class DescriptorInfo {
     public DescriptorInfo(List<? extends MethodDescriptor> descs) {
         min = Integer.MAX_VALUE;
         max = 0;
-        frame = false;
-        rest = false;
-        block = false;
         boolean first = true;
         boolean lastBlock = false;
 
@@ -45,6 +44,10 @@ public class DescriptorInfo {
             } else {
                 if (lastBlock != desc.hasBlock) {
                     throw new RuntimeException("Mismatched block parameters for method " + desc.declaringClassName + "." + desc.name);
+                }
+                if (keywords != desc.anno.keywords()) {
+                    // warning for now to avoid breaking existing extensions (jruby/jruby#9531)
+                    System.err.println("WARNING: keywords flag is not uniform across all signatures for method " + desc.declaringClassName + "." + desc.name);
                 }
             }
             lastBlock = desc.hasBlock;
@@ -88,6 +91,7 @@ public class DescriptorInfo {
 
             if (frame && !desc.anno.frame())
                 throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
+            keywords |= desc.anno.keywords();
             frame |= desc.anno.frame();
             block |= desc.hasBlock;
         }
@@ -131,9 +135,8 @@ public class DescriptorInfo {
         parameterDesc = descBuilder.toString();
     }
 
-    @Deprecated
-    public boolean isBacktrace() {
-        return false;
+    public boolean acceptsKeywords() {
+        return keywords;
     }
 
     public boolean isFrame() {

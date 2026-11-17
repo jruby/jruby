@@ -8,21 +8,32 @@ class TestDir < Test::Unit::TestCase
 
   def setup
     @verbose = $VERBOSE
-    $VERBOSE = nil
     @root = File.realpath(Dir.mktmpdir('__test_dir__'))
     @nodir = File.join(@root, "dummy")
+    @dirs = []
     for i in "a".."z"
       if i.ord % 2 == 0
         FileUtils.touch(File.join(@root, i))
       else
         FileUtils.mkdir(File.join(@root, i))
+        @dirs << File.join(i, "")
       end
     end
+    @envs = nil
   end
 
   def teardown
     $VERBOSE = @verbose
     FileUtils.remove_entry_secure @root if File.directory?(@root)
+    ENV.update(@envs) if @envs
+  end
+
+  def setup_envs(envs = %w"HOME LOGDIR")
+    @envs ||= {}
+    envs.each do |e, v|
+      @envs[e] = ENV.delete(e)
+      ENV[e] = v if v
+    end
   end
 
   def test_seek
@@ -85,41 +96,136 @@ class TestDir < Test::Unit::TestCase
     d.close
   end
 
-  def test_chdir
-    @pwd = Dir.pwd
-    @env_home = ENV["HOME"]
-    @env_logdir = ENV["LOGDIR"]
-    ENV.delete("HOME")
-    ENV.delete("LOGDIR")
+  def test_class_chdir
+    pwd = Dir.pwd
+    setup_envs
 
     assert_raise(Errno::ENOENT) { Dir.chdir(@nodir) }
     assert_raise(ArgumentError) { Dir.chdir }
-    ENV["HOME"] = @pwd
+    ENV["HOME"] = pwd
     Dir.chdir do
-      assert_equal(@pwd, Dir.pwd)
-      Dir.chdir(@root)
+      conflicting = /conflicting chdir during another chdir block\n^#{Regexp.quote(__FILE__)}:#{__LINE__-1}:/
+      assert_warning(conflicting) { Dir.chdir(pwd) }
+
+      assert_warning(conflicting) { Dir.chdir(@root) }
       assert_equal(@root, Dir.pwd)
+
+      assert_warning(conflicting) { Dir.chdir(pwd) }
+
+      assert_raise(RuntimeError) { Thread.new { Thread.current.report_on_exception = false; Dir.chdir(@root) }.join }
+      assert_raise(RuntimeError) { Thread.new { Thread.current.report_on_exception = false; Dir.chdir(@root) { } }.join }
+
+      assert_warning(conflicting) { Dir.chdir(pwd) }
+
+      assert_warning(conflicting) { Dir.chdir(@root) }
+      assert_equal(@root, Dir.pwd)
+
+      assert_warning(conflicting) { Dir.chdir(pwd) }
+      Dir.chdir(@root) do
+        assert_equal(@root, Dir.pwd)
+      end
+      assert_equal(pwd, Dir.pwd)
     end
 
   ensure
     begin
-      Dir.chdir(@pwd)
+      Dir.chdir(pwd)
     rescue
-      abort("cannot return the original directory: #{ @pwd }")
+      abort("cannot return the original directory: #{ pwd }")
     end
-    if @env_home
-      ENV["HOME"] = @env_home
-    else
-      ENV.delete("HOME")
+  end
+
+  def test_instance_chdir
+    pwd = Dir.pwd
+    dir = Dir.new(pwd)
+    root_dir = Dir.new(@root)
+    setup_envs
+
+    ENV["HOME"] = pwd
+    ret = root_dir.chdir do |*a|
+      conflicting = /conflicting chdir during another chdir block\n^#{Regexp.quote(__FILE__)}:#{__LINE__-1}:/
+
+      assert_empty(a)
+
+      assert_warning(conflicting) { dir.chdir }
+      assert_warning(conflicting) { root_dir.chdir }
+
+      assert_equal(@root, Dir.pwd)
+
+      assert_raise(RuntimeError) { Thread.new { Thread.current.report_on_exception = false; dir.chdir }.join }
+      assert_raise(RuntimeError) { Thread.new { Thread.current.report_on_exception = false; dir.chdir{} }.join }
+
+      assert_warning(conflicting) { dir.chdir }
+      assert_equal(pwd, Dir.pwd)
+
+      assert_warning(conflicting) { root_dir.chdir }
+      assert_equal(@root, Dir.pwd)
+
+      assert_warning(conflicting) { dir.chdir }
+
+      root_dir.chdir do
+        assert_equal(@root, Dir.pwd)
+      end
+      assert_equal(pwd, Dir.pwd)
+
+      42
     end
-    if @env_logdir
-      ENV["LOGDIR"] = @env_logdir
-    else
-      ENV.delete("LOGDIR")
+
+    assert_separately(["-", @root], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      root = ARGV.shift
+
+      $dir_warnings = []
+
+      def Warning.warn(message)
+        $dir_warnings << message
+      end
+
+      line2 = line1 = __LINE__; Dir.chdir(root) do
+        line2 = __LINE__; Dir.chdir
+      end
+
+      message = $dir_warnings.shift
+      assert_include(message, "#{__FILE__}:#{line2}:")
+      assert_include(message, "#{__FILE__}:#{line1}:")
+      assert_empty($dir_warnings)
+    end;
+
+    assert_equal(42, ret)
+  ensure
+    begin
+      assert_equal(0, dir.chdir)
+    rescue
+      abort("cannot return the original directory: #{ pwd }")
+    end
+    dir.close
+    root_dir.close
+  end
+
+  def test_chdir_conflict
+    pwd = Dir.pwd
+    q = Thread::Queue.new
+    t = Thread.new do
+      q.pop
+      Dir.chdir(pwd) rescue $!
+    end
+    Dir.chdir(pwd) do
+      q.push nil
+      assert_instance_of(RuntimeError, t.value)
+    end
+
+    t = Thread.new do
+      q.pop
+      Dir.chdir(pwd){} rescue $!
+    end
+    Dir.chdir(pwd) do
+      q.push nil
+      assert_instance_of(RuntimeError, t.value)
     end
   end
 
   def test_chroot_nodir
+    omit if RUBY_PLATFORM =~ /android/
     assert_raise(NotImplementedError, Errno::ENOENT, Errno::EPERM
 		) { Dir.chroot(File.join(@nodir, "")) }
   end
@@ -132,15 +238,26 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_glob
-    assert_equal((%w(. ..) + ("a".."z").to_a).map{|f| File.join(@root, f) },
-                 Dir.glob(File.join(@root, "*"), File::FNM_DOTMATCH).sort)
-    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) }.sort,
-                 Dir.glob([@root, File.join(@root, "*")]).sort)
-    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) }.sort,
-                 Dir.glob(@root + "\0\0\0" + File.join(@root, "*")).sort)
+    assert_equal((%w(.) + ("a".."z").to_a).map{|f| File.join(@root, f) },
+                 Dir.glob(File.join(@root, "*"), File::FNM_DOTMATCH))
+    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) },
+                 Dir.glob([@root, File.join(@root, "*")]))
+    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) },
+                 Dir.glob([@root, File.join(@root, "*")], sort: false).sort)
+    assert_equal([@root] + ("a".."z").map {|f| File.join(@root, f) },
+                 Dir.glob([@root, File.join(@root, "*")], sort: true))
+    assert_raise_with_message(ArgumentError, /nul-separated/) do
+      Dir.glob(@root + "\0\0\0" + File.join(@root, "*"))
+    end
+    assert_raise_with_message(ArgumentError, /expected true or false/) do
+      Dir.glob(@root, sort: 1)
+    end
+    assert_raise_with_message(ArgumentError, /expected true or false/) do
+      Dir.glob(@root, sort: nil)
+    end
 
-    assert_equal(("a".."z").step(2).map {|f| File.join(File.join(@root, f), "") }.sort,
-                 Dir.glob(File.join(@root, "*/")).sort)
+    assert_equal(("a".."z").each_slice(2).map {|f,_| File.join(File.join(@root, f), "") },
+                 Dir.glob(File.join(@root, "*/")))
     assert_equal([File.join(@root, '//a')], Dir.glob(@root + '//a'))
 
     FileUtils.touch(File.join(@root, "{}"))
@@ -150,7 +267,7 @@ class TestDir < Test::Unit::TestCase
     assert_equal([], Dir.glob(File.join(@root, '[a-\\')))
 
     assert_equal([File.join(@root, "a")], Dir.glob(File.join(@root, 'a\\')))
-    assert_equal(("a".."f").map {|f| File.join(@root, f) }.sort, Dir.glob(File.join(@root, '[abc/def]')).sort)
+    assert_equal(("a".."f").map {|f| File.join(@root, f) }, Dir.glob(File.join(@root, '[abc/def]')))
 
     open(File.join(@root, "}}{}"), "wb") {}
     open(File.join(@root, "}}a"), "wb") {}
@@ -167,6 +284,9 @@ class TestDir < Test::Unit::TestCase
     Dir.chdir(@root) do
       assert_include(Dir.glob("a/**/*", File::FNM_DOTMATCH), "a/.", bug8006)
 
+      Dir.mkdir("a/b")
+      assert_not_include(Dir.glob("a/**/*", File::FNM_DOTMATCH), "a/b/.")
+
       FileUtils.mkdir_p("a/b/c/d/e/f")
       assert_equal(["a/b/c/d/e/f"], Dir.glob("a/**/e/f"), bug6977)
       assert_equal(["a/b/c/d/e/f"], Dir.glob("a/**/d/e/f"), bug6977)
@@ -180,11 +300,61 @@ class TestDir < Test::Unit::TestCase
       dirs = ["a/.x", "a/b/.y"]
       FileUtils.mkdir_p(dirs)
       dirs.map {|dir| open("#{dir}/z", "w") {}}
-      assert_equal([], Dir.glob("a/**/z").sort, bug8283)
+      assert_equal([], Dir.glob("a/**/z"), bug8283)
       assert_equal(["a/.x/z"], Dir.glob("a/**/.x/z"), bug8283)
       assert_equal(["a/.x/z"], Dir.glob("a/.x/**/z"), bug8283)
       assert_equal(["a/b/.y/z"], Dir.glob("a/**/.y/z"), bug8283)
     end
+  end
+
+  def test_glob_recursive_directory
+    Dir.chdir(@root) do
+      ['d', 'e'].each do |path|
+        FileUtils.mkdir_p("c/#{path}/a/b/c")
+        FileUtils.touch("c/#{path}/a/a.file")
+        FileUtils.touch("c/#{path}/a/b/b.file")
+        FileUtils.touch("c/#{path}/a/b/c/c.file")
+      end
+      bug15540 = '[ruby-core:91110] [Bug #15540]'
+      assert_equal(["c/d/a/", "c/d/a/b/", "c/d/a/b/c/", "c/e/a/", "c/e/a/b/", "c/e/a/b/c/"],
+                   Dir.glob('c/{d,e}/a/**/'), bug15540)
+
+      assert_equal(["c/e/a/", "c/e/a/b/", "c/e/a/b/c/", "c/d/a/", "c/d/a/b/", "c/d/a/b/c/"],
+                   Dir.glob('c/{e,d}/a/**/'))
+    end
+  end
+
+  def test_glob_starts_with_brace
+    Dir.chdir(@root) do
+      bug15649 = '[ruby-core:91728] [Bug #15649]'
+      assert_equal(["#{@root}/a", "#{@root}/b"],
+                   Dir.glob("{#{@root}/a,#{@root}/b}"), bug15649)
+    end
+  end
+
+  def test_glob_recursive_with_brace
+    Dir.chdir(@root) do
+      bug19042 = '[ruby-core:110220] [Bug #19042]'
+      %w"c/dir_a c/dir_b c/dir_b/dir".each do |d|
+        Dir.mkdir(d)
+      end
+      expected = %w"c/dir_a/file c/dir_b/dir/file"
+      expected.each do |f|
+        File.write(f, "")
+      end
+      assert_equal(expected, Dir.glob("**/{dir_a,dir_b/dir}/file"), bug19042)
+    end
+  end
+
+  def test_glob_order
+    Dir.chdir(@root) do
+      assert_equal(["#{@root}/a", "#{@root}/b"], Dir.glob("#{@root}/[ba]"))
+      assert_equal(["#{@root}/b", "#{@root}/a"], Dir.glob(%W"#{@root}/b #{@root}/a"))
+      assert_equal(["#{@root}/b", "#{@root}/a"], Dir.glob("#{@root}/{b,a}"))
+    end
+    assert_equal(["a", "b"], Dir.glob("[ba]", base: @root))
+    assert_equal(["b", "a"], Dir.glob(%W"b a", base: @root))
+    assert_equal(["b", "a"], Dir.glob("{b,a}", base: @root))
   end
 
   if Process.const_defined?(:RLIMIT_NOFILE)
@@ -208,18 +378,74 @@ class TestDir < Test::Unit::TestCase
   def test_glob_base
     files = %w[a/foo.c c/bar.c]
     files.each {|n| File.write(File.join(@root, n), "")}
-    assert_equal(files, Dir.glob("*/*.c", base: @root).sort)
-    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: ".").sort})
-    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.glob("*.c", base: "a").sort})
-    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: "").sort})
-    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: nil).sort})
+    Dir.mkdir(File.join(@root, "a/dir"))
+    dirs = @dirs + %w[a/dir/]
+    dirs.sort!
+
+    assert_equal(files, Dir.glob("*/*.c", base: @root))
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: ".")})
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.glob("*.c", base: "a")})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: "")})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: nil)})
+    assert_equal(@dirs, Dir.glob("*/", base: @root))
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: ".")})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.glob("*/", base: "a")})
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: "")})
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: nil)})
+    assert_equal(dirs, Dir.glob("**/*/", base: @root))
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: ".")})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.glob("**/*/", base: "a")})
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: "")})
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: nil)})
+
+    assert_equal(files, Dir.glob("*/*.c", base: @root, sort: false).sort)
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: ".", sort: false).sort})
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.glob("*.c", base: "a", sort: false).sort})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: "", sort: false).sort})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: nil, sort: false).sort})
+    assert_equal(@dirs, Dir.glob("*/", base: @root))
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: ".", sort: false).sort})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.glob("*/", base: "a", sort: false).sort})
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: "", sort: false).sort})
+    assert_equal(@dirs, Dir.chdir(@root) {Dir.glob("*/", base: nil, sort: false).sort})
+    assert_equal(dirs, Dir.glob("**/*/", base: @root))
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: ".", sort: false).sort})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.glob("**/*/", base: "a", sort: false).sort})
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: "", sort: false).sort})
+    assert_equal(dirs, Dir.chdir(@root) {Dir.glob("**/*/", base: nil, sort: false).sort})
   end
 
   def test_glob_base_dir
     files = %w[a/foo.c c/bar.c]
     files.each {|n| File.write(File.join(@root, n), "")}
-    assert_equal(files, Dir.open(@root) {|d| Dir.glob("*/*.c", base: d)}.sort)
-    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*", base: d)}})
+    Dir.mkdir(File.join(@root, "a/dir"))
+    dirs = @dirs + %w[a/dir/]
+    dirs.sort!
+
+    assert_equal(files, Dir.open(@root) {|d| Dir.glob("*/*.c", base: d)})
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*.c", base: d)}})
+    assert_equal(@dirs, Dir.open(@root) {|d| Dir.glob("*/", base: d)})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*/", base: d)}})
+    assert_equal(dirs, Dir.open(@root) {|d| Dir.glob("**/*/", base: d)})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("**/*/", base: d)}})
+
+    assert_equal(files, Dir.open(@root) {|d| Dir.glob("*/*.c", base: d, sort: false).sort})
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*.c", base: d, sort: false).sort}})
+    assert_equal(@dirs, Dir.open(@root) {|d| Dir.glob("*/", base: d, sort: false).sort})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*/", base: d, sort: false).sort}})
+    assert_equal(dirs, Dir.open(@root) {|d| Dir.glob("**/*/", base: d, sort: false).sort})
+    assert_equal(%w[dir/], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("**/*/", base: d, sort: false).sort}})
+  end
+
+  def test_glob_ignore_casefold_invalid_encoding
+    bug14456 = "[ruby-core:85448]"
+    filename = "\u00AAa123".encode('ISO-8859-1')
+    File.write(File.join(@root, filename), "")
+    matches = Dir.chdir(@root) {|d| Dir.glob("*a123".encode('UTF-8'), File::FNM_CASEFOLD)}
+    assert_equal(1, matches.size, bug14456)
+    matches.each{|f| f.force_encoding('ISO-8859-1')}
+    # Handle MacOS/Windows, which saves under a different filename
+    assert_include([filename, "\u00C2\u00AAa123".encode('ISO-8859-1')], matches.first, bug14456)
   end
 
   def assert_entries(entries, children_only = false)
@@ -231,24 +457,52 @@ class TestDir < Test::Unit::TestCase
 
   def test_entries
     assert_entries(Dir.open(@root) {|dir| dir.entries})
-    assert_entries(Dir.entries(@root).to_a)
+    assert_entries(Dir.entries(@root))
     assert_raise(ArgumentError) {Dir.entries(@root+"\0")}
+    [Encoding::UTF_8, Encoding::ASCII_8BIT].each do |enc|
+      assert_equal(enc, Dir.entries(@root, encoding: enc).first.encoding)
+    end
   end
 
   def test_foreach
     assert_entries(Dir.open(@root) {|dir| dir.each.to_a})
     assert_entries(Dir.foreach(@root).to_a)
     assert_raise(ArgumentError) {Dir.foreach(@root+"\0").to_a}
+    newdir = @root+"/new"
+    e = Dir.foreach(newdir)
+    assert_raise(Errno::ENOENT) {e.to_a}
+    Dir.mkdir(newdir)
+    File.write(newdir+"/a", "")
+    assert_equal(%w[. .. a], e.to_a.sort)
+    [Encoding::UTF_8, Encoding::ASCII_8BIT].each do |enc|
+      e = Dir.foreach(newdir, encoding: enc)
+      assert_equal(enc, e.to_a.first.encoding)
+    end
   end
 
   def test_children
+    assert_entries(Dir.open(@root) {|dir| dir.children}, true)
     assert_entries(Dir.children(@root), true)
     assert_raise(ArgumentError) {Dir.children(@root+"\0")}
+    [Encoding::UTF_8, Encoding::ASCII_8BIT].each do |enc|
+      assert_equal(enc, Dir.children(@root, encoding: enc).first.encoding)
+    end
   end
 
   def test_each_child
+    assert_entries(Dir.open(@root) {|dir| dir.each_child.to_a}, true)
     assert_entries(Dir.each_child(@root).to_a, true)
     assert_raise(ArgumentError) {Dir.each_child(@root+"\0").to_a}
+    newdir = @root+"/new"
+    e = Dir.each_child(newdir)
+    assert_raise(Errno::ENOENT) {e.to_a}
+    Dir.mkdir(newdir)
+    File.write(newdir+"/a", "")
+    assert_equal(%w[a], e.to_a)
+    [Encoding::UTF_8, Encoding::ASCII_8BIT].each do |enc|
+      e = Dir.each_child(newdir, encoding: enc)
+      assert_equal(enc, e.to_a.first.encoding)
+    end
   end
 
   def test_dir_enc
@@ -289,10 +543,10 @@ class TestDir < Test::Unit::TestCase
     end
 
     assert_equal([*"a".."z", *"symlink-a".."symlink-z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }.sort,
-		 Dir.glob(File.join(@root, "*/")).sort)
+		 Dir.glob(File.join(@root, "*/")))
 
-    assert_equal([@root + "/", *[*"a".."z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }.sort],
-                 Dir.glob(File.join(@root, "**/")).sort)
+    assert_equal([@root + "/", *[*"a".."z"].each_slice(2).map {|f, _| File.join(@root, f + "/") }],
+                 Dir.glob(File.join(@root, "**/")))
   end
 
   def test_glob_metachar
@@ -323,9 +577,9 @@ class TestDir < Test::Unit::TestCase
     def test_glob_legacy_short_name
       bug10819 = '[ruby-core:67954] [Bug #10819]'
       bug11206 = '[ruby-core:69435] [Bug #11206]'
-      skip unless /\A\w:/ =~ ENV["ProgramFiles"]
+      omit unless /\A\w:/ =~ ENV["ProgramFiles"]
       short = "#$&/PROGRA~1"
-      skip unless File.directory?(short)
+      omit unless File.directory?(short)
       entries = Dir.glob("#{short}/Common*")
       assert_not_empty(entries, bug10819)
       long = File.expand_path(short)
@@ -335,29 +589,104 @@ class TestDir < Test::Unit::TestCase
       assert_include(Dir.glob(wild, File::FNM_SHORTNAME), long, bug10819)
       assert_empty(entries - Dir.glob("#{wild}/Common*", File::FNM_SHORTNAME), bug10819)
     end
+
+    def test_home_windows
+      setup_envs(%w[HOME USERPROFILE HOMEDRIVE HOMEPATH])
+
+      ENV['HOME'] = "C:\\ruby\\home"
+      assert_equal("C:/ruby/home", Dir.home)
+
+      ENV['USERPROFILE'] = "C:\\ruby\\userprofile"
+      assert_equal("C:/ruby/home", Dir.home)
+      ENV.delete('HOME')
+      assert_equal("C:/ruby/userprofile", Dir.home)
+
+      ENV['HOMEDRIVE'] = "C:"
+      ENV['HOMEPATH'] = "\\ruby\\homepath"
+      assert_equal("C:/ruby/userprofile", Dir.home)
+      ENV.delete('USERPROFILE')
+      assert_equal("C:/ruby/homepath", Dir.home)
+    end
+
+    def test_home_at_startup_windows
+      env = {'HOME' => "C:\\ruby\\home"}
+      args = [env]
+      assert_separately(args, "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        assert_equal("C:/ruby/home", Dir.home)
+      end;
+
+      env['USERPROFILE'] = "C:\\ruby\\userprofile"
+      assert_separately(args, "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        assert_equal("C:/ruby/home", Dir.home)
+      end;
+
+      env['HOME'] = nil
+      assert_separately(args, "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        assert_equal("C:/ruby/userprofile", Dir.home)
+      end;
+
+      env['HOMEDRIVE'] = "C:"
+      env['HOMEPATH'] = "\\ruby\\homepath"
+      assert_separately(args, "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        assert_equal("C:/ruby/userprofile", Dir.home)
+      end;
+
+      env['USERPROFILE'] = nil
+      assert_separately(args, "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        assert_equal("C:/ruby/homepath", Dir.home)
+      end;
+    end
+
+    def test_children_long_name
+      Dir.mktmpdir do |dirname|
+        longest_possible_component = "b" * 255
+        long_path = File.join(dirname, longest_possible_component)
+        Dir.mkdir(long_path)
+        File.write("#{long_path}/c", "")
+        assert_equal(%w[c], Dir.children(long_path))
+      ensure
+        File.unlink("#{long_path}/c")
+        Dir.rmdir(long_path)
+      end
+    rescue Errno::ENOENT
+      omit "File system does not support long file name"
+    end
   end
 
   def test_home
-    env_home = ENV["HOME"]
-    env_logdir = ENV["LOGDIR"]
-    ENV.delete("HOME")
-    ENV.delete("LOGDIR")
+    setup_envs
 
     ENV["HOME"] = @nodir
-    assert_nothing_raised(ArgumentError) {
+    assert_nothing_raised(ArgumentError) do
       assert_equal(@nodir, Dir.home)
+    end
+    assert_nothing_raised(ArgumentError) do
       assert_equal(@nodir, Dir.home(""))
-      if user = ENV["USER"]
-        ENV["HOME"] = env_home
-        assert_equal(File.expand_path(env_home), Dir.home(user))
+    end
+    if user = ENV["USER"]
+      tilde = windows? ? "~" : "~#{user}"
+      assert_nothing_raised(ArgumentError) do
+        assert_equal(File.expand_path(tilde), Dir.home(user))
       end
-    }
+    end
     %W[no:such:user \u{7559 5b88}:\u{756a}].each do |user|
       assert_raise_with_message(ArgumentError, /#{user}/) {Dir.home(user)}
     end
-  ensure
-    ENV["HOME"] = env_home
-    ENV["LOGDIR"] = env_logdir
+  end
+
+  if Encoding.find("filesystem") == Encoding::UTF_8
+    # On Windows and macOS, file system encoding is always UTF-8.
+    def test_home_utf8
+      setup_envs
+
+      ENV["HOME"] = "/\u{e4}~\u{1f3e0}"
+      assert_equal("/\u{e4}~\u{1f3e0}", Dir.home)
+    end
   end
 
   def test_symlinks_not_resolved
@@ -372,8 +701,8 @@ class TestDir < Test::Unit::TestCase
         Dir.mkdir('some-dir')
         File.write('some-dir/foo', 'some content')
 
-        assert_equal [ 'dir-symlink', 'some-dir' ], Dir['*'].sort
-        assert_equal [ 'dir-symlink', 'some-dir', 'some-dir/foo' ], Dir['**/*'].sort
+        assert_equal [ 'dir-symlink', 'some-dir' ], Dir['*']
+        assert_equal [ 'dir-symlink', 'some-dir', 'some-dir/foo' ], Dir['**/*']
       end
     end
   end
@@ -386,6 +715,23 @@ class TestDir < Test::Unit::TestCase
         assert_raise(NotImplementedError) { d.fileno }
       end
     }
+  end
+
+  def test_for_fd
+    if Dir.respond_to? :for_fd
+      begin
+        new_dir = Dir.new('..')
+        for_fd_dir = Dir.for_fd(new_dir.fileno)
+        assert_equal(new_dir.chdir{Dir.pwd}, for_fd_dir.chdir{Dir.pwd})
+      ensure
+        new_dir&.close
+        if for_fd_dir
+          assert_raise(Errno::EBADF) { for_fd_dir.close }
+        end
+      end
+    else
+      assert_raise(NotImplementedError) { Dir.for_fd(0) }
+    end
   end
 
   def test_empty?
@@ -413,12 +759,27 @@ class TestDir < Test::Unit::TestCase
     begin;
       Process.setrlimit(Process::RLIMIT_NOFILE, 50)
       begin
-        tap {tap {tap {(0..100).map {open(IO::NULL)}}}}
+        fs = []
+        tap {tap {tap {(0..100).each {fs << open(IO::NULL)}}}}
       rescue Errno::EMFILE
+      ensure
+        fs.clear
       end
-      list = Dir.glob("*").sort
+      list = Dir.glob("*")
       assert_not_empty(list)
       assert_equal([*"a".."z"], list)
     end;
   end if defined?(Process::RLIMIT_NOFILE)
+
+  def test_glob_array_with_destructive_element
+    args = Array.new(100, "")
+    pat = Struct.new(:ary).new(args)
+    args.push(pat, *Array.new(100) {"."*40})
+    def pat.to_path
+      ary.clear
+      GC.start
+      ""
+    end
+    assert_empty(Dir.glob(args))
+  end
 end

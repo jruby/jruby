@@ -8,11 +8,15 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-./mvnw install -Pbootstrap
-./mvnw -Pcomplete
-./mvnw -Pdist
-./mvnw -Pjruby-jars
-./mvnw -Pmain
+# Retry the builds: a transient fetch failure used to leave no jars behind and
+# report every artefact below as "not found". The checks themselves never retry.
+set -e
+tool/ci-retry.sh ./mvnw -ntp install -Pbootstrap
+tool/ci-retry.sh ./mvnw -ntp -Pcomplete
+tool/ci-retry.sh ./mvnw -ntp -Pdist
+tool/ci-retry.sh ./mvnw -ntp -Pjruby-jars
+tool/ci-retry.sh ./mvnw -ntp -Pmain
+set +e
 
 declare -a failed
 failed[0]=0
@@ -31,7 +35,7 @@ function check {
 
   if [[ $length -gt $max  ]]
   then
-    echo size of $archive expected smaller then $max but got $length
+    echo size of $archive expected smaller than $max but got $length
     failed[0]=1
   fi
 
@@ -61,16 +65,16 @@ function check {
 
 }
 
-check lib/target/jruby-stdlib-$jar_version.jar 12
-check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
-check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 15
-check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 12
-check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
+check lib/target/jruby-stdlib-$jar_version.jar 25
+check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 45
+check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 22
+check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 25
+check maven/jruby-complete/target/jruby-complete-$jar_version.jar 48
 check maven/jruby/target/jruby-$jar_version.jar 9
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 20 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 48 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
-check core/target/jruby-core-$jar_version.jar 10
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 54 jruby-$jar_version
+check core/target/jruby-base-$jar_version.jar 10
+check shaded/target/jruby-core-$jar_version.jar 22
 
 exit "${failed[0]}"

@@ -6,25 +6,28 @@ import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Create.newString;
+
 public class TestEncodingAPI extends TestCase {
-    private Ruby runtime;
+    private ThreadContext context;
 
     public TestEncodingAPI(String name) {
         super(name);
     }
 
     public void setUp() {
-        runtime = Ruby.newInstance();
+        context= Ruby.newInstance().getCurrentContext();
     }
 
     public void testStrConvEncThatGrows() throws Exception {
         String javaStr = "--- こんにちは！";
-        RubyString rubyStr = RubyString.newString(runtime, javaStr);
-        rubyStr = EncodingUtils.strConvEnc(runtime.getCurrentContext(), rubyStr, rubyStr.getEncoding(), SJISEncoding.INSTANCE);
+        RubyString rubyStr = newString(context, javaStr);
+        rubyStr = EncodingUtils.strConvEnc(context, rubyStr, rubyStr.getEncoding(), SJISEncoding.INSTANCE);
         assertEquals(rubyStr.getEncoding(), SJISEncoding.INSTANCE);
-        rubyStr = EncodingUtils.strConvEnc(runtime.getCurrentContext(), rubyStr, SJISEncoding.INSTANCE, UTF8Encoding.INSTANCE);
+        rubyStr = EncodingUtils.strConvEnc(context, rubyStr, SJISEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         assertEquals(rubyStr.getEncoding(), UTF8Encoding.INSTANCE);
     }
 }

@@ -20,29 +20,29 @@ describe "Kernel#instance_variable_get" do
   end
 
   it "returns nil when the referred instance variable does not exist" do
-    @obj.instance_variable_get(:@does_not_exist).should be_nil
+    @obj.instance_variable_get(:@does_not_exist).should == nil
   end
 
   it "raises a TypeError when the passed argument does not respond to #to_str" do
-    lambda { @obj.instance_variable_get(Object.new) }.should raise_error(TypeError)
+    -> { @obj.instance_variable_get(Object.new) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when the passed argument can't be converted to a String" do
     obj = mock("to_str")
     obj.stub!(:to_str).and_return(123)
-    lambda { @obj.instance_variable_get(obj) }.should raise_error(TypeError)
+    -> { @obj.instance_variable_get(obj) }.should.raise(TypeError)
   end
 
   it "raises a NameError when the conversion result does not start with an '@'" do
     obj = mock("to_str")
     obj.stub!(:to_str).and_return("test")
-    lambda { @obj.instance_variable_get(obj) }.should raise_error(NameError)
+    -> { @obj.instance_variable_get(obj) }.should.raise(NameError)
   end
 
   it "raises a NameError when passed just '@'" do
     obj = mock("to_str")
     obj.stub!(:to_str).and_return('@')
-    lambda { @obj.instance_variable_get(obj) }.should raise_error(NameError)
+    -> { @obj.instance_variable_get(obj) }.should.raise(NameError)
   end
 end
 
@@ -57,15 +57,21 @@ describe "Kernel#instance_variable_get when passed Symbol" do
   end
 
   it "raises a NameError when passed :@ as an instance variable name" do
-    lambda { @obj.instance_variable_get(:"@") }.should raise_error(NameError)
+    -> { @obj.instance_variable_get(:"@") }.should.raise(NameError)
   end
 
   it "raises a NameError when the passed Symbol does not start with an '@'" do
-    lambda { @obj.instance_variable_get(:test) }.should raise_error(NameError)
+    -> { @obj.instance_variable_get(:test) }.should.raise(NameError)
   end
 
   it "raises a NameError when the passed Symbol is an invalid instance variable name" do
-    lambda { @obj.instance_variable_get(:"@0") }.should raise_error(NameError)
+    -> { @obj.instance_variable_get(:"@0") }.should.raise(NameError)
+  end
+
+  it "returns nil or raises for frozen objects" do
+    nil.instance_variable_get(:@foo).should == nil
+    -> { nil.instance_variable_get(:foo) }.should.raise(NameError)
+    :foo.instance_variable_get(:@foo).should == nil
   end
 end
 
@@ -80,26 +86,26 @@ describe "Kernel#instance_variable_get when passed String" do
   end
 
   it "raises a NameError when the passed String does not start with an '@'" do
-    lambda { @obj.instance_variable_get("test") }.should raise_error(NameError)
+    -> { @obj.instance_variable_get("test") }.should.raise(NameError)
   end
 
   it "raises a NameError when the passed String is an invalid instance variable name" do
-    lambda { @obj.instance_variable_get("@0") }.should raise_error(NameError)
+    -> { @obj.instance_variable_get("@0") }.should.raise(NameError)
   end
 
   it "raises a NameError when passed '@' as an instance variable name" do
-    lambda { @obj.instance_variable_get("@") }.should raise_error(NameError)
+    -> { @obj.instance_variable_get("@") }.should.raise(NameError)
   end
 end
 
-describe "Kernel#instance_variable_get when passed Fixnum" do
+describe "Kernel#instance_variable_get when passed Integer" do
   before :each do
     @obj = Object.new
     @obj.instance_variable_set("@test", :test)
   end
 
   it "raises a TypeError" do
-    lambda { @obj.instance_variable_get(10) }.should raise_error(TypeError)
-    lambda { @obj.instance_variable_get(-10) }.should raise_error(TypeError)
+    -> { @obj.instance_variable_get(10) }.should.raise(TypeError)
+    -> { @obj.instance_variable_get(-10) }.should.raise(TypeError)
   end
 end

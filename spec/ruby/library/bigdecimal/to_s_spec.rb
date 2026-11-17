@@ -8,6 +8,11 @@ describe "BigDecimal#to_s" do
     @bigneg_str = "-3.1415926535897932384626433832795028841971693993"
     @bigdec = BigDecimal(@bigdec_str)
     @bigneg = BigDecimal(@bigneg_str)
+    @internal = Encoding.default_internal
+  end
+
+  after :each do
+    Encoding.default_internal = @internal
   end
 
   it "return type is of class String" do
@@ -19,8 +24,14 @@ describe "BigDecimal#to_s" do
     @bigdec.to_s.should =~ /^0\.[0-9]*e[0-9]*$/
   end
 
+  it "does not add an exponent for zero values" do
+    BigDecimal("0").to_s.should == "0.0"
+    BigDecimal("+0").to_s.should == "0.0"
+    BigDecimal("-0").to_s.should == "-0.0"
+  end
+
   it "takes an optional argument" do
-    lambda {@bigdec.to_s("F")}.should_not raise_error()
+    -> {@bigdec.to_s("F")}.should_not.raise()
   end
 
   it "starts with + if + is supplied and value is positive" do
@@ -28,9 +39,9 @@ describe "BigDecimal#to_s" do
     @bigneg.to_s("+").should_not =~ /^\+.*/
   end
 
-  it "inserts a space every n chars, if integer n is supplied" do
+  it "inserts a space every n chars to fraction part, if integer n is supplied" do
     re =\
-      /\A0\.314 159 265 358 979 323 846 264 338 327 950 288 419 716 939 937E1\z/i
+    /\A0\.314 159 265 358 979 323 846 264 338 327 950 288 419 716 939 937E1\z/i
     @bigdec.to_s(3).should =~ re
 
     str1 = '-123.45678 90123 45678 9'
@@ -39,6 +50,10 @@ describe "BigDecimal#to_s" do
     BigDecimal("1.00000000000").to_s('1F').should == "1.0"
     # 0 is treated as no spaces
     BigDecimal("1.2345").to_s('0F').should == "1.2345"
+  end
+
+  it "inserts a space every n chars to integer part, if integer n is supplied" do
+    BigDecimal('1000010').to_s('5F').should == "10 00010.0"
   end
 
   it "can return a leading space for values > 0" do
@@ -71,4 +86,13 @@ describe "BigDecimal#to_s" do
     end
   end
 
+  it "returns a String in US-ASCII encoding when Encoding.default_internal is nil" do
+    Encoding.default_internal = nil
+    BigDecimal('1.23').to_s.encoding.should.equal?(Encoding::US_ASCII)
+  end
+
+  it "returns a String in US-ASCII encoding when Encoding.default_internal is not nil" do
+    Encoding.default_internal = Encoding::IBM437
+    BigDecimal('1.23').to_s.encoding.should.equal?(Encoding::US_ASCII)
+  end
 end

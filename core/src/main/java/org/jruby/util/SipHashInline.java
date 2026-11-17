@@ -1,10 +1,8 @@
 package org.jruby.util;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-
-import org.jruby.util.unsafe.UnsafeHolder;
-
-import sun.misc.Unsafe;
 
 /**
  * SipHash implementation with hand inlining the SIPROUND.
@@ -37,7 +35,7 @@ public class SipHashInline {
 
         // processing 8 bytes blocks in data
         while (i < last) {
-            m = LongReader.INSTANCE.getLong(src, i);
+            m = (long) BYTE_ARRAY_HANDLE.get(src, i);
             i += 8;
             // MSGROUND {
                 v3 ^= m;
@@ -61,28 +59,28 @@ public class SipHashInline {
                  *   N: v2=ROTL(v2,32);
                  *
                  * Each dependency:
-                 *   B -> A
-                 *   C -> A, B
-                 *   D -> C
-                 *   F -> E
-                 *   G -> E, F
-                 *   H -> D, G
-                 *   I -> H
-                 *   J -> H, I
-                 *   K -> C, G
-                 *   L -> K
-                 *   M -> K, L
-                 *   N -> M
+                 *   B$ -&gt; A
+                 *   C$ -&gt; A, B
+                 *   D$ -&gt; C
+                 *   F$ -&gt; E
+                 *   G$ -&gt; E, F
+                 *   H$ -&gt; D, G
+                 *   I$ -&gt; H
+                 *   J$ -&gt; H, I
+                 *   K$ -&gt; C, G
+                 *   L$ -&gt; K
+                 *   M$ -&gt; K, L
+                 *   N$ -&gt; M
                  *
                  * Dependency graph:
-                 *   D -> C -> B -> A
-                 *        G -> F -> E
-                 *   J -> I -> H -> D, G
-                 *   N -> M -> L -> K -> C, G
+                 *   D$ -&gt; C -> B -> A
+                 *        G$ -&gt; F -> E
+                 *   J$ -&gt; I -> H -> D, G
+                 *   N$ -&gt; M -> L -> K -> C, G
                  *
                  * Resulting parallel friendly execution order:
-                 *   -> ABCDHIJ
-                 *   -> EFGKLMN
+                 *  $ -&gt; ABCDHIJ
+                 *  $ -&gt; EFGKLMN
                  */
 
                 // SIPROUND {
@@ -145,50 +143,5 @@ public class SipHashInline {
         return v0 ^ v1 ^ v2 ^ v3;
     }
 
-    private static abstract class LongReader {
-        public abstract long getLong(byte[] src, int offset);
-
-        public static final LongReader INSTANCE = createBestLongReader();
-
-        private static LongReader createBestLongReader() {
-            try {
-                if (UnsafeHolder.U != null) {
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                        return new UnsafeLongReader(UnsafeHolder.U);
-                    }
-                }
-            } catch (Exception e) {
-            }
-            return new FallbackLongReader();
-        }
-
-        private static final class FallbackLongReader extends LongReader {
-            @Override
-            public long getLong(byte[] src, int offset) {
-                return (long) src[offset++]       |
-                       (long) src[offset++] <<  8 |
-                       (long) src[offset++] << 16 |
-                       (long) src[offset++] << 24 |
-                       (long) src[offset++] << 32 |
-                       (long) src[offset++] << 40 |
-                       (long) src[offset++] << 48 |
-                       (long) src[offset++] << 56 ;
-            }
-        }
-
-        private static final class UnsafeLongReader extends LongReader {
-            final Unsafe unsafe;
-            final int byteArrayBaseOffset;
-
-            public UnsafeLongReader(Unsafe unsafe) {
-                this.unsafe = unsafe;
-                this.byteArrayBaseOffset = unsafe.arrayBaseOffset(byte[].class);
-            }
-
-            @Override
-            public final long getLong(byte[] src, int offset) {
-                return unsafe.getLong(src, byteArrayBaseOffset + (long)offset);
-            }
-        }
-    }
+    static final VarHandle BYTE_ARRAY_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
 }

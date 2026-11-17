@@ -14,4 +14,7 @@ public class DefaultPackageClass {
         }
         return ((Comparable) o1).compareTo(o2);
     }
+
+    public static Class<?> returnLongClass() { return Long.class; }
+
 }

@@ -6,6 +6,10 @@ describe "A GzipWriter instance" do
     @tempfile = Tempfile.new("GH-4202")
   end
 
+  after do
+    @tempfile.close! rescue nil
+  end
+
   it "supports all respond_to? arities" do
     gzw = Zlib::GzipWriter.open(@tempfile.path)
     expect(gzw.respond_to?(:path)).to be true
@@ -16,6 +20,10 @@ end
 describe "A GzipReader instance" do
   before do
     @tempfile = Tempfile.new("GH-4202")
+  end
+
+  after do
+    @tempfile.close! rescue nil
   end
 
   it "supports all respond_to? arities" do

@@ -48,7 +48,6 @@ import org.osgi.framework.FrameworkUtil;
  * Used as the parent classloader the usual jruby's bundle's classloader.
  *
  * @author hmalphettes
- *
  */
 public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleReference {
 
@@ -75,32 +74,22 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
      * look in OSGi first? true by default for now.
      * we could look in jruby first if that makes more sense.
      */
-    private boolean _lookInOsgiFirst = true;
+    private final boolean _lookInOsgiFirst = true;
 
     private LinkedHashMap<Bundle,ClassLoader> _libraries;
 
-    /**
-     * @param
-     * @throws IOException
-     */
     public JRubyOSGiBundleClassLoader()
     {
         super(ScriptingContainer.class.getClassLoader());
         _libraries = new LinkedHashMap<Bundle, ClassLoader>();
     }
-    /**
-     * @param
-     * @throws IOException
-     */
+
     public JRubyOSGiBundleClassLoader(Bundle creator)
     {
         this();
         addBundle(creator);
     }
-    /**
-     * @param
-     * @throws IOException
-     */
+
     public void addBundle(Class<?> classInOsgiBundle)
     {
         Bundle b = FrameworkUtil.getBundle(classInOsgiBundle);
@@ -112,21 +101,14 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
         }
         _libraries.put(b, classInOsgiBundle.getClassLoader());
     }
-    /**
-     * @param parent The parent classloader. In this case jrubyLoader
-     * @param context The WebAppContext
-     * @param contributor The bundle that defines this web-application.
-     * @throws IOException
-     */
+
     public boolean addBundle(Bundle bundle)
     {
         return _libraries.put(bundle, ADAPTER.getClassLoader(bundle)) != null;
     }
 
     /**
-     * @param parent The parent classloader. In this case jrubyLoader
-     * @param context The WebAppContext
-     * @param contributor The bundle that defines this web-application.
+     * @param bundle
      * @throws IOException
      */
     public boolean removeBundle(Bundle bundle)
@@ -210,9 +192,6 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
         return list;
     }
 
-    /**
-     *
-     */
     protected Class<?> findClass(String name) throws ClassNotFoundException
     {
         if (_lookInOsgiFirst) {

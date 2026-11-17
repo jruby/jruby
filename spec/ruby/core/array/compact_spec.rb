@@ -15,63 +15,37 @@ describe "Array#compact" do
 
   it "does not return self" do
     a = [1, 2, 3]
-    a.compact.should_not equal(a)
+    a.compact.should_not.equal?(a)
   end
 
   it "does not return subclass instance for Array subclasses" do
-    ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(Array)
-  end
-
-  it "does not keep tainted status even if all elements are removed" do
-    a = [nil, nil]
-    a.taint
-    a.compact.tainted?.should be_false
-  end
-
-  it "does not keep untrusted status even if all elements are removed" do
-    a = [nil, nil]
-    a.untrust
-    a.compact.untrusted?.should be_false
+    ArraySpecs::MyArray[1, 2, 3, nil].compact.should.instance_of?(Array)
   end
 end
 
 describe "Array#compact!" do
   it "removes all nil elements" do
     a = ['a', nil, 'b', false, 'c']
-    a.compact!.should equal(a)
+    a.compact!.should.equal?(a)
     a.should == ["a", "b", false, "c"]
     a = [nil, 'a', 'b', false, 'c']
-    a.compact!.should equal(a)
+    a.compact!.should.equal?(a)
     a.should == ["a", "b", false, "c"]
     a = ['a', 'b', false, 'c', nil]
-    a.compact!.should equal(a)
+    a.compact!.should.equal?(a)
     a.should == ["a", "b", false, "c"]
   end
 
   it "returns self if some nil elements are removed" do
     a = ['a', nil, 'b', false, 'c']
-    a.compact!.should equal a
+    a.compact!.should.equal? a
   end
 
   it "returns nil if there are no nil elements to remove" do
     [1, 2, false, 3].compact!.should == nil
   end
 
-  it "keeps tainted status even if all elements are removed" do
-    a = [nil, nil]
-    a.taint
-    a.compact!
-    a.tainted?.should be_true
-  end
-
-  it "keeps untrusted status even if all elements are removed" do
-    a = [nil, nil]
-    a.untrust
-    a.compact!
-    a.untrusted?.should be_true
-  end
-
-  it "raises a #{frozen_error_class} on a frozen array" do
-    lambda { ArraySpecs.frozen_array.compact! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.compact! }.should.raise(FrozenError)
   end
 end

@@ -25,27 +25,27 @@ describe "Module#class_variable_set" do
     c.send(:class_variable_get, "@@mvar").should == :new_mvar
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
-    lambda {
+  it "raises a FrozenError when self is frozen" do
+    -> {
       Class.new.freeze.send(:class_variable_set, :@@test, "test")
-    }.should raise_error(frozen_error_class)
-    lambda {
+    }.should.raise(FrozenError)
+    -> {
       Module.new.freeze.send(:class_variable_set, :@@test, "test")
-    }.should raise_error(frozen_error_class)
+    }.should.raise(FrozenError)
   end
 
   it "raises a NameError when the given name is not allowed" do
     c = Class.new
 
-    lambda {
+    -> {
       c.send(:class_variable_set, :invalid_name, "test")
-    }.should raise_error(NameError)
-    lambda {
+    }.should.raise(NameError)
+    -> {
       c.send(:class_variable_set, "@invalid_name", "test")
-    }.should raise_error(NameError)
+    }.should.raise(NameError)
   end
 
-  it "converts a non string/symbol/fixnum name to string using to_str" do
+  it "converts a non string/symbol name to string using to_str" do
     (o = mock('@@class_var')).should_receive(:to_str).and_return("@@class_var")
     c = Class.new
     c.send(:class_variable_set, o, "test")
@@ -55,8 +55,8 @@ describe "Module#class_variable_set" do
   it "raises a TypeError when the given names can't be converted to strings using to_str" do
     c = Class.new { class_variable_set :@@class_var, "test" }
     o = mock('123')
-    lambda { c.send(:class_variable_set, o, "test") }.should raise_error(TypeError)
+    -> { c.send(:class_variable_set, o, "test") }.should.raise(TypeError)
     o.should_receive(:to_str).and_return(123)
-    lambda { c.send(:class_variable_set, o, "test") }.should raise_error(TypeError)
+    -> { c.send(:class_variable_set, o, "test") }.should.raise(TypeError)
   end
 end

@@ -40,7 +40,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * An implementation of BiVariable for a persistent local variable. This type of
  * a local variable survives over multiple evaluation.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class PersistentLocalVariable extends AbstractVariable {
 
@@ -50,7 +50,7 @@ public class PersistentLocalVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a
      * persistent local variable is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of PersistentLocalVariable
@@ -102,16 +102,14 @@ public class PersistentLocalVariable extends AbstractVariable {
      * Retrieves local variables from Ruby after the evaluation. This retrieval doesn't
      * depend on eager option. Local variables are always retrieved eagerly.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved local variables.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
-        ManyVarsDynamicScope scope =
-            (ManyVarsDynamicScope) receiver.getRuntime().getCurrentContext().getCurrentScope();
-        if (scope == null) {
-            return;
-        }
+        var context = receiver.getRuntime().getCurrentContext();
+        ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
+        if (scope == null) return;
+
         String[] names = scope.getAllNamesInScope();
         IRubyObject[] values = scope.getValues();
         if (names == null || values == null || names.length == 0 || values.length == 0) {

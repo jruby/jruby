@@ -3,11 +3,11 @@ require 'matrix'
 
 describe "Matrix::LUPDecomposition#initialize" do
   it "raises an error if argument is not a matrix" do
-    lambda {
+    -> {
       Matrix::LUPDecomposition.new([[]])
-    }.should raise_error(TypeError)
-    lambda {
+    }.should.raise(TypeError)
+    -> {
       Matrix::LUPDecomposition.new(42)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 end

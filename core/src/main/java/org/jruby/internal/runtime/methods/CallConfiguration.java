@@ -17,10 +17,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author headius
- */
 public enum CallConfiguration {
     FrameFullScopeFull(Framing.Full, Scoping.Full) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
@@ -93,44 +89,23 @@ public enum CallConfiguration {
         }
     };
 
-    @Deprecated
-    public static final CallConfiguration FRAME_AND_SCOPE = FrameFullScopeFull;
-    @Deprecated
-    public static final CallConfiguration FRAME_AND_DUMMY_SCOPE = FrameFullScopeDummy;
-    @Deprecated
-    public static final CallConfiguration FRAME_ONLY = FrameFullScopeNone;
-    @Deprecated
-    public static final CallConfiguration BACKTRACE_AND_SCOPE = FrameBacktraceScopeFull;
-    @Deprecated
-    public static final CallConfiguration BACKTRACE_DUMMY_SCOPE = FrameBacktraceScopeNone;
-    @Deprecated
-    public static final CallConfiguration BACKTRACE_ONLY = FrameBacktraceScopeNone;
-    @Deprecated
-    public static final CallConfiguration SCOPE_ONLY = FrameNoneScopeFull;
-    @Deprecated
-    public static final CallConfiguration NO_FRAME_DUMMY_SCOPE = FrameNoneScopeDummy;
-    @Deprecated
-    public static final CallConfiguration NO_FRAME_NO_SCOPE = FrameNoneScopeNone;
-
     /**
      * Produce a CallConfiguration that represents what *caller* methods must prepare for
      * the method with this annotation.
      *
      * @see org.jruby.anno.AnnotationHelper#getCallerCallConfigNameByAnno(org.jruby.anno.JRubyMethod)
      */
+    @Deprecated(since = "10.0.3.0")
     public static CallConfiguration getCallerCallConfigByAnno(JRubyMethod jrubyMethod) {
         boolean frame = false;
-        boolean scope = false;
 
         for (FrameField field : jrubyMethod.reads()) {
             frame |= field.needsFrame();
-            scope |= field.needsScope();
         }
         for (FrameField field : jrubyMethod.writes()) {
             frame |= field.needsFrame();
-            scope |= field.needsScope();
         }
-        return getCallConfig(frame, scope);
+        return getCallConfig(frame);
     }
 
     /**
@@ -168,29 +143,4 @@ public enum CallConfiguration {
     abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope);
     abstract void post(ThreadContext context);
     boolean isNoop() { return framing == Framing.None && scoping == Scoping.None; }
-
-    @Deprecated
-    public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
-        return getCallConfig(frame, scope);
-    }
-
-    /**
-     * Given a frame and scope requirement, return the name of the appropriate CallConfiguration.
-     *
-     * @see org.jruby.anno.AnnotationHelper#getCallConfigName(boolean, boolean)
-     */
-    @Deprecated
-    public static CallConfiguration getCallConfig(boolean frame, boolean scope) {
-        if (frame) {
-            if (scope) {
-                return FrameFullScopeFull;
-            } else {
-                return FrameFullScopeNone;
-            }
-        } else if (scope) {
-            return FrameNoneScopeFull;
-        } else {
-            return FrameNoneScopeNone;
-        }
-    }
 }

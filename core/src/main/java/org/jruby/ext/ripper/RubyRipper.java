@@ -33,6 +33,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -42,230 +43,235 @@ import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RubyRipper extends RubyObject {
-    public static void initRipper(Ruby runtime) {
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyRipper(runtime, klazz);
-            }
-        });
-        
-        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
-        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
-        defineLexStateConstants(runtime, ripper);
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.lexer.LexingCommon.*;
 
-        ripper.defineAnnotatedMethods(RubyRipper.class);
+public class RubyRipper extends RubyObject {
+    public static RubyClass initRipper(ThreadContext context) {
+        var Ripper = (RubyClass) defineClass(context, "Ripper", objectClass(context), RubyRipper::new).
+                defineMethods(context, RubyRipper.class).
+                defineConstant(context, "SCANNER_EVENT_TABLE", createScannerEventTable(context)).
+                defineConstant(context, "PARSER_EVENT_TABLE", createParserEventTable(context));
+
+        defineLexStateConstants(context, Ripper);
+
+        return Ripper;
     }
 
-    private static void defineLexStateConstants(Ruby runtime, RubyClass ripper) {
+    private static void defineLexStateConstants(ThreadContext context, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant(lexStateNames[i], runtime.newFixnum((1 << i)));
+            ripper.defineConstant(context, "EXPR_" + lexStateNames[i], asFixnum(context, lexStateValues[i]));
         }
     }
     
     // Creates mapping table of token to arity for on_* method calls for the scanner support
-    private static IRubyObject createScannerEventTable(Ruby runtime, RubyClass ripper) {
-        RubyHash hash = new RubyHash(runtime);
+    private static RubyHash createScannerEventTable(ThreadContext context) {
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime);
 
-        hash.fastASet(runtime.newSymbol("CHAR"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("__end__"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("backref"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("backtick"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("comma"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("comment"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("const"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("cvar"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embdoc"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embdoc_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embdoc_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embexpr_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embexpr_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("embvar"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("float"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("gvar"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("heredoc_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("heredoc_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("ident"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("ignored_nl"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("imaginary"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("int"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("ivar"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("kw"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("label"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("label_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("lbrace"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("lbracket"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("lparen"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("nl"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("op"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("period"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("qsymbols_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("qwords_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("rational"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("rbrace"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("rbracket"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("regexp_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("regexp_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("rparen"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("semicolon"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("sp"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("symbeg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("symbols_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("tlambda"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("tlambeg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("tstring_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("tstring_content"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("tstring_end"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("words_beg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("words_sep"), runtime.newFixnum(1));
+        hash.fastASet(asSymbol(context, "CHAR"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "__end__"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "backref"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "backtick"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "comma"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "comment"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "const"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "cvar"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embdoc"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embdoc_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embdoc_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embexpr_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embexpr_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "embvar"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "float"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "gvar"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "heredoc_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "heredoc_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "ident"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "ignored_nl"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "imaginary"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "int"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "ivar"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "kw"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "label"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "label_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "lbrace"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "lbracket"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "lparen"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "nl"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "op"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "period"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "qsymbols_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "qwords_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "rational"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "rbrace"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "rbracket"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "regexp_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "regexp_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "rparen"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "semicolon"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "sp"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "symbeg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "symbols_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "tlambda"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "tlambeg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "tstring_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "tstring_content"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "tstring_end"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "words_beg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "words_sep"), asFixnum(context, 1));
         
         return hash;
     }
     
     // Creates mapping table of token to arity for on_* method calls for the parser support    
-    private static IRubyObject createParserEventTable(Ruby runtime, RubyClass ripper) {
-        RubyHash hash = new RubyHash(runtime);
+    private static RubyHash createParserEventTable(ThreadContext context) {
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime);
 
-        hash.fastASet(runtime.newSymbol("BEGIN"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("END"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("alias"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("alias_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("aref"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("aref_field"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("arg_ambiguous"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("arg_paren"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("args_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("args_add_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("args_add_star"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("args_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("array"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("assign"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("assign_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("assoc_new"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("assoc_splat"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("assoclist_from_args"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("bare_assoc_hash"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("begin"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("binary"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("block_var"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("block_var_add_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("block_var_add_star"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("blockarg"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("bodystmt"), runtime.newFixnum(4));
-        hash.fastASet(runtime.newSymbol("brace_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("break"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("call"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("case"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("class"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("class_name_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("command"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("command_call"), runtime.newFixnum(4));
-        hash.fastASet(runtime.newSymbol("const_path_field"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("const_path_ref"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("const_ref"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("def"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("defined"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("defs"), runtime.newFixnum(5));
-        hash.fastASet(runtime.newSymbol("do_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("dot2"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("dot3"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("dyna_symbol"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("else"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("elsif"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("ensure"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("excessed_comma"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("fcall"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("field"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("for"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("hash"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("heredoc_dedent"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("if"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("if_mod"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("ifop"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("kwrest_param"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("lambda"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("magic_comment"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("massign"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("method_add_arg"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("method_add_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mlhs_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mlhs_add_post"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mlhs_add_star"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mlhs_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("mlhs_paren"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("module"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mrhs_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mrhs_add_star"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("mrhs_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("mrhs_new_from_args"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("next"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("opassign"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("operator_ambiguous"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("param_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("params"), runtime.newFixnum(7));
-        hash.fastASet(runtime.newSymbol("paren"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("parse_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("program"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("qsymbols_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("qsymbols_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("qwords_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("qwords_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("redo"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("regexp_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("regexp_literal"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("regexp_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("rescue"), runtime.newFixnum(4));
-        hash.fastASet(runtime.newSymbol("rescue_mod"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("rest_param"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("retry"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("return"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("return0"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("sclass"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("stmts_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("stmts_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("string_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("string_concat"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("string_content"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("string_dvar"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("string_embexpr"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("string_literal"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("super"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("symbol"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("symbol_literal"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("symbols_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("symbols_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("top_const_field"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("top_const_ref"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("unary"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("undef"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("unless"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("unless_mod"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("until"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("until_mod"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("var_alias"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("var_field"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("var_ref"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("vcall"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("void_stmt"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("when"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("while"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("while_mod"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("word_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("word_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("words_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("words_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("xstring_add"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("xstring_literal"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("xstring_new"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("yield"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("yield0"), runtime.newFixnum(0));
-        hash.fastASet(runtime.newSymbol("zsuper"), runtime.newFixnum(0));
+        hash.fastASet(asSymbol(context, "BEGIN"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "END"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "alias"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "alias_error"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "aref"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "aref_field"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "arg_ambiguous"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "arg_paren"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "args_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "args_add_block"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "args_add_star"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "args_forward"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "args_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "array"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "aryptn"), asFixnum(context, 4));
+        hash.fastASet(asSymbol(context, "assign"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "assign_error"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "assoc_new"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "assoc_splat"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "assoclist_from_args"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "bare_assoc_hash"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "begin"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "binary"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "block_var"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "blockarg"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "bodystmt"), asFixnum(context, 4));
+        hash.fastASet(asSymbol(context, "brace_block"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "break"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "call"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "case"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "class"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "class_name_error"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "command"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "command_call"), asFixnum(context, 4));
+        hash.fastASet(asSymbol(context, "const_path_field"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "const_path_ref"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "const_ref"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "def"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "defined"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "defs"), asFixnum(context, 5));
+        hash.fastASet(asSymbol(context, "do_block"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "dot2"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "dot3"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "dyna_symbol"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "else"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "elsif"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "ensure"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "excessed_comma"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "fcall"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "field"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "fndptn"), asFixnum(context, 4));
+        hash.fastASet(asSymbol(context, "for"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "hash"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "heredoc_dedent"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "hshptn"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "if"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "if_mod"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "ifop"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "in"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "kwrest_param"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "lambda"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "magic_comment"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "massign"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "method_add_arg"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "method_add_block"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mlhs_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mlhs_add_post"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mlhs_add_star"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mlhs_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "mlhs_paren"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "module"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mrhs_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mrhs_add_star"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "mrhs_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "mrhs_new_from_args"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "next"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "nokw_param"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "opassign"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "operator_ambiguous"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "param_error"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "params"), asFixnum(context, 7));
+        hash.fastASet(asSymbol(context, "paren"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "parse_error"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "program"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "qsymbols_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "qsymbols_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "qwords_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "qwords_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "redo"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "regexp_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "regexp_literal"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "regexp_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "rescue"), asFixnum(context, 4));
+        hash.fastASet(asSymbol(context, "rescue_mod"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "rest_param"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "retry"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "return"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "return0"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "sclass"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "stmts_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "stmts_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "string_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "string_concat"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "string_content"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "string_dvar"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "string_embexpr"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "string_literal"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "super"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "symbol"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "symbol_literal"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "symbols_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "symbols_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "top_const_field"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "top_const_ref"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "unary"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "undef"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "unless"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "unless_mod"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "until"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "until_mod"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "var_alias"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "var_field"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "var_ref"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "vcall"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "void_stmt"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "when"), asFixnum(context, 3));
+        hash.fastASet(asSymbol(context, "while"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "while_mod"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "word_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "word_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "words_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "words_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "xstring_add"), asFixnum(context, 2));
+        hash.fastASet(asSymbol(context, "xstring_literal"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "xstring_new"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "yield"), asFixnum(context, 1));
+        hash.fastASet(asSymbol(context, "yield0"), asFixnum(context, 0));
+        hash.fastASet(asSymbol(context, "zsuper"), asFixnum(context, 0));
 
         return hash;
     }
@@ -294,11 +300,9 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
-        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw argumentError(context, "method called for uninitialized object");
             
-        if (!parseStarted) return context.nil;
-        
-        return context.runtime.newFixnum(parser.getColumn());
+        return !parseStarted ? context.nil : asFixnum(context, parser.getColumn());
     }
 
     @JRubyMethod
@@ -308,12 +312,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isEndSeen());
+        return asBoolean(context, parser.isEndSeen());
     }
 
     @JRubyMethod(name = "error?")
     public IRubyObject error_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isError());
+        return asBoolean(context, parser.isError());
     }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
@@ -322,20 +326,23 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
-        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw argumentError(context, "method called for uninitialized object");
         
-        if (!parseStarted) return context.nil;
-            
-        return context.runtime.newFixnum(parser.getLineno());
+        return !parseStarted ? context.nil : asFixnum(context, parser.getLineno());
     }
 
     @JRubyMethod
     public IRubyObject state(ThreadContext context) {
         int state = parser.getState();
 
-        return state == 0 ? context.nil : context.runtime.newFixnum(parser.getState());
+        return state == 0 ? context.nil : asFixnum(context, state);
     }
-    
+
+    @JRubyMethod
+    public IRubyObject token(ThreadContext context) {
+        return context.runtime.newString(parser.lexer.tokenByteList());
+    }
+
     @JRubyMethod
     public IRubyObject parse(ThreadContext context) {
         parseStarted = true;
@@ -352,7 +359,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return context.runtime.newBoolean(parser.getYYDebug());
+        return asBoolean(context, parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
@@ -364,10 +371,10 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject dedent_string(ThreadContext context, IRubyObject self, IRubyObject _input, IRubyObject _width) {
         RubyString input = _input.convertToString();
-        int wid = _width.convertToInteger().getIntValue();
-        input.modify19();
+        int wid = toInt(context, _width);
+        input.modifyAndClearCodeRange();
         int col = LexingCommon.dedent_string(input.getByteList(), wid);
-        return context.runtime.newFixnum(col);
+        return asFixnum(context, col);
     }
 
     @JRubyMethod
@@ -377,12 +384,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject lex_state_name(ThreadContext context, IRubyObject self, IRubyObject lexStateParam) {
-        int lexState = lexStateParam.convertToInteger().getIntValue();
+        int lexState = toInt(context, lexStateParam);
 
         boolean needsSeparator = false;
         RubyString name = null;
-        for (int i = 0; i < lexStateNames.length; i++) {
-            if ((lexState & (1<<i)) != 0) {
+        for (int i = 0; i < singleStateLexStateNames; i++) {
+            if ((lexState & lexStateValues[i]) != 0) {
                 if (!needsSeparator) {
                     name = context.runtime.newString(lexStateNames[i]);
                     needsSeparator = true;
@@ -418,17 +425,25 @@ public class RubyRipper extends RubyObject {
     private int lineAsInt(ThreadContext context, IRubyObject line) {
         if (line == null || line.isNil()) return 0;
 
-        return RubyNumeric.fix2int(line.convertToInteger()) - 1;
+        return toInt(context, line.convertToInteger()) - 1;
     }
 
     private RipperParserBase parser = null;
     private IRubyObject filename = null;
     private boolean parseStarted = false;
 
-    // FIXME: Consider moving this to LexingCommon but it is very specific to ripper (perhaps I can make it more useful wit debuggin?).
-    // These are ordered in same order as LexerCommon.  Any changes to lex_state should update this.
+    // Number of expr states which represent a distinct value.  unions expr values occur after these.
+    private static int singleStateLexStateNames = 13; // EXPR_BEG -> EXPR_FITEM
     private static String[] lexStateNames = new String[] {
-            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG",
-            "EXPR_MID", "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM"
+            "BEG", "END", "ENDARG", "ENDFN", "ARG", "CMDARG", "MID",
+            "FNAME", "DOT", "CLASS", "LABEL", "LABELED", "FITEM", // end of single states
+            "VALUE", "BEG_ANY", "ARG_ANY", "END_ANY"
     };
+
+    private static int[] lexStateValues = new int[] {
+            EXPR_BEG, EXPR_END, EXPR_ENDARG, EXPR_ENDFN, EXPR_ARG, EXPR_CMDARG, EXPR_MID, EXPR_FNAME,
+            EXPR_DOT, EXPR_CLASS, EXPR_LABEL, EXPR_LABELED, EXPR_FITEM, EXPR_VALUE, EXPR_BEG_ANY,
+            EXPR_ARG_ANY, EXPR_END_ANY
+    };
+
 }

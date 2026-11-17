@@ -32,10 +32,10 @@ import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
-import org.jruby.util.ArraySupport;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby NoMethodError.
@@ -46,16 +46,15 @@ import org.jruby.util.ArraySupport;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNoMethodError(runtime, klass);
+    private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
-    static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
-        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
-        return noMethodErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass NameError) {
+        return defineClass(context, "NoMethodError", NameError, ALLOCATOR).
+                defineMethods(context, RubyNoMethodError.class);
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName());
+        super(runtime, exceptionClass, exceptionClass.getName(runtime.getCurrentContext()));
         this.args = runtime.getNil();
     }
     
@@ -70,9 +69,10 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args) {
+        var context = recv.getRuntime().getCurrentContext();
         RubyClass klass = (RubyClass)recv;
 
-        RubyException newError = (RubyException) klass.allocate();
+        RubyException newError = (RubyException) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 
@@ -80,9 +80,10 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args, boolean privateCall) {
+        var context = recv.getRuntime().getCurrentContext();
         RubyClass klass = (RubyClass)recv;
 
-        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate();
+        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 
@@ -91,17 +92,25 @@ public class RubyNoMethodError extends RubyNameError {
         return newError;
     }
 
-    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 2) {
-            this.args = args[ args.length - 1 ];
-            args = ArraySupport.newCopy(args, args.length - 1);
+    public IRubyObject initializeOptions(IRubyObject[] args, RubyHash options, Block block) {
+        int argc = args.length;
+        if (argc > 3) {
+            argc--;
+            if (args[argc].isTrue() && !args[argc].isNil()) {
+               this.privateCall = true;
+            } else {
+               this.privateCall = false;
+            }
+        }
+
+        if (argc > 2) {
+            this.args = args[ --argc ];
         } else {
             this.args = getRuntime().getNil();
         }
 
-        super.initialize(args, block);
+        super.initializeOptions(args, options, block);
         return this;
     }
     

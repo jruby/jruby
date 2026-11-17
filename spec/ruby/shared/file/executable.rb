@@ -13,7 +13,7 @@ describe :file_executable, shared: true do
     rm_r @file1, @file2
   end
 
-  platform_is_not :windows do
+  platform_is_not :windows, :android do
     it "returns true if named file is executable by the effective user id of the process, otherwise false" do
       @object.send(@method, '/etc/passwd').should == false
       @object.send(@method, @file1).should == true
@@ -31,13 +31,67 @@ describe :file_executable, shared: true do
   end
 
   it "raises an ArgumentError if not passed one argument" do
-    lambda { @object.send(@method) }.should raise_error(ArgumentError)
+    -> { @object.send(@method) }.should.raise(ArgumentError)
   end
 
   it "raises a TypeError if not passed a String type" do
-    lambda { @object.send(@method, 1)     }.should raise_error(TypeError)
-    lambda { @object.send(@method, nil)   }.should raise_error(TypeError)
-    lambda { @object.send(@method, false) }.should raise_error(TypeError)
+    -> { @object.send(@method, 1)     }.should.raise(TypeError)
+    -> { @object.send(@method, nil)   }.should.raise(TypeError)
+    -> { @object.send(@method, false) }.should.raise(TypeError)
+  end
+
+  platform_is :darwin do
+    it "accepts a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+      utf8_path = tmp("file_predicate_utf8_path_\u{3042}.txt")
+      # Can fail with UndefinedConversionError if tmp path has non-Shift_JIS chars (e.g. Emojis, Hangul, Cyrillic, accented letters)
+      non_utf8_path = utf8_path.encode(Encoding::Windows_31J)
+
+      begin
+        touch(utf8_path)
+        @object.send(@method, non_utf8_path).should == false
+
+        File.chmod(0755, utf8_path)
+        @object.send(@method, non_utf8_path).should == true
+      ensure
+        rm_r utf8_path
+        rm_r non_utf8_path
+      end
+    end
+  end
+
+  platform_is_not :windows do
+    as_superuser do
+      context "when run by a superuser" do
+        before :each do
+          @file = tmp('temp3.txt')
+          touch @file
+        end
+
+        after :each do
+          rm_r @file
+        end
+
+        it "returns true if file owner has permission to execute" do
+          File.chmod(0766, @file)
+          @object.send(@method, @file).should == true
+        end
+
+        it "returns true if group has permission to execute" do
+          File.chmod(0676, @file)
+          @object.send(@method, @file).should == true
+        end
+
+        it "returns true if other have permission to execute" do
+          File.chmod(0667, @file)
+          @object.send(@method, @file).should == true
+        end
+
+        it "return false if nobody has permission to execute" do
+          File.chmod(0666, @file)
+          @object.send(@method, @file).should == false
+        end
+      end
+    end
   end
 end
 

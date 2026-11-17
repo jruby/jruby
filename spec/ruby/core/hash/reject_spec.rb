@@ -28,13 +28,8 @@ describe "Hash#reject" do
 
   context "with extra state" do
     it "returns Hash instance for subclasses" do
-      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
-      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
-    end
-
-    it "does not taint the resulting hash" do
-      h = { a: 1 }.taint
-      h.reject {false}.tainted?.should == false
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should.is_a?(Hash)
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should.is_a?(Hash)
     end
   end
 
@@ -47,6 +42,27 @@ describe "Hash#reject" do
     h.reject! { |*pair| reject_bang_pairs << pair }
 
     reject_pairs.should == reject_bang_pairs
+  end
+
+  it "does not retain the default value" do
+    h = Hash.new(1)
+    h.reject { false }.default.should == nil
+    h[:a] = 1
+    h.reject { false }.default.should == nil
+  end
+
+  it "does not retain the default_proc" do
+    pr = proc { |h, k| h[k] = [] }
+    h = Hash.new(&pr)
+    h.reject { false }.default_proc.should == nil
+    h[:a] = 1
+    h.reject { false }.default_proc.should == nil
+  end
+
+  it "retains compare_by_identity flag" do
+    h = { a: 9, c: 4 }.compare_by_identity
+    h2 = h.reject { |k, _| k == :a }
+    h2.compare_by_identity?.should == true
   end
 
   it_behaves_like :hash_iteration_no_block, :reject
@@ -63,7 +79,7 @@ describe "Hash#reject!" do
 
   it "removes all entries if the block is true" do
     h = { a: 1, b: 2, c: 3 }
-    h.reject! { |k,v| true }.should equal(h)
+    h.reject! { |k,v| true }.should.equal?(h)
     h.should == {}
   end
 
@@ -87,12 +103,12 @@ describe "Hash#reject!" do
     reject_bang_pairs.should == delete_if_pairs
   end
 
-  it "raises a #{frozen_error_class} if called on a frozen instance that is modified" do
-    lambda { HashSpecs.empty_frozen_hash.reject! { true } }.should raise_error(frozen_error_class)
+  it "raises a FrozenError if called on a frozen instance that is modified" do
+    -> { HashSpecs.empty_frozen_hash.reject! { true } }.should.raise(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} if called on a frozen instance that would not be modified" do
-    lambda { HashSpecs.frozen_hash.reject! { false } }.should raise_error(frozen_error_class)
+  it "raises a FrozenError if called on a frozen instance that would not be modified" do
+    -> { HashSpecs.frozen_hash.reject! { false } }.should.raise(FrozenError)
   end
 
   it_behaves_like :hash_iteration_no_block, :reject!

@@ -1,15 +1,21 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.RubyBoolean;
+import org.jruby.anno.CRuby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Check.checkID;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
 
-public class RespondToCallSite extends NormalCachingCallSite {
+public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
     private final String respondToName;
     private RubySymbol respondToNameSym;
@@ -61,8 +67,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
+            String id = checkID(context, name).idString();
+            if (id.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name);
@@ -73,8 +79,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
+            String id = checkID(context, name).idString();
+            if (id.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name, bool);
@@ -99,73 +105,86 @@ public class RespondToCallSite extends NormalCachingCallSite {
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), context.runtime.newBoolean(includePrivate)).isTrue();
+        return super.call(context, caller, self, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
+    }
+
+    // Like respondsTo, but without respond_to? this skips method_missing. Only for CRuby's rb_respond_to callers;
+    // code ported from rb_check_funcall does go to method_missing.
+    @CRuby(value = "rb_respond_to", file = "vm_method.c")
+    public boolean rbRespondTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
+        RubyClass klass = getMetaClass(self);
+        RespondToTuple tuple = respondToTuple; // only cached for the builtin respond_to?
+        if (tuple.cacheOk(klass) && respondToName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
+        if (klass.searchWithCache(methodName).method.isUndefined()) return Helpers.basicObjRespondsTo(context, klass, self, respondToName);
+        // go through normal call logic, which will hit overridden cacheAndCall
+        return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
         RubySymbol sym = respondToNameSym;
-        if (sym == null) {
-            respondToNameSym = sym = context.runtime.newSymbol(respondToName);
-        }
+        if (sym == null) respondToNameSym = sym = asSymbol(context, respondToName);
         return sym;
     }
 
     @Override
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
-        final CacheEntry entry = selfType.searchWithCache(methodName);
-        final DynamicMethod method = entry.method;
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg);
+            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+            method = entry.method;
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.isBuiltin()) {
-            String name = arg.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
-
-            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
-                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
-                respondToTuple = tuple;
-                return tuple.respondsTo;
-            }
+            IRubyObject tuple = fastRespondTo(context, arg, entry, selfType, true);
+            if (tuple != null) return tuple;
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
+        entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
     @Override
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        final CacheEntry entry = selfType.searchWithCache(methodName);
-        final DynamicMethod method = entry.method;
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1);
+            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+            method = entry.method;
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.equals(context.runtime.getRespondToMethod())) {
-            String name = arg0.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
-
-            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
-                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
-                respondToTuple = tuple;
-                return tuple.respondsTo;
-            }
+            IRubyObject tuple = fastRespondTo(context, arg0, entry, selfType, !arg1.isTrue());
+            if (tuple != null) return tuple;
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
+        entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
+    }
+
+    private IRubyObject fastRespondTo(ThreadContext context, IRubyObject arg, CacheEntry entry, RubyClass selfType, boolean checkVisibility) {
+        String id = checkID(context, arg).idString();
+        RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, checkVisibility, context);
+
+        // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+        if (tuple.respondsTo.isTrue() ||
+                selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
+            respondToTuple = tuple;
+            return tuple.respondsTo;
+        }
+        return null;
     }
 
     private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
         boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
-        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, context.runtime.newBoolean(respondsTo));
+        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, asBoolean(context, respondsTo));
     }
 }

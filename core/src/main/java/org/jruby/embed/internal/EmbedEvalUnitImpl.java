@@ -29,6 +29,7 @@
  */
 package org.jruby.embed.internal;
 
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubySystemExit;
@@ -39,9 +40,10 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  * Implementation of org.jruby.javasupport.JavaEmbedUtils.EvalUnit for embeddiing.
@@ -51,24 +53,23 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * <p>Users do not instantiate explicitly. Instead, they can get the instance by parsing
  * Ruby script by parse method of {@link ScriptingContainer}.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EmbedEvalUnitImpl implements EmbedEvalUnit {
 
     private final ScriptingContainer container;
-    private final Node node;
-    private final ManyVarsDynamicScope scope;
+    private final ParseResult parseResult;
+    private final DynamicScope scope;
     private final Script script;
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, ManyVarsDynamicScope scope) {
-        this(container, node, scope, null);
-    }
+    private final boolean wrapExceptions;
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, ManyVarsDynamicScope scope, Script script) {
+    EmbedEvalUnitImpl(ScriptingContainer container, ParseResult parseResult, DynamicScope scope, Script script, boolean wrapExceptions) {
         this.container = container;
-        this.node = node;
+        this.parseResult = parseResult;
         this.scope = scope;
         this.script = script;
+        this.wrapExceptions = wrapExceptions;
     }
 
     /**
@@ -76,8 +77,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
      *
      * @return a root node of parsed Ruby script
      */
+    @Deprecated(since = "9.4.6.0")
     public Node getNode() {
-        return node;
+        return (Node) parseResult.getAST();
     }
 
     /**
@@ -86,7 +88,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
      *
      * @return a scope to refer local variables
      */
-    public ManyVarsDynamicScope getScope() {
+    public DynamicScope getLocalVarScope() {
         return scope;
     }
 
@@ -96,18 +98,18 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
      * @return results of executing this evaluation unit
      */
     public IRubyObject run() {
-        if (node == null && script == null) {
+        if (parseResult == null && script == null) {
             return null;
         }
         final Ruby runtime = container.getProvider().getRuntime();
         final BiVariableMap vars = container.getVarMap();
-        final boolean sharing_variables = isSharingVariables();
+        final boolean sharing_variables = isSharingVariables(container);
 
         // Keep reference to current context to prevent it being collected.
-        final ThreadContext threadContext = runtime.getCurrentContext();
+        final ThreadContext context = runtime.getCurrentContext();
         if (sharing_variables) {
-            vars.inject(scope, 0, null);
-            threadContext.pushScope(scope);
+            vars.inject(scope);
+            context.pushScope(scope);
         }
         try {
             final IRubyObject ret;
@@ -115,7 +117,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             if (mode == CompileMode.FORCE) {
                 ret = runtime.runScriptBody(script);
             } else {
-                ret = runtime.runInterpreter(node);
+                ret = runtime.runInterpreter(parseResult);
             }
             if (sharing_variables) {
                 vars.retrieve(ret);
@@ -123,22 +125,23 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             return ret;
         }
         catch (RaiseException e) {
+            // Exception is about to be propagated out to Java, so clear $!
+            runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+
             // handle exits as simple script termination
             if ( e.getException() instanceof RubySystemExit ) {
                 return ((RubySystemExit) e.getException()).status();
             }
-            runtime.printError(e.getException());
-            throw new EvalFailedException(e.getMessage(), e);
+            if (wrapExceptions) throw new EvalFailedException(e.getMessage(), e);
+            throw e;
         }
-        catch (StackOverflowError soe) {
-            throw runtime.newSystemStackError("stack level too deep", soe);
-        }
-        catch (Throwable e) {
-            throw new EvalFailedException(e);
+        catch (Exception e) {
+            if (wrapExceptions) throw new EvalFailedException(e);
+            Helpers.throwException(e); return null; // never returns
         }
         finally {
             if (sharing_variables) {
-                threadContext.popScope();
+                context.popScope();
             }
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
@@ -148,10 +151,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         }
     }
 
-    private boolean isSharingVariables() {
+    static boolean isSharingVariables(ScriptingContainer container) {
         final Object sharing = container.getAttribute(AttributeName.SHARING_VARIABLES);
-        if ( sharing != null && sharing instanceof Boolean &&
-                ((Boolean) sharing).booleanValue() == false ) {
+        if ( sharing instanceof Boolean && ((Boolean) sharing).booleanValue() == false ) {
             return false;
         }
         return true;

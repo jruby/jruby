@@ -1,10 +1,11 @@
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 describe "String#prepend" do
   it "prepends the given argument to self and returns self" do
     str = "world"
-    str.prepend("hello ").should equal(str)
+    str.prepend("hello ").should.equal?(str)
     str.should == "hello world"
   end
 
@@ -16,30 +17,22 @@ describe "String#prepend" do
   end
 
   it "raises a TypeError if the given argument can't be converted to a String" do
-    lambda { "hello ".prepend [] }.should raise_error(TypeError)
-    lambda { 'hello '.prepend mock('x') }.should raise_error(TypeError)
+    -> { "hello ".prepend [] }.should.raise(TypeError)
+    -> { 'hello '.prepend mock('x') }.should.raise(TypeError)
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a.prepend "" }.should raise_error(frozen_error_class)
-    lambda { a.prepend "test" }.should raise_error(frozen_error_class)
+    -> { a.prepend "" }.should.raise(FrozenError)
+    -> { a.prepend "test" }.should.raise(FrozenError)
   end
 
   it "works when given a subclass instance" do
     a = " world"
     a.prepend StringSpecs::MyString.new("hello")
     a.should == "hello world"
-  end
-
-  it "taints self if other is tainted" do
-    x = "x"
-    x.prepend("".taint).tainted?.should be_true
-
-    x = "x"
-    x.prepend("y".taint).tainted?.should be_true
   end
 
   it "takes multiple arguments" do
@@ -56,7 +49,7 @@ describe "String#prepend" do
 
   it "returns self when given no arguments" do
     str = "hello"
-    str.prepend.should equal(str)
+    str.prepend.should.equal?(str)
     str.should == "hello"
   end
 end

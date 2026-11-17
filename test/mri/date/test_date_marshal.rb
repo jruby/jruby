@@ -30,13 +30,30 @@ class TestDateMarshal < Test::Unit::TestCase
     a = d.marshal_dump
     d.freeze
     assert(d.frozen?)
-    assert_raise(FrozenError){d.marshal_load(a)}
+    expected_error = defined?(FrozenError) ? FrozenError : RuntimeError
+    assert_raise(expected_error){d.marshal_load(a)}
 
     d = DateTime.now
     a = d.marshal_dump
     d.freeze
     assert(d.frozen?)
-    assert_raise(FrozenError){d.marshal_load(a)}
+    expected_error = defined?(FrozenError) ? FrozenError : RuntimeError
+    assert_raise(expected_error){d.marshal_load(a)}
+
+    d = Date.new + 1/2r + 2304/65437r/86400
+    m = Marshal.dump(d)
+    d2 = Marshal.load(m)
+    assert_equal(d, d2)
+    assert_equal(d.start, d2.start)
+    assert_instance_of(String, d2.to_s)
   end
 
+  def test_memsize
+    require 'objspace'
+    t = DateTime.new(2018, 11, 13)
+    size = ObjectSpace.memsize_of(t)
+    t2 = Marshal.load(Marshal.dump(t))
+    assert_equal(t, t2)
+    assert_equal(size, ObjectSpace.memsize_of(t2), "not reallocated but memsize changed")
+  end
 end

@@ -1,0 +1,84 @@
+windows:Array#pack with format 'L' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '<' and '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '<' and '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '<' and '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '<' and '_' ignores spaces between directives
+windows:Array#pack with format 'L' with modifier '<' and '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '<' and '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '<' and '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '<' and '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '<' and '!' ignores spaces between directives
+windows:Array#pack with format 'L' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '>' and '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '>' and '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '>' and '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '>' and '_' ignores spaces between directives
+windows:Array#pack with format 'L' with modifier '>' and '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '>' and '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '>' and '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '>' and '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '>' and '!' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '<' and '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '<' and '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '<' and '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '<' and '_' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '<' and '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '<' and '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '<' and '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '<' and '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '<' and '!' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '>' and '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '>' and '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '>' and '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '>' and '_' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '>' and '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '>' and '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '>' and '!' ignores spaces between directives
+windows:Array#pack with format 'L' with modifier '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '_' ignores spaces between directives
+windows:Array#pack with format 'L' with modifier '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'L' with modifier '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'L' with modifier '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'L' with modifier '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'L' with modifier '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'L' with modifier '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'L' with modifier '!' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '_' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '_' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '_' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '_' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '_' ignores spaces between directives
+windows:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a positive number
+windows:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a negative number
+windows:Array#pack with format 'l' with modifier '!' encodes a Float truncated as an Integer
+windows:Array#pack with format 'l' with modifier '!' calls #to_int to convert the pack argument to an Integer
+windows:Array#pack with format 'l' with modifier '!' encodes the number of array elements specified by the count modifier
+windows:Array#pack with format 'l' with modifier '!' encodes all remaining elements when passed the '*' modifier
+windows:Array#pack with format 'l' with modifier '!' ignores spaces between directives

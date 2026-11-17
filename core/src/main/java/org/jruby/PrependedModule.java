@@ -29,29 +29,45 @@
 
 package org.jruby;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * This class is used as an intermediate superclass for Module#prepend
+ * This class is used as an intermediate superclass for Module#prepend.  It takes over all
+ * methods on the original module/class which is prepended and sets the originals methodLocation
+ * to this class.  The orignial type no longer has methods so it will look down its inheritance
+ * chain to find them.  The class which is actually prepended will be included onto the original
+ * type.  This original method holding type will be put beneath the prepend module.
  *
  * @see org.jruby.IncludedModuleWrapper
  * @see org.jruby.RubyModule
  */
-public class PrependedModule extends IncludedModule {
+public class PrependedModule extends RubyClass implements DelegatedModule {
+    private RubyModule origin;
 
-    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule klass) {
-        super(runtime, superClass, klass);
-        this.methods = klass.methods;
-        klass.methods = Collections.EMPTY_MAP;
-        klass.methodLocation = this;
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule prependedClass) {
+        super(runtime, superClass, false);
+        origin = prependedClass;
+        this.metaClass = origin.metaClass;
+        if (superClass != null) {
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+        }
+        this.methods = prependedClass.getMethodsForWrite();
+        prependedClass.methods = null;
+        prependedClass.methodLocation = this;
+
+        Map<String, DynamicMethod> methods = getMethods();
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
-            if (moveRefinedMethod(entry.getKey(), method, klass)) {
+            if (moveRefinedMethod(entry.getKey(), method, prependedClass)) {
                 methods.remove(entry.getKey());
             }
         }
@@ -59,9 +75,8 @@ public class PrependedModule extends IncludedModule {
 
     /**
      * Transfer refined methods from the prepend stub to the origin as markers so they trigger refinements
-     *
-     * MRI: move_refined_method
      */
+    @CRuby(value = "move_refined_method", file = "class.c")
     private boolean moveRefinedMethod(String key, DynamicMethod method, RubyModule klass) {
         if (method.isRefined()) {
             if (method instanceof RefinedMarker) {
@@ -83,14 +98,127 @@ public class PrependedModule extends IncludedModule {
     }
 
     @Override
-    public void addMethod(String id, DynamicMethod method) {
-        super.addMethod(id, method);
+    public boolean isPrepended() {
+        return true;
+    }
+
+    @Override
+    public boolean isModule() {
+        return false;
+    }
+
+    @Override
+    public boolean isClass() {
+        return false;
+    }
+
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
+    @Override
+    public void setMetaClass(RubyClass newRubyClass) {
+        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
+    }
+
+    @Override
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
+    }
+
+    @Override
+    public RubyModule getOrigin() {
+        return origin;
+    }
+
+    @Override
+    public RubyModule getDelegate() {
+        return origin;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    @Override
+    public IRubyObject id() {
+        return origin.id();
+    }
+
+    /**
+     * We don't want to reveal ourselves to Ruby code, so origin this
+     * operation.
+     */
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        return origin.__id__(context);
+    }
+
+    @Override
+    public void addMethod(ThreadContext context, String id, DynamicMethod method) {
+        super.addMethod(context, id, method);
         method.setDefinedClass(origin);
     }
 
     @Override
-    public boolean isPrepended() {
-        return true;
+    protected synchronized Map<String, IRubyObject> getClassVariables() {
+        return origin.getClassVariables();
+    }
+
+    @Override
+    protected Map<String, IRubyObject> getClassVariablesForRead() {
+        return origin.getClassVariablesForRead();
+    }
+
+    //
+    // CONSTANT TABLE METHODS - pass to origin
+    //
+
+    @Override
+    protected IRubyObject constantTableStore(String name, IRubyObject value) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value, hidden);
+    }
+
+    @Override
+    protected ConstantEntry constantEntryFetch(String name) {
+        return origin.constantEntryFetch(name);
+    }
+
+    @Override
+    protected IRubyObject constantTableRemove(String name) {
+        // this _is_ legal (when removing an undef)
+        return origin.constantTableRemove(name);
+    }
+
+    @Override
+    protected IRubyObject getAutoloadConstant(ThreadContext context, String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(context, name, forceLoad);
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMap() {
+        return origin.getAutoloadMap();
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMapForWrite() {
+        return origin.getAutoloadMapForWrite();
+    }
+
+    /**
+     * If the origin was a module, also invalidate its hierarchies
+     */
+    @Override
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
+
+        if (origin.isModule()) {
+            origin.invalidateCacheDescendants(context);
+        }
     }
 
 }

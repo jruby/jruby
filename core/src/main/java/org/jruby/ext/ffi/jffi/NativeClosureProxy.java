@@ -14,6 +14,11 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
+
 /**
  * Wraps a ruby proc in a JFFI Closure
  */
@@ -49,14 +54,14 @@ final class NativeClosureProxy implements Closure {
 
         IRubyObject[] params = new IRubyObject[closureInfo.parameterTypes.length];
         for (int i = 0; i < params.length; ++i) {
-            params[i] = fromNative(runtime, closureInfo.parameterTypes[i], buffer, i);
+            params[i] = fromNative(context, closureInfo.parameterTypes[i], buffer, i);
         }
 
         IRubyObject retVal = recv instanceof Block
                 ? ((Block) recv).call(context, params)
                 : callSite.call(context, (IRubyObject) recv, (IRubyObject) recv, params);
 
-        setReturnValue(runtime, closureInfo.returnType, buffer, retVal);
+        setReturnValue(context, closureInfo.returnType, buffer, retVal);
     }
 
 
@@ -68,13 +73,8 @@ final class NativeClosureProxy implements Closure {
      * @param value The Ruby object to convert
      * @return a java long value.
      */
-    private static final long longValue(IRubyObject value) {
-        if (value instanceof RubyNumeric) {
-            return ((RubyNumeric) value).getLongValue();
-        } else if (value.isNil()) {
-            return 0L;
-        }
-        return 0;
+    private static final long longValue(ThreadContext context, IRubyObject value) {
+        return value instanceof RubyNumeric num ? num.asLong(context) : 0L;
     }
 
     /**
@@ -85,13 +85,11 @@ final class NativeClosureProxy implements Closure {
      * @param value The Ruby object to convert
      * @return a java long value.
      */
-    private static final long addressValue(IRubyObject value) {
-        if (value instanceof RubyNumeric) {
-            return ((RubyNumeric) value).getLongValue();
+    private static final long addressValue(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyNumeric num) {
+            return num.asLong(context);
         } else if (value instanceof Pointer) {
             return ((Pointer) value).getAddress();
-        } else if (value.isNil()) {
-            return 0L;
         }
         return 0;
     }
@@ -99,56 +97,49 @@ final class NativeClosureProxy implements Closure {
     /**
      * Converts a ruby return value into a native callback return value.
      *
-     * @param runtime The ruby runtime the callback is attached to
+     * @param context The thread context
      * @param type The ruby type of the return value
      * @param buffer The native parameter buffer
      * @param value The ruby value
      */
-    private static final void setReturnValue(Ruby runtime, Type type,
+    private static final void setReturnValue(ThreadContext context, Type type,
             Closure.Buffer buffer, IRubyObject value) {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
                 case VOID:
                     break;
-                case CHAR:
-                    buffer.setByteReturn((byte) longValue(value)); break;
-                case UCHAR:
-                    buffer.setByteReturn((byte) longValue(value)); break;
-                case SHORT:
-                    buffer.setShortReturn((short) longValue(value)); break;
-                case USHORT:
-                    buffer.setShortReturn((short) longValue(value)); break;
-                case INT:
-                    buffer.setIntReturn((int) longValue(value)); break;
-                case UINT:
-                    buffer.setIntReturn((int) longValue(value)); break;
+                case CHAR, UCHAR:
+                    buffer.setByteReturn((byte) longValue(context, value)); break;
+                case SHORT, USHORT:
+                    buffer.setShortReturn((short) longValue(context, value)); break;
+                case INT, UINT:
+                    buffer.setIntReturn((int) longValue(context, value)); break;
                 case LONG_LONG:
                     buffer.setLongReturn(Util.int64Value(value)); break;
                 case ULONG_LONG:
                     buffer.setLongReturn(Util.uint64Value(value)); break;
-
                 case LONG:
                     if (LONG_SIZE == 32) {
-                        buffer.setIntReturn((int) longValue(value));
+                        buffer.setIntReturn((int) longValue(context, value));
                     } else {
                         buffer.setLongReturn(Util.int64Value(value));
                     }
                     break;
-
                 case ULONG:
                     if (LONG_SIZE == 32) {
-                        buffer.setIntReturn((int) longValue(value));
+                        buffer.setIntReturn((int) longValue(context, value));
                     } else {
                         buffer.setLongReturn(Util.uint64Value(value));
                     }
                     break;
-
                 case FLOAT:
-                    buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
+                    buffer.setFloatReturn((float) toDouble(context, value)); break;
                 case DOUBLE:
-                    buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
+                    buffer.setDoubleReturn(toDouble(context, value)); break;
+//                case LONGDOUBLE:
+//                    break; // not implemented
                 case POINTER:
-                    buffer.setAddressReturn(addressValue(value)); break;
+                    buffer.setAddressReturn(addressValue(context, value)); break;
 
                 case BOOL:
                     buffer.setIntReturn(value.isTrue() ? 1 : 0); break;
@@ -156,17 +147,15 @@ final class NativeClosureProxy implements Closure {
             }
         } else if (type instanceof CallbackInfo) {
             if (value instanceof RubyProc || value.respondsTo("call")) {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, (CallbackInfo) type, value);
-                buffer.setAddressReturn(addressValue(cb));
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context, (CallbackInfo) type, value);
+                buffer.setAddressReturn(addressValue(context, cb));
             } else {
                 buffer.setAddressReturn(0L);
-                throw runtime.newTypeError("invalid callback return value, expected Proc or callable object");
+                throw typeError(context, "invalid callback return value, expected Proc or callable object");
             }
 
         } else if (type instanceof StructByValue) {
-
-            if (value instanceof Struct) {
-                Struct s = (Struct) value;
+            if (value instanceof Struct s) {
                 MemoryIO memory = s.getMemory().getMemoryIO();
 
                 if (memory.isDirect()) {
@@ -181,91 +170,68 @@ final class NativeClosureProxy implements Closure {
                 } else if (memory instanceof ArrayMemoryIO) {
                     ArrayMemoryIO arrayMemory = (ArrayMemoryIO) memory;
                     if (arrayMemory.arrayLength() < type.getNativeSize()) {
-                        throw runtime.newRuntimeError("size of struct returned from callback too small");
+                        throw runtimeError(context, "size of struct returned from callback too small");
                     }
 
                     buffer.setStructReturn(arrayMemory.array(), arrayMemory.arrayOffset());
 
                 } else {
-                    throw runtime.newRuntimeError("struct return value has illegal backing memory");
+                    throw runtimeError(context, "struct return value has illegal backing memory");
                 }
             } else if (value.isNil()) {
                 // Zero it out
                 buffer.setStructReturn(new byte[type.getNativeSize()], 0);
 
             } else {
-                throw runtime.newTypeError(value, runtime.getFFI().structClass);
+                throw typeError(context, value, context.runtime.getFFI().structClass);
             }
-
-        } else if (type instanceof MappedType) {
-            MappedType mappedType = (MappedType) type;
-            setReturnValue(runtime, mappedType.getRealType(), buffer, mappedType.toNative(runtime.getCurrentContext(), value));
-
+        } else if (type instanceof MappedType mappedType) {
+            setReturnValue(context, mappedType.getRealType(), buffer, mappedType.toNative(context, value));
         } else {
             buffer.setLongReturn(0L);
-            throw runtime.newRuntimeError("unsupported return type from struct: " + type);
+            throw runtimeError(context, "unsupported return type from struct: " + type);
         }
     }
 
     /**
      * Converts a native value into a ruby object.
      *
-     * @param runtime The ruby runtime to create the ruby object in
+     * @param context the thread context
      * @param type The type of the native parameter
      * @param buffer The JFFI Closure parameter buffer.
      * @param index The index of the parameter in the buffer.
      * @return A new Ruby object.
      */
-    private static final IRubyObject fromNative(Ruby runtime, Type type,
+    private static final IRubyObject fromNative(ThreadContext context, Type type,
             Closure.Buffer buffer, int index) {
+        Ruby runtime = context.runtime;
         if (type instanceof Type.Builtin) {
-            switch (type.getNativeType()) {
-                case VOID:
-                    return runtime.getNil();
-                case CHAR:
-                    return Util.newSigned8(runtime, buffer.getByte(index));
-                case UCHAR:
-                    return Util.newUnsigned8(runtime, buffer.getByte(index));
-                case SHORT:
-                    return Util.newSigned16(runtime, buffer.getShort(index));
-                case USHORT:
-                    return Util.newUnsigned16(runtime, buffer.getShort(index));
-                case INT:
-                    return Util.newSigned32(runtime, buffer.getInt(index));
-                case UINT:
-                    return Util.newUnsigned32(runtime, buffer.getInt(index));
-                case LONG_LONG:
-                    return Util.newSigned64(runtime, buffer.getLong(index));
-                case ULONG_LONG:
-                    return Util.newUnsigned64(runtime, buffer.getLong(index));
+            return switch (type.getNativeType()) {
+                case VOID -> runtime.getNil();
+                case CHAR -> Util.newSigned8(runtime, buffer.getByte(index));
+                case UCHAR -> Util.newUnsigned8(runtime, buffer.getByte(index));
+                case SHORT -> Util.newSigned16(runtime, buffer.getShort(index));
+                case USHORT -> Util.newUnsigned16(runtime, buffer.getShort(index));
+                case INT -> Util.newSigned32(runtime, buffer.getInt(index));
+                case UINT -> Util.newUnsigned32(runtime, buffer.getInt(index));
+                case LONG_LONG -> Util.newSigned64(runtime, buffer.getLong(index));
+                case ULONG_LONG -> Util.newUnsigned64(runtime, buffer.getLong(index));
+                case LONG -> LONG_SIZE == 32
+                        ? Util.newSigned32(runtime, buffer.getInt(index))
+                        : Util.newSigned64(runtime, buffer.getLong(index));
+                case ULONG -> LONG_SIZE == 32
+                        ? Util.newUnsigned32(runtime, buffer.getInt(index))
+                        : Util.newUnsigned64(runtime, buffer.getLong(index));
+                case FLOAT -> runtime.newFloat(buffer.getFloat(index));
+                case DOUBLE -> runtime.newFloat(buffer.getDouble(index));
+//                case LONGDOUBLE:
+//                    return runtime.newFloat(0); // not implemented
 
-                case LONG:
-                    return LONG_SIZE == 32
-                            ? Util.newSigned32(runtime, buffer.getInt(index))
-                            : Util.newSigned64(runtime, buffer.getLong(index));
-                case ULONG:
-                    return LONG_SIZE == 32
-                            ? Util.newUnsigned32(runtime, buffer.getInt(index))
-                            : Util.newUnsigned64(runtime, buffer.getLong(index));
-
-                case FLOAT:
-                    return runtime.newFloat(buffer.getFloat(index));
-                case DOUBLE:
-                    return runtime.newFloat(buffer.getDouble(index));
-
-                case POINTER:
-                    return new Pointer(runtime, NativeMemoryIO.wrap(runtime, buffer.getAddress(index)));
-
-                case STRING:
-                case TRANSIENT_STRING:
-                    return getStringParameter(runtime, buffer, index);
-
-                case BOOL:
-                    return runtime.newBoolean(buffer.getByte(index) != 0);
-
-                default:
-                    throw runtime.newTypeError("invalid callback parameter type " + type);
-            }
+                case POINTER -> new Pointer(runtime, NativeMemoryIO.wrap(runtime, buffer.getAddress(index)));
+                case STRING, TRANSIENT_STRING -> getStringParameter(runtime, buffer, index);
+                case BOOL -> asBoolean(context, buffer.getByte(index) != 0);
+                default -> throw typeError(context, "invalid callback parameter type " + type);
+            };
 
         } else if (type instanceof CallbackInfo) {
             final CallbackInfo cbInfo = (CallbackInfo) type;
@@ -292,12 +258,11 @@ final class NativeClosureProxy implements Closure {
 
         } else if (type instanceof MappedType) {
             MappedType mappedType = (MappedType) type;
-            return mappedType.fromNative(runtime.getCurrentContext(), fromNative(runtime, mappedType.getRealType(), buffer, index));
+            return mappedType.fromNative(runtime.getCurrentContext(), fromNative(context, mappedType.getRealType(), buffer, index));
 
         } else {
-            throw runtime.newTypeError("unsupported callback parameter type: " + type);
+            throw typeError(context, "unsupported callback parameter type: " + type);
         }
-
     }
 
     /**

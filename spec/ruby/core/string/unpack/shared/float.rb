@@ -1,4 +1,4 @@
-# -*- encoding: ascii-8bit -*-
+# encoding: binary
 
 describe :string_unpack_float_le, shared: true do
   it "decodes one float for a single format character" do
@@ -53,12 +53,13 @@ describe :string_unpack_float_le, shared: true do
 
   it "decodes NaN" do
     # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
-    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should == true
   end
 
-  it "ignores NULL bytes between directives" do
-    array = "\x9a\x999@33\xb3?".unpack(unpack_format("\000", 2))
-    array.should == [2.9000000953674316, 1.399999976158142]
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      "\x9a\x999@33\xb3?".unpack(unpack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown unpack directive/)
   end
 
   it "ignores spaces between directives" do
@@ -120,12 +121,13 @@ describe :string_unpack_float_be, shared: true do
 
   it "decodes NaN" do
     # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
-    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should == true
   end
 
-  it "ignores NULL bytes between directives" do
-    array = "@9\x99\x9a?\xb333".unpack(unpack_format("\000", 2))
-    array.should == [2.9000000953674316, 1.399999976158142]
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      "@9\x99\x9a?\xb333".unpack(unpack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown unpack directive/)
   end
 
   it "ignores spaces between directives" do
@@ -190,11 +192,13 @@ describe :string_unpack_double_le, shared: true do
 
   it "decodes NaN" do
     # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
-    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should == true
   end
 
-  it "ignores NULL bytes between directives" do
-    "333333\x07@ffffff\xf6?".unpack(unpack_format("\000", 2)).should == [2.9, 1.4]
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      "333333\x07@ffffff\xf6?".unpack(unpack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown unpack directive/)
   end
 
   it "ignores spaces between directives" do
@@ -258,11 +262,13 @@ describe :string_unpack_double_be, shared: true do
 
   it "decodes NaN" do
     # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
-    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should == true
   end
 
-  it "ignores NULL bytes between directives" do
-    "@\x07333333?\xf6ffffff".unpack(unpack_format("\000", 2)).should == [2.9, 1.4]
+  it "raise ArgumentError for NULL bytes between directives" do
+    -> {
+      "@\x07333333?\xf6ffffff".unpack(unpack_format("\000", 2))
+    }.should.raise(ArgumentError, /unknown unpack directive/)
   end
 
   it "ignores spaces between directives" do

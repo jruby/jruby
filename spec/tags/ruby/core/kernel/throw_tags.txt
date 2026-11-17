@@ -1,1 +1,0 @@
-fails:Kernel.throw raises an UncaughtThrowError if there is no catch block for the symbol

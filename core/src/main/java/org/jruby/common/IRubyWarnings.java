@@ -32,13 +32,15 @@
 package org.jruby.common;
 
 import org.jruby.Ruby;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 // FIXME: Document difference between warn and warning (or rename one better)
-/**
- */
 public interface IRubyWarnings {
     enum ID {
+        /**
+         * Generic identifier often used when there isn't an extra ID type.
+         * <p>Note: Some of the "MISCELLANEOUS" warnings might end up being re-categorized.</p>
+         */
+        MISCELLANEOUS,
         AMBIGUOUS_ARGUMENT,
         ACCESSOR_NOT_INITIALIZED,
         ACCESSOR_MODULE_FUNCTION,
@@ -49,6 +51,7 @@ public interface IRubyWarnings {
         BLOCK_BEATS_DEFAULT_VALUE,
         BLOCK_NOT_ACCEPTED,
         BLOCK_UNUSED,
+        BLOCK_DEPRECATED,
         CONSTANT_ALREADY_INITIALIZED,
         CONSTANT_DEPRECATED,
         CONSTANT_BAD_REFERENCE,
@@ -68,7 +71,6 @@ public interface IRubyWarnings {
         INVALID_CHAR_SEQUENCE,
         IVAR_NOT_INITIALIZED,
         MAY_BE_TOO_BIG,
-        MISCELLANEOUS,
         MULTIPLE_VALUES_FOR_BLOCK,
         NEGATIVE_NUMBER_FOR_U,
         NO_SUPER_CLASS,
@@ -100,7 +102,8 @@ public interface IRubyWarnings {
         GC_STRESS_UNIMPLEMENTED,
         GC_ENABLE_UNIMPLEMENTED,
         GC_DISABLE_UNIMPLEMENTED,
-        RATIONAL_OUT_OF_RANGE,;
+        RATIONAL_OUT_OF_RANGE,
+        REDEFINING_METHOD;
 
         public String getID() {
             return name();
@@ -110,11 +113,9 @@ public interface IRubyWarnings {
     Ruby getRuntime();
     boolean isVerbose();
 
-    @Deprecated void warn(ID id, ISourcePosition position, String message);
     void warn(ID id, String fileName, int lineNumber, String message);
     void warn(ID id, String fileName, String message);
     void warn(ID id, String message);
     void warning(ID id, String message);
-    @Deprecated void warning(ID id, ISourcePosition position, String message);
     void warning(ID id, String fileName, int lineNumber, String message);
 }

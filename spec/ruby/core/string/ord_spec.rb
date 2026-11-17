@@ -1,8 +1,8 @@
 require_relative '../../spec_helper'
 
 describe "String#ord" do
-  it "returns a Fixnum" do
-    'a'.ord.should be_an_instance_of(Fixnum)
+  it "returns an Integer" do
+    'a'.ord.should.instance_of?(Integer)
   end
 
   it "returns the codepoint of the first character in the String" do
@@ -23,6 +23,11 @@ describe "String#ord" do
   end
 
   it "raises an ArgumentError if called on an empty String" do
-    lambda { ''.ord }.should raise_error(ArgumentError)
+    -> { ''.ord }.should.raise(ArgumentError)
+  end
+
+  it "raises ArgumentError if the character is broken" do
+    s = "©".dup.force_encoding("US-ASCII")
+    -> { s.ord }.should.raise(ArgumentError, "invalid byte sequence in US-ASCII")
   end
 end

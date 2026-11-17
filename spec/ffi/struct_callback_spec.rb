@@ -66,4 +66,12 @@ describe FFI::Struct, ' with inline callback functions' do
     expect(fn.respond_to?(:call)).to be true
     expect(fn.call(1, 2)).to eq(3)
   end
+
+  it "callback returning :string is rejected in struct" do
+    expect {
+      Class.new(FFI::Struct) do
+        layout :function1, callback([:int, :int], :string)
+      end
+    }.to raise_error(TypeError)
+  end
 end

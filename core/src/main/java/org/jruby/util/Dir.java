@@ -33,16 +33,20 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyString;
+import org.jruby.RubyFile;
+import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
+
+import static org.jruby.api.Convert.asJavaString;
+import static org.jruby.runtime.Helpers.memchr;
 import static org.jruby.util.ByteList.NULL_ARRAY;
+import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+import static org.jruby.util.StringSupport.codePoint;
 
 /**
  * This class exists as a counterpart to the dir.c file in
@@ -53,12 +57,14 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  */
 public class Dir {
     public final static boolean DOSISH = Platform.IS_WINDOWS;
-    public final static boolean CASEFOLD_FILESYSTEM = DOSISH;
+    public final static boolean CASEFOLD_FILESYSTEM = DOSISH || Platform.IS_MAC;
 
     public final static int FNM_NOESCAPE = 0x01;
     public final static int FNM_PATHNAME = 0x02;
     public final static int FNM_DOTMATCH = 0x04;
     public final static int FNM_CASEFOLD = 0x08;
+
+    public final static int FNM_GLOB_SKIPDOT = 0x80;
 
     public final static int FNM_SYSCASE = CASEFOLD_FILESYSTEM ? FNM_CASEFOLD : 0;
 
@@ -70,119 +76,243 @@ public class Dir {
     public final static byte[] STAR = new byte[]{'*'};
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
 
-    private static boolean isdirsep(char c) {
+    private static boolean isdirsep(int c) {
         return c == '/' || DOSISH && c == '\\';
     }
 
     private static boolean isdirsep(byte c) {
-        return isdirsep((char)(c & 0xFF));
+        return isdirsep((int)(c & 0xFF));
     }
 
-    private static int rb_path_next(byte[] _s, int s, int send) {
-        while(s < send && !isdirsep(_s[s])) {
-            s++;
+    static class FilenameMatch {
+        int pcur;
+        int scur;
+        final int flags;
+        final boolean escape;
+        final boolean pathname;
+        final boolean period;
+        final boolean nocase;
+
+        FilenameMatch(int pcur, int scur, int flags) {
+            this.pcur = pcur;
+            this.scur = scur;
+            this.flags = flags;
+            this.escape = (flags & FNM_NOESCAPE) == 0;
+            this.pathname = (flags & FNM_PATHNAME) != 0;
+            this.period = (flags & FNM_DOTMATCH) == 0;
+            this.nocase = (flags & FNM_CASEFOLD) != 0;
         }
-        return s;
-    }
 
-    private static int fnmatch_helper(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
-        char test;
-        int s = sstart;
-        int pat = pstart;
-        boolean escape = (flags & FNM_NOESCAPE) == 0;
-        boolean pathname = (flags & FNM_PATHNAME) != 0;
-        boolean period = (flags & FNM_DOTMATCH) == 0;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        @CRuby(value = "fnmatch_helper", file = "dir.c")
+        int helper(byte[] pbytes, int pend, byte[] sbytes, int send, Encoding enc) {
+            int s = scur;
+            int p = pcur;
 
-        while(pat<pend) {
-            char c = (char)(bytes[pat++] & 0xFF);
-            switch(c) {
-            case '?':
-                if(s >= send || (pathname && isdirsep(string[s])) ||
-                   (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
+            int ptmp = -1;
+            int stmp = -1;
+
+            if (s < send && p < pend) {
+                if (period && sbytes[s] == '.' && pbytes[unescape(pbytes, p)] != '.') { /* leading period */
                     return FNM_NOMATCH;
                 }
-                s++;
-                break;
-            case '*':
-                while(pat < pend && (c = (char)(bytes[pat++] & 0xFF)) == '*') {}
-                if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
-                    return FNM_NOMATCH;
-                }
-                if(pat > pend || (pat == pend && c == '*')) {
-                    if(pathname && rb_path_next(string, s, send) < send) {
+            }
+
+            try { // RETURN macro in MRI
+                while (true) {
+                    // in place of expected C null char check that falls into default in switch below
+                    if (p >= pend) {
+                        if (isEnd(sbytes, s, send)) {
+                          return 0;
+                        }
+
+                        // failed: duplicated below due to inability to goto
+                        if (ptmp != -1 && stmp != -1) {
+                          p = ptmp;
+                          stmp++; /* !ISEND(*stmp) */
+                          s = stmp;
+                          continue;
+                        }
                         return FNM_NOMATCH;
-                    } else {
-                        return 0;
-                    }
-                } else if((pathname && isdirsep(c))) {
-                    s = rb_path_next(string, s, send);
-                    if(s < send) {
-                        s++;
-                        break;
-                    }
-                    return FNM_NOMATCH;
-                }
-                test = (char)(escape && c == '\\' && pat < pend ? (bytes[pat] & 0xFF) : c);
-                test = Character.toLowerCase(test);
-                pat--;
-                while(s < send) {
-                    if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
-                       fnmatch(bytes, pat, pend, string, s, send, flags | FNM_DOTMATCH) == 0) {
-                        return 0;
-                    } else if((pathname && isdirsep(string[s]))) {
-                        break;
-                    }
-                    s++;
-                }
-                return FNM_NOMATCH;
-            case '[':
-                if(s >= send || (pathname && isdirsep(string[s]) ||
-                                 (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
-                    return FNM_NOMATCH;
-                }
-                pat = range(bytes, pat, pend, (char)(string[s]&0xFF), flags);
-                if(pat == -1) {
-                    return FNM_NOMATCH;
-                }
-                s++;
-                break;
-            case '\\':
-                if (escape) {
-                    if (pat >= pend) {
-                        c = '\\';
-                    } else {
-                        c = (char)(bytes[pat++] & 0xFF);
-                    }
-                }
-            default:
-                if(s >= send) {
-                    return FNM_NOMATCH;
-                }
-                if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
-                } else {
-                    if (nocase) {
-                        if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
-                            return FNM_NOMATCH;
-                        }
-
-                    } else {
-                        if(c != (char)(string[s] & 0xFF)) {
-                            return FNM_NOMATCH;
-                        }
                     }
 
+                    switch (pbytes[p]) {
+                        case '*':
+                            do p++; while (p < pend && pbytes[p] == '*');
+                            if (isEnd(pbytes, unescape(pbytes, p), pend)) {
+                                return 0;
+                            }
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            ptmp = p;
+                            stmp = s;
+                            continue;
+
+                        case '?':
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            p++;
+                            s += StringSupport.length(enc, sbytes, s, send);
+                            continue;
+
+                        case '[':
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            int t = bracket(pbytes, p + 1, pend, sbytes, s, send, enc);
+                            if (t != -1) {
+                                p = t;
+                                s += StringSupport.length(enc, sbytes, s, send);
+                                continue;
+                            }
+                            break; // branch to failed
+
+                        default:
+                            p = unescape(pbytes, p);
+                            if (isEnd(sbytes, s, send)) {
+                                return isEnd(pbytes, p, pend) ? 0 : FNM_NOMATCH;
+                            }
+                            if (isEnd(pbytes, p, pend)) {
+                                break; // branch to failed
+                            }
+
+                            // TODO: MBC
+                            int r = StringSupport.preciseLength(enc, pbytes, p, pend);
+                            if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                                break; // branch to failed
+                            }
+                            if (r <= send - s && memcmp(pbytes, p, r, sbytes, s, r) == 0) {
+                                p += r;
+                                s += r;
+                                continue;
+                            }
+                            if (DOSISH && (pathname && isdirsep(pbytes[p]) && isdirsep(sbytes[s]))) {
+                            } else {
+                                if (!nocase) {
+                                    break; // branch to failed
+                                }
+
+                                // TODO: Use JOni case folding
+                                if (Character.toLowerCase(codePoint(enc, pbytes, p, pend)) !=
+                                        Character.toLowerCase(codePoint(enc, sbytes, s, send))) {
+                                    break; // branch to failed
+                                }
+
+                            }
+                            p += r;
+                            s += StringSupport.length(enc, sbytes, s, send);
+                            continue;
+                    }
+
+                    // failed: duplicated above due to inability to goto
+                    // reached by breaking from above switch rather than continuing
+                    {
+                        if (ptmp != -1 && stmp != -1) {
+                            p = ptmp;
+                            stmp++; /* !ISEND(*stmp) */
+                            s = stmp;
+                            continue;
+                        }
+                        return FNM_NOMATCH;
+                    }
                 }
-                s++;
-                break;
+            } finally {
+                // RETURN macro in MRI
+                pcur = p;
+                scur = s;
             }
         }
-        return s >= send ? 0 : FNM_NOMATCH;
+
+        public int bracket(byte[] pbytes, int p, int pend, byte[] sbytes, int s, int send, Encoding enc) {
+            boolean not = false;
+            boolean ok = false;
+            int r;
+            int c1, c2;
+
+            if (p >= pend) return -1;
+
+            if (pbytes[p] == '!' || pbytes[p] == '^') {
+                not = true;
+                p++;
+            }
+
+            while (true) {
+                // in place of null terminator logic
+                {
+                    if (p >= pend) return -1;
+                    if (pbytes[p] == ']') break;
+                }
+
+                int t1 = p;
+                if(escape && pbytes[t1] == '\\') {
+                    t1++;
+                }
+                if (t1 >= pend) return -1;
+                p = t1 + (r = StringSupport.length(enc, pbytes, t1, pend));
+                if (p >= pend) return -1;
+                if (pbytes[p] == '-' && pbytes[p+1] != ']') {
+                    int t2 = p + 1;
+                    int r2;
+                    if (escape && pbytes[t2] == '\\') {
+                        t2++;
+                    }
+                    if (t2 >= pend) return -1;
+                    p = t2 + (r2 = StringSupport.length(enc, pbytes, t2, pend));
+                    if (ok) continue;
+                    if ((r <= (send-s) && memcmp(pbytes, t1, r, sbytes, s, r) == 0) ||
+                            (r2 <= (send-s) && memcmp(pbytes, t2, r2, sbytes, s, r2) == 0)) {
+                        ok = true;
+                        continue;
+                    }
+                    c1 = codePoint(enc, sbytes, s, send);
+                    // TODO: Use JOni case folding
+                    if (nocase) c1 = Character.toUpperCase(c1);
+                    c2 = codePoint(enc, pbytes, t1, pend);
+                    if (nocase) c2 = Character.toUpperCase(c2);
+                    if (c1 < c2) continue;
+                    c2 = codePoint(enc, pbytes, t2, pend);
+                    if (nocase) c2 = Character.toUpperCase(c2);
+                    if (c1 > c2) continue;
+                } else {
+                    if (ok) continue;
+                    if (r <= (send-s) && memcmp(pbytes, t1, r, sbytes, s, r) == 0) {
+                        ok = true;
+                        continue;
+                    }
+                    if (!nocase) continue;
+                    c1 = Character.toUpperCase(codePoint(enc, sbytes, s, send));
+                    c2 = Character.toUpperCase(codePoint(enc, pbytes, p, pend));
+                    if (c1 != c2) continue;
+                }
+                ok = true;
+            }
+
+            return ok == not ? -1 : p + 1;
+        }
+
+        private int unescape(byte[] bytes, int i) {
+            if (escape && i < bytes.length && bytes[i] == '\\') {
+                return i + 1;
+            }
+            return i;
+        }
+
+        private boolean isEnd(byte[] sbytes, int s, int send) {
+            return s >= send || (pathname && isdirsep(sbytes[s]));
+        }
+
     }
 
     public static int fnmatch(
             byte[] bytes, int pstart, int pend,
             byte[] string, int sstart, int send, int flags) {
+        return fnmatch(bytes, pstart, pend, string, sstart, send, flags, ASCIIEncoding.INSTANCE);
+    }
+
+    public static int fnmatch(
+            byte[] bytes, int pstart, int pend,
+            byte[] string, int sstart, int send, int flags, Encoding enc) {
 
         // This method handles '**/' patterns and delegates to
         // fnmatch_helper for the main work.
@@ -203,17 +333,20 @@ public class Dir {
                     stmp = str_pos;
                 }
 
-                int patSlashIdx = nextSlashIndex(bytes, pat_pos, pend);
-                int strSlashIdx = nextSlashIndex(string, str_pos, send);
-
-                if (fnmatch_helper(bytes, pat_pos, patSlashIdx,
-                        string, str_pos, strSlashIdx, flags) == 0) {
-                    if (patSlashIdx < pend && strSlashIdx < send) {
-                        pat_pos = ++patSlashIdx;
-                        str_pos = ++strSlashIdx;
+                FilenameMatch fnmatch = new FilenameMatch(pat_pos, str_pos, flags);
+                if (fnmatch.helper(bytes, pend,
+                        string, send, enc) == 0) {
+                    pat_pos = fnmatch.pcur;
+                    str_pos = fnmatch.scur;
+                    while (str_pos < send && string[str_pos] != '/') {
+                        str_pos++;
+                    }
+                    if (pat_pos < pend && str_pos < send) {
+                        pat_pos++;
+                        str_pos++;
                         continue;
                     }
-                    if (patSlashIdx == pend && strSlashIdx == send) {
+                    if (pat_pos == pend && str_pos == send) {
                         return 0;
                     }
                 }
@@ -230,7 +363,8 @@ public class Dir {
                 return FNM_NOMATCH;
             }
         } else {
-            return fnmatch_helper(bytes, pstart, pend, string, sstart, send, flags);
+            FilenameMatch fnmatch = new FilenameMatch(pstart, sstart, flags);
+            return fnmatch.helper(bytes, pend, string, send, enc);
         }
 
     }
@@ -255,144 +389,14 @@ public class Dir {
         return idx;
     }
 
-    public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
-        boolean not;
-        boolean ok = false;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
-        boolean escape = (flags & FNM_NOESCAPE) == 0;
-
-        not = _pat[pat] == '!' || _pat[pat] == '^';
-        if(not) {
-            pat++;
-        }
-
-        if (nocase) {
-            test = Character.toLowerCase(test);
-        }
-
-        while(_pat[pat] != ']') {
-            char cstart, cend;
-            if(escape && _pat[pat] == '\\') {
-                pat++;
-            }
-            if(pat >= pend) {
-                return -1;
-            }
-            cstart = cend = (char)(_pat[pat++]&0xFF);
-            if(_pat[pat] == '-' && _pat[pat+1] != ']') {
-                pat++;
-                if(escape && _pat[pat] == '\\') {
-                    pat++;
-                }
-                if(pat >= pend) {
-                    return -1;
-                }
-
-                cend = (char)(_pat[pat++] & 0xFF);
-            }
-
-            if (nocase) {
-                if (Character.toLowerCase(cstart) <= test
-                        && test <= Character.toLowerCase(cend)) {
-                    ok = true;
-                }
-            } else {
-                if (cstart <= test && test <= cend) {
-                    ok = true;
-                }
-            }
-        }
-
-        return ok == not ? -1 : pat + 1;
-    }
-
-    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
-        if (globByteList.length() > 0) {
-            final ArrayList<ByteList> result = new ArrayList<ByteList>();
-            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
+    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
+        if (!globByteList.isEmpty()) {
+            final ArrayList<ByteList> result = new ArrayList<>();
+            push_braces(runtime, cwd, result, globByteList, flags, sort, 0, false);
             return result;
         }
 
         return Collections.emptyList();
-    }
-
-    private static class GlobPattern {
-        final byte[] bytes;
-        final int begin;
-        final int end;
-        final Encoding enc;
-
-        private int index;
-
-        private final int flags;
-
-        GlobPattern(ByteList bytes, int flags) {
-            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), bytes.getEncoding(), flags);
-        }
-
-        GlobPattern(byte[] bytes, int index, int end, Encoding enc, int flags) {
-            this.bytes = bytes;
-            this.index = index;
-            this.begin = index;
-            this.end = end;
-            this.enc = enc;
-            this.flags = flags;
-        }
-
-        public int findClosingIndexOf(int leftTokenIndex) {
-            if (leftTokenIndex == -1 || leftTokenIndex > end) return -1;
-
-            byte leftToken = bytes[leftTokenIndex];
-            byte rightToken;
-
-            switch (leftToken) {
-            case '{': rightToken = '}'; break;
-            case '[': rightToken = ']'; break;
-            default: return -1;
-            }
-
-            int nest = 1; // leftToken made us start as nest 1
-            index = leftTokenIndex + 1;
-            while (hasNext()) {
-                byte c = next();
-
-                if (c == leftToken) {
-                    nest++;
-                } else if (c == rightToken && --nest == 0) {
-                    return index();
-                }
-            }
-
-            return -1;
-        }
-
-        public boolean hasNext() {
-            return index < end;
-        }
-
-        public void reset() {
-            index = begin;
-        }
-
-        public void setIndex(int value) {
-            index = value;
-        }
-
-        // Get index of last read byte
-        public int index() {
-            return index - 1;
-        }
-
-        public int indexOf(byte c) {
-            while (hasNext()) if (next() == c) return index();
-
-            return -1;
-        }
-
-        public byte next() {
-            return bytes[index++];
-        }
-
     }
 
     private interface GlobFunc<T> {
@@ -410,77 +414,135 @@ public class Dir {
         }
     }
 
-    private final static GlobFunc<List<ByteList>> push_pattern = new GlobFunc<List<ByteList>>() {
-        public int call(byte[] ptr, int p, int len, Encoding enc, List<ByteList> ary) {
-            ary.add(new ByteList(ptr, p, len, enc, true));
-            return 0;
-        }
+    private final static GlobFunc<List<ByteList>> push_pattern = (ptr, p, len, enc, ary) -> {
+        ary.add(new ByteList(ptr, p, len, enc, true));
+        return 0;
     };
-    private final static GlobFunc<GlobArgs> glob_caller = new GlobFunc<GlobArgs>() {
-        public int call(byte[] ptr, int p, int len, Encoding enc, GlobArgs args) {
-            args.c = p;
-            return args.func.call(ptr, args.c, len, enc, args.arg);
-        }
+    private final static GlobFunc<GlobArgs> glob_caller = (ptr, p, len, enc, args) -> {
+        args.c = p;
+        return args.func.call(ptr, args.c, len, enc, args.arg);
     };
 
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
+     * Like CRuby, groups after a recursive "**" without '/' are kept and matched per entry by glob_helper.
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern) {
-        pattern.reset();
-        int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
-        int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, ByteList pattern, int flags, boolean sort,
+                                   int searchOffset, boolean expandAll) {
+        byte[] bytes = pattern.unsafeBytes();
+        int begin = pattern.begin();
+        int end = begin + pattern.realSize();
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(bytes, begin + searchOffset, end, escape);
 
-        // No, mismatched or escaped braces..Move along..nothing to see here
-        if (lbrace == -1 || rbrace == -1 ||
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' ||
-                rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
-            ByteList unescaped = new ByteList(pattern.bytes.length - 1);
-            unescaped.setEncoding(pattern.enc);
-            for (int i = pattern.begin; i < pattern.end; i++) {
-                byte b = pattern.bytes[i];
-                if (b == '\\' && i < pattern.bytes.length - 1) {
-                    byte next_b = pattern.bytes[i + 1];
-                    if (next_b != '{' && next_b != '}') {
-                        unescaped.append(b);
-                    }
-                } else {
-                    unescaped.append(b);
-                }
-            }
-            return push_globs(runtime, cwd, result, unescaped, pattern.flags);
+        while (!expandAll && group != null && isMatchedPerEntry(bytes, begin, group[0], group[1])) {
+            group = findBraceGroup(bytes, group[1] + 1, end, escape);
         }
 
-        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
-        // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
-        final ByteList bytes = new ByteList(20);
-        bytes.setEncoding(pattern.enc);
-        int middleRegionIndex;
-        int i = lbrace;
-        while (pattern.bytes[i] != '}') {
-            middleRegionIndex = i + 1;
-            for (i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}'; i++) {
-                if (pattern.bytes[i] == ',') {
-                    if (i > pattern.begin && pattern.bytes[i-1] == '\\') continue;
-                    break;
-                }
-                if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
-            }
+        // No braces left to expand. Kept groups and escapes are handled by glob_helper, which may change the bytes.
+        if (group == null) {
+            return push_globs(runtime, cwd, result, new ByteList(bytes, begin, end - begin, pattern.getEncoding(), true), flags, sort);
+        }
 
-            bytes.length(0);
-            bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
-            bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
-            bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags));
+        for (ByteList alternative : braceAlternatives(bytes, begin, end, group, escape, pattern.getEncoding())) {
+            int status = push_braces(runtime, cwd, result, alternative, flags, sort, group[0] - begin, true);
             if (status != 0) return status;
         }
 
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags) {
+    // {lbrace, rbrace} of the first brace group in bytes[from, end), skipping escaped characters.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static int[] findBraceGroup(byte[] bytes, int from, int end, boolean escape) {
+        int lbrace = -1;
+        int nest = 0;
+
+        for (int i = from; i < end; i++) {
+            byte c = bytes[i];
+            if (c == '{' && nest++ == 0) {
+                lbrace = i;
+            } else if (c == '}' && lbrace != -1 && --nest == 0) {
+                return new int[] { lbrace, i };
+            } else if (c == '\\' && escape) {
+                i++;
+            }
+        }
+
+        return null;
+    }
+
+    // bytes[begin, end) with the brace group replaced by each of its alternatives.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static List<ByteList> braceAlternatives(byte[] bytes, int begin, int end, int[] group, boolean escape, Encoding enc) {
+        int lbrace = group[0];
+        int rbrace = group[1];
+        List<ByteList> alternatives = new ArrayList<>();
+        int nest = 0;
+        int start = lbrace + 1;
+
+        for (int i = start; i <= rbrace; i++) {
+            byte c = bytes[i];
+            if (i == rbrace || (c == ',' && nest == 0)) {
+                ByteList alternative = new ByteList(end - begin);
+                alternative.setEncoding(enc);
+                alternative.append(bytes, begin, lbrace - begin);
+                alternative.append(bytes, start, i - start);
+                alternative.append(bytes, rbrace + 1, end - (rbrace + 1));
+                alternatives.add(alternative);
+                start = i + 1;
+            } else if (c == '{') {
+                nest++;
+            } else if (c == '}') {
+                nest--;
+            } else if (c == '\\' && escape && i + 1 < rbrace) {
+                i++;
+            }
+        }
+
+        return alternatives;
+    }
+
+    // CRuby keeps a group that follows a recursive "**" segment and has no '/' in it.
+    @CRuby(value = "glob_helper", file = "dir.c")
+    private static boolean isMatchedPerEntry(byte[] bytes, int begin, int lbrace, int rbrace) {
+        for (int i = lbrace + 1; i < rbrace; i++) {
+            if (bytes[i] == '/') return false;
+        }
+
+        for (int segment = begin; segment + 2 < lbrace; segment++) {
+            if ((segment == begin || bytes[segment - 1] == '/') && isDoubleStarAndSlash(bytes, segment)) return true;
+        }
+
+        return false;
+    }
+
+    // Matches if any alternative of the segment's brace groups does.
+    @CRuby(value = "dirent_match_brace", file = "dir.c")
+    private static boolean fnmatchBraces(byte[] pattern, int pbegin, int pend, byte[] string, int sbegin, int send, int flags) {
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(pattern, pbegin, pend, escape);
+        if (group == null) return fnmatch(pattern, pbegin, pend, string, sbegin, send, flags) == 0;
+
+        for (ByteList alternative : braceAlternatives(pattern, pbegin, pend, group, escape, ASCIIEncoding.INSTANCE)) {
+            if (fnmatchBraces(alternative.unsafeBytes(), alternative.begin(), alternative.begin() + alternative.realSize(),
+                    string, sbegin, send, flags)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
         flags |= FNM_SYSCASE;
-        return glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, ary));
+        List<ByteList> tmpAry = new ArrayList<>();
+        int globRet = glob_helper(runtime, cwd, pattern, flags, new GlobArgs(push_pattern, tmpAry));
+        if (sort) {
+            Collections.sort(tmpAry);
+        }
+        ary.addAll(tmpAry);
+        return globRet;
     }
 
     public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {
@@ -527,7 +589,7 @@ public class Dir {
         if(lbrace >= 0 && rbrace >= 0) {
             int pos = lbrace;
             String front = pattern.substring(0, lbrace);
-            String back = pattern.substring(rbrace + 1, pattern.length());
+            String back = pattern.substring(rbrace + 1);
 
             while(pos < rbrace) {
                 int nest = 0;
@@ -561,21 +623,32 @@ public class Dir {
         return patterns;
     }
 
-    private static boolean has_magic(byte[] bytes, int begin, int end, int flags) {
+    /* NOTE: Order here is important */
+    enum GlobMagic  { PLAIN, ALPHA, MAGICAL }
+
+    private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
         int open = 0;
+        int braceOpen = 0;
+        boolean hasalpha = false;
 
         for (int i = begin; i < end; i++) {
             switch (bytes[i]) {
             case '?':
             case '*':
-                return true;
+                return GlobMagic.MAGICAL;
             case '[':	/* Only accept an open brace if there is a close */
                 open++;	/* brace to match it.  Bracket expressions must be */
                 continue;	/* complete, according to Posix.2 */
             case ']':
-                if (open > 0) return true;
+                if (open > 0) return GlobMagic.MAGICAL;
+
+                continue;
+            case '{':
+                braceOpen++;
+                continue;
+            case '}':
+                if (braceOpen > 0) return GlobMagic.MAGICAL;
 
                 continue;
             case '\\':
@@ -585,15 +658,21 @@ public class Dir {
 //                if (escape && i == end) return false;
 //                break;
 
-                if (escape) return true; // force magic logic whenever there's escaped chars
+                if (escape) return GlobMagic.MAGICAL; // force magic logic whenever there's escaped chars
 
                 continue;
             default:
-                if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i] & 0xFF))) return true;
+                if (Platform.IS_WINDOWS || isAlpha(bytes[i])) {
+                    hasalpha = true;
+                }
             }
         }
 
-        return false;
+        return hasalpha ? GlobMagic.ALPHA : GlobMagic.PLAIN;
+    }
+
+    private static boolean isAlpha(byte b) {
+        return Character.isLetter(Byte.toUnsignedInt(b));
     }
 
     private static int remove_backslashes(byte[] bytes, int index, int end) {
@@ -617,23 +696,52 @@ public class Dir {
     private static byte[] extract_path(byte[] bytes, int begin, int end) {
         int len = end - begin;
 
-        if (len > 1 && bytes[end-1] == '/' && (!DOSISH || (len < 2 || bytes[end-2] != ':'))) len--;
+        if (len > 1 && bytes[end - 1] == '/' && (!DOSISH || bytes[end - 2] != ':')) len--;
 
         byte[] alloc = new byte[len];
         System.arraycopy(bytes,begin,alloc,0,len);
         return alloc;
     }
 
-    private static byte[] extract_elem(byte[] bytes, int begin, int end) {
-        int elementEnd = indexOf(bytes, begin, end, (byte)'/');
-        if (elementEnd == -1) elementEnd = end;
+    private static byte[] extractScheme(byte[] path, int begin, int end) {
+        int colon = findScheme(path, begin, end);
+        if (colon == -1) return null;
+        do { colon++; } while (colon < end && path[colon] == '/');
+        colon--;
+        byte[] scheme = new byte[colon - begin];
+        System.arraycopy(path, begin, scheme, 0, colon - begin);
+        return scheme;
+    }
 
-        return extract_path(bytes, begin, elementEnd);
+    private static ByteList prepend(ByteList buf, byte[] prefix) {
+        ByteList newbuf = new ByteList(prefix);
+        newbuf.setEncoding(buf.getEncoding());
+        newbuf.append(buf);
+        return newbuf;
+    }
+
+    private static byte[] prependScheme(byte[] scheme, byte[] path, int begin, int end) {
+        byte [] newpath = new byte[scheme.length + (end - begin)];
+        System.arraycopy(scheme, 0, newpath, 0, scheme.length);
+        System.arraycopy(path, begin, newpath, scheme.length, end - begin);
+        return newpath;
     }
 
     // Win drive letter X:/
     private static boolean beginsWithDriveLetter(byte[] path, int begin, int end) {
         return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]);
+    }
+
+    private static int findScheme(byte[] path, int begin, int end) {
+        String schemeStr = new String(path, begin, Math.min(16, end - begin));
+        if (schemeStr.startsWith("uri:classloader:")) return 16;
+        if (schemeStr.startsWith("uri:")) return 4;
+        if (schemeStr.startsWith("file:")) return 5;
+        if (schemeStr.startsWith("classpath:")) return 10;
+        if (schemeStr.startsWith("jar:file:")) {
+            return memchr(path, begin, '!', end - begin) + 1;
+        }
+        return -1;
     }
 
     // Is this nothing or literally root directory for the OS.
@@ -654,24 +762,9 @@ public class Dir {
         return files == null ? EMPTY_STRING_ARRAY : files;
     }
 
-    private static final class DirGlobber {
-        public final ByteList link;
-
-        DirGlobber(ByteList link) { this.link = link; }
-    }
-
-    private static boolean isSpecialFile(String name) {
-        int length = name.length();
-
-        if (length < 1 || length > 3 || name.charAt(0) != '.') return false;
-        if (length == 1) return true;
-        char c = name.charAt(1);
-        if (length == 2 && (c == '.' || c == '/')) return true;
-        return c == '.' && name.charAt(2) == '/';
-    }
-
-    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final String fileName = new String(bytes, begin, end - begin, enc.getCharset());
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc,
+                                           GlobFunc<GlobArgs> func, GlobArgs arg) {
+        final String fileName = decodePath(bytes, begin, end - begin, enc);
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
         // paths and using system drive make it absolute.  MRI does this on many methods we don't.
@@ -680,166 +773,176 @@ public class Dir {
             if (cwd == null) cwd = "C:";
             cwd = cwd + "/";
         }
-        FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
-        if (file.exists()) {
-            return func.call(bytes, begin, end - begin, enc, arg);
-        }
 
-        return 0;
+        return JRubyFile.createResource(runtime, cwd, fileName).exists() ?
+                func.call(bytes, begin, end - begin, enc, arg) :
+                0;
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final int begin = path.getBegin();
-        final int end = begin + path.getRealSize();
-        final Encoding enc = path.getEncoding();
-        return glob_helper(runtime, cwd, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
+    private static int glob_helper(Ruby runtime, String cwd, ByteList path, int flags, GlobArgs arg) {
+        int begin = path.getBegin();
+        int end = begin + path.length();
+        byte[] bytes = path.getUnsafeBytes();
+        final byte[] scheme = extractScheme(bytes, begin, end);
+        if (scheme != null) path.delete(begin, scheme.length);
+        return glob_helper(runtime, cwd, scheme, path, -1, flags, Dir.glob_caller, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd,
-        byte[] path, int begin, int end, Encoding enc, int sub,
-        final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        int status = 0;
-
+    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, ByteList b, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        byte[] path = b.getUnsafeBytes();
+        int begin = b.getBegin();
+        int end = begin + b.length();
+        Encoding enc = b.getEncoding();
         int ptr = sub != -1 ? sub : begin;
+        GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
-        if ( ! has_magic(path, ptr, end, flags) ) {
-            if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
-                if ( sub != -1 ) { // can modify path (our internal buf[])
-                    end = remove_backslashes(path, sub, end);
-                }
-                else {
-                    final int len = end - begin;
-                    final byte[] newPath = new byte[len];
-                    System.arraycopy(path, begin, newPath, 0, len);
-                    begin = 0; end = remove_backslashes(newPath, 0, len);
-                    path = newPath;
-                }
+        // No magical characters, so we just process it as if it was a single file.
+        if (has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0) {
+            if (DOSISH || (flags & FNM_NOESCAPE) == 0) end = remove_backslashes(path, ptr, end);
+            if (end <= begin) return 0;
+
+            if (scheme != null) {
+                path = prependScheme(scheme, path, begin, end);
+                begin = 0;
+                end = path.length;
             }
 
-            if (end > begin) {
-                if ( isAbsolutePath(path, begin, end) ) {
-                    status = addToResultIfExists(runtime, null, path, begin, end, enc, flags, func, arg);
-                } else {
-                    status = addToResultIfExists(runtime, cwd, path, begin, end, enc, flags, func, arg);
-                }
-            }
-
-            return status;
+            String pwd = isAbsolutePath(path, begin, end) ? null : cwd;
+            return addToResultIfExists(runtime, pwd, path, begin, end, enc, func, arg);
         }
 
-        final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
-
-        ByteList buf = new ByteList(20);
-        buf.setEncoding(enc);
-        FileResource resource;
-
+        final ArrayList<ByteList> links = new ArrayList<>();
+        int status = 0;
         mainLoop: while(ptr != -1 && status == 0) {
-            if ( path[ptr] == '/' ) ptr++;
+            if (path[ptr] == '/') ptr++;
 
-            final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
-            if (has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
-                finalize: do {
+            int slashIndex = indexOf(path, ptr, end, (byte) '/');
+            int segmentEnd = slashIndex == -1 ? end : slashIndex;
+            final GlobMagic magical = has_magic(path, ptr, segmentEnd, flags);
+            if (magical.compareTo(nonMagic) > 0) {
+                do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
-                    byte[] magic = extract_elem(path, ptr, end);
+                    if (scheme != null) dir = prependScheme(scheme, dir, 0, dir.length);
+                    byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, 0, dir.length, enc.getCharset()));
-                    if ( resource.isDirectory() ) {
-                        if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
-                            final int lengthOfBase = base.length;
-                            recursive = true;
-                            buf.length(0);
-                            buf.append(base);
-                            int nextStartIndex;
-                            int indexOfSlash = SLASH_INDEX;
-                            do {
-                                nextStartIndex = indexOfSlash + 1;
-                                indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
-                                magic = extract_elem(path, nextStartIndex, end);
-                            } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+                    FileResource resource = JRubyFile.createResource(runtime, cwd, decodePath(dir, 0, dir.length, enc));
+                    if (!resource.isDirectory()) break mainLoop;
 
-                            int remainingPathStartIndex;
-                            if(Arrays.equals(magic, DOUBLE_STAR)) {
-                                remainingPathStartIndex = nextStartIndex;
-                            } else {
-                                remainingPathStartIndex = nextStartIndex - 1;
-                            }
-                            remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
-                            buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
-                            status = glob_helper(runtime, cwd, buf, lengthOfBase, flags, func, arg);
-                            if ( status != 0 ) break finalize;
-                        }
-                    } else {
-                        break mainLoop;
+                    if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
+                        recursive = true;
+                        ByteList buf = createPath(base, null, enc);
+                        int nextStartIndex;
+                        int indexOfSlash = slashIndex;
+                        do {
+                            nextStartIndex = indexOfSlash + 1;
+                            indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
+                            int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
+                            magic = extract_path(path, nextStartIndex, nextEndIndex);
+                        } while (Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+
+                        int remainingPathStartIndex = Arrays.equals(magic, DOUBLE_STAR) ? nextStartIndex : nextStartIndex - 1;
+                        remainingPathStartIndex = base.length > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                        buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                        // Not in MRI but nested ** should not include '.' unless it explicitly asks for them.
+                        if ((flags & FNM_DOTMATCH) == 0) flags |= FNM_GLOB_SKIPDOT;
+                        status = glob_helper(runtime, cwd, scheme, buf, base.length, flags, func, arg);
+                        if (status != 0) break;
                     }
 
-                    final String[] files = files(resource);
+                    boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
+                    if (recursive || magical.compareTo(GlobMagic.MAGICAL) >= 0) flags |= FNM_GLOB_SKIPDOT;
 
-                    for ( int i = 0; i < files.length; i++ ) {
-                        final String file = files[i];
-                        final byte[] fileBytes = getBytesInUTF8(file);
+                    for (String file: files(resource)) {
+                        if (isIgnorableDotOrDotDot(file, recursive, flags, skipdot)) continue;
+
+                        byte[] fileBytes = getBytesInUTF8(file);
+                        ByteList buf = createPath(base, fileBytes, enc);
+
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
-                                continue;
-                            }
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
-                            if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
+                            if (fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
+
+                            ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
+                            FileResource r = JRubyFile.createResource(runtime, cwd, decodePath(resBuf));
+                            if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
-                                if ( status != 0 ) break;
+                                buf.append(path, slashIndex, end - slashIndex);
+                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
+                                if (status != 0) break;
                             }
-                            continue;
-                        }
-                        if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
-                            if ( SLASH_INDEX == -1 ) {
-                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
-                                if ( status != 0 ) break;
-                                continue;
+                        } else if (fnmatchBraces(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags)) {
+                            boolean dirMatch = slashIndex == end - 1 &&
+                                    JRubyFile.createResource(runtime, cwd, decodePath(buf)).isDirectory();
+                            if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'
+                                if (scheme != null) buf = prepend(buf, scheme);
+                                if (dirMatch) buf.append(SLASH);
+                                status = func.call(buf.getUnsafeBytes(), buf.begin(), buf.getRealSize(), enc, arg);
+                                if (status != 0) break;
+                            } else {                             // more subdirs to process
+                                links.add(buf);
                             }
-                            links.add(new DirGlobber(buf));
-                            buf = new ByteList(20);
-                            buf.setEncoding(enc);
                         }
                     }
                 } while(false);
 
-                if ( links.size() > 0 ) {
-                    for ( DirGlobber globber : links ) {
-                        final ByteList link = globber.link;
-                        if ( status == 0 ) {
-                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(link));
-                            if ( resource.isDirectory() ) {
-                                final int len = link.getRealSize();
-                                buf.length(0);
-                                buf.append(link);
-                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
-                            }
+                if (!links.isEmpty()) {
+                    for (ByteList link: links) {  // process matching directories found in this segment
+                        if (status != 0) break;
+
+                        String fullPath = decodePath(scheme != null ? prepend(link, scheme) : link);
+                        if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
+                            int linkSub = link.begin() + link.realSize();
+                            link.append(path, slashIndex, end - slashIndex);
+                            status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
                         }
                     }
-                    break mainLoop;
+                    break;
                 }
             }
-            ptr = SLASH_INDEX;
+            ptr = slashIndex;
         }
 
         return status;
     }
 
+    private static boolean isIgnorableDotOrDotDot(String file, boolean recursive, int flags, boolean skipdot) {
+        if (file.charAt(0) == '.') {
+            int length = file.length();
+            if (length == 1) return skipdot || recursive && (flags & FNM_DOTMATCH) == 0;
+            return length == 2 && file.charAt(1) == '.';
+        }
+
+        return false;
+    }
+
+    private static ByteList createPath(byte[] base, byte[] segment, Encoding encoding) {
+        ByteList buf = new ByteList(20);
+        buf.setEncoding(encoding);
+        buf.append(base);
+        if (segment != null) {
+            if (!isRoot(base)) buf.append(SLASH);
+            buf.append(segment);
+        }
+        return buf;
+    }
+
+    // A binary path goes to the OS as its raw bytes, as in RubyFile.decodePath; other paths decode as characters.
+    private static String decodePath(byte[] bytes, int begin, int length, Encoding enc) {
+        return enc == ASCIIEncoding.INSTANCE ?
+                RubyFile.decodeBinaryPath(bytes, begin, length) :
+                new String(bytes, begin, length, enc.getCharset());
+    }
+
+    private static String decodePath(ByteList path) {
+        return path.getEncoding() == ASCIIEncoding.INSTANCE ?
+                RubyFile.decodeBinaryPath(path.unsafeBytes(), path.begin(), path.realSize()) :
+                asJavaString(path);
+    }
+
     private static byte[] getBytesInUTF8(final String str) {
         return RubyEncoding.encodeUTF8(str);
     }
-
 }

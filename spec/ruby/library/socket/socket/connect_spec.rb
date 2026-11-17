@@ -32,7 +32,7 @@ describe 'Socket#connect' do
 
       @client.connect(@server.getsockname).should == 0
 
-      lambda {
+      -> {
         @client.connect(@server.getsockname)
 
         # A second call needed if non-blocking sockets become default
@@ -40,7 +40,7 @@ describe 'Socket#connect' do
         # as it's too implementation-dependent and checking for connect()
         # errors is futile anyways because of TOCTOU
         @client.connect(@server.getsockname)
-      }.should raise_error(Errno::EISCONN)
+      }.should.raise(Errno::EISCONN)
     end
 
     platform_is_not :darwin do
@@ -51,6 +51,28 @@ describe 'Socket#connect' do
           [Errno::ECONNREFUSED, Errno::ETIMEDOUT].include?(e.class).should == true
         end
       end
+    end
+  end
+
+  ruby_version_is "3.4" do
+    it "fails with timeout" do
+      # TEST-NET-1 IP address are reserved for documentation and example purposes.
+      address = Socket.pack_sockaddr_in(1, "192.0.2.1")
+
+      client = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM)
+      client.timeout = 0
+
+      -> {
+        begin
+          client.connect(address)
+        rescue Errno::ECONNREFUSED
+          skip "Outgoing packets may be filtered"
+        rescue Errno::ENETUNREACH
+          skip "Off line"
+        end
+      }.should.raise(IO::TimeoutError)
+    ensure
+      client.close
     end
   end
 end

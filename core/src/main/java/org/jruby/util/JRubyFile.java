@@ -35,6 +35,7 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jnr.posix.JavaSecuredFile;
 
@@ -100,12 +101,19 @@ public class JRubyFile extends JavaSecuredFile {
                 pathname = "uri:classloader:/" + pathname.substring(10);
             }
 
+            if (pathname.startsWith("uri:file:")) {
+                // treat uri:file: as file:
+                pathname = pathname.substring(4);
+            }
+
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
             if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname, isFile);
 
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
 
+                // Mostly for Windows to work as "//" is not a valid existing dir but this is more that the dir name should be.
+                if (pathname.equals("//")) pathname = "/";
                 if (pathname.length() == 0) return EmptyFileResource.INSTANCE;
             }
         }
@@ -117,15 +125,25 @@ public class JRubyFile extends JavaSecuredFile {
         // If any other special resource types fail, count it as a filesystem backed resource.
         return new RegularFileResource(runtime != null ? runtime.getPosix() : null, create(cwd, pathname), pathname);
     }
+    public static boolean isResourceRegularFile(FileResource res) {
+        return (res instanceof RegularFileResource);
+    }
 
     public static String normalizeSeps(String path) {
         return Platform.IS_WINDOWS ? path.replace(File.separatorChar, '/') : path;
     }
 
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname, File path) {
-        // File and company do not seem to recognize bare \ and / on Windows as absolute.  Cheat!
-        if (path.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
+        if (path.isAbsolute()) {
             return new JRubyFile(path);
+        } else if (Platform.IS_WINDOWS) {
+            // File and company do not seem to recognize COM ports on Windows as absolute.  Cheat!
+            if (JRubyFile.isComPort(pathname)) {
+                return new JRubyFile(pathname); // use raw path, not absolute path
+            // Nor do they seem to recognize bare \ and / on Windows as absolute.  Cheat!
+            } else if (pathname.startsWith("/") || pathname.startsWith("\\")) {
+                return new JRubyFile(path);
+            }
         }
         if (cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
             return new JRubyFile(cwd + '/' + pathname);
@@ -139,6 +157,17 @@ public class JRubyFile extends JavaSecuredFile {
 
     public static String getFileProperty(String property) {
         return normalizeSeps(SafePropertyAccessor.getProperty(property, "/"));
+    }
+
+    private static final Pattern windowsComPattern = Pattern.compile("(?:\\/\\/\\.\\/|\\\\\\\\\\.\\\\)?COM\\d\\d?", Pattern.CASE_INSENSITIVE);
+
+    // Checks to see if it's a windows com port path
+    static boolean isComPort(String path) {
+        if (!Platform.IS_WINDOWS) return false;
+        int len = path.length();
+
+        // Look for both \\.\ and //./, but avoid COMxx (len != 5) as that isn't valid
+        return len < 10 && len > 3 && len != 5 && windowsComPattern.matcher(path).matches();
     }
 
     private JRubyFile(File file) {
@@ -273,7 +302,7 @@ public class JRubyFile extends JavaSecuredFile {
         return smartFiles;
     }
 
-    public static JRubyFile DUMMY = new JRubyFile("") {
+    public static final JRubyFile DUMMY = new JRubyFile("") {
         @Override
         public String getAbsolutePath() {
             return "";

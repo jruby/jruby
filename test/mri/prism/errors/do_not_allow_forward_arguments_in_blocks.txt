@@ -1,0 +1,13 @@
+a {|...|}
+    ^~~ unexpected ... in block argument
+
+def foo(...)
+  a {|...|}
+      ^~~ unexpected ... in block argument
+end
+
+def foo
+  a {|...|}
+      ^~~ unexpected ... in block argument
+end
+

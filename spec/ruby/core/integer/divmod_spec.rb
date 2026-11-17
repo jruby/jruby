@@ -14,24 +14,24 @@ describe "Integer#divmod" do
     end
 
     it "raises a ZeroDivisionError when the given argument is 0" do
-      lambda { 13.divmod(0)  }.should raise_error(ZeroDivisionError)
-      lambda { 0.divmod(0)   }.should raise_error(ZeroDivisionError)
-      lambda { -10.divmod(0) }.should raise_error(ZeroDivisionError)
+      -> { 13.divmod(0)  }.should.raise(ZeroDivisionError)
+      -> { 0.divmod(0)   }.should.raise(ZeroDivisionError)
+      -> { -10.divmod(0) }.should.raise(ZeroDivisionError)
     end
 
     it "raises a ZeroDivisionError when the given argument is 0 and a Float" do
-      lambda { 0.divmod(0.0)   }.should raise_error(ZeroDivisionError)
-      lambda { 10.divmod(0.0)  }.should raise_error(ZeroDivisionError)
-      lambda { -10.divmod(0.0) }.should raise_error(ZeroDivisionError)
+      -> { 0.divmod(0.0)   }.should.raise(ZeroDivisionError)
+      -> { 10.divmod(0.0)  }.should.raise(ZeroDivisionError)
+      -> { -10.divmod(0.0) }.should.raise(ZeroDivisionError)
     end
 
     it "raises a TypeError when given a non-Integer" do
-      lambda {
+      -> {
         (obj = mock('10')).should_receive(:to_int).any_number_of_times.and_return(10)
         13.divmod(obj)
-      }.should raise_error(TypeError)
-      lambda { 13.divmod("10")    }.should raise_error(TypeError)
-      lambda { 13.divmod(:symbol) }.should raise_error(TypeError)
+      }.should.raise(TypeError)
+      -> { 13.divmod("10")    }.should.raise(TypeError)
+      -> { 13.divmod(:symbol) }.should.raise(TypeError)
     end
   end
 
@@ -46,16 +46,16 @@ describe "Integer#divmod" do
     # assert(0 < b ? (0 <= r && r < b) : (b < r && r <= 0))
     # So, r is always between 0 and b.
     it "returns an Array containing quotient and modulus obtained from dividing self by the given argument" do
-      @bignum.divmod(4).should == [2305843009213693965, 3]
-      @bignum.divmod(13).should == [709490156681136604, 11]
+      @bignum.divmod(4).should == [4611686018427387917, 3]
+      @bignum.divmod(13).should == [1418980313362273205, 6]
 
-      @bignum.divmod(4.5).should == [2049638230412172288, 3.5]
+      @bignum.divmod(4.5).should == [4099276460824344576, 2.5]
 
       not_supported_on :opal do
-        @bignum.divmod(4.0).should == [2305843009213693952, 0.0]
-        @bignum.divmod(13.0).should == [709490156681136640, 8.0]
+        @bignum.divmod(4.0).should == [4611686018427387904, 0.0]
+        @bignum.divmod(13.0).should == [1418980313362273280, 3.0]
 
-        @bignum.divmod(2.0).should == [4611686018427387904, 0.0]
+        @bignum.divmod(2.0).should == [9223372036854775808, 0.0]
       end
 
       @bignum.divmod(bignum_value).should == [1, 55]
@@ -94,24 +94,24 @@ describe "Integer#divmod" do
     end
 
     it "raises a ZeroDivisionError when the given argument is 0" do
-      lambda { @bignum.divmod(0) }.should raise_error(ZeroDivisionError)
-      lambda { (-@bignum).divmod(0) }.should raise_error(ZeroDivisionError)
+      -> { @bignum.divmod(0) }.should.raise(ZeroDivisionError)
+      -> { (-@bignum).divmod(0) }.should.raise(ZeroDivisionError)
     end
 
     # Behaviour established as correct in r23953
     it "raises a FloatDomainError if other is NaN" do
-      lambda { @bignum.divmod(nan_value) }.should raise_error(FloatDomainError)
+      -> { @bignum.divmod(nan_value) }.should.raise(FloatDomainError)
     end
 
     it "raises a ZeroDivisionError when the given argument is 0 and a Float" do
-      lambda { @bignum.divmod(0.0) }.should raise_error(ZeroDivisionError)
-      lambda { (-@bignum).divmod(0.0) }.should raise_error(ZeroDivisionError)
+      -> { @bignum.divmod(0.0) }.should.raise(ZeroDivisionError)
+      -> { (-@bignum).divmod(0.0) }.should.raise(ZeroDivisionError)
     end
 
     it "raises a TypeError when the given argument is not an Integer" do
-      lambda { @bignum.divmod(mock('10')) }.should raise_error(TypeError)
-      lambda { @bignum.divmod("10") }.should raise_error(TypeError)
-      lambda { @bignum.divmod(:symbol) }.should raise_error(TypeError)
+      -> { @bignum.divmod(mock('10')) }.should.raise(TypeError)
+      -> { @bignum.divmod("10") }.should.raise(TypeError)
+      -> { @bignum.divmod(:symbol) }.should.raise(TypeError)
     end
   end
 end

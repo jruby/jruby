@@ -5,7 +5,9 @@ import org.jruby.RubyLocalJumpError;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.runtime.Helpers;
 
 import java.util.List;
 
@@ -68,7 +70,7 @@ public class IRException extends Operand {
     public RuntimeException getException(Ruby runtime) {
         switch (getType()) {
             case NEXT: return runtime.newLocalJumpError(getType(), null, "unexpected next");
-            case BREAK: return runtime.newLocalJumpError(getType(), null, "unexpected break");
+            case BREAK: return Helpers.newLocalJumpErrorForBreak(runtime, null);
             case RETURN: return runtime.newLocalJumpError(getType(), null, "unexpected return");
             case REDO: return runtime.newLocalJumpError(getType(), null, "unexpected redo");
             case RETRY: return runtime.newLocalJumpError(getType(), null, "retry outside of rescue not supported");

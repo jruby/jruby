@@ -5,6 +5,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -12,7 +13,6 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -22,24 +22,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class EQQInstr extends CallInstr implements FixedArityInstr {
     // This is a splatted value and eqq should compare each element in the array vs
     // treating the array as a single value.
-    private boolean splattedValue;
-
-    // clone constructor
-    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,
-                       long callSiteID) {
-        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
-                v1, new Operand[] { v2 }, null, isPotentiallyRefined, callSite, callSiteID);
-
-        this.splattedValue = splattedValue;
-    }
+    private final boolean splattedValue;
+    private final boolean pattern;
 
     // normal constructor
-    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined) {
-        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, isPotentiallyRefined);
+    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean pattern, boolean isPotentiallyRefined) {
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1,
+                new Operand[] { v2 }, NullBlock.INSTANCE, 0, isPotentiallyRefined);
 
         assert result != null: "EQQInstr result is null";
 
         this.splattedValue = splattedValue;
+        this.pattern = pattern;
     }
 
     @Override
@@ -51,10 +45,14 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         return splattedValue;
     }
 
+    public boolean isPattern() {
+        return pattern;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
-                getArg1().cloneForInlining(ii), isSplattedValue(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getArg1().cloneForInlining(ii), isSplattedValue(), isPattern(), isPotentiallyRefined());
     }
 
     @Override
@@ -62,6 +60,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         super.encode(e);
 
         e.encode(splattedValue);
+        e.encode(pattern);
     }
 
     public static EQQInstr decode(IRReaderDecoder d) {
@@ -75,16 +74,20 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         d.decodeInt(); // we always know it is 1 arg (args count)
         Operand arg1 = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        d.decodeInt(); // flags is always 0 but super.decode stores it anyways
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new EQQInstr(d.getCurrentScope(), result, receiver, arg1, d.decodeBoolean(), d.getCurrentScope().maybeUsingRefinements());
+        return new EQQInstr(d.getCurrentScope(), result, receiver, arg1, d.decodeBoolean(), d.decodeBoolean(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject recv = (IRubyObject) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, currDynScope, temp);
+
+        // enebo: don't think we need to set callinfo?
+
         return IRRuntimeHelpers.isEQQ(context, recv, value, callSite, isSplattedValue());
     }
 

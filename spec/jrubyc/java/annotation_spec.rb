@@ -32,4 +32,12 @@ describe "A Ruby class generating a Java stub" do
       expect( method.to_s ).to match /@java\.lang\.SuppressWarnings\(name = "blah"\)\s+public Object bar/n
     end
   end
+
+  describe "with an annotated method, java_signature style" do
+    it "generates an annotation in the Java source" do
+      cls = generate("class Foo; java_signature '@java.lang.SuppressWarnings(name = \"blah\") public Object bar()'; def bar; end; end").classes[0]
+
+      expect( cls.to_s ).to match /@java\.lang\.SuppressWarnings\(name="blah"\)\s+public Object bar/n
+    end
+  end
 end

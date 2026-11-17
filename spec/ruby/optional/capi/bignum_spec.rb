@@ -7,21 +7,23 @@ def ensure_bignum(n)
   n
 end
 
-full_range_longs = (fixnum_max == 2**(0.size * 8 - 1) - 1)
+full_range_longs = (fixnum_max == max_long)
+max_ulong = begin
+  require 'rbconfig/sizeof'
+  RbConfig::LIMITS['ULONG_MAX']
+rescue LoadError
+  nil
+end
+# If the system doesn't offer ULONG_MAX, assume 2's complement and derive it
+# from LONG_MAX.
+max_ulong ||= 2 * (max_long + 1) - 1
 
 describe "CApiBignumSpecs" do
   before :each do
     @s = CApiBignumSpecs.new
-
-    if full_range_longs
-      @max_long = 2**(0.size * 8 - 1) - 1
-      @min_long = -@max_long - 1
-      @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
-    else
-      @max_long = ensure_bignum(2**(0.size * 8 - 1) - 1)
-      @min_long = ensure_bignum(-@max_long - 1)
-      @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
-    end
+    @max_long = max_long
+    @min_long = min_long
+    @max_ulong = ensure_bignum(max_ulong)
   end
 
   describe "rb_big2long" do
@@ -33,8 +35,8 @@ describe "CApiBignumSpecs" do
     end
 
     it "raises RangeError if passed Bignum overflow long" do
-      lambda { @s.rb_big2long(ensure_bignum(@max_long + 1)) }.should raise_error(RangeError)
-      lambda { @s.rb_big2long(ensure_bignum(@min_long - 1)) }.should raise_error(RangeError)
+      -> { @s.rb_big2long(ensure_bignum(@max_long + 1)) }.should.raise(RangeError)
+      -> { @s.rb_big2long(ensure_bignum(@min_long - 1)) }.should.raise(RangeError)
     end
   end
 
@@ -47,8 +49,8 @@ describe "CApiBignumSpecs" do
     end
 
     it "raises RangeError if passed Bignum overflow long" do
-      lambda { @s.rb_big2ll(ensure_bignum(@max_long << 40)) }.should raise_error(RangeError)
-      lambda { @s.rb_big2ll(ensure_bignum(@min_long << 40)) }.should raise_error(RangeError)
+      -> { @s.rb_big2ll(ensure_bignum(@max_long << 40)) }.should.raise(RangeError)
+      -> { @s.rb_big2ll(ensure_bignum(@min_long << 40)) }.should.raise(RangeError)
     end
   end
 
@@ -65,8 +67,8 @@ describe "CApiBignumSpecs" do
     end
 
     it "raises RangeError if passed Bignum overflow long" do
-      lambda { @s.rb_big2ulong(ensure_bignum(@max_ulong + 1)) }.should raise_error(RangeError)
-      lambda { @s.rb_big2ulong(ensure_bignum(@min_long - 1)) }.should raise_error(RangeError)
+      -> { @s.rb_big2ulong(ensure_bignum(@max_ulong + 1)) }.should.raise(RangeError)
+      -> { @s.rb_big2ulong(ensure_bignum(@min_long - 1)) }.should.raise(RangeError)
     end
   end
 
@@ -123,7 +125,7 @@ describe "CApiBignumSpecs" do
       val.should == @max_ulong
     end
 
-    platform_is wordsize: 64 do
+    platform_is c_long_size: 64 do
       it "packs max_ulong into 2 ulongs to allow sign bit" do
         val = @s.rb_big_pack_length(@max_ulong)
         val.should == 2
@@ -187,14 +189,14 @@ describe "CApiBignumSpecs" do
     it "returns a Fixnum for a Fixnum input value" do
       val = @s.rb_dbl2big(2)
 
-      val.kind_of?(Fixnum).should == true
+      val.kind_of?(Integer).should == true
       val.should == 2
     end
 
     it "returns a Fixnum for a Float input value" do
       val = @s.rb_dbl2big(2.5)
 
-      val.kind_of?(Fixnum).should == true
+      val.kind_of?(Integer).should == true
       val.should == 2
     end
 
@@ -202,7 +204,7 @@ describe "CApiBignumSpecs" do
       input = 219238102380912830988.5 # chosen by fair dice roll
       val   = @s.rb_dbl2big(input)
 
-      val.kind_of?(Bignum).should == true
+      val.kind_of?(Integer).should == true
 
       # This value is based on the output of a simple C extension that uses
       # rb_dbl2big() to convert the above input value to a Bignum.
@@ -212,13 +214,13 @@ describe "CApiBignumSpecs" do
     it "raises FloatDomainError for Infinity values" do
       inf = 1.0 / 0
 
-      lambda { @s.rb_dbl2big(inf) }.should raise_error(FloatDomainError)
+      -> { @s.rb_dbl2big(inf) }.should.raise(FloatDomainError)
     end
 
     it "raises FloatDomainError for NaN values" do
       nan = 0.0 / 0
 
-      lambda { @s.rb_dbl2big(nan) }.should raise_error(FloatDomainError)
+      -> { @s.rb_dbl2big(nan) }.should.raise(FloatDomainError)
     end
   end
 end

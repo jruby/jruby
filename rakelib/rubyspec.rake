@@ -14,6 +14,7 @@ namespace :spec do
   task :'ruby:aot' => :ci_precompiled
 
   if ENV['CI']
+    # can't easily see file output on CI so we use specdoc
     MSPEC_FORMAT = "s"
   else
     MSPEC_FORMAT = "d"
@@ -21,26 +22,70 @@ namespace :spec do
 
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast' do
+    mspec :format => 'd',
+          :spec_target => ":fast",
+          :spec_config => "spec/jruby.mspec"
+  end
+
+  desc "Run fast specs that do not spawn many subprocesses (prism)"
+  task :'ruby:fast:prism' do
     mspec :compile_mode => "OFF",
           :format => MSPEC_FORMAT,
           :spec_target => ":fast",
-          :jruby_opts => "-I. --dev"
+          :jruby_opts => "--dev -Xparser.prism",
+          :spec_config => "spec/jruby.mspec"
   end
-
+  
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast:jit' do
     mspec :compile_mode => "JIT",
           :jit_threshold => 0,
-          :format => 'd',
+          :format => MSPEC_FORMAT,
+          :spec_target => ":fast"
+  end
+
+  desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast:int' do
+    mspec :compile_mode => "OFF",
+          :format => MSPEC_FORMAT,
           :spec_target => ":fast"
   end
 
   desc "Run slow specs"
   task :'ruby:slow' do
     mspec :compile_mode => "OFF",
-          :format => MSPEC_FORMAT,
+          :format => "s",
           :spec_target => ":slow",
-          :jruby_opts => "-I. --dev --debug"
+          :jruby_opts => "--dev"
+  end
+
+  desc "Run debug specs"
+  task :'ruby:debug' do
+    mspec :compile_mode => "OFF",
+          :format => "s",
+          :spec_target => ":debug",
+          :jruby_opts => "--debug"
+  end
+
+  desc "Run debug specs with the JIT enabled"
+  task :'ruby:debug:jit' do
+    mspec :compile_mode => "JIT",
+          :jit_threshold => 0,
+          :format => "s",
+          :spec_target => ":debug",
+          :jruby_opts => "--debug",
+          :spec_config => "spec/jruby.mspec"
+  end
+
+  desc "Run specs for work-in-progess features"
+  task :'ruby:wip' do
+    mspec :command => "run",
+          :compile_mode => "OFF",
+          :format => "s",
+          :spec_target => ":ci_files",
+          :jruby_opts => "--dev",
+          :spec_config => "spec/jruby.mspec",
+          :tags => [:wip]
   end
 
   desc "Run rubyspecs expected to pass"
@@ -56,21 +101,16 @@ namespace :spec do
   desc "Run all the specs in precompiled mode"
   task :ci_all_precompiled => ['spec:all_precompiled']
 
-  desc "Run rubyspecs expected to pass (against latest rubyspec version)"
-  task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged']
-
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
 
+  # Each mode's mspec run aborts rake as soon as it fails, so there is no
+  # separate status check after all modes have run.
   desc "Run tagged specs in interpreted, JIT, and pre-compiled modes"
-  task :tagged => [:interpreted, :compiled, :precompiled] do
-    fail "One or more Ruby spec runs have failed" if spec_run_error
-  end
+  task :tagged => [:interpreted, :compiled, :precompiled]
 
   desc "Run all specs in interpreted, JIT, and pre-compiled modes"
-  task :all => [:all_interpreted, :all_compiled, :all_precompiled] do
-    fail "One or more Ruby spec runs have failed" if spec_run_error
-  end
+  task :all => [:all_interpreted, :all_compiled, :all_precompiled]
 
   desc "Tagged specs in interpreted mode only"
   task :interpreted do
@@ -83,6 +123,14 @@ namespace :spec do
     mspec :compile_mode => "JIT",
        :jit_threshold => 0,
        :format => 'd'
+  end
+
+  desc "Tagged specs in JIT mode only (threshold=0)"
+  task :'compiled:prism' do
+    mspec :compile_mode => "JIT",
+       :jit_threshold => 0,
+       :format => 'd'
+       :jruby_opts => "-Xparser.prism"
   end
 
   desc "Tagged specs in AOT mode only"
@@ -110,30 +158,7 @@ namespace :spec do
        :format => 'd'
   end
 
-  # Parameterized rubyspec runs for e.g. TravisCI
-  desc "Run RubySpec on Travis in interpreted mode"
-  task :ci_interpreted_travis do
-    mspec :compile_mode => 'OFF',
-     :format => 's'
-  end
-
   # Complimentary tasks for running specs
-
-  task :fetch_latest_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]
-
-  task :fetch_stable_specs => :install_build_gems do
-    puts "Rolling rubyspec to stable version"
-    git_submodule_update('spec/ruby')
-
-    puts "Rolling mspec to stable version"
-    git_submodule_update('spec/mspec')
-  end
-
-  task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
-    puts "Rolling to rubyspec to latest version"
-    git_checkout('rubyspec', 'origin/HEAD', RUBYSPEC_DIR)
-    git_move_to_head_detached('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
-  end
 
   desc "Retrieve latest tagged rubyspec git repository"
   task :fetch_latest_rubyspec_repo do
@@ -164,10 +189,5 @@ namespace :spec do
     rm_rf MSPEC_DIR
     rm_f MSPEC_TAR_FILE
     rm_f File.join(SPEC_DIR, "rubyspecs.current.revision")
-  end
-
-  def spec_run_error
-    # Obtuseriffic - If any previous spec runs were non-zero return we failed
-    ['OFF', 'JIT', 'FORCE'].any? {|n| ant.properties["spec.status.#{n}"] != "0"}
   end
 end

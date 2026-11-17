@@ -1,9 +1,9 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
-require 'rubygems/commands/open_command'
+
+require_relative "helper"
+require "rubygems/commands/open_command"
 
 class TestGemCommandsOpenCommand < Gem::TestCase
-
   def setup
     super
 
@@ -22,21 +22,51 @@ class TestGemCommandsOpenCommand < Gem::TestCase
 
   def test_execute
     @cmd.options[:args] = %w[foo]
-    @cmd.options[:editor] = "#{Gem.ruby} -e0 --"
+    @cmd.options[:editor] = (ruby_with_rubygems_in_load_path + ["-e", "puts(ARGV,Dir.pwd)", "--"]).join(" ")
 
-    gem 'foo', '1.0.0'
-    spec = gem 'foo', '1.0.1'
-    mock = MiniTest::Mock.new
-    mock.expect(:call, true, [spec.full_gem_path])
+    gem "foo", "1.0.0"
+    spec = gem "foo", "1.0.1"
 
-    Dir.stub(:chdir, mock) do
-      use_ui @ui do
-        @cmd.execute
+    assert_nothing_raised Gem::MockGemUi::TermError do
+      stdout, stderr = capture_subprocess_io do
+        use_ui @ui do
+          @cmd.execute
+        end
       end
+      assert_equal [spec.full_gem_path, spec.full_gem_path], stdout.split("\n")
+      assert_equal "", stderr
     end
 
-    assert mock.verify
     assert_equal "", @ui.error
+    assert_equal "", @ui.output
+  end
+
+  def test_editor_command_windows_path
+    win_platform = Gem.win_platform?
+
+    editor = if win_platform
+      FileUtils.mkdir_p File.join(@tempdir, "editor dir")
+      File.join(@tempdir, "editor dir", "editor.exe").tr("/", "\\")
+    else
+      # backslashes and spaces are plain filename characters on POSIX
+      File.join(@tempdir, 'C:\editor dir\editor.exe')
+    end
+    FileUtils.touch editor
+
+    Gem.win_platform = true
+
+    assert_equal [editor], @cmd.editor_command(editor)
+  ensure
+    Gem.win_platform = win_platform
+  end
+
+  def test_editor_command_quoted_path
+    assert_equal ['C:\editor dir\editor.exe', "-w"],
+                 @cmd.editor_command('"C:\editor dir\editor.exe" -w')
+  end
+
+  def test_editor_command_with_arguments
+    assert_equal %w[code -w], @cmd.editor_command("code -w")
   end
 
   def test_wrong_version
@@ -45,27 +75,55 @@ class TestGemCommandsOpenCommand < Gem::TestCase
 
     gem "foo", "5.0"
 
-    assert_raises Gem::MockGemUi::TermError do
+    assert_raise Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
     end
 
-    assert_match %r|Unable to find gem 'foo'|, @ui.output
+    assert_match(/Unable to find gem 'foo'/, @ui.output)
     assert_equal "", @ui.error
   end
 
   def test_execute_bad_gem
     @cmd.options[:args] = %w[foo]
 
-    assert_raises Gem::MockGemUi::TermError do
+    assert_raise Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
     end
 
-    assert_match %r|Unable to find gem 'foo'|, @ui.output
+    assert_match(/Unable to find gem 'foo'/, @ui.output)
     assert_equal "", @ui.error
   end
 
+  def test_default_gem
+    @cmd.options[:version] = "1.0"
+    @cmd.options[:args] = %w[foo]
+
+    version = @cmd.options[:version]
+    @cmd.define_singleton_method(:spec_for) do |name|
+      spec = Gem::Specification.find_all_by_name(name, version).first
+
+      spec.define_singleton_method(:default_gem?) do
+        true
+      end
+
+      return spec if spec
+
+      say "Unable to find gem '#{name}'"
+    end
+
+    gem("foo", "1.0")
+
+    assert_raise Gem::MockGemUi::TermError do
+      use_ui @ui do
+        @cmd.execute
+      end
+    end
+
+    assert_match(/'foo' is a default gem and can't be opened\./, @ui.output)
+    assert_equal "", @ui.error
+  end
 end

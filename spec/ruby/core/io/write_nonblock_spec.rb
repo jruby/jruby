@@ -31,15 +31,26 @@ platform_is_not :windows do
       end
     end
 
+    it "does not modify the passed argument" do
+      File.open(@filename, "w") do |f|
+        f.set_encoding(Encoding::IBM437)
+        # A character whose codepoint differs between UTF-8 and IBM437
+        f.write_nonblock("ƒ".freeze)
+      end
+
+      File.binread(@filename).bytes.should == [198, 146]
+    end
+
     it "checks if the file is writable if writing zero bytes" do
-      lambda {
-         @readonly_file.write_nonblock("")
-      }.should raise_error(IOError)
+      -> {
+        @readonly_file.write_nonblock("")
+      }.should.raise(IOError)
     end
   end
 
   describe "IO#write_nonblock" do
     it_behaves_like :io_write, :write_nonblock
+    it_behaves_like :io_write_no_transcode, :write_nonblock
   end
 end
 
@@ -54,22 +65,30 @@ describe 'IO#write_nonblock' do
   end
 
   it "raises an exception extending IO::WaitWritable when the write would block" do
-    lambda {
+    -> {
       loop { @write.write_nonblock('a' * 10_000) }
-    }.should raise_error(IO::WaitWritable) { |e|
+    }.should.raise(IO::WaitWritable) { |e|
       platform_is_not :windows do
-        e.should be_kind_of(Errno::EAGAIN)
+        e.should.is_a?(Errno::EAGAIN)
       end
       platform_is :windows do
-        e.should be_kind_of(Errno::EWOULDBLOCK)
+        e.should.is_a?(Errno::EWOULDBLOCK)
       end
     }
   end
 
+  it "raises an ArgumentError if exception: is not true or false" do
+    -> { @write.write_nonblock("a", exception: 0) }.should.raise ArgumentError, /expected true or false/
+    -> { @write.write_nonblock("a", exception: nil) }.should.raise ArgumentError, /expected true or false/
+    -> { @write.write_nonblock("a", exception: 'false') }.should.raise ArgumentError, /expected true or false/
+  end
+
   context "when exception option is set to false" do
     it "returns :wait_writable when the operation would block" do
-      loop { break if @write.write_nonblock("a" * 10_000, exception: false) == :wait_writable }
-      1.should == 1
+      loop {
+        break if @write.write_nonblock("a" * 10_000, exception: false) == :wait_writable
+      }
+      @write.write_nonblock("a" * 10_000, exception: false).should == :wait_writable
     end
   end
 
@@ -77,7 +96,7 @@ describe 'IO#write_nonblock' do
     it 'sets the IO in nonblock mode' do
       require 'io/nonblock'
       @write.write_nonblock('a')
-      @write.nonblock?.should == true
+      @write.should.nonblock?
     end
   end
 end

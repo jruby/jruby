@@ -40,11 +40,13 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
     B_SWITCH(OpFlags.f_is_jump_or_branch),
+    B_INT(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
     RECV_SELF(0),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_POST_REQD_ARG(OpFlags.f_is_arg_receive),
+    RECV_KW(OpFlags.f_is_arg_receive | OpFlags.f_has_side_effect),
     RECV_KW_ARG(OpFlags.f_is_arg_receive),
     RECV_KW_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
@@ -53,9 +55,10 @@ public enum Operation {
     RECV_JRUBY_EXC(OpFlags.f_is_arg_receive),
     LOAD_IMPLICIT_CLOSURE(OpFlags.f_is_arg_receive),
 
-    /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
+    /** Instruction to reify an passed-in block to a Proc for def foo(&amp;b) */
     REIFY_CLOSURE(0),
     LOAD_FRAME_CLOSURE(0),
+    LOAD_BLOCK_IMPLICIT_CLOSURE(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,
@@ -69,6 +72,7 @@ public enum Operation {
     AS_STRING(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    JAVA_CTOR_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
@@ -80,6 +84,8 @@ public enum Operation {
     CALL_1OB(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    BLOCK_GIVEN_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    FRAME_NAME_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** Ruby operators: should all these be calls? Implementing instrs don't inherit from CallBase.java */
     EQQ(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception), // a === call used in when
@@ -120,7 +126,6 @@ public enum Operation {
     /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
-    CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
     SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 
@@ -142,12 +147,19 @@ public enum Operation {
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    // Method coverage: take the counter passed by the calling DynamicMethod, then count the call once the
+    // arguments have been received.
+    RECV_METHOD_COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    COVER_METHOD(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    // Branch coverage: count that execution reached a branch target.
+    COVER_BRANCH(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
-    ARG_SCOPE_DEPTH(0),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BUILD_BACKREF(OpFlags.f_can_raise_exception),
+    BUILD_NTHREF(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_ARRAY(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_STRING(OpFlags.f_can_raise_exception),
     BUILD_DREGEXP(OpFlags.f_can_raise_exception),
@@ -159,6 +171,8 @@ public enum Operation {
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),
+    INT_MATH(0),
+    AS_FIXNUM(0),
     MASGN_OPT(0),
     MASGN_REQD(0),
     MASGN_REST(0),
@@ -230,7 +244,7 @@ public enum Operation {
     PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
-    private int flags;
+    private final int flags;
 
     Operation(int flags) {
         this.flags = flags;

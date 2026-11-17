@@ -31,15 +31,20 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.javasupport.JavaUtil.convertArguments;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
-import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
+import static org.jruby.util.Inspector.GT;
+import static org.jruby.util.Inspector.inspectPrefix;
 
 /**
  * Java::JavaLangReflect package extensions.
@@ -48,20 +53,31 @@ import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
  */
 public abstract class JavaLangReflect {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, (proxyClass) -> Constructor.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.lang.reflect.Field.class, (proxyClass) -> Field.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.lang.reflect.Method.class, (proxyClass) -> Method.define(runtime, (RubyClass) proxyClass));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.lang.reflect.AccessibleObject.class, proxy -> proxy.defineMethods(context, AccessibleObject.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, proxy -> proxy.defineMethods(context, Constructor.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Field.class, proxy -> proxy.defineMethods(context, Field.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Method.class, proxy -> proxy.defineMethods(context, Method.class));
+    }
+
+    @JRubyClass(name = "Java::JavaLangReflect::AccessibleObject")
+    public static class AccessibleObject {
+        @JRubyMethod
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.AccessibleObject obj = JavaUtil.unwrapJavaObject(self);
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, ' ');
+            RubyStringBuilder.cat(context.runtime, buf, obj.toString());
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+
+            return buf;
+        }
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::Constructor")
     public static class Constructor {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Constructor.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject return_type(final ThreadContext context, final IRubyObject self) {
             return context.nil;
@@ -69,78 +85,130 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod // alias argument_types parameter_types
         public static IRubyObject argument_types(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return convertJavaToUsableRubyObject(context.runtime, thiz.getParameterTypes());
         }
 
-        //
-
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.AccessibleObject thiz = unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
+        // NOTE: (legacy) JavaConstructor compat - converting arguments
+        @JRubyMethod(name = {"newInstance", "new_instance"}, rest = true)
+        public static IRubyObject new_instance(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            final Object[] javaArgs;
+            if (args.length == 0) {
+                javaArgs = NO_ARGS;
+            } else {
+                javaArgs = convertArguments(args, thiz.getParameterTypes(), 0);
+            }
+            try {
+                return convertJavaToUsableRubyObject(context.runtime, thiz.newInstance(javaArgs));
+            }
+            catch (IllegalAccessException|InvocationTargetException|InstantiationException e) {
+                Helpers.throwException(e); return null;
+            }
         }
 
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
+        public static IRubyObject public_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            return isPublic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject public_p(final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
-            return isPublic(self, thiz.getModifiers());
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
+        public static IRubyObject protected_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            return isProtected(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject protected_p(final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
-            return isProtected(self, thiz.getModifiers());
+            return protected_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "private?")
+        public static IRubyObject private_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            return isPrivate(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject private_p(final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
-            return isPrivate(self, thiz.getModifiers());
+            return private_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "final?")
+        public static IRubyObject final_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            return isFinal(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject final_p(final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
-            return isFinal(self, thiz.getModifiers());
+            return final_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "static?")
+        public static IRubyObject static_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
+            return isStatic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject static_p(final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = unwrapJavaObject(self);
-            return isStatic(self, thiz.getModifiers());
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
     }
 
+    private static final Object[] NO_ARGS = new Object[0];
+
     @JRubyClass(name = "Java::JavaLangReflect::Method")
     public static class Method {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Method.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject return_type(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
             return convertJavaToUsableRubyObject(context.runtime, thiz.getReturnType());
         }
 
         @JRubyMethod // alias argument_types parameter_types
         public static IRubyObject argument_types(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
             return convertJavaToUsableRubyObject(context.runtime, thiz.getParameterTypes());
         }
 
         @JRubyMethod(rest = true)
-        public static IRubyObject invoke_static(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            final Object[] javaArgs = convertArguments(args, thiz.getParameterTypes());
+        public static IRubyObject invoke(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
+            final java.lang.reflect.Method method = JavaUtil.unwrapJavaObject(self);
+            // NOTE: (legacy) JavaMethod compat - also worked with no arguments
+            final Object target;
+            final Object[] javaArgs;
+            if (args.length == 0) {
+                target = null;
+                javaArgs = NO_ARGS;
+            } else {
+                target = unwrapJavaObject(args[0]);
+                javaArgs = convertArguments(args, method.getParameterTypes(), 1);
+            }
             try {
-                return convertJavaToUsableRubyObject(context.runtime, thiz.invoke(null, javaArgs));
+                return convertJavaToUsableRubyObject(context.runtime, method.invoke(target, javaArgs));
+            }
+            catch (IllegalAccessException|InvocationTargetException e) {
+                Helpers.throwException(e); return null;
+            }
+        }
+
+        @JRubyMethod(rest = true)
+        public static IRubyObject invoke_static(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
+            final java.lang.reflect.Method method = JavaUtil.unwrapJavaObject(self);
+            final Object[] javaArgs = convertArguments(args, method.getParameterTypes());
+            try {
+                return convertJavaToUsableRubyObject(context.runtime, method.invoke(null, javaArgs));
             }
             catch (IllegalAccessException|InvocationTargetException e) {
                 Helpers.throwException(e); return null;
@@ -149,71 +217,91 @@ public abstract class JavaLangReflect {
 
         //
 
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.AccessibleObject thiz = unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
+        @JRubyMethod(name = "abstract?")
+        public static IRubyObject abstract_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isAbstract(context, self, thiz.getModifiers());
         }
 
-        @JRubyMethod(name = "abstract?")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject abstract_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isAbstract(self, thiz.getModifiers());
+            return abstract_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
+        public static IRubyObject public_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
+            return isPublic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject public_p(final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            return isPublic(self, thiz.getModifiers());
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
+        public static IRubyObject protected_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
+            return isProtected(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject protected_p(final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            return isProtected(self, thiz.getModifiers());
+            return protected_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "private?")
+        public static IRubyObject private_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
+            return isPrivate(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject private_p(final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            return isPrivate(self, thiz.getModifiers());
+            return private_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "final?")
+        public static IRubyObject final_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
+            return isFinal(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject final_p(final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            return isFinal(self, thiz.getModifiers());
+            return final_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "static?")
+        public static IRubyObject static_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
+            return isStatic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject static_p(final IRubyObject self) {
-            final java.lang.reflect.Method thiz = unwrapJavaObject(self);
-            return isStatic(self, thiz.getModifiers());
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::Field")
     public static class Field {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Field.class);
-            return proxy;
-        }
-
-        @JRubyMethod // alias value_type name
+        @JRubyMethod
         public static IRubyObject value_type(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Field field = unwrapJavaObject(self);
-            return convertJavaToUsableRubyObject(context.runtime, field.getName());
+            final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
+            return convertJavaToUsableRubyObject(context.runtime, field.getType().getName());
         }
 
         @JRubyMethod // alias value get
         public static IRubyObject value(final ThreadContext context, final IRubyObject self, final IRubyObject obj) {
-            final java.lang.reflect.Field field = unwrapJavaObject(self);
+            final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
+            // NOTE: (legacy) JavaField compat - also worked when setting a static value
+            final Object target = Modifier.isStatic(field.getModifiers()) ? null : unwrapJavaObject(obj);
             try {
-                return convertJavaToUsableRubyObject(context.runtime, field.get(unwrapJavaObject(obj)));
+                return convertJavaToUsableRubyObject(context.runtime, field.get(target));
             }
             catch (IllegalAccessException e) {
                 Helpers.throwException(e); return null;
@@ -223,10 +311,12 @@ public abstract class JavaLangReflect {
         @JRubyMethod // alias set_value set
         public static IRubyObject set_value(final ThreadContext context, final IRubyObject self, final IRubyObject obj,
             final IRubyObject value) {
-            final java.lang.reflect.Field field = unwrapJavaObject(self);
+            final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
+            // NOTE: (legacy) JavaField compat - also worked when setting a static value
+            final Object target = Modifier.isStatic(field.getModifiers()) ? null : unwrapJavaObject(obj);
+            final Object javaValue = convertValueToJava(field, value);
             try {
-                final Object val = value.toJava(field.getType());
-                field.set(unwrapJavaObject(obj), val);
+                field.set(target, javaValue);
             }
             catch (IllegalAccessException e) {
                 Helpers.throwException(e); return null;
@@ -236,7 +326,7 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod
         public static IRubyObject static_value(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Field field = unwrapJavaObject(self);
+            final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
             try {
                 return convertJavaToUsableRubyObject(context.runtime, field.get(null));
             }
@@ -247,10 +337,10 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod
         public static IRubyObject set_static_value(final ThreadContext context, final IRubyObject self, final IRubyObject value) {
-            final java.lang.reflect.Field field = unwrapJavaObject(self);
+            final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
+            final Object javaValue = convertValueToJava(field, value);
             try {
-                final Object val = value.toJava(field.getType());
-                field.set(null, val);
+                field.set(null, javaValue);
             }
             catch (IllegalAccessException e) {
                 Helpers.throwException(e); return null;
@@ -258,70 +348,96 @@ public abstract class JavaLangReflect {
             return context.nil;
         }
 
-        //
-
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.AccessibleObject thiz = unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
-        }
-
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
+        public static IRubyObject public_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isPublic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject public_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isPublic(self, thiz.getModifiers());
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
+        public static IRubyObject protected_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isProtected(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject protected_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isProtected(self, thiz.getModifiers());
+            return protected_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "private?")
+        public static IRubyObject private_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isPrivate(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject private_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isPrivate(self, thiz.getModifiers());
+            return private_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "final?")
+        public static IRubyObject final_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isFinal(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject final_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isFinal(self, thiz.getModifiers());
+
+            return final_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "static?")
+        public static IRubyObject static_p(ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.Field thiz = JavaUtil.unwrapJavaObject(self);
+            return isStatic(context, self, thiz.getModifiers());
+        }
+
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject static_p(final IRubyObject self) {
-            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
-            return isStatic(self, thiz.getModifiers());
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
     }
 
-    static RubyBoolean isAbstract(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isAbstract(mod));
+    private static Object unwrapJavaObject(final IRubyObject object) {
+        return JavaUtil.unwrapJavaValue(object);
     }
 
-    static RubyBoolean isPublic(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isPublic(mod));
+    private static Object convertValueToJava(final java.lang.reflect.Field field, IRubyObject value) {
+        return value.toJava(field.getType());
     }
 
-    static RubyBoolean isProtected(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isProtected(mod));
+    static RubyBoolean isAbstract(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isAbstract(mod));
     }
 
-    static RubyBoolean isPrivate(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isPrivate(mod));
+    static RubyBoolean isPublic(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isPublic(mod));
     }
 
-    static RubyBoolean isFinal(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isFinal(mod));
+    static RubyBoolean isProtected(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isProtected(mod));
     }
 
-    static RubyBoolean isStatic(final IRubyObject self, final int mod) {
-        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isStatic(mod));
+    static RubyBoolean isPrivate(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isPrivate(mod));
+    }
+
+    static RubyBoolean isFinal(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isFinal(mod));
+    }
+
+    static RubyBoolean isStatic(ThreadContext context, final IRubyObject self, final int mod) {
+        return asBoolean(context, java.lang.reflect.Modifier.isStatic(mod));
     }
 
 }

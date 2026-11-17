@@ -1,41 +1,46 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
+require_relative '../process/fixtures/common'
 
 describe "IO.popen" do
-  before :each do
-    @io = nil
-  end
+  ProcessSpecs.use_system_ruby(self)
 
-  after :each do
-    @io.close if @io
-  end
-
-  it "returns an open IO" do
-    @io = IO.popen(ruby_cmd('exit'), "r")
-    @io.closed?.should be_false
-  end
-
-  it "reads a read-only pipe" do
-    @io = IO.popen(ruby_cmd('puts "foo"'), "r")
-    @io.read.should == "foo\n"
-  end
-
-  it "raises IOError when writing a read-only pipe" do
-    @io = IO.popen(ruby_cmd('puts "foo"'), "r")
-    lambda { @io.write('bar') }.should raise_error(IOError)
-    @io.read.should == "foo\n"
-  end
-end
-
-describe "IO.popen" do
   before :each do
     @fname = tmp("IO_popen_spec")
     @io = nil
+    @var = "$FOO"
+    platform_is :windows do
+      @var = "%FOO%"
+    end
   end
 
   after :each do
     @io.close if @io and !@io.closed?
     rm_r @fname
+  end
+
+  it "returns an open IO" do
+    @io = IO.popen(ruby_cmd('exit'), "r")
+    @io.closed?.should == false
+  end
+
+  it "reads a read-only pipe" do
+    @io = IO.popen('echo foo', "r")
+    @io.read.should == "foo\n"
+  end
+
+  platform_is_not :windows do
+    it "redirects the child's STDIN from the parent's STDOUT" do
+      skip "requires STDOUT to be a terminal device" unless STDOUT.tty?
+
+      IO.popen([*ruby_exe, "-e", "print STDIN.tty?", in: STDOUT], &:read).should == "true"
+    end
+  end
+
+  it "raises IOError when writing a read-only pipe" do
+    @io = IO.popen('echo foo', "r")
+    -> { @io.write('bar') }.should.raise(IOError)
+    @io.read.should == "foo\n"
   end
 
   it "sees an infinitely looping subprocess exit when read pipe is closed" do
@@ -55,7 +60,7 @@ describe "IO.popen" do
 
   it "raises IOError when reading a write-only pipe" do
     @io = IO.popen(ruby_cmd('IO.copy_stream(STDIN,STDOUT)'), "w")
-    lambda { @io.read }.should raise_error(IOError)
+    -> { @io.read }.should.raise(IOError)
   end
 
   it "reads and writes a read/write pipe" do
@@ -80,16 +85,16 @@ describe "IO.popen" do
     Process.kill "KILL", pid
     @io.close
     platform_is_not :windows do
-      $?.signaled?.should == true
+      $?.should.signaled?
     end
     platform_is :windows do
-      $?.exited?.should == true
+      $?.should.exited?
     end
   end
 
   it "returns an instance of a subclass when called on a subclass" do
     @io = IOSpecs::SubIO.popen(ruby_cmd('exit'), "r")
-    @io.should be_an_instance_of(IOSpecs::SubIO)
+    @io.should.instance_of?(IOSpecs::SubIO)
   end
 
   it "coerces mode argument with #to_str" do
@@ -97,38 +102,44 @@ describe "IO.popen" do
     mode.should_receive(:to_str).and_return("r")
     @io = IO.popen(ruby_cmd('exit 0'), mode)
   end
-end
 
-describe "IO.popen" do
-  before :each do
-    @io = nil
+  it "accepts a path using the chdir: keyword argument" do
+    path = File.dirname(@fname)
+
+    @io = IO.popen(ruby_cmd("puts Dir.pwd"), "r", chdir: path)
+    @io.read.chomp.should == path
   end
 
-  after :each do
-    @io.close if @io
+  it "accepts a path using the chdir: keyword argument and a coercible path" do
+    path = File.dirname(@fname)
+    object = mock("path")
+    object.should_receive(:to_path).and_return(path)
+
+    @io = IO.popen(ruby_cmd("puts Dir.pwd"), "r", chdir: object)
+    @io.read.chomp.should == path
   end
 
   describe "with a block" do
     it "yields an open IO to the block" do
       IO.popen(ruby_cmd('exit'), "r") do |io|
-        io.closed?.should be_false
+        io.closed?.should == false
       end
     end
 
     it "yields an instance of a subclass when called on a subclass" do
       IOSpecs::SubIO.popen(ruby_cmd('exit'), "r") do |io|
-        io.should be_an_instance_of(IOSpecs::SubIO)
+        io.should.instance_of?(IOSpecs::SubIO)
       end
     end
 
     it "closes the IO after yielding" do
       io = IO.popen(ruby_cmd('exit'), "r") { |_io| _io }
-      io.closed?.should be_true
+      io.closed?.should == true
     end
 
     it "allows the IO to be closed inside the block" do
       io = IO.popen(ruby_cmd('exit'), 'r') { |_io| _io.close; _io }
-      io.closed?.should be_true
+      io.closed?.should == true
     end
 
     it "returns the value of the block" do
@@ -166,18 +177,18 @@ describe "IO.popen" do
   it "sets the internal encoding to nil if it's the same as the external encoding" do
     @io = IO.popen(ruby_cmd('exit'), external_encoding: Encoding::EUC_JP,
                           internal_encoding: Encoding::EUC_JP)
-    @io.internal_encoding.should be_nil
+    @io.internal_encoding.should == nil
   end
 
   context "with a leading ENV Hash" do
     it "accepts a single String command" do
-      IO.popen({"FOO" => "bar"}, ruby_cmd('puts ENV["FOO"]')) do |io|
+      IO.popen({"FOO" => "bar"}, "echo #{@var}") do |io|
         io.read.should == "bar\n"
       end
     end
 
     it "accepts a single String command, and an IO mode" do
-      IO.popen({"FOO" => "bar"}, ruby_cmd('puts ENV["FOO"]'), "r") do |io|
+      IO.popen({"FOO" => "bar"}, "echo #{@var}", "r") do |io|
         io.read.should == "bar\n"
       end
     end
@@ -278,6 +289,25 @@ describe "IO.popen" do
                err: [:child, :out], internal_encoding: Encoding::EUC_JP) do |io|
         io.read.should == "bar\n"
         io.internal_encoding.should == Encoding::EUC_JP
+      end
+    end
+  end
+
+  describe "options validation" do
+    it "raises an ArgumentError if :unsetenv_others option is not a boolean or nil" do
+      -> { IO.popen(["true", unsetenv_others: 1]) }.should.raise(ArgumentError, /expected true or false/)
+      -> { IO.popen(["true", unsetenv_others: "true"]) }.should.raise(ArgumentError, /expected true or false/)
+    end
+
+    it "raises an ArgumentError if :close_others option is not a boolean or nil" do
+      -> { IO.popen(["true", close_others: 1]) }.should.raise(ArgumentError, /expected true or false/)
+      -> { IO.popen(["true", close_others: "true"]) }.should.raise(ArgumentError, /expected true or false/)
+    end
+
+    platform_is :windows do
+      it "raises an ArgumentError if :new_pgroup option is not a boolean or nil" do
+        -> { IO.popen(["true", new_pgroup: 1]) }.should.raise(ArgumentError, /expected true or false/)
+        -> { IO.popen(["true", new_pgroup: "true"]) }.should.raise(ArgumentError, /expected true or false/)
       end
     end
   end

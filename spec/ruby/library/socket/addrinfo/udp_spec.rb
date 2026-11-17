@@ -4,7 +4,7 @@ require_relative '../fixtures/classes'
 describe 'Addrinfo.udp' do
   SocketSpecs.each_ip_protocol do |family, ip_address|
     it 'returns an Addrinfo instance' do
-      Addrinfo.udp(ip_address, 80).should be_an_instance_of(Addrinfo)
+      Addrinfo.udp(ip_address, 80).should.instance_of?(Addrinfo)
     end
 
     it 'sets the IP address' do
@@ -27,10 +27,8 @@ describe 'Addrinfo.udp' do
       Addrinfo.udp(ip_address, 80).socktype.should == Socket::SOCK_DGRAM
     end
 
-    platform_is_not :solaris do
-      it 'sets the socket protocol' do
-        Addrinfo.udp(ip_address, 80).protocol.should == Socket::IPPROTO_UDP
-      end
+    it 'sets the socket protocol' do
+      Addrinfo.udp(ip_address, 80).protocol.should == Socket::IPPROTO_UDP
     end
   end
 end

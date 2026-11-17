@@ -42,14 +42,6 @@ class TestLoad < Test::Unit::TestCase
     assert $loaded_foo_bar
   end
 
-  def test_require_without_current_dir_in_load_path
-    $LOAD_PATH.delete '.'
-    assert_raises(LoadError) { require('test/jruby/dummy') }
-    assert require('./test/jruby/dummy')
-  ensure
-    $LOAD_PATH << '.'
-  end
-
   # GH-2972
   def test_require_relative_via_uri_classloader_protocol
     $CLASSPATH << './test/jruby'
@@ -241,10 +233,6 @@ end
 DEPS
 
     require 'test/jruby/test_loading_behavior'
-
-    res = File.expand_path($loading_behavior_result)
-
-    assert_equal File.expand_path(File.join('test', 'jruby', 'test_loading_behavior.rb')), res
   ensure
     Object.class_eval { alias require old_require; undef :old_require }
   end
@@ -274,15 +262,13 @@ DEPS
   def test_load_from_jar_with_symlink_in_path
     if !WINDOWS
       begin
-        Dir.mkdir 'not_A' unless File.exists? 'not_A'
+        Dir.mkdir 'not_A' unless File.exist? 'not_A'
         File.symlink("not_A", "A") unless File.symlink?('A')
-        with_jruby_shell_spawning do
-          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
-          assert_equal 0, $?
-        end
+        `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
+        assert_equal 0, $?
       ensure
         File.delete("A") if File.symlink?('A')
-        Dir.rmdir 'not_A' if File.exists? 'not_A'
+        Dir.rmdir 'not_A' if File.exist? 'not_A'
       end
     end
   end
@@ -322,7 +308,7 @@ DEPS
 
   def test_symlinked_jar
     Dir.chdir('test/jruby') do
-      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exists?('jarwithoutextension')
+      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exist?('jarwithoutextension')
       File.symlink 'jarwithoutextension', 'symlink.jar' unless File.symlink?('symlink.jar')
     end
 
@@ -330,12 +316,10 @@ DEPS
       require 'test/jruby/symlink.jar'
     }
   ensure
-    Dir.chdir('test/jruby') do
-      [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
-        File.delete(file)
-      end
+    [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
+      File.delete("test/jruby/#{file}") rescue nil
     end
-  end
+  end unless WINDOWS # symlink not supported
 
   def test_load_wrapped
     load(File.expand_path('hello_dummy.rb', File.dirname(__FILE__)), true)

@@ -69,3 +69,34 @@ RSpec::Matchers.define :have_strings_or_symbols do |*strings|
     end.join("\n")
   end
 end
+
+def with_stderr_captured
+  stderr = $stderr; require 'stringio'
+  begin
+    $stderr = StringIO.new
+    yield
+    $stderr.string
+  ensure
+    $stderr = stderr
+  end
+end
+
+def with_warn_captured
+  warns = []
+  oldwarn = nil
+
+  Warning.singleton_class.class_eval do
+    oldwarn = instance_method(:warn)
+    define_method :warn do |message, category: nil|
+      warns << [message, category]
+    end
+  end
+
+  yield
+
+  Warning.singleton_class.class_eval do
+    define_method :warn, oldwarn
+  end
+
+  warns
+end

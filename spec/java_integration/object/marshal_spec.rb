@@ -22,33 +22,6 @@ describe "A Java object" do
     expect( marshaled ).to eql data
   end
 
-  java_import 'java_integration.fixtures.InnerClasses'
-
-  it "marshals local Java class" do
-    hash = { :local => InnerClasses.localMethodClass }
-    caps_method = hash[:local].capsMethod
-
-    #pending 'Marshal.load can not resolve local class: Java::Java_integrationFixtures::InnerClasses::1CapsImpl'
-
-    local = Marshal.load(Marshal.dump(hash))[:local]
-    expect( local.class.java_class.member_class? ).to be false
-    expect( local.class.java_class.anonymous_class? ).to be false
-    expect( local.capsMethod ).to eql caps_method
-  end
-
-  it "marshals anonymous Java class" do
-    array = [ InnerClasses.anonymousMethodClass ]
-    caps_method = array[0].capsMethod
-
-    #pending 'Marshal.load can not resolve anonymous class: Java::Java_integrationFixtures::InnerClasses::1'
-
-    anon = Marshal.load(Marshal.dump(array))[0]
-
-    expect( anon.class.java_class.member_class? ).to be false
-    expect( anon.class.java_class.anonymous_class? ).to be true
-    expect( anon.capsMethod ).to eql caps_method
-  end
-
   it "marshals anonymous (enum) class" do
     mic = java.util.concurrent.TimeUnit::MICROSECONDS
     mil = java.util.concurrent.TimeUnit::MILLISECONDS

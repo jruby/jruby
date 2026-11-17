@@ -20,9 +20,9 @@ describe "Invoking a method" do
     end
 
     it "raises ArgumentError if the method has a positive arity" do
-      lambda {
+      -> {
         specs.fooM1
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
@@ -36,14 +36,14 @@ describe "Invoking a method" do
     end
 
     it "raises ArgumentError if the methods arity doesn't match" do
-      lambda {
+      -> {
         specs.fooM1(1,2)
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
   describe "with optional arguments" do
-    it "uses the optional argument if none is is passed" do
+    it "uses the optional argument if none is passed" do
       specs.fooM0O1.should == [1]
     end
 
@@ -52,9 +52,9 @@ describe "Invoking a method" do
     end
 
     it "raises ArgumentError if extra arguments are passed" do
-      lambda {
+      -> {
         specs.fooM0O1(2,3)
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
@@ -64,15 +64,15 @@ describe "Invoking a method" do
     end
 
     it "raises an ArgumentError if there are no values for the mandatory args" do
-      lambda {
+      -> {
         specs.fooM1O1
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
 
     it "raises an ArgumentError if too many values are passed" do
-      lambda {
+      -> {
         specs.fooM1O1(1,2,3)
-      }.should raise_error(ArgumentError)
+      }.should.raise(ArgumentError)
     end
   end
 
@@ -94,7 +94,7 @@ describe "Invoking a method" do
 
   it "with a block converts the block to a Proc" do
     prc = specs.makeproc { "hello" }
-    prc.should be_kind_of(Proc)
+    prc.should.is_a?(Proc)
     prc.call.should == "hello"
   end
 
@@ -106,10 +106,28 @@ describe "Invoking a method" do
     specs.yield_now(&o).should == :from_to_proc
   end
 
+  ruby_version_is "4.0" do
+    it "raises TypeError if 'to_proc' doesn't return a Proc" do
+      o = LangSendSpecs::RawToProc.new(42)
+
+      -> {
+        specs.makeproc(&o)
+      }.should raise_consistent_error(TypeError, "can't convert LangSendSpecs::RawToProc into Proc (LangSendSpecs::RawToProc#to_proc gives Integer)")
+    end
+
+    it "raises TypeError if block object isn't a Proc and doesn't respond to `to_proc`" do
+      o = Object.new
+
+      -> {
+        specs.makeproc(&o)
+      }.should.raise(TypeError, "no implicit conversion of Object into Proc")
+    end
+  end
+
   it "raises a SyntaxError with both a literal block and an object as block" do
-    lambda {
+    -> {
       eval "specs.oneb(10, &l){ 42 }"
-    }.should raise_error(SyntaxError)
+    }.should.raise(SyntaxError)
   end
 
   it "with same names as existing variables is ok" do
@@ -194,21 +212,42 @@ describe "Invoking a method" do
       o.args.should == [1,2]
     end
 
-    it "raises NameError if invoked as a vcall" do
-      lambda { no_such_method }.should raise_error NameError
+    describe "if invoked as a vcall" do
+      it "raises NameError" do
+        -> { no_such_method }.should.raise NameError
+      end
+
+      it "raises NameError with $! as a cause" do
+        begin
+          raise RuntimeError.new
+        rescue => cause
+          -> { no_such_method }.should.raise(NameError, cause:)
+        end
+      end
     end
 
     it "should omit the method_missing call from the backtrace for NameError" do
-      lambda { no_such_method }.should raise_error { |e| e.backtrace.first.should_not include("method_missing") }
+      -> { no_such_method }.should.raise { |e| e.backtrace.first.should_not.include?("method_missing") }
     end
 
-    it "raises NoMethodError if invoked as an unambiguous method call" do
-      lambda { no_such_method() }.should raise_error NoMethodError
-      lambda { no_such_method(1,2,3) }.should raise_error NoMethodError
+    describe "if invoked as an unambiguous method call" do
+      it "raises NoMethodError" do
+        -> { no_such_method() }.should.raise NoMethodError
+        -> { no_such_method(1,2,3) }.should.raise NoMethodError
+      end
+
+      it "raises NoMethodError with $! as a cause" do
+        begin
+          raise
+        rescue => cause
+          -> { no_such_method() }.should.raise(NoMethodError, cause:)
+          -> { no_such_method(1,2,3) }.should.raise(NoMethodError, cause:)
+        end
+      end
     end
 
     it "should omit the method_missing call from the backtrace for NoMethodError" do
-      lambda { no_such_method() }.should raise_error { |e| e.backtrace.first.should_not include("method_missing") }
+      -> { no_such_method() }.should.raise { |e| e.backtrace.first.should_not.include?("method_missing") }
     end
   end
 
@@ -258,10 +297,10 @@ describe "Invoking a private setter method" do
 end
 
 describe "Invoking a private getter method" do
-  it "does not permit self as a receiver" do
+  it "permits self as a receiver" do
     receiver = LangSendSpecs::PrivateGetter.new
-    lambda { receiver.call_self_foo }.should raise_error(NoMethodError)
-    lambda { receiver.call_self_foo_or_equals(6) }.should raise_error(NoMethodError)
+    receiver.call_self_foo_or_equals(6)
+    receiver.call_self_foo.should == 6
   end
 end
 
@@ -337,7 +376,7 @@ describe "Invoking a method" do
 
   it "with splat operator * and non-Array value uses value unchanged if it does not respond_to?(:to_ary)" do
     obj = Object.new
-    obj.should_not respond_to(:to_a)
+    obj.should_not.respond_to?(:to_a)
 
     specs.fooM0R(*obj).should == [obj]
     specs.fooM1R(1,*obj).should == [1, [obj]]
@@ -411,17 +450,17 @@ describe "Invoking a method" do
     specs.rest_len(0,*a,4,*5,6,7,*c,-1).should == 11
   end
 
-  it "expands the Array elements from the splat after executing the arguments and block if no other arguments follow the splat" do
+  it "expands the Array elements from the splat before applying block argument operations" do
     def self.m(*args, &block)
       [args, block]
     end
 
     args = [1, nil]
-    m(*args, &args.pop).should == [[1], nil]
+    m(*args, &args.pop).should == [[1, nil], nil]
 
     args = [1, nil]
     order = []
-    m(*(order << :args; args), &(order << :block; args.pop)).should == [[1], nil]
+    m(*(order << :args; args), &(order << :block; args.pop)).should == [[1, nil], nil]
     order.should == [:args, :block]
   end
 

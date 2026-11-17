@@ -45,7 +45,7 @@ import org.jruby.embed.util.SystemPropertyCatcher;
 /**
  * This class implements javax.script.ScriptEngineFactory.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String engineName;
@@ -54,7 +54,7 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String languageName;
     //setting languageVersion in constructor causes runtime initialization before setting all configs.
     //changed to get info on demand.
-    private String languageVersion;
+    private final String languageVersion;
     private final List<String> mimeTypes;
     private final List<String> engineIds;
     private Map<String, Object> parameters;
@@ -167,11 +167,10 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
         LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.PERSISTENT);
         boolean lazy = SystemPropertyCatcher.isLazy(false);
-        ScriptingContainer container = new ScriptingContainer(scope, behavior, lazy);
+        ScriptingContainer container = new ScriptingContainer(scope, behavior, lazy, false);
         SystemPropertyCatcher.setClassLoader(container);
         SystemPropertyCatcher.setConfiguration(container);
-        JRubyEngine engine = new JRubyEngine(container, this);
-        return (ScriptEngine)engine;
+        return new JRubyEngine(container, this);
     }
 
 }

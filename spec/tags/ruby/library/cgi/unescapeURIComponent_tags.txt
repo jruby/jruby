@@ -1,0 +1,3 @@
+fails:CGI.unescapeURIComponent creates a String with the specified target Encoding
+fails:CGI.unescapeURIComponent accepts a string name of an Encoding
+fails:CGI.unescapeURIComponent uses CGI.accept_charset as the default target encoding

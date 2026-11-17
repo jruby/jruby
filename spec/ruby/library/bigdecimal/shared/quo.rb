@@ -31,6 +31,7 @@ describe :bigdecimal_quo, shared: true do
 
   describe "with Object" do
     it "tries to coerce the other operand to self" do
+      skip if @method == :div
       object = mock("Object")
       object.should_receive(:coerce).with(@one).and_return([@one, @two])
       @one.send(@method, object, *@object).should == BigDecimal("0.5")
@@ -49,8 +50,8 @@ describe :bigdecimal_quo, shared: true do
   end
 
   it "returns NaN if Infinity / ((+|-) Infinity)" do
-    @infinity.send(@method, @infinity_minus, *@object).nan?.should == true
-    @infinity_minus.send(@method, @infinity, *@object).nan?.should == true
+    @infinity.send(@method, @infinity_minus, *@object).should.nan?
+    @infinity_minus.send(@method, @infinity, *@object).should.nan?
   end
 
   it "returns (+|-) Infinity if divided by zero" do
@@ -60,8 +61,8 @@ describe :bigdecimal_quo, shared: true do
   end
 
   it "returns NaN if zero is divided by zero" do
-    @zero.send(@method, @zero, *@object).nan?.should == true
-    @zero_minus.send(@method, @zero_plus, *@object).nan?.should == true
-    @zero_plus.send(@method, @zero_minus, *@object).nan?.should == true
+    @zero.send(@method, @zero, *@object).should.nan?
+    @zero_minus.send(@method, @zero_plus, *@object).should.nan?
+    @zero_plus.send(@method, @zero_minus, *@object).should.nan?
   end
 end

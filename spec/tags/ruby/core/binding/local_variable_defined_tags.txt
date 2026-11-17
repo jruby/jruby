@@ -1,2 +1,0 @@
-fails:Binding#local_variable_defined? allows usage of a String as the variable name
-fails:Binding#local_variable_defined? allows usage of an object responding to #to_str as the variable name

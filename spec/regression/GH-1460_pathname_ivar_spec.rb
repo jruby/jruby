@@ -12,7 +12,7 @@ describe "Pathname @path ivar should be transparent to Ruby land" do
     require 'yaml'
     path = Pathname.new('foo')
     yaml = path.to_yaml
-    deserialized = YAML.load(yaml)
+    deserialized = YAML.load(yaml, permitted_classes: [Pathname])
     expect(deserialized.to_path).to eq('foo')
   end
 end

@@ -1,1 +1,0 @@
-fails:ENV.fetch raises a TypeError if the key is not a String

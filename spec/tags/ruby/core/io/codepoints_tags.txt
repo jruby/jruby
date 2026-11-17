@@ -1,2 +1,0 @@
-windows:IO#codepoints yields each codepoint starting from the current position
-windows:IO#codepoints raises an error if reading invalid sequence

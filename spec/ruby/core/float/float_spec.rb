@@ -6,14 +6,14 @@ describe "Float" do
   end
 
   it ".allocate raises a TypeError" do
-    lambda do
+    -> do
       Float.allocate
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it ".new is undefined" do
-    lambda do
+    -> do
       Float.new
-    end.should raise_error(NoMethodError)
+    end.should.raise(NoMethodError)
   end
 end

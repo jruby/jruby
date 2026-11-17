@@ -15,7 +15,7 @@ class TestIONonblock < Test::Unit::TestCase
     Socket.pair(:INET, :STREAM) {|s1, s2|
       return if flush_test(s1, s2)
     }
-    skip "nonblocking IO did not work"
+    omit "nonblocking IO did not work"
   end
 
   def flush_test(r, w)
@@ -53,6 +53,7 @@ class TestIONonblock < Test::Unit::TestCase
 
   def test_nonblock
     IO.pipe {|r, w|
+      w.nonblock = false
       assert_equal(false, w.nonblock?)
       w.nonblock do
         assert_equal(true, w.nonblock?)

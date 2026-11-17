@@ -7,23 +7,23 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
+
 public class TestArrayFlatten extends TestCase {
 
-    public void testFlatten() throws Exception {
-        Ruby runtime = Ruby.newInstance();
-        RubyArray keys = runtime.newArray();
-        RubyArray values = runtime.newArray();
-        
-//        int n = 10;
-        int n = 10000;
-        for (int i = 0; i < n; ++i) {
-            keys.append(runtime.newFixnum(i));
-            values.append(runtime.newFixnum(i));
+    public void testFlatten() {
+        var context = Ruby.newInstance().getCurrentContext();
+        var keys = newArray(context);
+        var values = newArray(context);
+
+        for (int i = 0; i < 10_000; ++i) {
+            keys.append(context, asFixnum(context, i));
+            values.append(context, asFixnum(context, i));
         }
         
-        RubyArray temp = (RubyArray) keys.zip(runtime.getCurrentContext(), new IRubyObject[] {values}, Block.NULL_BLOCK);
-        RubyArray preHash = (RubyArray) temp.flatten(runtime.getCurrentContext());
-        
+        var preHash = ((RubyArray<?>) keys.zip(context, new IRubyObject[] {values}, Block.NULL_BLOCK)).flatten(context);
+
         assertNotNull("We have a hash back", preHash);
     }
 }

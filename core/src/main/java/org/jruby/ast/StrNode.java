@@ -34,33 +34,40 @@
 package org.jruby.ast;
 
 import java.util.List;
+import java.util.Objects;
+
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.ir.builder.StringStyle;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import static org.jruby.ir.builder.StringStyle.*;
 
 /** 
  * Representing a simple String literal.
  */
-public class StrNode extends Node implements ILiteralNode, SideEffectFree {
+public class StrNode extends Node implements ILiteralNode, LiteralValue, SideEffectFree {
     private final ByteList value;
     private final int codeRange;
-    private boolean frozen;
+    private StringStyle stringStyle;
 
-    public StrNode(ISourcePosition position, ByteList value) {
-        this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
+    public StrNode(int line, ByteList value) {
+        this(line, value, StringSupport.codeRangeScan(value.getEncoding(), value), Frozen);
     }
 
-    public StrNode(ISourcePosition position, ByteList value, int codeRange) {
-        super(position, false);
+    public StrNode(int line, ByteList value, int codeRange, StringStyle stringStyle) {
+        super(line, false);
 
         this.value = value;
         this.codeRange = codeRange;
+        this.stringStyle = stringStyle;
     }
 
-    public StrNode(ISourcePosition position, StrNode head, StrNode tail) {
-        super(position, false);
+    public StrNode(int line, StrNode head, StrNode tail) {
+        super(line, false);
         
         ByteList headBL = head.getValue();
         ByteList tailBL = tail.getValue();
@@ -70,7 +77,20 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
         myValue.append(headBL);
         myValue.append(tailBL);
 
-        frozen = head.isFrozen() && tail.isFrozen();
+        // Convoluted logic and maybe not totally needed.  Frozen loses to anything else.
+        // once we know neither is Frozen than a mismatch means we just use chilled.
+        if (head.stringStyle != tail.stringStyle) {
+            if (head.stringStyle == Frozen) {
+                stringStyle = tail.stringStyle;
+            } else if (tail.stringStyle == Frozen) {
+                stringStyle = head.stringStyle;
+            } else {
+                stringStyle = Chilled;
+            }
+        } else {
+            stringStyle = head.stringStyle;
+        }
+
         value = myValue;
         codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
     }
@@ -84,6 +104,19 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitStrNode(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StrNode strNode = (StrNode) o;
+        return value.equals(strNode.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
     }
 
     /**
@@ -107,11 +140,16 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
         return EMPTY_LIST;
     }
 
-    public boolean isFrozen() {
-        return frozen;
+    public StringStyle getStringStyle() {
+        return stringStyle;
     }
 
-    public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+    public void setStringStyle(StringStyle stringStyle) {
+        this.stringStyle = stringStyle;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return runtime.newString(value);
     }
 }

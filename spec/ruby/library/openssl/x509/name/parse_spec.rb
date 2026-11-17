@@ -35,14 +35,14 @@ describe "OpenSSL::X509::Name.parse" do
   end
 
   it "raises TypeError if the given string contains no key/value pairs" do
-    lambda do
+    -> do
       OpenSSL::X509::Name.parse("hello")
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises OpenSSL::X509::NameError if the given string contains invalid keys" do
-    lambda do
+    -> do
       OpenSSL::X509::Name.parse("hello=goodbye")
-    end.should raise_error(OpenSSL::X509::NameError)
+    end.should.raise(OpenSSL::X509::NameError)
   end
 end

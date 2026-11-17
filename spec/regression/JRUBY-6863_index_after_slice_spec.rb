@@ -7,7 +7,7 @@ describe 'JRUBY-6863' do
   end
 
   subject do
-    str.slice!(3..-1) # => "えおかきくけこ"
+    (+str).slice!(3..-1) # => "えおかきくけこ"
   end
 
   it 'String#index without args' do 

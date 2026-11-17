@@ -6,14 +6,16 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.RubyRegexp;
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 // Represents a backref node in Ruby code
 public class BuildBackrefInstr extends NoOperandResultBaseInstr {
@@ -49,10 +51,12 @@ public class BuildBackrefInstr extends NoOperandResultBaseInstr {
         IRubyObject backref = context.getBackRef();
 
         switch (type) {
-        case '&' : return RubyRegexp.last_match(backref);
-        case '`' : return RubyRegexp.match_pre(backref);
-        case '\'': return RubyRegexp.match_post(backref);
-        case '+' : return RubyRegexp.match_last(backref);
+        case '&' : return RubyRegexp.last_match(context, backref);
+        case '`' : return RubyRegexp.match_pre(context, backref);
+        case '\'': return RubyRegexp.match_post(context, backref);
+        case '+' : return RubyRegexp.match_last(context, backref);
+        case 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 :
+            return IRRuntimeHelpers.nthMatch(context, type);
         default:
             assert false: "backref with invalid type";
             return null;
@@ -65,8 +69,8 @@ public class BuildBackrefInstr extends NoOperandResultBaseInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.REQUIRES_BACKREF);
 
         return true;
     }

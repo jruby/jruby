@@ -1,7 +1,4 @@
-exclude :test_big_fdiv, "needs investigation"
-exclude :test_eq, "needs investigation"
 exclude :test_fix_fdiv, "needs investigation"
 exclude :test_float_fdiv, "needs investigation"
-exclude :test_interrupt_during_bigdivrem, "slow and isn't testing interrupt well"
+exclude :test_interrupt_during_bigdivrem, "slow and may not be testing interrupt well"
 exclude :test_interrupt_during_to_s, "slow and isn't testing interrupt well"
-exclude :test_pow, "needs investigation"

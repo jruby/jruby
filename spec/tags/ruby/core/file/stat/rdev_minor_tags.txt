@@ -1,1 +1,0 @@
-windows:File::Stat#rdev_minor returns the minor part of File::Stat#rdev

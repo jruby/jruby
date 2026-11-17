@@ -24,7 +24,7 @@ describe "BigDecimal#add" do
   end
 
   it "returns a + b with given precision" do
-    # documentation states, that precision ist optional, but it ain't,
+    # documentation states that precision is optional, but it ain't,
     @two.add(@one, 1).should == @three
     @one .add(@two, 1).should == @three
     @one.add(@one_minus, 1).should == @zero
@@ -60,7 +60,7 @@ describe "BigDecimal#add" do
   end
 
 #  TODO:
-#  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17374
+#  https://blade.ruby-lang.org/ruby-core/17374
 #
 #  This doesn't work on MRI and looks like a bug to me:
 #  one can use BigDecimal + Float, but not Bigdecimal.add(Float)
@@ -73,11 +73,9 @@ describe "BigDecimal#add" do
 #    BigDecimal("0.88").add(0.0, 1).should == BigDecimal("0.9")
 #  end
 
-  describe "with Object" do
-    it "tries to coerce the other operand to self" do
-      object = mock("Object")
-      object.should_receive(:coerce).with(@frac_3).and_return([@frac_3, @frac_4])
-      @frac_3.add(object, 1).should == BigDecimal("0.1E16")
+  describe "with Rational" do
+    it "produces a BigDecimal" do
+      (@three + Rational(500, 2)).should == BigDecimal("0.253e3")
     end
   end
 
@@ -130,8 +128,8 @@ describe "BigDecimal#add" do
   end
 
   it "returns NaN if NaN is involved" do
-    @one.add(@nan, 10000).nan?.should == true
-    @nan.add(@one, 1).nan?.should == true
+    @one.add(@nan, 10000).should.nan?
+    @nan.add(@one, 1).should.nan?
   end
 
   it "returns Infinity or -Infinity if these are involved" do
@@ -160,28 +158,28 @@ describe "BigDecimal#add" do
   end
 
   it "returns NaN if Infinity + (- Infinity)" do
-    @infinity.add(@infinity_minus, 10000).nan?.should == true
-    @infinity_minus.add(@infinity, 10000).nan?.should == true
+    @infinity.add(@infinity_minus, 10000).should.nan?
+    @infinity_minus.add(@infinity, 10000).should.nan?
   end
 
   it "raises TypeError when adds nil" do
-    lambda {
+    -> {
       @one.add(nil, 10)
-    }.should raise_error(TypeError)
-    lambda {
+    }.should.raise(TypeError)
+    -> {
       @one.add(nil, 0)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises TypeError when precision parameter is nil" do
-    lambda {
+    -> {
       @one.add(@one, nil)
-    }.should raise_error(TypeError)
+    }.should.raise(TypeError)
   end
 
   it "raises ArgumentError when precision parameter is negative" do
-    lambda {
+    -> {
       @one.add(@one, -10)
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 end

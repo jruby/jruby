@@ -31,18 +31,26 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
+import static org.jruby.util.RubyStringBuilder.str;
+
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
  *
- * @note This was renamed from UnboundMethod.java
+ * <p>Note: This was renamed from UnboundMethod.java</p>
  * @author jpetersen
  */
 @JRubyClass(name="UnboundMethod", parent="Method")
@@ -70,26 +78,18 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newMethod;
     }
 
-    public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setUnboundMethod(newClass);
-
-        newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
-        newClass.setReifiedClass(RubyUnboundMethod.class);
-
-        newClass.defineAnnotatedMethods(AbstractRubyMethod.class);
-        newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
-
-        newClass.getSingletonClass().undefineMethod("new");
-
-        return newClass;
+    public static RubyClass defineUnboundMethodClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "UnboundMethod", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyUnboundMethod.class).
+                classIndex(ClassIndex.UNBOUNDMETHOD).
+                defineMethods(context, AbstractRubyMethod.class, RubyUnboundMethod.class).
+                tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
@@ -98,14 +98,14 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         if (method instanceof ProcMethod) {
             return ((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod());
         }
+
         AbstractRubyMethod otherMethod = (AbstractRubyMethod) other;
-        return originModule == otherMethod.originModule &&
-               method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
+        return method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @Override
@@ -117,50 +117,85 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
-        
-        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
-        
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
+        RubyModule owner = (RubyModule) owner(context);
+
+        receiverClass.checkValidBindTargetFrom(context, owner, true);
+
+        CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
+
+        // like CRuby, a method owned by a module is bound through the module's include in the receiver's class,
+        // so it reports the module rather than the receiver's class
+        RubyModule originModule = owner instanceof RubyClass ? receiverClass : owner;
+
+        return RubyMethod.newMethod(implementationModule, methodName, originModule, originName, methodEntry, aReceiver);
+    }
+
+    private CacheEntry convertUnboundMethodToCallableEntry(ThreadContext context, RubyClass receiverClass) {
+        CacheEntry methodEntry = entry;
+
+        if (implementationModule.isModule()) {
+            IncludedModuleWrapper alreadyIncluded = receiverClass.findModuleInAncestors(implementationModule);
+
+            if (alreadyIncluded != null) {
+                methodEntry = new CacheEntry(method, alreadyIncluded, entry.token);
+            } else {
+                RubyModule boundModule = new IncludedModuleWrapper(context.runtime, receiverClass, implementationModule);
+                methodEntry = new CacheEntry(method, boundModule, entry.token);
+            }
+        }
+
+        return methodEntry;
     }
 
     @JRubyMethod(name = "clone")
-    @Override
     public RubyUnboundMethod rbClone() {
-        return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+        RubyUnboundMethod unboundMethod = newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        return (RubyUnboundMethod) cloneSetup(context, unboundMethod, context.nil);
+    }
+
+    @JRubyMethod
+    public RubyUnboundMethod dup(ThreadContext context) {
+        RubyUnboundMethod unboundMethod = newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+
+        return (RubyUnboundMethod) dupSetup(context, unboundMethod);
+    }
+
+    @JRubyMethod(required =  1, rest = true, checkArity = false, keywords = true)
+    public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
+        IRubyObject receiver = args[0];
+        IRubyObject[] newArgs = new IRubyObject[argc - 1];
+        System.arraycopy(args, 1, newArgs, 0, argc - 1);
+
+        RubyClass receiverClass = receiver.getMetaClass();
+
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+
+        CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
+
+        return method.call(context, receiver, methodEntry.sourceModule, methodName, newArgs, block);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
-    public IRubyObject inspect() {
-        StringBuilder str = new StringBuilder(24).append("#<");
-        char sharp = '#';
-
-        str.append(getMetaClass().getRealClass().getName()).append(": ");
-
-        if (implementationModule.isSingleton()) {
-            str.append(implementationModule.inspect().toString());
-        } else {
-            str.append(originModule.getName());
-
-            if (implementationModule != originModule) {
-                str.append('(').append(implementationModule.getName()).append(')');
-            }
-        }
-
-        str.append(sharp).append(methodName); // (real-name) if alias
-        final String realName= method.getRealMethod().getName();
-        if ( realName != null && ! methodName.equals(realName) ) {
-            str.append('(').append(realName).append(')');
-        }
-        str.append('>');
-
-        RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
-        return res;
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect((IRubyObject) null);
     }
 
     @JRubyMethod
-    public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, sourceModule.getSuperClass());
+    public IRubyObject super_method(ThreadContext context) {
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod || method instanceof AliasMethod) {
+            RubyModule definedClass = method.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) superClass = module.getSuperClass();
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, null, superClass);
     }
 }

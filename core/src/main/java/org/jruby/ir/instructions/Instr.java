@@ -3,10 +3,13 @@ package org.jruby.ir.instructions;
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -21,6 +24,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -161,9 +165,9 @@ public abstract class Instr {
 
     /**
      * Does this instruction do anything the scope is interested in?
-     * @return true if it modified the scope.
+     * @return true if it modified the scope or set any flags.
      */
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         return false;
     }
 
@@ -176,7 +180,7 @@ public abstract class Instr {
          return !(hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl());
     }
 
-    public boolean canBeDeletedFromScope(IRScope s) {
+    public boolean canBeDeletedFromScope(FullInterpreterContext fic) {
         if (!isDeletable()) {
             return false;
         }
@@ -186,7 +190,7 @@ public abstract class Instr {
 
              // An escaped binding needs to preserve lvars since
              // consumers of that binding may access lvars.
-             if (s.bindingHasEscaped()) return !(r instanceof LocalVariable);
+             if (fic.bindingHasEscaped()) return !(r instanceof LocalVariable);
          }
 
         return true;
@@ -257,7 +261,7 @@ public abstract class Instr {
      * It is not required that it do so -- code correctness is not compromised by failure
      * to simplify
      */
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+    protected void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         Operand[] operands = getOperands();
         for (int i = 0; i < operands.length; i++) {
             setOperand(i, operands[i].getSimplifiedOperand(valueMap, force));
@@ -277,10 +281,14 @@ public abstract class Instr {
      * @param valueMap Mapping from operands to their simplified values
      * @return simplified result / output of this instruction
      */
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
 
         return null; // By default, no simplifications!
+    }
+
+    public Instr simplifyInstr(IRManager manager) {
+        return this;
     }
 
     @Interp

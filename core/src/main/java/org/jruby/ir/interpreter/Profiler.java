@@ -5,6 +5,7 @@ import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.CallSite;
@@ -36,8 +37,8 @@ public class Profiler {
     }
 
     private static class CallSiteProfile {
-        IRCallSite cs;
-        HashMap<IRScope, Counter> counters;
+        final IRCallSite cs;
+        final HashMap<IRScope, Counter> counters;
 
         public CallSiteProfile(IRCallSite cs) {
             this.cs = new IRCallSite(cs);
@@ -45,7 +46,7 @@ public class Profiler {
         }
     }
 
-    private static IRCallSite callerSite = new IRCallSite();
+    private static final IRCallSite callerSite = new IRCallSite();
 
     private static int inlineCount = 0;
     private static int globalThreadPollCount = 0;
@@ -53,7 +54,7 @@ public class Profiler {
     private static int numCyclesWithNoModifications = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
+    private static final HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
     private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();
@@ -100,7 +101,6 @@ public class Profiler {
                 }
 
                 long x = csp.counters.get(s).count;
-                c += x;
                 cs.count += x;
             }
 
@@ -176,7 +176,7 @@ public class Profiler {
             String n = tgtMethod.getId();
             boolean inlineCall = true;
             if (isHotClosure) {
-                Operand clArg = call.getClosureArg(null);
+                Operand clArg = call.getClosureArg(NullBlock.INSTANCE);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
 /*
@@ -295,7 +295,7 @@ public class Profiler {
         Integer scopeVersion = scopeVersionMap.get(scope);
         if (scopeVersion == null) {
             scopeVersionMap.put(scope, versionCount);
-            scopeVersion = new Integer(versionCount);
+            scopeVersion = Integer.valueOf(versionCount);
         }
 
         if (callerSite.call != null) {

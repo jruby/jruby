@@ -18,7 +18,8 @@ class HavePrivateInstanceMethodMatcher < MethodMatcher
 end
 
 module MSpecMatchers
-  private def have_private_instance_method(method, include_super=true)
+  private def have_private_instance_method(method, include_super = true)
+    MSpec.deprecate __method__, '.private_instance_methods(false).should.include?'
     HavePrivateInstanceMethodMatcher.new method, include_super
   end
 end

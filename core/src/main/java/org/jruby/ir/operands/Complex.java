@@ -4,6 +4,7 @@ import org.jruby.RubyComplex;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -26,8 +27,8 @@ public class Complex extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubyComplex.newComplexRaw(context.runtime,
-                context.runtime.newFixnum(0), (IRubyObject) number.cachedObject(context));
+        return IRRuntimeHelpers.newComplexRaw(context,
+                (IRubyObject) number.cachedObject(context));
     }
 
     @Override
@@ -52,5 +53,10 @@ public class Complex extends ImmutableLiteral {
 
     public Operand getNumber() {
         return number;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
     }
 }

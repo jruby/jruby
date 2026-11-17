@@ -1,0 +1,19 @@
+fails:Socket::AncillaryData.ip_pktinfo with a source address and index returns a Socket::AncillaryData
+fails:Socket::AncillaryData.ip_pktinfo with a source address and index sets the family to AF_INET
+fails:Socket::AncillaryData.ip_pktinfo with a source address and index sets the level to IPPROTO_IP
+fails:Socket::AncillaryData.ip_pktinfo with a source address and index sets the type to IP_PKTINFO
+fails:Socket::AncillaryData.ip_pktinfo with a source address, index, and destination address returns a Socket::AncillaryData
+fails:Socket::AncillaryData.ip_pktinfo with a source address, index, and destination address sets the family to AF_INET
+fails:Socket::AncillaryData.ip_pktinfo with a source address, index, and destination address sets the level to IPPROTO_IP
+fails:Socket::AncillaryData.ip_pktinfo with a source address, index, and destination address sets the type to IP_PKTINFO
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number returns an Array
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the returned Array stores an Addrinfo at index 0
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the returned Array stores the ifindex at index 1
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the returned Array stores an Addrinfo at index 2
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the source Addrinfo uses the correct IP address
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the source Addrinfo is not the same object as the input Addrinfo
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the ifindex is an Integer
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the destination Addrinfo uses the correct IP address
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo without a port number the destination Addrinfo is not the same object as the input Addrinfo
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo with a port number the source Addrinfo does not contain a port number
+fails:Socket::AncillaryData#ip_pktinfo using an Addrinfo with a port number the destination Addrinfo does not contain a port number

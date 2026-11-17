@@ -1,10 +1,11 @@
-#frozen_string_literal: false
-require 'test_helper'
+# frozen_string_literal: true
+require_relative 'test_helper'
 require 'json/add/core'
 require 'json/add/complex'
 require 'json/add/rational'
 require 'json/add/bigdecimal'
 require 'json/add/ostruct'
+require 'json/add/set'
 require 'date'
 
 class JSONAdditionTest < Test::Unit::TestCase
@@ -43,10 +44,6 @@ class JSONAdditionTest < Test::Unit::TestCase
   end
 
   class B
-    def self.json_creatable?
-      false
-    end
-
     def to_json(*args)
       {
         'json_class'  => self.class.name,
@@ -55,10 +52,6 @@ class JSONAdditionTest < Test::Unit::TestCase
   end
 
   class C
-    def self.json_creatable?
-      false
-    end
-
     def to_json(*args)
       {
         'json_class'  => 'JSONAdditionTest::Nix',
@@ -68,7 +61,6 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json
     a = A.new(666)
-    assert A.json_creatable?
     json = generate(a)
     a_again = parse(json, :create_additions => true)
     assert_kind_of a.class, a_again
@@ -77,7 +69,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json_default
     a = A.new(666)
-    assert A.json_creatable?
+    assert A.respond_to?(:json_create)
     json = generate(a)
     a_hash = parse(json)
     assert_kind_of Hash, a_hash
@@ -85,7 +77,6 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json_disabled
     a = A.new(666)
-    assert A.json_creatable?
     json = generate(a)
     a_again = parse(json, :create_additions => true)
     assert_kind_of a.class, a_again
@@ -100,21 +91,18 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json_fail1
     b = B.new
-    assert !B.json_creatable?
     json = generate(b)
     assert_equal({ "json_class"=>"JSONAdditionTest::B" }, parse(json))
   end
 
   def test_extended_json_fail2
     c = C.new
-    assert !C.json_creatable?
     json = generate(c)
     assert_raise(ArgumentError, NameError) { parse(json, :create_additions => true) }
   end
 
   def test_raw_strings
-    raw = ''
-    raw.respond_to?(:encode!) and raw.encode!(Encoding::ASCII_8BIT)
+    raw = ''.b
     raw_array = []
     for i in 0..255
       raw << i
@@ -162,9 +150,15 @@ class JSONAdditionTest < Test::Unit::TestCase
     assert_equal(/foo/i, JSON(JSON(/foo/i), :create_additions => true))
   end
 
+  def test_deprecated_load_create_additions
+    assert_deprecated_warning(/use JSON\.unsafe_load/) do
+      JSON.load(JSON.dump(Time.now))
+    end
+  end
+
   def test_utc_datetime
     now = Time.now
-    d = DateTime.parse(now.to_s, :create_additions => true) # usual case
+    d = DateTime.parse(now.to_s) # usual case
     assert_equal d, parse(d.to_json, :create_additions => true)
     d = DateTime.parse(now.utc.to_s) # of = 0
     assert_equal d, parse(d.to_json, :create_additions => true)
@@ -182,12 +176,17 @@ class JSONAdditionTest < Test::Unit::TestCase
   def test_bigdecimal
     assert_equal BigDecimal('3.141', 23), JSON(JSON(BigDecimal('3.141', 23)), :create_additions => true)
     assert_equal BigDecimal('3.141', 666), JSON(JSON(BigDecimal('3.141', 666)), :create_additions => true)
-  end
+  end if defined?(::BigDecimal)
 
   def test_ostruct
     o = OpenStruct.new
     # XXX this won't work; o.foo = { :bar => true }
     o.foo = { 'bar' => true }
     assert_equal o, parse(JSON(o), :create_additions => true)
+  end if defined?(::OpenStruct)
+
+  def test_set
+    s = Set.new([:a, :b, :c, :a])
+    assert_equal s, JSON.parse(JSON(s), :create_additions => true)
   end
 end

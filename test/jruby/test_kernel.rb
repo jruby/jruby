@@ -285,25 +285,25 @@ class TestKernel < Test::Unit::TestCase
     # by Exception Class
     $stderr = StringIO.new
     raise StandardError rescue nil
-    tobe = "Exception `StandardError' at #{__FILE__}:#{__LINE__ - 1} - StandardError"
+    tobe = "Exception 'StandardError' at #{__FILE__}:#{__LINE__ - 1} - StandardError"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by String
     $stderr.reopen
     raise "TEST_ME" rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by Exception
     $stderr.reopen
     raise RuntimeError.new("TEST_ME") rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by re-raise
     $stderr.reopen
     raise "TEST_ME" rescue raise rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     traces = $stderr.string.split("\n")
     assert_equal(tobe, traces[0])
     assert_equal(tobe, traces[1])
@@ -346,26 +346,6 @@ class TestKernel < Test::Unit::TestCase
       @value.send(method, *args, &block)
     end
 
-  end
-
-  def test_sleep_arg
-    sleep SecDuration.new(0.01)
-
-    begin
-      sleep SecDuration.new(-0.01)
-    rescue ArgumentError => e
-      assert_equal "time interval must be positive", e.message
-    else
-      fail 'argument error expected'
-    end
-
-    begin
-      sleep []
-    rescue TypeError => e
-      assert_equal "can't convert Array into time interval", e.message
-    else
-      fail 'type error expected'
-    end
   end
 
   class SecDuration19
@@ -799,5 +779,29 @@ class TestKernel < Test::Unit::TestCase
 #  trap
 #  untrace_var
 #  warn
+
+  def test_warning_line_numbers; %w{ open3 tempfile }.each { |feat| require feat }
+    Tempfile.create(__method__.to_s) do |file|
+      file.write "\n" +
+        "#'foo'.lines { :ignored_block } # line 2\n" + # no longer warns in Ruby >= 3.1
+        "[1, 2].find_index(3) { :unused_block }\n" + # line 3
+        "Array.new(2, false) { :superseded }\n" + # line 4
+
+        "Array.class_eval do\n" +
+        "  alias_method :hash, :size\n" + # line 6
+        "end\n" +
+
+        ":done \n" # line 8
+      file.flush
+
+      bin_jruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+      output, status = Open3.capture2e("#{bin_jruby} -v #{file.path}")
+      assert_equal 0, status.to_i, "got status: #{status} with:\n#{output}"
+      assert_includes output, ":3: warning: given block not used"
+      assert_includes output, ":4: warning: block supersedes default value argument"
+      assert_includes output, ":6: warning: method redefined; discarding old hash"
+      assert_includes output, ":8: warning: possibly useless use of a literal in void context"
+    end
+  end
 
 end

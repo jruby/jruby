@@ -1,3 +1,0 @@
-fails:The -n command line option only evaluates BEGIN blocks once
-fails:The -n command line option only evaluates END blocks once
-fails:The -n command line option allows summing over a whole file

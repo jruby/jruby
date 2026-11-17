@@ -1,1 +1,0 @@
-windows:File::Stat#mode returns the mode of a File::Stat object

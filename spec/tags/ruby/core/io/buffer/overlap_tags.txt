@@ -1,0 +1,6 @@
+fails:IO::Buffer#and! range checking rejects actual overlap in either address order
+fails:IO::Buffer#and! range checking accepts adjacent non-empty ranges in either address order
+fails:IO::Buffer#or! range checking rejects actual overlap in either address order
+fails:IO::Buffer#or! range checking accepts adjacent non-empty ranges in either address order
+fails:IO::Buffer#xor! range checking rejects actual overlap in either address order
+fails:IO::Buffer#xor! range checking accepts adjacent non-empty ranges in either address order

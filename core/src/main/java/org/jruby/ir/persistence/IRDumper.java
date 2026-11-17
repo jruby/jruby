@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubySymbol;
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -16,6 +17,8 @@ import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.BuiltinClass;
+import org.jruby.ir.operands.ChilledString;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.CurrentScope;
@@ -28,11 +31,11 @@ import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.NullBlock;
-import org.jruby.ir.operands.ObjectClass;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Range;
 import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
@@ -40,12 +43,12 @@ import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
 import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryIntVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UnboxedBoolean;
@@ -55,6 +58,7 @@ import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.runtime.Signature;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
@@ -63,9 +67,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class IRDumper extends IRVisitor {
     private final PrintStream stream;
@@ -89,7 +93,7 @@ public class IRDumper extends IRVisitor {
     }
 
     public void visit(IRScope scope, boolean full, boolean recurse) {
-        println("begin " + scope.getScopeType().name() + "<" + scope.getId() + ">");
+        println("begin " + scope.getFullyQualifiedName());
 
         InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 
@@ -104,20 +108,22 @@ public class IRDumper extends IRVisitor {
         Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
-            println("declared variables");
+            println("declared variables:");
 
             for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
 
-        Set<LocalVariable> usedVariables = ic.getScope().getUsedLocalVariables();
-
-        if (usedVariables != null && !usedVariables.isEmpty()) {
-            println("used variables");
-
-            for (LocalVariable var : usedVariables) {
-                println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+        FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
+        if (fullInterpreterContext != null) {
+            Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
+            
+            if (usedVariables != null && !usedVariables.isEmpty()) {
+                println("used variables:");
+                for (LocalVariable var : usedVariables) {
+                    println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+                }
             }
         }
 
@@ -127,7 +133,7 @@ public class IRDumper extends IRVisitor {
         int longest = 0;
         int largestBlock = 0;
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
             largestBlock = instrs.length;
             for (Instr i : instrs) {
                 if (i instanceof ResultInstr) {
@@ -154,7 +160,9 @@ public class IRDumper extends IRVisitor {
         String varSpaces = spaces(longest + " := ".length());
         String ipcFormat = "  %0" + instrLog + "d: ";
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
+            println();
+
             for (int i = 0; i < instrs.length; i++) {
                 formatInstr(instrs[i], varFormat, varSpaces, ipcFormat, instrs[i], i);
             }
@@ -164,18 +172,31 @@ public class IRDumper extends IRVisitor {
             for (BasicBlock bb : bbs) {
                 printAnsi(BLOCK_COLOR, "\nblock #" + bb.getID());
 
-                Iterable<BasicBlock> outs;
-                if (scope.getCFG() != null &&
-                        (outs = scope.getCFG().getOutgoingDestinations(bb)) != null &&
-                        outs.iterator().hasNext()) {
+                Iterable<Edge<BasicBlock, CFG.EdgeType>> outs;
+                if ((outs = ic.getCFG().getOutgoingEdges(bb)) != null && outs.iterator().hasNext()) {
 
                     printAnsi(BLOCK_COLOR, " (out: ");
 
                     boolean first = true;
-                    for (BasicBlock out : outs) {
-                        if (!first) printAnsi(BLOCK_COLOR, ",");
+                    for (Edge<BasicBlock, CFG.EdgeType> out : outs) {
+                        if (!first) printAnsi(BLOCK_COLOR, ", ");
                         first = false;
-                        printAnsi(BLOCK_COLOR, "" + out.getID());
+                        CFG.EdgeType type = out.getType();
+                        BasicBlock block = out.getDestination().getOutgoingDestinationData();
+                        switch (type) {
+                            case EXIT:
+                                printAnsi(BLOCK_COLOR, "exit");
+                                break;
+                            case REGULAR:
+                                printAnsi(BLOCK_COLOR, "" + block.getID());
+                                break;
+                            case EXCEPTION:
+                                printAnsi(BLOCK_COLOR, block.getID() + "!");
+                                break;
+                            case FALL_THROUGH:
+                                printAnsi(BLOCK_COLOR, block.getID() + "↓");
+                                break;
+                        }
                     }
 
                     printAnsi(BLOCK_COLOR, ")");
@@ -286,7 +307,9 @@ public class IRDumper extends IRVisitor {
     }
     public void Bignum(Bignum bignum) { print(bignum.value); }
     public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
+    public void BuiltinClass(BuiltinClass builtinClass) { } // FIXME: need to print enum
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }
+    public void ChilledString(ChilledString chilled) { print(chilled.getByteList()); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { LocalVariable(closurelocalvariable); }
     public void CurrentScope(CurrentScope currentscope) { }
     public void Complex(Complex complex) { visit(complex.getNumber()); }
@@ -308,31 +331,28 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
-        if (hash.isKWArgsHash) {
-            if (comma) print(',');
-            print("kwargs=true");
-        }
     }
+    public void Integer(org.jruby.ir.operands.Integer integer) { print(integer.getValue()); }
     public void IRException(IRException irexception) { print(irexception.getType()); }
     public void Label(Label label) { print(label.toString()); }
     public void LocalVariable(LocalVariable localvariable) { print(localvariable.getName()); }
     public void Nil(Nil nil) { }
-    public void NthRef(NthRef nthref) { print(nthref.getId()); }
     public void NullBlock(NullBlock nullblock) { }
-    public void ObjectClass(ObjectClass objectclass) { }
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
+    public void Range(Range range) { print(range.getBegin() + (range.isExclusive() ? "..." : "..") + range.getEnd()); }
     public void Regexp(Regexp regexp) { print(regexp.getSource()); }
     public void ScopeModule(ScopeModule scopemodule) { print(scopemodule.getScopeModuleDepth()); }
     public void Self(Self self) { print("%self"); }
     public void Splat(Splat splat) { visit(splat.getArray()); }
     public void StandardError(StandardError standarderror) {  }
-    public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
+    public void MutableString(MutableString mutablestring) { print(mutablestring.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
     public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName().idString()); }
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getId()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }
+    public void TemporaryIntVariable(TemporaryIntVariable temporaryintvariable) { TemporaryVariable(temporaryintvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { TemporaryVariable(temporaryfixnumvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { TemporaryVariable(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) {  }

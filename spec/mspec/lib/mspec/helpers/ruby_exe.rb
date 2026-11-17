@@ -2,11 +2,12 @@ require 'mspec/guards/platform'
 require 'mspec/helpers/tmp'
 
 # The ruby_exe helper provides a wrapper for invoking the
-# same Ruby interpreter with the same falgs as the one running
+# same Ruby interpreter with the same flags as the one running
 # the specs and getting the output from running the code.
+#
 # If +code+ is a file that exists, it will be run.
-# Otherwise, +code+ should be Ruby code that will be run with
-# the -e command line option. For example:
+# Otherwise, +code+ will be written to a temporary file and be run.
+# For example:
 #
 #   ruby_exe('path/to/some/file.rb')
 #
@@ -14,26 +15,23 @@ require 'mspec/helpers/tmp'
 #
 #   `#{RUBY_EXE} 'path/to/some/file.rb'`
 #
-# while
+# The ruby_exe helper also accepts an options hash with four
+# keys: :options, :args :env and :exception.
 #
-#   ruby_exe('puts "hello, world."')
-#
-# will be executed as
-#
-#   `#{RUBY_EXE} -e 'puts "hello, world."'`
-#
-# The ruby_exe helper also accepts an options hash with three
-# keys: :options, :args and :env. For example:
+# For example:
 #
 #   ruby_exe('file.rb', :options => "-w",
-#                       :args => "> file.txt",
+#                       :args => "arg1 arg2",
 #                       :env => { :FOO => "bar" })
 #
 # will be executed as
 #
-#   `#{RUBY_EXE} -w #{'file.rb'} > file.txt`
+#   `#{RUBY_EXE} -w file.rb arg1 arg2`
 #
 # with access to ENV["FOO"] with value "bar".
+#
+# When `exception: false` and Ruby command fails then exception will not be
+# raised.
 #
 # If +nil+ is passed for the first argument, the command line
 # will be built only from the options hash.
@@ -49,38 +47,18 @@ require 'mspec/helpers/tmp'
 # The RUBY_EXE constant is setup by mspec automatically
 # and is used by ruby_exe and ruby_cmd. The mspec runner script
 # will set ENV['RUBY_EXE'] to the name of the executable used
-# to invoke the mspec-run script. The value of RUBY_EXE will be
-# constructed as follows:
-#
-#   1. the value of ENV['RUBY_EXE']
-#   2. an explicit value based on RUBY_ENGINE
-#   3. cwd/(RUBY_ENGINE + $(EXEEXT) || $(exeext) || '')
-#   4. $(bindir)/$(RUBY_INSTALL_NAME)
+# to invoke the mspec-run script.
 #
 # The value will only be used if the file exists and is executable.
-# The flags will then be appended to the resulting value.
-#
-# These 4 ways correspond to the following scenarios:
-#
-#   1. Using the MSpec runner scripts, the name of the
-#      executable is explicitly passed by ENV['RUBY_EXE']
-#      so there is no ambiguity.
-#
-#  Otherwise, if using RSpec (or something else)
-#
-#   2. Running the specs while developing an alternative
-#      Ruby implementation. This explicitly names the
-#      executable in the development directory based on
-#      the value of RUBY_ENGINE.
-#   3. Running the specs within the source directory for
-#      some implementation. (E.g. a local build directory.)
-#   4. Running the specs against some installed Ruby
-#      implementation.
+# The flags will then be appended to the resulting value, such that
+# the RUBY_EXE constant contains both the executable and the flags.
 #
 # Additionally, the flags passed to mspec
 # (with -T on the command line or in the config with set :flags)
 # will be appended to RUBY_EXE so that the interpreter
 # is always called with those flags.
+#
+# Failure of a Ruby command leads to raising exception by default.
 
 def ruby_exe_options(option)
   case option
@@ -129,7 +107,13 @@ def resolve_ruby_exe
   raise Exception, "Unable to find a suitable ruby executable."
 end
 
+unless Object.const_defined?(:RUBY_EXE) and RUBY_EXE
+  RUBY_EXE = resolve_ruby_exe
+end
+
 def ruby_exe(code = :not_given, opts = {})
+  skip "WASI doesn't provide subprocess" if PlatformGuard.wasi?
+
   if opts[:dir]
     raise "ruby_exe(..., dir: dir) is no longer supported, use Dir.chdir"
   end
@@ -153,10 +137,47 @@ def ruby_exe(code = :not_given, opts = {})
     code = tmpfile
   end
 
+  expected_status = opts.fetch(:exit_status, 0)
+
   begin
-    platform_is_not :opal do
-      `#{ruby_cmd(code, opts)}`
+    command = ruby_cmd(code, opts)
+
+    # Try to avoid the extra shell for 2>&1
+    # This is notably useful for TimeoutAction which can then signal the ruby subprocess and not the shell
+    popen_options = []
+    if command.end_with?(' 2>&1')
+      command = command[0...-5]
+      popen_options = [{ err: [:child, :out] }]
     end
+
+    output = IO.popen(command, *popen_options) do |io|
+      pid = io.pid
+      MSpec.subprocesses << pid
+      begin
+        io.read
+      ensure
+        MSpec.subprocesses.delete(pid)
+      end
+    end
+
+    status = Process.last_status
+
+    exit_status = if status.exited?
+                    status.exitstatus
+                  elsif status.signaled?
+                    signame = Signal.signame status.termsig
+                    raise "No signal name?" unless signame
+                    :"SIG#{signame}"
+                  else
+                    raise SpecExpectationNotMetError, "#{exit_status.inspect} is neither exited? nor signaled?"
+                  end
+    if exit_status != expected_status
+      formatted_output = output.lines.map { |line| "  #{line}" }.join
+      raise SpecExpectationNotMetError,
+        "Expected exit status is #{expected_status.inspect} but actual is #{exit_status.inspect} for command ruby_exe(#{command.inspect})\nOutput:\n#{formatted_output}"
+    end
+
+    output
   ensure
     saved_env.each { |key, value| ENV[key] = value }
     env.keys.each do |key|
@@ -178,9 +199,7 @@ def ruby_cmd(code, opts = {})
     body = "-e #{code.inspect}"
   end
 
-  [RUBY_EXE, opts[:options], body, opts[:args]].compact.join(' ')
-end
-
-unless Object.const_defined?(:RUBY_EXE) and RUBY_EXE
-  RUBY_EXE = resolve_ruby_exe
+  command = [RUBY_EXE, opts[:options], body, opts[:args]].compact.join(' ')
+  STDERR.puts "\nruby_cmd: #{command}" if ENV["DEBUG_MSPEC_RUBY_CMD"] == "true"
+  command
 end

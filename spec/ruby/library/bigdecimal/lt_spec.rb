@@ -17,7 +17,7 @@ describe "BigDecimal#<" do
       def coerce(other)
         return [other, BigDecimal('123')]
       end
-      def < (other)
+      def <(other)
         BigDecimal('123') < other
       end
     end
@@ -84,11 +84,11 @@ describe "BigDecimal#<" do
   end
 
   it "raises an ArgumentError if the argument can't be coerced into a BigDecimal" do
-    lambda {@zero         < nil }.should raise_error(ArgumentError)
-    lambda {@infinity     < nil }.should raise_error(ArgumentError)
-    lambda {@infinity_neg < nil }.should raise_error(ArgumentError)
-    lambda {@mixed        < nil }.should raise_error(ArgumentError)
-    lambda {@pos_int      < nil }.should raise_error(ArgumentError)
-    lambda {@neg_frac     < nil }.should raise_error(ArgumentError)
+    -> {@zero         < nil }.should.raise(ArgumentError)
+    -> {@infinity     < nil }.should.raise(ArgumentError)
+    -> {@infinity_neg < nil }.should.raise(ArgumentError)
+    -> {@mixed        < nil }.should.raise(ArgumentError)
+    -> {@pos_int      < nil }.should.raise(ArgumentError)
+    -> {@neg_frac     < nil }.should.raise(ArgumentError)
   end
 end

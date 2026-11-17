@@ -34,9 +34,9 @@ describe "Thread#name=" do
   end
 
   it "raises an ArgumentError if the name includes a null byte" do
-    lambda {
+    -> {
       @thread.name = "new thread\0name"
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it "can be reset to nil" do

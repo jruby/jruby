@@ -8,13 +8,13 @@ describe "Enumerable#chunk" do
 
   it "returns an Enumerator if called without a block" do
     chunk = EnumerableSpecs::Numerous.new(1, 2, 3, 1, 2).chunk
-    chunk.should be_an_instance_of(Enumerator)
+    chunk.should.instance_of?(Enumerator)
     result = chunk.with_index {|elt, i| elt - i }.to_a
     result.should == [[1, [1, 2, 3]], [-2, [1, 2]]]
   end
 
   it "returns an Enumerator if given a block" do
-    EnumerableSpecs::Numerous.new.chunk {}.should be_an_instance_of(Enumerator)
+    EnumerableSpecs::Numerous.new.chunk {}.should.instance_of?(Enumerator)
   end
 
   it "yields the current element and the current chunk to the block" do
@@ -29,10 +29,20 @@ describe "Enumerable#chunk" do
     result.should == [[1, [1, 2]], [0, [3]], [1, [2]], [0, [3]], [1, [2, 1]]]
   end
 
+  it "returns a partitioned Array of values" do
+    e = EnumerableSpecs::Numerous.new(1,2,3)
+    e.chunk { |x| x > 2 }.map(&:last).should == [[1, 2], [3]]
+  end
+
   it "returns elements for which the block returns :_alone in separate Arrays" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3, 2, 1)
     result = e.chunk { |x| x < 2 && :_alone }.to_a
     result.should == [[:_alone, [1]], [false, [2, 3, 2]], [:_alone, [1]]]
+  end
+
+  it "yields Arrays as a single argument to a rest argument" do
+    e = EnumerableSpecs::Numerous.new([1, 2])
+    result = e.chunk { |*x| x.should == [[1,2]] }.to_a
   end
 
   it "does not return elements for which the block returns :_separator" do
@@ -49,14 +59,14 @@ describe "Enumerable#chunk" do
 
   it "raises a RuntimeError if the block returns a Symbol starting with an underscore other than :_alone or :_separator" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3, 2, 1)
-    lambda { e.chunk { |x| :_arbitrary }.to_a }.should raise_error(RuntimeError)
+    -> { e.chunk { |x| :_arbitrary }.to_a }.should.raise(RuntimeError)
   end
 
   it "does not accept arguments" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3)
-    lambda {
+    -> {
       e.chunk(1) {}
-    }.should raise_error(ArgumentError)
+    }.should.raise(ArgumentError)
   end
 
   it 'returned Enumerator size returns nil' do

@@ -17,6 +17,6 @@ describe "Logger::LogDevice#close" do
 
   it "closes the LogDevice's stream" do
     @device.close
-    lambda { @device.write("Test") }.should complain(/\Alog writing failed\./)
+    -> { @device.write("Test") }.should complain(/\Alog shifting failed\./)
   end
 end

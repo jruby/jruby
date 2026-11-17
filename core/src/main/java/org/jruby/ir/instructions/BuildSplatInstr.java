@@ -46,7 +46,6 @@ public class BuildSplatInstr extends OneOperandResultBaseInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArray());
         e.encode(getDup());
     }
 

@@ -4,11 +4,11 @@ require 'bigdecimal'
 describe "BigDecimal#truncate" do
 
   before :each do
-      @arr = ['3.14159', '8.7', "0.314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593014782083152134043E1"]
-      @big = BigDecimal("123456.789")
-      @nan = BigDecimal('NaN')
-      @infinity = BigDecimal('Infinity')
-      @infinity_negative = BigDecimal('-Infinity')
+    @arr = ['3.14159', '8.7', "0.314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593014782083152134043E1"]
+    @big = BigDecimal("123456.789")
+    @nan = BigDecimal('NaN')
+    @infinity = BigDecimal('Infinity')
+    @infinity_negative = BigDecimal('-Infinity')
   end
 
   it "returns value of type Integer." do
@@ -58,9 +58,9 @@ describe "BigDecimal#truncate" do
   end
 
   it "returns NaN if self is NaN" do
-    @nan.truncate(-1).nan?.should == true
-    @nan.truncate(+1).nan?.should == true
-    @nan.truncate(0).nan?.should == true
+    @nan.truncate(-1).should.nan?
+    @nan.truncate(+1).should.nan?
+    @nan.truncate(0).should.nan?
   end
 
   it "returns Infinity if self is infinite" do
@@ -74,8 +74,8 @@ describe "BigDecimal#truncate" do
   end
 
   it "returns the same value if self is special value" do
-    lambda { @nan.truncate }.should raise_error(FloatDomainError)
-    lambda { @infinity.truncate }.should raise_error(FloatDomainError)
-    lambda { @infinity_negative.truncate }.should raise_error(FloatDomainError)
+    -> { @nan.truncate }.should.raise(FloatDomainError)
+    -> { @infinity.truncate }.should.raise(FloatDomainError)
+    -> { @infinity_negative.truncate }.should.raise(FloatDomainError)
   end
 end

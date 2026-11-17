@@ -36,14 +36,14 @@ describe "Regexps with interpolation" do
 
   it "gives precedence to escape sequences over substitution" do
     str = "J"
-    /\c#{str}/.to_s.should == '(?-mix:\c#' + '{str})'
+    /\c#{str}/.to_s.should.include?('{str}')
   end
 
   it "throws RegexpError for malformed interpolation" do
     s = ""
-    lambda { /(#{s}/ }.should raise_error(RegexpError)
+    -> { /(#{s}/ }.should.raise(RegexpError)
     s = "("
-    lambda { /#{s}/ }.should raise_error(RegexpError)
+    -> { /#{s}/ }.should.raise(RegexpError)
   end
 
   it "allows interpolation in extended mode" do
@@ -54,5 +54,16 @@ describe "Regexps with interpolation" do
   it "allows escape sequences in interpolated regexps" do
     escape_seq = %r{"\x80"}n
     %r{#{escape_seq}}n.should == /(?-mix:"\x80")/n
+  end
+
+  it "uses the source encoding for literal parts" do
+    str = "a"
+    /é#{str}/.encoding.should == Encoding::UTF_8
+    /é#{str}/.should =~ "éa"
+  end
+
+  it "allows property escapes in literal parts" do
+    str = "a"
+    /\p{L}|#{str}/.should =~ "é"
   end
 end

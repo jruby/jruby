@@ -266,7 +266,7 @@ module SuperSpecs
 
       # Use this so that we can see collect all supers that we see.
       # One bug that arises is that we call Alias2#name from Alias2#name
-      # as it's superclass. In that case, either we get a runaway recursion
+      # as its superclass. In that case, either we get a runaway recursion
       # super OR we get the return value being [:alias2, :alias2, :alias1]
       # rather than [:alias2, :alias1].
       #
@@ -282,7 +282,7 @@ module SuperSpecs
     #
     # When name3 is called then, Alias2 (NOT Alias3) is presented as the
     # current module to Alias2#name, so that when super is called,
-    # Alias2->superclass is next.
+    # Alias2's superclass is next.
     #
     # Otherwise, Alias2 is next, which is where name was to begin with,
     # causing the wrong #name method to be called.
@@ -377,12 +377,12 @@ module SuperSpecs
       end
 
       def b
-        block_ref = lambda { 15 }
+        block_ref = -> { 15 }
         [super { 14 }, super(&block_ref)]
       end
 
       def c
-        block_ref = lambda { 16 }
+        block_ref = -> { 16 }
         super(&block_ref)
       end
     end
@@ -455,6 +455,52 @@ module SuperSpecs
     end
   end
 
+  module ZSuperWithRestAndPost
+    class A
+      def m(*args, a, b)
+        args
+      end
+
+      def m_modified(*args, a, b)
+        args
+      end
+    end
+
+    class B < A
+      def m(*args, a, b)
+        super
+      end
+
+      def m_modified(*args, a, b)
+        args[1] = 14
+        super
+      end
+    end
+  end
+
+  module ZSuperWithRestOthersAndPost
+    class A
+      def m(a, *args, b)
+        args
+      end
+
+      def m_modified(a, *args, b)
+        args
+      end
+    end
+
+    class B < A
+      def m(a, *args, b)
+        super
+      end
+
+      def m_modified(a, *args, b)
+        args[1] = 14
+        super
+      end
+    end
+  end
+
   module ZSuperWithRestReassigned
     class A
       def a(*args)
@@ -493,6 +539,30 @@ module SuperSpecs
         args
       end
 
+      def m3(*args)
+        args
+      end
+
+      def m4(*args)
+        args
+      end
+
+      def m_default(*args)
+        args
+      end
+
+      def m_rest(*args)
+        args
+      end
+
+      def m_pre_default_rest_post(*args)
+        args
+      end
+
+      def m_kwrest(**kw)
+        kw
+      end
+
       def m_modified(*args)
         args
       end
@@ -503,9 +573,47 @@ module SuperSpecs
         super
       end
 
+      def m3(_, _, _)
+        super
+      end
+
+      def m4(_, _, _, _)
+        super
+      end
+
+      def m_default(_ = 0)
+        super
+      end
+
+      def m_rest(*_)
+        super
+      end
+
+      def m_pre_default_rest_post(_, _, _=:a, _=:b, *_, _, _)
+        super
+      end
+
+      def m_kwrest(**_)
+        super
+      end
+
       def m_modified(_, _)
         _ = 14
         super
+      end
+    end
+  end
+
+  module ZSuperInBlock
+    class A
+      def m(arg:)
+        arg
+      end
+    end
+
+    class B < A
+      def m(arg:)
+        proc { super }.call
       end
     end
   end

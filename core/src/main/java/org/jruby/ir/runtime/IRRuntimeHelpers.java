@@ -1,46 +1,50 @@
 package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
-import java.io.ByteArrayInputStream;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.Map;
+import java.math.BigInteger;
+
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyProc;
+import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.common.IRubyWarnings;
+import org.jruby.anno.CRuby;
+import org.jruby.api.Convert;
+import org.jruby.api.Create;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.coverage.MethodCoverage;
+import org.jruby.internal.runtime.SplitSuperCall;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
@@ -49,9 +53,14 @@ import org.jruby.ir.JIT;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
+import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -60,16 +69,20 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -83,7 +96,23 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.encodingService;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warning;
+import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
+import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
@@ -108,6 +137,10 @@ public class IRRuntimeHelpers {
         return blockType == LAMBDA && !scope.isArgumentScope();
     }
 
+    public static boolean inMethod(Block.Type blockType) {
+        return blockType == null;
+    }
+
     public static boolean inLambda(Block.Type blockType) {
         return blockType == LAMBDA;
     }
@@ -116,24 +149,18 @@ public class IRRuntimeHelpers {
         return blockType == Block.Type.PROC;
     }
 
-    // FIXME: We should change this to be static scope which is what it is implmented with now and it will make the inlining FIXME below trivial since
-    //   checkforljeinstr can just record IRScope it should return to statically
     // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
     //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block block) {
-        if (inLambda(block.type)) return; // break/return in lambda unconditionally a return.
+    @Interp @JIT
+    public static void checkForLJE(ThreadContext context, DynamicScope currentScope, boolean definedWithinMethod, Block block) {
+        if (inLambda(block.type)) return; // break/return in lambda is unconditionally a return.
 
-        StaticScope staticScope = getContainingReturnToScope(dynScope.getStaticScope());
-        if (staticScope != null) { // we found a valid lexical return scope...but is it higher up the stack?
-            boolean inDefineMethod = staticScope.isArgumentScope() && staticScope.getScopeType().isBlock();
-            boolean topLevel = staticScope.getScopeType() == IRScopeType.SCRIPT_BODY;
+        DynamicScope returnToScope = getContainingReturnToScope(currentScope);
 
-            if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(staticScope)) {
-                return;
-            }
+        if (returnToScope == null || !context.scopeExistsOnCallStack(returnToScope)) {
+            throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
 
-        throw IRException.RETURN_LocalJumpError.getException(context.runtime);
     }
 
     /*
@@ -143,48 +170,40 @@ public class IRRuntimeHelpers {
      * Note: as a result of this all lambdas which contain returns in nested scopes (or itself) can never eliminate
      * its binding.
      */
-    private static StaticScope getContainingLambda(DynamicScope dynamicScope) {
+    private static DynamicScope getContainingLambda(DynamicScope dynamicScope) {
         for (DynamicScope scope = dynamicScope; scope != null && scope.getStaticScope().isBlockScope(); scope = scope.getParentScope()) {
             // we are within a lambda but not a define_method (which seemingly advertises itself as a lambda).
-            if (scope.isLambda() && !scope.getStaticScope().isArgumentScope()) return scope.getStaticScope();
+            if (scope.isLambda() && !scope.getStaticScope().isArgumentScope()) return scope;
         }
 
         return null;
     }
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
-    @JIT
-    public static IRubyObject initiateNonLocalReturn(DynamicScope dynScope, Block block, IRubyObject returnValue) {
+    @JIT @Interp
+    public static IRubyObject initiateNonLocalReturn(DynamicScope currentScope, Block block, IRubyObject returnValue) {
         if (block != null && inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
-        StaticScope returnScope = dynScope.getStaticScope();
-        StaticScope returnToScope = getContainingLambda(dynScope);
+        DynamicScope returnToScope = getContainingLambda(currentScope);
 
-        if (returnToScope == null) returnToScope = getContainingReturnToScope(returnScope);
+        if (returnToScope == null) returnToScope = getContainingReturnToScope(currentScope);
 
         assert returnToScope != null: "accidental return scope";
 
-        throw IRReturnJump.create(returnScope.getIRScope(), returnToScope.getIRScope(), returnValue);
+        throw IRReturnJump.create(currentScope.getStaticScope(), returnToScope, returnValue);
     }
 
     // Finds static scope of where we want to *return* to.
-    private static StaticScope getContainingReturnToScope(StaticScope returnLocationScope) {
-        for (StaticScope current = returnLocationScope; current != null; current = current.getEnclosingScope()) {
-            IRScopeType scopeType = current.getScopeType();
-
-            // We hit a method boundary (actual method or a define_method closure) or we exit out of a script/file.
-            if (scopeType.isMethodType() ||                              // Contained within a method
-                    scopeType.isBlock() && current.isArgumentScope() ||  // Contained within define_method closure
-                    scopeType == IRScopeType.SCRIPT_BODY) {              // (2.5+) Contained within a script
-                return current;
-            }
+    private static DynamicScope getContainingReturnToScope(DynamicScope returnLocationScope) {
+        for (DynamicScope current = returnLocationScope; current != null; current = current.getParentScope()) {
+            if (current.isReturnTarget()) return current;
         }
 
         return null;
     }
 
     @JIT
-    public static IRubyObject handleNonlocalReturn(DynamicScope dynScope, Object rjExc) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(DynamicScope currentScope, Object rjExc) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null; // Unreachable
@@ -192,8 +211,8 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // If we are in the method scope we are supposed to return from, stop p<ropagating.
-            if (rj.methodToReturnFrom == dynScope.getStaticScope().getIRScope()) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+            if (rj.isReturnToScope(currentScope)) {
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + currentScope);
                 return (IRubyObject) rj.returnValue;
             }
 
@@ -224,7 +243,7 @@ public class IRRuntimeHelpers {
         DynamicScope parentScope = dynScope.getParentScope();
 
         if (block.isEscaped()) {
-            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, breakValue, "unexpected break");
+            throw Helpers.newLocalJumpErrorForBreak(context.runtime, breakValue);
         }
 
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
@@ -232,9 +251,8 @@ public class IRRuntimeHelpers {
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
-    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, IRScope scope) {
-        // blockType == null is any non-block scope but in this case it is always a method based on how we emit instrs.
-        return (blockType == null || inLambda(blockType)) && exception.methodToReturnFrom == scope;
+    private static boolean inReturnToScope(Block.Type blockType, IRReturnJump exception, DynamicScope currentScope) {
+        return (inMethod(blockType) || inLambda(blockType)) && exception.isReturnToScope(currentScope);
     }
 
     @JIT
@@ -243,7 +261,7 @@ public class IRRuntimeHelpers {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope().getIRScope())) {
+        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnToScope(block.type, (IRReturnJump) exc, dynScope)) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
@@ -300,11 +318,10 @@ public class IRRuntimeHelpers {
     // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        String name = (nameArg instanceof String) ?
-                (String) nameArg : nameArg.toString();
+        String name = (nameArg instanceof String str) ? str : nameArg.toString();
 
         if (module == null) {
-            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
+            throw typeError(context, str(context.runtime, "No class to undef method '",  asSymbol(context, name), "'."));
         }
 
         module.undef(context, name);
@@ -314,20 +331,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static double unboxFloat(IRubyObject val) {
-        if (val instanceof RubyFloat) {
-            return ((RubyFloat)val).getValue();
-        } else {
-            return ((RubyFixnum)val).getDoubleValue();
-        }
+        return val instanceof RubyFloat flote ? flote.getValue() : (double) ((RubyFixnum)val).getValue();
     }
 
     @JIT
     public static long unboxFixnum(IRubyObject val) {
-        if (val instanceof RubyFloat) {
-            return (long)((RubyFloat)val).getValue();
-        } else {
-            return ((RubyFixnum)val).getLongValue();
-        }
+        return val instanceof RubyFloat flote ? (long) flote.getValue() : ((RubyFixnum)val).getValue();
     }
 
     public static boolean flt(double v1, double v2) {
@@ -366,7 +375,7 @@ public class IRRuntimeHelpers {
         return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
-    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
+    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         if (!(excObj instanceof Throwable)) {
             return false;
         }
@@ -374,11 +383,10 @@ public class IRRuntimeHelpers {
         final Ruby runtime = context.runtime;
         final Throwable ex = (Throwable) excObj;
 
-        if (excType instanceof RubyArray) {
-            RubyArray testTypes = (RubyArray)excType;
+        if (excType instanceof RubyArray testTypes) {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                if (isJavaExceptionHandled(context, testType, ex)) {
                     IRubyObject exception;
                     if (n == 1) {
                         exception = wrapJavaException(context, testType, ex);
@@ -386,7 +394,7 @@ public class IRRuntimeHelpers {
                         exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    runtime.getGlobalVariables().set("$!", exception);
+                    setErrorInfoGlobalVariable(context, exception);
                     return true;
                 }
             }
@@ -394,7 +402,7 @@ public class IRRuntimeHelpers {
         else {
             IRubyObject exception = wrapJavaException(context, excType, ex);
             if (Helpers.checkJavaException(exception, ex, excType, context)) {
-                runtime.getGlobalVariables().set("$!", exception);
+                setErrorInfoGlobalVariable(context, exception);
                 return true;
             }
         }
@@ -410,6 +418,7 @@ public class IRRuntimeHelpers {
         return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
     }
 
+    @Deprecated(since = "10.0.3.0")
     @SuppressWarnings("deprecation")
     private static IRubyObject wrapWithNativeException(ThreadContext context, Throwable throwable, Ruby runtime) {
         // wrap Throwable in a NativeException object
@@ -423,23 +432,47 @@ public class IRRuntimeHelpers {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
-                    context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
+                if (isRubyExceptionHandled(context, testType, excObj)) {
+                    setErrorInfoGlobalVariable(context, (IRubyObject) excObj);
                     return true;
                 }
             }
-        } else if (excObj instanceof IRubyObject) {
-            // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
-            if (!(excType instanceof RubyModule)) {
-                throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
-            }
-
-            if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
-                context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
-                return true;
-            }
+            return false;
+        }
+        if (excObj instanceof IRubyObject) {
+            return isRubyExceptionHandled(context, excType, (IRubyObject) excObj);
         }
         return false;
+    }
+
+    private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, IRubyObject excObj) {
+        // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
+        if (!(excType instanceof RubyModule)) {
+            throw typeError(context, "class or module required for rescue clause. Found: " + excType);
+        }
+
+        if (((RubyModule) excType).callMethod(context, "===", excObj).isTrue()) {
+            setErrorInfoGlobalVariable(context, excObj);
+            return true;
+        }
+        return false;
+    }
+
+    @JIT
+    public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
+        if (exception instanceof RaiseException) {
+            setErrorInfoGlobalVariable(context, ((RaiseException) exception).getException());
+        } else if (exception instanceof Throwable && !(exception instanceof Unrescuable)) {
+            exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
+            setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+        } else if (exception instanceof IRubyObject) {
+            setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+        }
+        // un-rescuables e.g. JumpException, ThreadKill do not affect $!
+    }
+
+    public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {
+        context.setErrorInfo(exception);
     }
 
     public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
@@ -451,15 +484,15 @@ public class IRRuntimeHelpers {
         // Unwrap Ruby exceptions
         excObj = unwrapRubyException(excObj);
 
-        boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
-            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
-
-        return context.runtime.newBoolean(ret);
+        boolean ret = isRubyExceptionHandled(context, excType, excObj) || isJavaExceptionHandled(context, excType, excObj);
+        return asBoolean(context, ret);
     }
 
+    // partially: vm_insnhelper.c - vm_check_match + check_match
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite, boolean splattedValue) {
-        boolean isUndefValue = value == UndefinedValue.UNDEFINED;
-        if (splattedValue && receiver instanceof RubyArray) {
+        boolean isUndefValue = value == UNDEFINED;
+
+        if (splattedValue && receiver instanceof RubyArray) {       // multiple value when
             RubyArray testVals = (RubyArray) receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject v = testVals.eltInternal(i);
@@ -468,57 +501,73 @@ public class IRRuntimeHelpers {
             }
             return context.fals;
         }
-        return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
+
+        if (isUndefValue) return receiver;                           // no arg case single when
+
+        return callSite.call(context, receiver, receiver, value);    // single when
     }
 
     public static IRubyObject newProc(Ruby runtime, Block block) {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
+    @JIT
+    public static IRubyObject newProc(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
+    }
+
+    @JIT
+    public static RubyProc newLambdaProc(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        return runtime.newProc(LAMBDA, block);
+    }
+
+    @JIT
     public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
+    @JIT
     public static IRubyObject yieldSpecific(ThreadContext context, Block b) {
         return b.yieldSpecific(context);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value,
-                                                         org.jruby.runtime.Signature signature, boolean argIsArray) {
-        // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
-        if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
+    @JIT
+    public static IRubyObject yieldValues(ThreadContext context, Block blk, IRubyObject[] args) {
+        return blk.yieldValues(context, args);
+    }
 
+    // .call for PROC
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, org.jruby.runtime.Signature signature) {
         switch (signature.arityValue()) {
-            case -1 :
-                return argIsArray || (signature.opt() > 1 && value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
-            case  0 : return new IRubyObject[] { value };
-            case  1 : {
-               if (argIsArray) {
-                   RubyArray valArray = ((RubyArray)value);
-                   if (valArray.size() == 0) {
-                       value = RubyArray.newEmptyArray(context.runtime);
-                   }
-               }
-               return new IRubyObject[] { value };
-            }
-            default :
-                if (argIsArray) {
-                    RubyArray valArray = (RubyArray)value;
-                    if (valArray.size() == 1) value = valArray.eltInternal(0);
-                    value = Helpers.aryToAry(context, value);
-                    return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
-                } else {
-                    IRubyObject val0 = Helpers.aryToAry(context, value);
-                    // FIXME: This logic exists in RubyProc and IRRubyBlockBody. consolidate when we do block call protocol work
-                    if (val0.isNil()) {
-                        return new IRubyObject[] { value };
-                    } else if (!(val0 instanceof RubyArray)) {
-                        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
-                    } else {
-                        return ((RubyArray) val0).toJavaArray();
-                    }
-                }
+            case -1:
+                return signature.opt() > 1 && value instanceof RubyArray ?
+                        ((RubyArray) value).toJavaArray(context) :
+                        new IRubyObject[] { value };
+            case  0:
+            case  1:
+                return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
+                        IRBlockBody.toAry(context, value) :
+                        new IRubyObject[] { value };
         }
+
+        return IRBlockBody.toAry(context, value);
+    }
+
+    // NORMAL yield paths passed through yieldSpecific and call (for when block is passed through -- some internal weirdness on our part).
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, RubyArray array, org.jruby.runtime.Signature signature) {
+        switch (signature.arityValue()) {
+            case -1:
+                return array.toJavaArray(context);
+            case 0:
+            case 1:
+                return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
+                        IRBlockBody.toAry(context, array) :
+                        new IRubyObject[] { array };
+        }
+
+        return singleBlockArgToArray(Helpers.aryToAry(context, array.size() == 1 ? array.eltInternal(0) : array));
     }
 
     @JIT
@@ -535,7 +584,7 @@ public class IRRuntimeHelpers {
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {
-            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc", true)).getBlock();
+            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc")).getBlock();
         } else {
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
         }
@@ -563,65 +612,48 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
-                                  boolean receivesKwargs, int restKey, Block block) {
+    /*
+     *  Specific arity methods made during the JIT only accept the arguments they accept.  One strange case with
+     * Ruby 3 keywords is any method can recieve an extra argument for keyword arguments.  For specific arity we do
+     * no accept keyword args but any method can pass them anyways.  We have instructions for processing keywords
+     * but in specific arity methods we check arity mismatches in an args[] signature and it will complain if it
+     * sees that extra kwarg....and it should...unless it happens to be empty (**{}).  In that case we silently ignore
+     * that empty arg.
+     *
+     * As of 9.4.0.0 the design is such that in Ruby we bifurcate and check for empty kwargs and do not pass them.
+     * For ruby2_keyword methods we do not do this (or we would have to put this same if conditional for every call
+     * in Ruby along with a dynamic check looking to see if it is this kind of method -- which would be before our
+     * actual callsite).  So this special logic here literally only exists for ruby2_keyword arg methods which receive and
+     * pass splatted values (where last one might be an empty kwarg hash).
+     *
+     * Note: we probably need this logic baked into every callsite in the system as this would cause a hit in the case
+     * of keywords but it is much simpler than having all kwargs parameter calls emit an if statement looking for
+     * emptiness in the kwarg.  Also all native methods will complain for this case if you call with an empty kwarg.
+     */
+    public static void checkAritySpecificArgs(ThreadContext context, StaticScope scope, Object[] args,
+                                  int required, int opt, boolean rest, int restKey, Block block) {
         int argsLength = args.length;
-        RubyHash keywordArgs = extractKwargsHash(context, args, required, receivesKwargs);
-
-        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
-
-        // keyword arguments value is not used for arity checking.
-        if (keywordArgs != null) argsLength -= 1;
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
-            Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
+            if (argsLength > (required + opt) && args[argsLength - 1] instanceof RubyHash) {
+                RubyHash last = (RubyHash) args[argsLength - 1];
+                if (last.isRuby2KeywordHash() && last.isEmpty()) return;
+            }
+            //System.out.println("C: " + context.getFile() + ":" + context.getLine());
+            Arity.raiseArgumentError(context, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
     }
 
-    @JIT
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        // No kwarg because required args slurp them up.
-        int length = args.length;
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords,
+                                  int required, int opt, boolean rest, int restKey, Block block) {
+        int argsLength = args.length - (keywords != UNDEFINED ? 1: 0);
 
-        if (length <= requiredArgsCount) return args;
-
-        final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
-
-        if (maybeKwargs != null) {
-            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
-                return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
-            }
-
-            RubyHash kwargs = (RubyHash) maybeKwargs;
-
-            if (kwargs.allSymbols()) {
-                args[length - 1] = kwargs.dupFast(context);
-            } else {
-                args = homogenizeKwargs(context, args, kwargs);
-            }
+        if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
+            //System.out.println("C: " + context.getFile() + ":" + context.getLine());
+            Arity.raiseArgumentError(context, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
 
-        return args;
-    }
-
-    private static IRubyObject[] homogenizeKwargs(ThreadContext context, IRubyObject[] args, RubyHash kwargs) {
-        DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
-
-        // We know toHash makes null, nil, or Hash
-        kwargs.visitAll(context, visitor, null);
-
-        if (visitor.syms == null) {
-            // no symbols, use empty kwargs hash
-            visitor.syms = RubyHash.newSmallHash(context.runtime);
-        }
-
-        if (visitor.others != null) { // rest args exists too expand args
-            args = ArraySupport.newCopy(args, args.length + 1);
-            args[args.length - 2] = visitor.others; // opt args
-        }
-        args[args.length - 1] = visitor.syms; // kwargs hash
-
-        return args;
+        if (restKey == -1 && keywords != UNDEFINED) checkForExtraUnwantedKeywordArgs(context, scope, (RubyHash) keywords);
     }
 
     /**
@@ -631,68 +663,364 @@ public class IRRuntimeHelpers {
      * @param runtime the current runtime
      * @return whether to print IR
      */
-    public static boolean shouldPrintIR(Ruby runtime) {
+    public static boolean shouldPrintIR(final Ruby runtime) {
         boolean booting = runtime.isBooting();
         boolean print = Options.IR_PRINT.load();
         boolean printAll = Options.IR_PRINT_ALL.load();
 
-        return (print && !booting) || (booting && printAll);
+        return (!booting && print) || (booting && printAll);
     }
 
-    private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
-        RubyHash syms;
-        RubyHash others;
+    /**
+     * Check if the scope matches the configured ir.print.pattern, or if no pattern is set.
+     *
+     * @param scope the scope to match
+     * @return whether to print the scope
+     */
+    public static boolean shouldPrintScope(IRScope scope) {
+        String pattern = Options.IR_PRINT_PATTERN.load();
 
-        @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object unused) {
-            if (key instanceof RubySymbol) {
-                if (syms == null) syms = RubyHash.newSmallHash(context.runtime);
-                syms.fastASetSmall(key, value);
-            } else {
-                if (others == null) others = RubyHash.newSmallHash(context.runtime);
-                others.fastASetSmall(key, value);
+        return pattern.equals(Options.IR_PRINT_PATTERN_NO_PATTERN_STRING) || scope.getId().matches(pattern);
+    }
+
+    /**
+     * Count one call of the running method for Coverage's methods mode. This is the second half of the hand-off
+     * started by DynamicMethod#prepareMethodCoverage. See CoverMethodInstr.
+     *
+     * @param scope the static scope of the running method or block body
+     * @param coverage the MethodCoverage taken at the start of the body. Null or nil when there was none: a block
+     *                 running as a block, or a method that is not counted.
+     */
+    public static void coverMethod(ThreadContext context, StaticScope scope, Object coverage) {
+        if (!(coverage instanceof MethodCoverage methodCoverage)) return;
+        if (!methodCoverage.isFor(scope.getIRScope())) return; // never charge a stale hand-off to another method
+        if (!context.runtime.getCoverageData().isRunning()) return;
+
+        methodCoverage.cover();
+    }
+
+    /**
+     * Update coverage data for the given file and zero-based line number.
+     *
+     * @param context
+     * @param filename
+     * @param line
+     */
+    public static void updateCoverage(ThreadContext context, String filename, int line) {
+        coverLine(context, filename, line);
+    }
+
+    /**
+     * Update coverage data for the given file and zero-based line number.
+     *
+     * @return true if the line was counted. A oneshot_lines probe stays armed until this returns true.
+     */
+    public static boolean coverLine(ThreadContext context, String filename, int line) {
+        Ruby runtime = context.runtime;
+
+        if (!runtime.isCoverageEnabled()) return false;
+
+        CoverageData data = runtime.getCoverageData();
+
+        if (!data.isRunning()) return false;
+
+        return data.coverLine(filename, line);
+    }
+
+    @JIT @Interp
+    public static IRubyObject hashCheck(ThreadContext context, IRubyObject hash) {
+        // A case like: x = nil; foo(a: 1, **x). **nil itself gets figured out during build but indirection to nil happens here.
+        if (hash instanceof RubyNil) return newHash(context);
+        return TypeConverter.convertToType(hash, hashClass(context), "to_hash");
+    }
+
+    public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
+        // ARGSPUSH ended up realizing we have an empty kwargs already and stripped off the empty value (meaning
+        // any call need not worry about subtracting a kwargs argument.
+        if ((context.callInfo & CALL_KEYWORD_EMPTY) != 0) return context.fals;
+
+        boolean isEmpty;
+        if (hash.isNil()) {
+            isEmpty = true;
+        } else {
+            hash = TypeConverter.checkHashType(context.runtime, hash);
+            isEmpty = hash instanceof RubyHash && ((RubyHash) hash).size() == 0;
+        }
+        if (isEmpty) context.callInfo |= CALL_KEYWORD_EMPTY;
+        return  isEmpty ? context.tru : context.fals;
+    }
+
+    public static IRubyObject undefined() {
+        return UNDEFINED;
+    }
+
+    // specific arity methods in JIT will only be fixed arity meaning no kwargs and no rest args.
+    // this logic is the same as recieveKeywords but we know it will never be a keyword argument (jit
+    // will save %undefined as the keyword value).
+    // Due to jruby/jruby#8119 and the potential for ruby2_keywords flags to change after JIT, jitted code will always
+    // call on this path and pass in the live value of ruby2_keywords from the scope.
+    @JIT
+    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        if (shouldHandleKwargs(last, callInfo)) {
+            RubyHash hash = (RubyHash) last;
+            KwargsAction kwargsAction = kwargsActionJIT(last, ruby2Keywords, callInfo);
+            return switch (kwargsAction) {
+                case RETURN_DUP -> hash.dupFast(context);
+                case RETURN_DUP_WITH_RUBY2 -> hash.dupFast(context).withRuby2Keywords(true);
+                case RETURN_WITHOUT_RUBY2 -> hash.withRuby2Keywords(false);
+                case RETURN_HASH -> hash;
+
+                // JIT does not have these conditions
+                default -> throw new IllegalArgumentException("null kwargs action");
+            };
+        }
+        return last;
+    }
+
+    @JIT
+    private static KwargsAction kwargsActionJIT(IRubyObject last, boolean ruby2Keywords, int callInfo) {
+        boolean isKwarg = hasKeywords(callInfo);
+        if (ruby2Keywords) {
+            // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+            // This means methods which don't just keep that marked hash around in case it is passed
+            // onto another method which accepts keywords.
+            if (isKwarg) {
+                // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
+                // So it can be used similarly to an ordinary hash passed in this way.
+                return KwargsAction.RETURN_DUP_WITH_RUBY2;
             }
-        }
-    };
 
-    private static IRubyObject toHash(ThreadContext context, IRubyObject lastArg) {
-        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-        if (lastArg.respondsTo("to_hash")) {
-            lastArg = lastArg.callMethod(context, "to_hash");
-            if (lastArg == context.nil) return lastArg;
-            TypeConverter.checkType(context, lastArg, context.runtime.getHash());
-            return (RubyHash) lastArg;
+            return KwargsAction.RETURN_HASH;
+        } else {
+            if ((callInfo & CALL_SPLATS) != 0 && ((RubyHash) last).isRuby2KeywordHash()) {
+                return KwargsAction.RETURN_DUP;
+            }
+
+            if (isKwarg) {
+                return KwargsAction.RETURN_DUP;
+            }
+
+            return KwargsAction.RETURN_HASH;
         }
-        return null;
     }
 
-    public static RubyHash extractKwargsHash(ThreadContext context, Object[] args, int requiredArgsCount, boolean receivesKwargs) {
-        if (!receivesKwargs) return null;
-        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
-
-        Object lastArg = args[args.length - 1];
-
-        if (lastArg instanceof IRubyObject) {
-            IRubyObject returnValue = toHash(context, (IRubyObject) lastArg);
-            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
+    /**
+     * <p>Handle incoming keyword arguments given the receiver's rest arg, keyword acceptance, and need for
+     * ruby2_keywords.</p>
+     *
+     * <p>Note: We return as %undefined and not null when no keyword arguments are present since null in temporary
+     * values when accessed will return nil (unfortunate artifact of us not guaranteeing all temporary variables are
+     * explicitly initialized).</p>
+     *
+     * <p>Note: Last argument of args may be replaced by a duplicate of itself.  This is done for two reasons:
+     * 1) keywords passed to method with rest argument and we dup as side-effect because recv_rest_arg lack
+     * knowledge to do it itself 2) any context where keyword can be consumed as an ordinary argument (not
+     * doing this would modify the hash back at the callsite)</p>
+     *
+     * @param context the thread context
+     * @param args arguments we are processing
+     * @param hasRestArgs the thing being called has a rest argument
+     * @param acceptsKeywords the thing being called accepts keyword arguments
+     * @param ruby2_keywords_method the method being called is marked with ruby2_keywords
+     * @return %undefined if no keywords given or a hash if so
+     */
+    @Interp
+    public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
+                                              boolean acceptsKeywords, boolean ruby2_keywords_method) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        if (shouldHandleKwargs(args, callInfo)) {
+            return receiveKeywordsHash(context, args, hasRestArgs, acceptsKeywords, ruby2_keywords_method, callInfo);
         }
 
-        return null;
+        return UNDEFINED;
     }
 
-    @Deprecated // not used
-    public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
-        if (!receivesKwargs) return null;
-        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
+    /**
+     * For the given the argument list and callInfo, determine whether keyword argument
+     * processing should happen. The basic requirements are:
+     *
+     * <ul>
+     *     <li>callInfo metadata does not indicate explicitly-empty keyword args</li>
+     *     <li>one or more arguments in the argument list</li>
+     *     <li>last argument is a Hash</li>
+     * </ul>
+     *
+     * @param args the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
+    @Interp
+    private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
+        if (args.length > 0) {
+            return shouldHandleKwargs(args[args.length - 1], callInfo);
+        }
+        return false;
+    }
 
-        Object lastArg = args[args.length - 1];
+    /**
+     * For the given last argument and callInfo, determine whether keyword argument
+     * processing should happen.
+     * </p>
+     * See {@link #shouldHandleKwargs(IRubyObject[], int)}.
+     *
+     * @param lastArg the last argument in the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
+    @JIT
+    private static boolean shouldHandleKwargs(IRubyObject lastArg, int callInfo) {
+        return !keywordsEmpty(callInfo) && lastArg instanceof RubyHash;
+    }
 
-        if (lastArg instanceof IRubyObject) {
-            IRubyObject returnValue = toHash(((IRubyObject) lastArg).getRuntime().getCurrentContext(), (IRubyObject) lastArg);
-            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
+    enum KwargsAction {
+        REPLACE_WITH_DUP_RETURN_UNDEFINED,
+        REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED,
+        RETURN_DUP,
+        RETURN_UNDEFINED,
+        RETURN_DUP_WITHOUT_RUBY2,
+        RETURN_DUP_WITH_RUBY2,
+        RETURN_WITHOUT_RUBY2,
+        RETURN_HASH
+    }
+
+    @Interp
+    private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
+                                                   boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
+        RubyHash hash = (RubyHash) args[args.length - 1];
+
+        switch (kwargsAction(hash, hasRestArgs, acceptsKeywords, ruby2_keywords_method, callInfo)) {
+            case REPLACE_WITH_DUP_RETURN_UNDEFINED -> {
+                args[args.length - 1] = hash.dupFast(context);
+                return UNDEFINED;
+            }
+            case REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED -> {
+                args[args.length - 1] = hash.dupFast(context).withRuby2Keywords(true);
+                return UNDEFINED;
+            }
+            case RETURN_DUP -> {
+                return hash.dupFast(context);
+            }
+            case RETURN_DUP_WITHOUT_RUBY2 -> {
+                return hash.dupFast(context).withRuby2Keywords(false);
+            }
+            case RETURN_DUP_WITH_RUBY2 -> {
+                return hash.dupFast(context).withRuby2Keywords(true);
+            }
+            case RETURN_WITHOUT_RUBY2 -> {
+                return hash.withRuby2Keywords(false);
+            }
+            case RETURN_HASH -> {
+                return hash;
+            }
+            case RETURN_UNDEFINED -> {
+                return UNDEFINED;
+            }
+            case null -> throw new IllegalArgumentException("null kwargs action");
+        }
+    }
+
+    private static KwargsAction kwargsAction(RubyHash hash, boolean hasRestArgs,
+                                                   boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
+        boolean empty = hash.isEmpty();
+
+        if (ruby2_keywords_method) {
+            // no keywords to use in this method
+            if (hasKeywords(callInfo)) {
+                return KwargsAction.REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED;
+            } else if (hash.isRuby2KeywordHash() && (callInfo & CALL_SPLATS) != 0 && empty) { // splatted empty hash...just return it
+                return KwargsAction.RETURN_HASH;
+            } else if (acceptsKeywords && !empty) { // keywords method which has keywords
+                return KwargsAction.RETURN_DUP;
+            } else {
+                return KwargsAction.RETURN_UNDEFINED;
+            }
+        } else if (hash.isRuby2KeywordHash()) {
+            // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+            // This means methods which don't just keep that marked hash around in case it is passed
+            // onto another method which accepts keywords.
+            if (acceptsKeywords) {
+                if (!empty) {
+                    return KwargsAction.RETURN_DUP_WITHOUT_RUBY2;
+                } else {
+                    return KwargsAction.RETURN_WITHOUT_RUBY2;
+                }
+            } else if ((callInfo & CALL_SPLATS) != 0) {
+                // somehow we splatted an array with an empty keyword argument attached (ruby2_keywords_hash can lead to this)
+                if (empty) {
+                    return KwargsAction.RETURN_HASH;
+                } else {
+                    return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
+                }
+            } else if (hasKeywords(callInfo)) {
+                if (!empty) {
+                    return KwargsAction.RETURN_DUP;
+                } else if (hasRestArgs) {
+                    // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
+                    // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
+                    // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
+                    // it happening here.
+                    return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
+                } else {
+                    return KwargsAction.RETURN_UNDEFINED;
+                }
+            } else {
+                return KwargsAction.RETURN_UNDEFINED;
+            }
+        } else if (!hasKeywords(callInfo)) {
+            return KwargsAction.RETURN_UNDEFINED;
+        } else if (acceptsKeywords && !empty) {
+            return KwargsAction.RETURN_DUP;
+        } else {
+            return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
+        }
+    }
+
+    /**
+     * Methods like Kernel#send if it receives a key-splatted value at a send site (send :foo, **h)
+     * it will dup h.
+     */
+    public static IRubyObject dupIfKeywordRestAtCallsite(ThreadContext context, IRubyObject arg) {
+        int callInfo = context.callInfo;
+
+        if ((callInfo & CALL_KEYWORD_EMPTY) == 0 && (callInfo & CALL_KEYWORD_REST) != 0) {
+            arg = arg.dup();
+            context.callInfo = callInfo;
         }
 
-        return null;
+        return arg;
+    }
+
+    @JIT @Interp
+    public static void setCallInfo(ThreadContext context, int flags) {
+        // Forwarding args set callInfo elsewhere based on the incoming call structure.
+        // We leave them as-is and return.
+        if ((flags & CALL_FORWARDING) != 0) return;
+
+        // CALL_KEYWORD_EMPTY is set dynamically while building this call's arguments (argsPush,
+        // isHashEmpty, irSplat) when a keyword-rest or splat turns out to be empty, and it must
+        // survive into the call so the callee treats the kwargs as explicitly empty. It is only
+        // ever set for a call that passes a keyword-rest or splat, so we carry it forward only
+        // when this call is such a call. Otherwise a leftover CALL_KEYWORD_EMPTY from a previous
+        // call whose (native) callee never reset callInfo would leak into an unrelated call (e.g.
+        // a plain keyword call), causing the keyword argument to be mishandled. See
+        // test/jruby/test_call_info.rb#test_forward_dots_to_native_method_does_not_leak.
+        if ((flags & (CALL_KEYWORD_REST | CALL_SPLATS)) != 0) {
+            context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
+        } else {
+            context.callInfo = flags;
+        }
+    }
+
+    @JIT @Interp
+    public static RubyFixnum captureCallInfo(ThreadContext context) {
+        return context.runtime.newFixnum(context.callInfo);
+    }
+
+    @JIT @Interp
+    public static IRubyObject restoreCallInfo(ThreadContext context, IRubyObject callInfo) {
+        context.callInfo = (int) ((RubyFixnum) callInfo).getValue();
+        return callInfo;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
@@ -711,11 +1039,10 @@ public class IRRuntimeHelpers {
     public static DynamicScope prepareScriptScope(ThreadContext context, StaticScope scope) {
         IRScope irScope = scope.getIRScope();
 
-        if (irScope.isScriptScope()) {
+        if (irScope != null && irScope.isScriptScope() && !irScope.hasFlipFlops()) {
             DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
             if (tlbScope != null) {
                 context.preScopedBody(tlbScope);
-                tlbScope.growIfNeeded();
                 return tlbScope;
             }
         }
@@ -726,35 +1053,46 @@ public class IRRuntimeHelpers {
         return dynScope;
     }
 
+    public static IRubyObject blockGivenOrCall(ThreadContext context, IRubyObject self, FunctionalCachingCallSite blockGivenSite, Object blk) {
+        CacheEntry blockGivenEntry = blockGivenSite.retrieveCache(self);
+
+        if (!blockGivenEntry.method.getRealMethod().isBuiltin()) {
+            return blockGivenSite.call(context, self, self);
+        }
+
+        return isBlockGiven(context, blk);
+    }
+
     private static class InvalidKeyException extends RuntimeException {}
     private static final InvalidKeyException INVALID_KEY_EXCEPTION = new InvalidKeyException();
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
-                throw INVALID_KEY_EXCEPTION;
-            }
+            if (!isValidKeyword(scope, key)) throw INVALID_KEY_EXCEPTION;
         }
     };
 
+    private static boolean isValidKeyword(StaticScope scope, IRubyObject key) {
+        return key instanceof RubySymbol && scope.keywordExists(((RubySymbol) key).idString());
+    }
+
     private static class GatherUnwantedKeywordsVisitor extends RubyHash.VisitorWithState<StaticScope> {
-        ArrayList invalidKwargs;
+        RubyArray invalidKwargs;
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
-                if (invalidKwargs == null) invalidKwargs = new ArrayList();
-                invalidKwargs.add(javaName);
+            if (!isValidKeyword(scope, key)) {
+                if (invalidKwargs == null) invalidKwargs = newArray(context);
+                invalidKwargs.add(key.inspect(context));
             }
         }
 
         public void raiseIfError(ThreadContext context) {
             if (invalidKwargs != null) {
-                String invalidKwargs = this.invalidKwargs.toString();
-                throw context.runtime.newArgumentError(
-                        (this.invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ")
-                                + invalidKwargs.substring(1, invalidKwargs.length() - 1));
+                //System.out.println("RAISEEEEE: " + context.getFile() + ":" + context.getLine());
+                RubyString errorMessage = (RubyString) invalidKwargs.join(context, newString(context, ", "));
+                String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
+
+                throw argumentError(context, prefix + errorMessage);
             }
         }
     }
@@ -769,7 +1107,7 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject extractOptionalArgument(RubyArray rubyArray, int minArgsLength, int index) {
         int n = rubyArray.getLength();
-        return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+        return minArgsLength < n ? rubyArray.entry(index) : UNDEFINED;
     }
 
     @JIT @Interp
@@ -780,8 +1118,7 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject isDefinedGlobal(ThreadContext context, String name, IRubyObject definedMessage) {
-        return context.runtime.getGlobalVariables().isDefined(name) ?
-                definedMessage : context.nil;
+        return globalVariables(context).isDefined(name) ? definedMessage : context.nil;
     }
 
     // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
@@ -789,13 +1126,8 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber, IRubyObject definedMessage) {
         IRubyObject backref = context.getBackRef();
 
-        if (backref instanceof RubyMatchData) {
-            if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                return definedMessage;
-            }
-        }
-
-        return context.nil;
+        return backref instanceof RubyMatchData match && !match.group(context, matchNumber).isNil() ?
+                definedMessage : context.nil;
     }
 
     @JIT @Interp
@@ -812,12 +1144,6 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedMessage) {
-        return receiver.getInstanceVariables().hasInstanceVariable(name) ?
-                definedMessage : context.nil;
-    }
-
-    @JIT @Interp
     public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
         IRubyObject boundValue = Helpers.getDefinedCall(context, self, receiver, name, definedMessage);
 
@@ -825,8 +1151,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name, definedConstantMessage, definedMethodMessage);
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name,
+                                                        IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(context, receiver, name.intern(context).idString(),
+                definedConstantMessage, definedMethodMessage);
 
         return definedType == null ? context.nil : definedType;
     }
@@ -838,11 +1166,12 @@ public class IRRuntimeHelpers {
         boolean defined = !method.isUndefined();
 
         if (defined) {
-            // If we find the method we optionally check if it is public before returning "method".
-            defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
+            // With a receiver the method must be public; without one CRuby checks respond_to?,
+            // which is false for a not-implemented method.
+            defined = checkIfPublic ? method.getVisibility() == Visibility.PUBLIC : !method.isNotImplemented();
         } else {
             // If we did not find the method, check respond_to_missing?
-            defined = receiver.respondsToMissing(name, checkIfPublic);
+            defined = RubyClass.checkRespondToMissing(context, receiver, name);
         }
 
         return defined ? definedMessage : context.nil;
@@ -856,58 +1185,92 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
-                frameClass.getSuperClass().isMethodBound(frameName, false);
+                frameClass.getSuperClass() != null &&
+                isSuperMethodBound(frameClass.getSuperClass().searchMethod(frameName));
 
         return defined ? definedMessage : context.nil;
     }
 
-    public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
-        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
+    // CRuby's defined?(super) also ignores not-implemented methods (rb_method_boundp returns 0).
+    private static boolean isSuperMethodBound(DynamicMethod method) {
+        return !method.isUndefined() && !method.isNotImplemented();
     }
 
-    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope, IRubyObject newName, IRubyObject oldName) {
+    public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
+        return RubyRegexp.nth_match(context, matchNumber, context.getBackRef());
+    }
+
+    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope,
+                                   IRubyObject newName, IRubyObject oldName) {
         if (self == null || self instanceof RubyFixnum || self instanceof RubySymbol) {
-            throw context.runtime.newTypeError("no class to make alias");
+            throw typeError(context, "no class to make alias");
         }
 
-        findInstanceMethodContainer(context, currDynScope, self).alias_method(context, newName, oldName);
+        findInstanceMethodContainer(context, currDynScope, self).aliasMethod(context, newName, oldName);
+    }
+
+    /**
+     * Find the base class or "cbase" used for various class-level operations.
+     *
+     * This should be equivalent to "cbase" in CRuby, as retrieved by vm_get_cbase.
+     *
+     * See {@link org.jruby.ir.instructions.GetClassVarContainerModuleInstr} and {@link org.jruby.RubyKernel#autoload(ThreadContext, IRubyObject, IRubyObject, IRubyObject)}
+     * for example usage.
+     *
+     * @param context the current context
+     * @param self the current self object
+     * @return the instance method definition target, or the "cbase" for other purposes
+     */
+    public static RubyModule getCurrentClassBase(ThreadContext context, IRubyObject self) {
+        return getModuleFromScope(context, context.getCurrentStaticScope(), self);
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         RubyModule rubyClass = scope.getModule();
 
         // SSS FIXME: Copied from ASTInterpreter.getClassVariableBase and adapted
-        while (scope != null && (rubyClass.isSingleton() || rubyClass == runtime.getDummy())) {
+        while (scope != null && (rubyClass.isSingleton() || rubyClass == context.runtime.getDummy())) {
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
-                runtime.getWarnings().warn(IRubyWarnings.ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
+                warn(context, "class variable access from toplevel singleton method");
             }
         }
 
-        if ((scope == null) && (arg != null)) {
-            // We ran out of scopes to check -- look in arg's metaclass
-            rubyClass = arg.getMetaClass();
-        }
-
-        if (rubyClass == null) {
-            throw context.runtime.newTypeError("no class/module to define class variable");
-        }
+        // We ran out of scopes to check -- look in arg's metaclass
+        if ((scope == null) && (arg != null)) rubyClass = arg.getMetaClass();
+        if (rubyClass == null) throw typeError(context, "no class/module to define class variable");
 
         return rubyClass;
     }
 
     @JIT @Interp
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
-        RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
-
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg,
+                                                    IRubyObject explicitKwarg, boolean checkForDuplicates) {
+        // FIXME: JIT is generating a hash which is empty but seems to contain an %undefined within it.
+        //   This was crashing because it would dup it and then try and dup the undefined within it.
+        //   This replacement logic is correct even if that was figured out but this should just be
+        //   hash = checkHashType(...).dup().
+        RubyHash hash;
+        if (!(restKwarg instanceof RubyHash hsh)) {
+            hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg);
+        } else {
+            hash = !hsh.isEmpty() ? (RubyHash) hsh.dup() : newHash(context);
+        }
         hash.modify();
-        final RubyHash otherHash = explicitKwarg.convertToHash();
 
-        if (otherHash.empty_p().isTrue()) return hash;
+        RubyHash otherHash = explicitKwarg.convertToHash();
 
-        otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+        // If all the kwargs are empty let's discard them
+        if (otherHash.empty_p(context).isTrue()) {
+            return hash;
+        }
+
+        if (checkForDuplicates) {
+            otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+        } else {
+            hash.merge_bang(context, new IRubyObject[] { otherHash }, Block.NULL_BLOCK);
+        }
 
         return hash;
     }
@@ -921,10 +1284,14 @@ public class IRRuntimeHelpers {
 
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            // All kwargs keys must be symbols.
-            TypeConverter.checkType(context, key, context.runtime.getSymbol());
-
+            if (target.fastARef(key) != null) {
+                context.runtime.getWarnings().warn(context, key, KwargMergeVisitor::duplicationWarning);
+            }
             target.op_aset(context, key, value);
+        }
+
+        private static String duplicationWarning(ThreadContext c, IRubyObject k, RubyStackTraceElement trace) {
+            return str(c.runtime, "key ", k.inspect(c), " is duplicated and overwritten on line " + (trace.getLineNumber()));
         }
     }
 
@@ -967,7 +1334,7 @@ public class IRRuntimeHelpers {
                 //   end
                 // -------------
                 case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-                case INSTANCE_EVAL: return self.getSingletonClass();
+                case INSTANCE_EVAL: return self.singletonClass(context);
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
@@ -982,6 +1349,13 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
+                                // FIXME: JIT has different module set here M vs MetaM.  Figure out discrepency.
+                                // Instance methods when defined within a method which is a singleton should
+                                // use the singletons container scope.
+                                if (!(self instanceof MetaClass) && self.getMetaClass().isSingleton()) {
+                                    return ds.getStaticScope().getModule();
+                                }
+
                                 // This is a similar scenario as the FIXME above that was added
                                 // in b65a5842ecf56ca32edc2a17800968f021b6a064. At that time,
                                 // I was wondering if it would affect this site here and looks
@@ -989,8 +1363,10 @@ public class IRRuntimeHelpers {
                                 return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
                             case INSTANCE_METHOD:
-                            case SCRIPT_BODY:
                                 return self.getMetaClass();
+
+                            case SCRIPT_BODY:
+                                return currDynScope.getStaticScope().getModule();
 
                             default:
                                 throw new RuntimeException("Should not get here! scopeType is " + scopeType);
@@ -1006,48 +1382,27 @@ public class IRRuntimeHelpers {
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return context.runtime.newBoolean( ((Block) blk).isGiven() );
+        return asBoolean(context,  ((Block) blk).isGiven() );
     }
 
-    public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
-        return constructRestArg(context, args, keywordArguments, required, argIndex);
-    }
+    @JIT @Interp
+    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int required, int argIndex) {
+        int argsLength = args.length + (keywords != UNDEFINED ? -1 : 0);
 
-    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
-        return constructRestArg(context, args, keywordArguments, required, argIndex);
-    }
+        if (required == 0 && argsLength == args.length ) return RubyArray.newArray(context.runtime, args);
 
-    public static IRubyObject constructRestArg(ThreadContext context, Object[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
         int remainingArguments = argsLength - required;
-
-        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
-
-        return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) args, argIndex, remainingArguments);
-    }
-
-    private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-        if ( required == 0 && argsLength == args.length ) {
-            return RubyArray.newArray(context.runtime, args);
-        }
-        int remainingArguments = argsLength - required;
-
-        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
+        if (remainingArguments <= 0) return newEmptyArray(context);
 
         return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
 
     @JIT @Interp
-    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int pre,
-                                                 int opt, boolean rest, int post,
-                                                 int argIndex, boolean acceptsKeywordArgument) {
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords,
+                                                 int pre, int opt, boolean rest, int post, int argIndex) {
         int required = pre + post;
         // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
-        boolean kwargs = extractKwargsHash(context, args, required, acceptsKeywordArgument) != null;
-        int n = kwargs ? args.length - 1 : args.length;
+        int n = keywords != UNDEFINED ? args.length - 1 : args.length;
         int remaining = n - pre;       // we know we have received all pre args by post receives.
 
         if (remaining < post) {        // less args available than post args need
@@ -1069,26 +1424,36 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject receiveOptArg(ThreadContext context, IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+    @JIT @Interp
+    public static IRubyObject receiveOptArg(IRubyObject[] args, IRubyObject keywords, int requiredArgs,
+                                            int preArgs, int argIndex) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = extractKwargsHash(context, args, requiredArgs, acceptsKeywordArgument);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
 
-        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+        if (requiredArgs + optArgIndex >= argsLength) return UNDEFINED; // No more args left
 
         return args[preArgs + optArgIndex];
     }
 
-    @Deprecated // not used
-    public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
-        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+    /**
+     * Whether the splat ends with an empty hash flagged by ruby2_keywords, which a call leaves out of its arguments.
+     */
+    @CRuby(value = "vm_caller_setup_arg_splat", file = "vm_args.c")
+    private static boolean endsWithEmptyRuby2KeywordsHash(RubyArray splat) {
+        int size = splat.size();
+        return size > 0 && splat.eltOk(size - 1) instanceof RubyHash hash && hash.isRuby2KeywordHash() && hash.isEmpty();
+    }
 
-        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+    /**
+     * The arguments for a call whose only argument is the given splat.
+     */
+    @JIT
+    public static IRubyObject[] splatToArgs(ThreadContext context, RubyArray splat) {
+        if (!endsWithEmptyRuby2KeywordsHash(splat)) return splat.toJavaArray(context);
 
-        return args[preArgs + optArgIndex];
+        IRubyObject[] args = IRubyObject.array(splat.size() - 1);
+        splat.copyInto(context, args, 0, args.length);
+        return args;
     }
 
     public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, int argIndex) {
@@ -1097,44 +1462,48 @@ public class IRRuntimeHelpers {
         return result;
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
-
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
-
-        RubySymbol keywordName = context.runtime.newSymbol(id);
-
-        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+    /**
+     * Like {@link #getPreArgSafe(ThreadContext, IRubyObject[], int)}, but when the last argument was received
+     * as keywords it is not a positional argument. A proc called with only keywords, as in
+     * <code>proc {|c, a: 1|}.call(a: 3)</code>, gets nil for c rather than the keywords hash.
+     */
+    @Interp @JIT
+    public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int argIndex) {
+        int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
+        return argIndex < argsLength ? args[argIndex] : context.nil;
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, RubySymbol key, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
-
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
-
-        if (keywordArguments.fastARef(key) == null) return UndefinedValue.UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, key, Block.NULL_BLOCK);
+    @JIT
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject keywords, String id) {
+        return receiveKeywordArg(keywords, asSymbol(context, id));
     }
 
-    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, keywordArgumentSupplied);
+    @Interp
+    public static IRubyObject receiveKeywordArg(IRubyObject keywords, RubySymbol key) {
+        if (keywords == UNDEFINED) return UNDEFINED;
 
-        return keywordArguments == null ? RubyHash.newSmallHash(context.runtime) : keywordArguments;
+        IRubyObject value = ((RubyHash) keywords).delete(key);
+
+        return value == null ? UNDEFINED : value;
+    }
+
+    @JIT
+    public static IRubyObject keywordRestOnHash(ThreadContext context, IRubyObject rest) {
+        TypeConverter.checkType(context, rest, hashClass(context));
+        return ((RubyHash) rest).dupFast(context);
+    }
+
+    @JIT @Interp
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
+        return keywords == UNDEFINED ? newSmallHash(context) : (RubyHash) keywords;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
         if (matchRes.isNil()) return context.nil;
 
-        IRubyObject backref = context.getBackRef();
+        RubyMatchData backref = (RubyMatchData) context.getBackRef();
 
-        return RubyRegexp.nth_match(((RubyMatchData) backref).getNameToBackrefNumber(id), backref);
+        return RubyRegexp.nth_match(context, backref.getNameToBackrefNumber(context, id), backref);
     }
 
     @JIT // for JVM6
@@ -1142,10 +1511,98 @@ public class IRRuntimeHelpers {
         return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
+    @JIT // for JVM6
+    public static IRubyObject instanceSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return instanceSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
     @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        if (context.isCapturingSplitSuper(self, id)) throw new SplitSuperCall(args, block);
+
+        CacheEntry entry = getSuperMethodEntry(id, definingModule);
+        DynamicMethod method = entry.method;
+
+        if (method instanceof InstanceMethodInvoker && self instanceof JavaProxy) {
+            return javaProxySuper(
+                    context,
+                    (JavaProxy) self,
+                    id,
+                    (RubyClass) definingModule,
+                    args,
+                    (InstanceMethodInvoker) method);
+        }
+
+        if (method.isUndefined()) {
+            return Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block);
+        }
+
+        return method.call(context, self, entry.sourceModule, id, args, block);
+    }
+
+    /**
+     * Perform a super invocation against a Java proxy, using proxy logic to locate and invoke the appropriate shim
+     * method.
+     *
+     * This duplicates some logic from InstanceMethodInvoker.call and JavaMethod.tryProxyInvocation in order to properly
+     * retrieve the superclass method from the caller's point of view. See GH-6718.
+     *
+     * @param context the current context
+     * @param self the proxy wrapper
+     * @param id the method name
+     * @param definingModule the module in which the calling method is defined
+     * @param args arguments to the call
+     * @param superMethod the invoker for the super method found using using Ruby super logic
+     * @return the result of invoking the super method via a shim method
+     */
+    private static IRubyObject javaProxySuper(ThreadContext context, JavaProxy self, String id, RubyClass definingModule, IRubyObject[] args, InstanceMethodInvoker superMethod) {
+        Object javaInvokee = self.getObject();
+
+        JavaMethod javaMethod = (JavaMethod) superMethod.findCallable(self, id, args, args.length);
+
+        Object[] newArgs = RubyToJavaInvoker.convertArguments(javaMethod, args);
+
+        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context, definingModule);
+
+        if (jpc != null) {
+            // self is a Java subclass, need to do a bit more logic to dispatch the right method
+            JavaProxyMethod jpm = jpc.getMethod(id, javaMethod.getParameterTypes());
+
+            if (jpm != null && jpm.hasSuperImplementation()) {
+                return javaMethod.invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, newArgs);
+            }
+        }
+
+        return javaMethod.invokeDirectWithExceptionHandling(context, javaMethod.getValue(), javaInvokee, newArgs);
+    }
+
+    @Interp
+    public static IRubyObject instanceSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return instanceSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    private static CacheEntry getSuperMethodEntry(String id, RubyModule definingModule) {
         RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+        return superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+    }
+
+    @JIT // for JVM6
+    public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
+    @JIT // for JVM6
+    public static IRubyObject classSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
+    @Interp
+    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        CacheEntry entry = getSuperMethodEntry(id, definingModule.getMetaClass());
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -1155,32 +1612,34 @@ public class IRRuntimeHelpers {
         return method.call(context, self, entry.sourceModule, id, args, block);
     }
 
-    @JIT // for JVM6
-    public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
-        return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
-    }
-
     @Interp
-    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMetaClass().getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
-        DynamicMethod method = entry.method;
-        IRubyObject rVal = method.isUndefined() ?
-            Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block)
-                : method.call(context, self, entry.sourceModule, id, args, block);
-        return rVal;
+    public static IRubyObject classSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return classSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
     }
 
+    @JIT
     public static IRubyObject unresolvedSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
     }
 
+    @JIT
+    public static IRubyObject unresolvedSuperIterSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return unresolvedSuperIter(context, self, splatArguments(args, splatMap), block);
+    }
+
+    @Interp
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
         String methodName = context.getFrameName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+
+        if (context.isCapturingSplitSuper(self, methodName)) throw new SplitSuperCall(args, block);
 
         RubyClass superClass = searchNormalSuperclass(klazz);
         CacheEntry entry = superClass != null ? superClass.searchWithCache(methodName) : CacheEntry.NULL_CACHE;
@@ -1195,12 +1654,21 @@ public class IRRuntimeHelpers {
         return rVal;
     }
 
-    // MRI: vm_search_normal_superclass
+    @Interp
+    public static IRubyObject unresolvedSuperIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        try {
+            return unresolvedSuper(context, self, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    @CRuby(value = "vm_search_normal_superclass", file = "vm_insnhelper.c")
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()
-                && klazz.getNonIncludedClass().isRefinement()) {
-            klazz = klazz.getNonIncludedClass();
+                && klazz.getOrigin().isRefinement()) {
+            klazz = klazz.getOrigin();
         }
         klazz = klazz.getMethodLocation();
         return klazz.getSuperClass();
@@ -1218,7 +1686,10 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
         if (splatMap != null && splatMap.length > 0) {
-            int count = 0;
+            int last = splatMap.length - 1;
+            boolean dropLast = splatMap[last] && args[last] instanceof RubyArray lastSplat && endsWithEmptyRuby2KeywordsHash(lastSplat);
+
+            int count = dropLast ? -1 : 0;
             for (int i = 0; i < splatMap.length; i++) {
                 // make sure arg is still an array (zsuper can get have any args changed before it is called).
                 count += splatMap[i] && args[i] instanceof RubyArray ? ((RubyArray)args[i]).size() : 1;
@@ -1229,7 +1700,8 @@ public class IRRuntimeHelpers {
             for (int i = 0; i < splatMap.length; i++) {
                 if (splatMap[i] && args[i] instanceof RubyArray) {
                     RubyArray ary = (RubyArray) args[i];
-                    for (int j = 0; j < ary.size(); j++) {
+                    int size = i == last && dropLast ? ary.size() - 1 : ary.size();
+                    for (int j = 0; j < size; j++) {
                         newArgs[actualOffset++] = ary.eltOk(j);
                     }
                 } else {
@@ -1304,35 +1776,41 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr) {
+        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr);
+    }
+
+    @JIT
     public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
-        return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
+        return new ByteList(RubyEncoding.encodeISO(str), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
 
     @JIT
     public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
-        return context.runtime.getEncodingService().getEncoding(retrieveJCodingsEncoding(context, name));
+        return encodingService(context).getEncoding(retrieveJCodingsEncoding(context, name));
     }
 
     @JIT
     public static Encoding retrieveJCodingsEncoding(ThreadContext context, String name) {
-        return context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
+        return encodingService(context).findEncodingOrAliasEntry(name.getBytes()).getEncoding();
     }
 
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(ThreadContext context, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
-        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+        RubyHash hash = useSmallHash ? newSmallHash(context) : newHash(context);
 
         for (int i = 0; i < pairs.length;) {
             if (useSmallHash) {
-                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
+                hash.fastASetSmall(context.runtime, pairs[i++], pairs[i++], true);
             } else {
-                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+                hash.fastASet(context.runtime, pairs[i++], pairs[i++], true);
             }
 
         }
+
         return hash;
     }
 
@@ -1340,57 +1818,49 @@ public class IRRuntimeHelpers {
     public static RubyHash dupKwargsHashAndPopulateFromArray(ThreadContext context, RubyHash dupHash, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = dupHash.dupFast(context);
+
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
+
         return hash;
     }
 
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
-        RubyModule object = context.runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            module = staticScope.getModule();
+            constant = noPrivateConsts ?
+                    module.getConstantFromNoConstMissing(context, constName, false) :
+                    module.getConstantNoConstMissing(context, constName);
         }
 
         // Call const_missing or cache
-        if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
-        }
-
-        return constant;
+        return constant != null ?
+                constant : module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
     }
 
     @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
-        RubyModule module;
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw context.runtime.newTypeError(cmVal + " is not a type/class");
-        }
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        IRubyObject constant = noPrivateConsts ?
+                module.getConstantFromNoConstMissing(context, constName, false) :
+                module.getConstantNoConstMissing(context, constName);
 
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        return constant;
+        return constant == null ? UNDEFINED : constant;
     }
 
     @JIT
     public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
-        IRubyObject constant = staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
 
         if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
+            constant = UNDEFINED;
         }
 
         return constant;
@@ -1404,224 +1874,221 @@ public class IRRuntimeHelpers {
      * Construct a new DynamicMethod to wrap the given IRModuleBody and singletonizable object. Used by interpreter.
      */
     @Interp
-    public static DynamicMethod newInterpretedMetaClass(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
-        RubyClass singletonClass = newMetaClassFromIR(runtime, metaClassBody, obj);
+    public static DynamicMethod newInterpretedMetaClass(ThreadContext context, IRScope metaClassBody, IRubyObject obj) {
+        RubyClass singletonClass = newMetaClassFromIR(context, metaClassBody.getStaticScope(), obj, metaClassBody.maybeUsingRefinements());
 
-        return new InterpretedIRMetaClassBody(metaClassBody, singletonClass);
+        return new InterpretedIRBodyMethod(metaClassBody, singletonClass);
     }
 
     /**
      * Construct a new DynamicMethod to wrap the given IRModuleBody and singletonizable object. Used by JIT.
      */
     @JIT
-    public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, IRScope metaClassBody, IRubyObject obj) {
-        RubyClass singletonClass = newMetaClassFromIR(context.runtime, metaClassBody, obj);
+    public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, StaticScope scope, IRubyObject obj, int line, boolean refinements, boolean dynscopeEliminated) {
+        RubyClass singletonClass = newMetaClassFromIR(context, scope, obj, refinements);
 
-        return new CompiledIRNoProtocolMethod(handle, metaClassBody, singletonClass);
+        return new CompiledIRNoProtocolMethod(handle, scope, scope.getFile(), line,
+                singletonClass, !dynscopeEliminated);
     }
 
-    private static RubyClass newMetaClassFromIR(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
-        RubyClass singletonClass = Helpers.getSingletonClass(runtime, obj);
+    private static RubyClass newMetaClassFromIR(ThreadContext context, StaticScope scope, IRubyObject obj, boolean refinements) {
+        RubyClass singletonClass = obj.singletonClass(context);
 
-        StaticScope metaClassScope = metaClassBody.getStaticScope();
+        scope.setModule(singletonClass);
 
-        metaClassScope.setModule(singletonClass);
-
-        metaClassBody.captureParentRefinements(runtime.getCurrentContext());
+        if (refinements) scope.captureParentRefinements(context);
 
         return singletonClass;
     }
 
-    /**
-     * Construct a new DynamicMethod to wrap the given IRModuleBody and singletonizable object. Used by interpreter.
-     */
-    @Interp
-    public static DynamicMethod newInterpretedModuleBody(ThreadContext context, IRScope irModule, Object rubyContainer) {
-        RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new InterpretedIRBodyMethod(irModule, newRubyModule);
-    }
-
     @JIT
-    public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, IRScope irModule, Object rubyContainer) {
-        RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
+    public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, String id, int line,
+                                                      StaticScope scope, Object rubyContainer, boolean maybeRefined) {
+        RubyModule newRubyModule = newRubyModuleFromIR(context, id, scope, rubyContainer, maybeRefined);
+
+        return new CompiledIRMethod(handle,id, line, scope, Visibility.PUBLIC, newRubyModule);
     }
 
     @Interp @JIT
-    public static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
-        if (!(rubyContainer instanceof RubyModule)) {
-            throw context.runtime.newTypeError("no outer class/module");
-        }
+    public static RubyModule newRubyModuleFromIR(ThreadContext context, String id, StaticScope scope,
+                                                 Object rubyContainer, boolean maybeRefined) {
+        if (!(rubyContainer instanceof RubyModule)) throw typeError(context, "no outer class/module");
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(irModule.getId());
-        irModule.getStaticScope().setModule(newRubyModule);
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(context, id, scope.getFile(), context.getLine() + 1);
+        scope.setModule(newRubyModule);
 
-        irModule.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         return newRubyModule;
     }
 
-    @Interp
-    public static DynamicMethod newInterpretedClassBody(ThreadContext context, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
-
-        return new InterpretedIRBodyMethod(irClassBody, newRubyClass);
-    }
-
     @JIT
-    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
+    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, int line,
+                                                     StaticScope scope, Object container,
+                                                     Object superClass, boolean maybeRefined) {
+        RubyModule newRubyClass = newRubyClassFromIR(context, id, scope, superClass, container, maybeRefined);
 
-        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
+        return new CompiledIRMethod(handle, id, line, scope, Visibility.PUBLIC, newRubyClass);
     }
 
-    @Interp @JIT
-    public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
-        if (!(container instanceof RubyModule)) {
-            throw runtime.newTypeError("no outer class/module");
-        }
+    @Interp
+    public static RubyModule newRubyClassFromIR(ThreadContext context, String id, StaticScope scope, Object superClass,
+                                                Object container, boolean maybeRefined) {
+        if (!(container instanceof RubyModule)) throw typeError(context, "no outer class/module");
 
-        RubyModule newRubyClass;
-
-        if (irClassBody instanceof IRMetaClassBody) {
-            newRubyClass = ((RubyModule)container).getMetaClass();
+        RubyClass sc;
+        if (superClass == UNDEFINED) {
+            sc = null;
         } else {
-            RubyClass sc;
-            if (superClass == UndefinedValue.UNDEFINED) {
-                sc = null;
-            } else {
-                RubyClass.checkInheritable((IRubyObject) superClass);
+            RubyClass.checkInheritable(context, (IRubyObject) superClass);
 
-                sc = (RubyClass) superClass;
-            }
-
-            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(irClassBody.getId(), sc);
+            sc = (RubyClass) superClass;
         }
 
-        irClassBody.getStaticScope().setModule(newRubyClass);
+        RubyModule newRubyClass = ((RubyModule)container).defineClassUnder(context, id, sc, null, scope.getFile(), context.getLine() + 1);
 
-        irClassBody.captureParentRefinements(runtime.getCurrentContext());
+        scope.setModule(newRubyClass);
+
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         return newRubyClass;
     }
 
     @Interp
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = method.getName();
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
+        context.setLine(method.getLine());
+        String id = method.getId();
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
 
-        method.captureParentRefinements(context);
+        if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+        if (instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
         } else {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
-        rubyClass.addMethod(methodName.idString(), newMethod);
-        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", methodName);
-    }
-
-    @JIT
-    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = method.getName();
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
-
-        method.captureParentRefinements(context);
-
-        // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
-        if (!rubyClass.isRefinement()) {
-            // FIXME: needs checkID and proper encoding to force hard symbol
-            obj.callMethod(context, "singleton_method_added", methodName);
-        }
-    }
-
-    @JIT
-    public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
-
-        method.captureParentRefinements(context);
-
-        rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
-
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
+        rubyClass.addMethod(context, id, newMethod);
+        if (redefined != null) warning(context, redefined);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
-    private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
+    @JIT
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, String id, int line,
+                                              StaticScope scope, String encodedArgumentDescriptors,
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
+                                              boolean needsToFindImplementer) {
+        context.setLine(line);
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
+
+        if (maybeRefined) scope.captureParentRefinements(context);
+
+        // FIXME: needs checkID and proper encoding to force hard symbol
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
+        rubyClass.addMethod(context, id,
+                new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
+                        encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
+        if (redefined != null) warning(context, redefined);
+
+        if (!rubyClass.isRefinement()) {
+            // FIXME: needs checkID and proper encoding to force hard symbol
+            obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
+        }
+    }
+
+    @JIT
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
+                                              int specificArity, String id, int line, StaticScope scope,
+                                              String encodedArgumentDescriptors,
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
+                                              boolean needsToFindImplementer) {
+        context.setLine(line);
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
+
+        if (maybeRefined) scope.captureParentRefinements(context);
+
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
+        rubyClass.addMethod(context, id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+                Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
+        if (redefined != null) warning(context, redefined);
+
+        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
+    }
+
+    private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
-            throw context.runtime.newTypeError(str(context.runtime, "can't define singleton method \"", method.getName(), "\" for ", obj.getMetaClass().rubyBaseName()));
+            throw typeError(context, str(context.runtime, "can't define singleton method \"",
+                    ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName(context)));
         }
 
-        // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
-
-        return obj.getSingletonClass();
+        return obj.singletonClass(context);
     }
 
     @Interp
     public static void defInterpretedInstanceMethod(ThreadContext context, IRScope method, DynamicScope currDynScope, IRubyObject self) {
-        Ruby runtime = context.runtime;
+        context.setLine(method.getLine());
         RubySymbol methodName = method.getName();
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, rubyClass, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
-        DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
-        }
+        DynamicMethod newMethod = instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
+            new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
-        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context, runtime);
+        String redefined = rubyClass.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context, redefined);
     }
 
     @JIT
-    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, IRScope method, DynamicScope currDynScope, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubySymbol methodName = method.getName();
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, String id, int line,
+                                                 StaticScope scope, String encodedArgumentDescriptors,
+                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
+                                                 boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+        context.setLine(line);
+        RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, line, scope,
+                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
+        String redefined = clazz.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, redefined);
     }
 
     @JIT
-    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, DynamicScope currDynScope, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubySymbol methodName = method.getName();
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
+                                                 int specificArity, String id, int line, StaticScope scope,
+                                                 String encodedArgumentDescriptors,
+                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
+                                                 boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+        context.setLine(line);
+        RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
+        String redefined = clazz.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, redefined);
     }
-
-    @JIT
-    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method, Block block) {
-        RubyModule implClass = method.getImplementationClass();
-
-        return method.call(context, implClass, implClass, "", block);
-    }
-
-    // FIXME: Temporary until CompiledIRMethod part of this is removed.
+    
     @JIT
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();
@@ -1632,7 +2099,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject[] pieces, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1642,7 +2109,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1652,7 +2119,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1662,7 +2129,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1672,7 +2139,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1682,7 +2149,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3, arg4);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1702,15 +2169,22 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        int callInfo = ThreadContext.resetCallInfo(context);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
+        RubyArray<?> result;
         if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
+            result = newArray(context, ary);
+            context.callInfo = callInfo;
+        } else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
+            result = (RubyArray<?>) ((RubyArray)tmp).aryDup();
+
+            // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
+            if (result.last(context) == UNDEFINED) {
+                result.pop(context);
+                context.callInfo |= callInfo | CALL_KEYWORD_EMPTY;
+            }
         }
-        else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
-            tmp = ((RubyArray)tmp).aryDup();
-        }
-        return (RubyArray)tmp;
+        return result;
     }
 
     /**
@@ -1720,16 +2194,39 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        return dupArray ? splatArrayDup(context, ary) : splatArray(context, ary);
+    }
 
-        if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
-        } else if (dupArray) {
-            tmp = ((RubyArray) tmp).aryDup();
-        }
+    /**
+     * Call to_ary to get Array or die typing.  The optionally dup it if specified.  Some conditional
+     * cases in compiler we know we are safe in not-duping.  This method is the same impl as MRIs
+     * splatarray instr in the YARV instruction set.
+     */
+    @JIT @Interp
+    public static RubyArray splatArray(ThreadContext context, IRubyObject ary) {
+        if (ary.isNil()) return context.runtime.getEmptyFrozenArray();
 
-        return (RubyArray) tmp;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
+
+        if (tmp.isNil()) return newArray(context, ary);
+
+        return (RubyArray<?>) tmp;
+    }
+
+    /**
+     * Call to_ary to get Array or die typing.  The optionally dup it if specified.  Some conditional
+     * cases in compiler we know we are safe in not-duping.  This method is the same impl as MRIs
+     * splatarray instr in the YARV instruction set.
+     */
+    @JIT @Interp
+    public static RubyArray splatArrayDup(ThreadContext context, IRubyObject ary) {
+        if (ary.isNil()) return newEmptyArray(context);
+
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
+
+        if (tmp.isNil()) return newArray(context, ary);
+
+        return ((RubyArray<?>) tmp).aryDup();
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
@@ -1755,17 +2252,21 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(!(obj.isTrue()));
+        return asBoolean(context, !(obj.isTrue()));
     }
 
     @JIT
     public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String id) {
-        return context.runtime.newArgumentError(str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
+        return argumentError(context, str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
+    }
+
+    public static void pushExitBlock(ThreadContext context, Block blk) {
+        context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, blk));
     }
 
     @JIT
-    public static void pushExitBlock(ThreadContext context, Block blk) {
-        context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, blk));
+    public static void pushExitBlock(ThreadContext context, Object blk) {
+        context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, getBlockFromObject(context, blk)));
     }
 
     @JIT
@@ -1773,13 +2274,13 @@ public class IRRuntimeHelpers {
         return new FunctionalCachingCallSite(name);
     }
 
-    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope, long callSiteId) {
-        return new ProfilingCachingCallSite(name, scope, callSiteId);
+    public static ProfilingCachingCallSite newProfilingCachingCallSite(CallType callType, String name, IRScope scope, long callSiteId) {
+        return new ProfilingCachingCallSite(callType, name, scope, callSiteId);
     }
 
     @JIT
-    public static NormalCachingCallSite newNormalCachingCallSite(String name) {
-        return new NormalCachingCallSite(name);
+    public static MonomorphicCallSite newMonomorphicCallSite(String name) {
+        return new MonomorphicCallSite(name);
     }
 
     @JIT
@@ -1788,14 +2289,14 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, IRScope scope, String callType) {
+    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, StaticScope scope, String callType) {
         return new RefinedCachingCallSite(name, scope, CallType.valueOf(callType));
     }
 
     @JIT
     public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes, String filename) {
         try {
-            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes), new ByteList(filename.getBytes())));
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), scopeBytes, filename));
         } catch (IOException ioe) {
             // should not happen for bytes
             return null;
@@ -1813,50 +2314,30 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-        IRubyObject result = (IRubyObject)accessor.get(self);
-        if (result == null) {
-            if (runtime.isVerbose()) {
-                runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, name)," not initialized"));
-            }
-            result = context.nil;
-        }
-        return result;
-    }
-
-    @JIT
-    public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
-        accessor.set(self, value);
-    }
-
-    @JIT
     public static RubyFixnum getArgScopeDepth(ThreadContext context, StaticScope currScope) {
         int i = 0;
         while (!currScope.isArgumentScope()) {
             currScope = currScope.getEnclosingScope();
             i++;
         }
-        return context.runtime.newFixnum(i);
+        return asFixnum(context, i);
     }
 
     public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         IRubyObject ary;
         if (args.length == 1 && (ary = Helpers.aryOrToAry(context, args[0])) != context.nil) {
-            if (ary instanceof RubyArray) {
-                args = ((RubyArray) ary).toJavaArray();
-            } else {
-                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
-            }
+            if (!(ary instanceof RubyArray)) throw typeError(context, "", args[0], "#to_ary should return Array");
+            args = ((RubyArray) ary).toJavaArray(context);
         }
         return args;
     }
 
+    // This is always for PROC type
     private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
         if (args.length != 1) return args;
 
         // Potentially expand single value if it is an array depending on what we are calling.
-        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature(), b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
+        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature());
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
@@ -1874,17 +2355,15 @@ public class IRRuntimeHelpers {
                     args = toAry(context, args);
                 }
 
-                sig.checkArity(context.runtime, args);
+                sig.checkArity(context, args);
                 return args;
             case PROC:
                 return prepareProcArgs(context, block, args);
         }
 
+        // FIXME: For NORMAL/THREAD but it is unclear if we really need any keyword logic in here anymore.
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
-        int arityValue = sig.arityValue();
-        if (!sig.hasKwargs() && arityValue >= -1 && arityValue <= 1) {
-            return args;
-        }
+        if (!sig.isSpreadable() || (sig.opt() + sig.required() == 1 && !sig.hasRest())) return args;
 
         // We get here only when we need both required and optional/rest args
         // (keyword or non-keyword in either case).
@@ -1906,7 +2385,7 @@ public class IRRuntimeHelpers {
             IRubyObject[] newArgs = ArraySupport.newCopy(args, len);
             if (actual < len) {
                 // Not enough args and we need an empty {} for kwargs processing.
-                newArgs[len - 1] = RubyHash.newHash(context.runtime);
+                newArgs[len - 1] = newHash(context);
             } else {
                 // We have more args than we need and kwargs is always the last arg.
                 newArgs[len - 1] = args[args.length - 1];
@@ -1932,7 +2411,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        if (block.type == LAMBDA) block.getSignature().checkArity(context.runtime, args);
+        if (block.type == LAMBDA) block.getSignature().checkArity(context, args);
 
         return args;
     }
@@ -1943,7 +2422,7 @@ public class IRRuntimeHelpers {
 
         switch (block.type) {
             case LAMBDA:
-                block.getBody().getSignature().checkArity(context.runtime, args);
+                block.getBody().getSignature().checkArity(context, args);
                 return args;
             case PROC:
                 if (args.length == 0) {
@@ -1965,7 +2444,7 @@ public class IRRuntimeHelpers {
 
         switch (block.type) {
             case LAMBDA:
-                block.getBody().getSignature().checkArity(context.runtime, args);
+                block.getBody().getSignature().checkArity(context, args);
                 return args;
             case PROC:
                 return prepareProcArgs(context, block, args);
@@ -1978,12 +2457,8 @@ public class IRRuntimeHelpers {
 
     // This is the placeholder for scenarios not handled by specialized instructions.
     @Interp @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
-        args = prepareBlockArgsInternal(context, block, args);
-        if (usesKwArgs) {
-            args = frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
-        }
-        return args;
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs, boolean ruby2Keywords) {
+        return prepareBlockArgsInternal(context, block, args);
     }
 
     private static DynamicScope getNewBlockScope(Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
@@ -1997,12 +2472,30 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @Interp @JIT
+    @Interp
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
             context.pushScope(newScope);
         }
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeNew(ThreadContext context, Block block) {
+        DynamicScope newScope = block.allocScope(block.getBinding().getDynamicScope());
+
+        context.pushScope(newScope);
+
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeReuse(ThreadContext context, Block block) {
+        DynamicScope newScope = block.getBinding().getDynamicScope();
+
+        context.pushScope(newScope);
+
         return newScope;
     }
 
@@ -2013,9 +2506,6 @@ public class IRRuntimeHelpers {
             // Update self to the binding's self
             self = useBindingSelf(block.getBinding());
         }
-
-        // Clear block's eval type
-        block.setEvalType(EvalType.NONE);
 
         // Return self in case it has been updated
         return self;
@@ -2032,12 +2522,12 @@ public class IRRuntimeHelpers {
      * Create a new Symbol.to_proc for the given symbol name and encoding.
      *
      * @param context
-     * @param id
+     * @param value
      * @return
      */
     @JIT
-    public static RubyProc newSymbolProc(ThreadContext context, String id) {
-        return (RubyProc) context.runtime.newSymbol(id).to_proc(context);
+    public static RubyProc newSymbolProc(ThreadContext context, ByteList value) {
+        return IRRuntimeHelpers.newSymbolProc(context, asSymbol(context, value));
     }
 
     /**
@@ -2054,37 +2544,39 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject[] singleBlockArgToArray(IRubyObject value) {
-        IRubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = value.convertToArray().toJavaArray();
-        } else {
-            args = new IRubyObject[] { value };
-        }
-        return args;
+        return value instanceof RubyArray ?
+                ((RubyArray) value).toJavaArray(value.getRuntime().getCurrentContext()) :
+                new IRubyObject[] { value };
     }
 
     @JIT
     public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, BlockBody body) {
-        Block block = new Block(body, context.currentBinding(self, scope));
+        Binding binding = newFrameScopeBinding(context, self, scope);
 
-        return block;
+        return new Block(body, binding);
+    }
+
+    public static Binding newFrameScopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        Binding binding = new Binding(self, frame, frame.getVisibility(), scope);
+        binding.setMethod(frame.getName());
+        return binding;
     }
 
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
-        RubyString string = RubyString.newString(runtime, bytelist, coderange);
-
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-            string.setFrozen(true);
-        } else {
-            string = runtime.freezeAndDedupString(string);
+        if (instanceConfig(context).isDebuggingFrozenStringLiteral()) {
+            return RubyString.newDebugFrozenString(runtime, stringClass(context), bytelist, coderange, file, line + 1);
         }
 
-        return string;
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
+    }
+
+    public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange) {
+        Ruby runtime = context.runtime;
+
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }
 
     @JIT @Interp
@@ -2095,42 +2587,26 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static RubyString freezeLiteralString(RubyString string, ThreadContext context, String file, int line) {
-        Ruby runtime = context.runtime;
-
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-        }
-
-        string.setFrozen(true);
+    public static RubyString chillLiteralString(RubyString string) {
+        string.chill();
 
         return string;
     }
 
     @JIT
     public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
-        if (target instanceof RubyHash && ((CachingCallSite) site).isBuiltin(target.getMetaClass())) {
-            // call directly with cached frozen string
-            return ((RubyHash) target).op_aref(context, keyStr);
-        }
-
-        return site.call(context, caller, target, keyStr.strDup(context.runtime));
+        return target instanceof RubyHash h && !h.isComparedByIdentity() && ((CachingCallSite) site).isBuiltin(target) ?
+                h.op_aref(context, keyStr) : // call directly with cached frozen string
+                site.call(context, caller, target, dupString(context, keyStr));
     }
 
     /**
      * asString using a given call site
      */
     @JIT
-    public static IRubyObject asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
+    public static RubyString asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
         IRubyObject str = site.call(context, caller, target);
-
-        if (!(str instanceof RubyString)) return target.anyToString();
-
-        if (target.isTaint()) str.setTaint(true);
-
-        return str;
+        return str instanceof RubyString string ? string : (RubyString) Convert.anyToString(context, target);
     }
 
     @JIT
@@ -2140,51 +2616,200 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyArray newArray(ThreadContext context, IRubyObject obj) {
-        return RubyArray.newArray(context.runtime, obj);
+        return Create.newArray(context, obj);
     }
 
     @JIT
     public static RubyArray newArray(ThreadContext context, IRubyObject obj0, IRubyObject obj1) {
-        return RubyArray.newArray(context.runtime, obj0, obj1);
+        return Create.newArray(context, obj0, obj1);
     }
 
     @JIT @Interp
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
+        String file = currScope.getFile();
+
         // FIXME: Not very efficient to do all this every time
-        return context.runtime.newString(currScope.getIRScope().getFile());
+        return newString(context, file);
     }
 
     @JIT
-    public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
-        if (context.runtime.hasEventHooks()) {
-            // FIXME: Try and statically generate END linenumber instead of hacking it.
-            int linenumber = line == -1 ? context.getLine()+1 : line;
+    public static void callTrace(ThreadContext context, IRubyObject selfClass, RubyEvent event, String name, String filename, int line) {
+        callTrace(context, selfClass, context.nil, event, name, filename, line);
+    }
 
-            context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+    @JIT
+    public static void callTrace(ThreadContext context, IRubyObject selfClass, IRubyObject value, RubyEvent event, String name, String filename, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            traceEvents.callEventHooks(context, event, filename, linenumber, name, selfClass, value);
         }
+    }
+
+    public static void traceRaise(ThreadContext context) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            RubyStackTraceElement backtraceElement = context.getSingleBacktrace();
+            String file = backtraceElement.getFileName();
+            int line = backtraceElement.getLineNumber();
+
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            traceEvents.callEventHooks(context, RubyEvent.RAISE, file, linenumber, null, context.nil);
+        }
+    }
+
+    public static void traceRescue(ThreadContext context, String file, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            traceEvents.callEventHooks(context, RubyEvent.RESCUE, file, line, null, context.getErrorInfo());
+        }
+    }
+
+    @JIT
+    public static void callTrace(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        callTrace(context, selfBlock, context.nil, event, name, filename, line);
+    }
+
+    @JIT
+    public static void callTrace(ThreadContext context, Block selfBlock, IRubyObject value, RubyEvent event, String name, String filename, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            traceEvents.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass(), value);
+        }
+    }
+
+    @JIT
+    public static void callTraceHooks(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        // FIXME: Try and statically generate END linenumber instead of hacking it.
+        int linenumber = line == -1 ? context.getLine() : line;
+
+        context.traceEvents.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass());
     }
 
     public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {
         if (self instanceof RubyModule && ((RubyModule) self).isRefinement()) {
-            context.runtime.getWarnings().warn("not defined at the refinement, but at the outer class/module");
+            warn(context, "not defined at the refinement, but at the outer class/module");
         }
     }
 
-    @JIT
-    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
-        warnSetConstInRefinement(context, self);
-
-        module.setConstant(id, value);
+    @Interp
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value) {
+        putConst(context, self, module, id, value, context.getFile(), context.getLine() + 1);
     }
 
     @JIT
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, StaticScope scope, int line) {
+        putConst(context, self, module, id, value, scope.getFile(), line);
+    }
+
+    private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
+        if (!(module instanceof RubyModule mod)) throw typeError(context, module.inspect(context) + " is not a class/module");
+
+        warnSetConstInRefinement(context, self);
+
+        mod.setConstant(context, id, value, filename, line);
+    }
+
+    @Interp @JIT
+    public static IRubyObject getClassVariable(ThreadContext context, RubyModule module, String id) {
+        return module.getClassVar(context, id);
+    }
+
+    @Interp @JIT
     public static void putClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
 
-        module.setClassVar(id, value);
+        module.setClassVar(context, id, value);
+    }
+
+    @JIT
+    public static RubyRational newRationalCanonicalize(ThreadContext context, IRubyObject num, IRubyObject den) {
+        return (RubyRational) RubyRational.newRationalCanonicalize(context, num, den);
+    }
+
+    @JIT
+    public static RubyRational newRationalRaw(ThreadContext context, String numerator, String denominator) {
+        return newRationalRaw(context, new BigInteger(numerator), new BigInteger(denominator));
+    }
+
+    @Interp @JIT
+    public static RubyRational newRationalRaw(ThreadContext context, BigInteger numerator, BigInteger denominator) {
+        return RubyRational.newRationalRaw(context.runtime,
+                RubyBignum.bignorm(context.runtime, numerator), RubyBignum.bignorm(context.runtime, denominator));
+    }
+
+    @JIT
+    public static RubyComplex newComplexRaw(ThreadContext context, IRubyObject i) {
+        return RubyComplex.newComplexRawImage(context.runtime, i);
+    }
+
+    @JIT
+    public static RubySymbol newDSymbol(ThreadContext context, IRubyObject symbol) {
+        RubyString str = symbol.asString();
+        // MRI: intern instruction; rb_str_intern checks only ASCII-compatible strings (sym_check_asciionly)
+        if (str.getEncoding().isAsciiCompatible()) return str.intern(context);
+        return asSymbol(context, str);
+    }
+
+    @JIT
+    public static RubyClass getStandardError(ThreadContext context) {
+        return context.runtime.getStandardError();
+    }
+
+    @JIT
+    public static RubyClass getArray(ThreadContext context) {
+        return arrayClass(context);
+    }
+
+    @JIT
+    public static RubyClass getHash(ThreadContext context) {
+        return hashClass(context);
+    }
+
+    @JIT
+    public static RubyClass getObject(ThreadContext context) {
+        return objectClass(context);
+    }
+
+    @JIT
+    public static RubyClass getSymbol(ThreadContext context) {
+        return symbolClass(context);
+    }
+
+    @JIT @Interp
+    public static IRubyObject svalue(ThreadContext context, Object val) {
+        return (val instanceof RubyArray) ? (RubyArray) val : context.nil;
+    }
+
+    @JIT
+    public static void aliasGlobalVariable(Ruby runtime, Object newName, Object oldName) {
+        runtime.getGlobalVariables().alias(newName.toString(), oldName.toString());
     }
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
+    }
+
+    @Interp @JIT
+    public static int arrayLength(RubyArray array) {
+        return array.getLength();
+    }
+
+    @Interp @JIT
+    public static String getFrameNameFromBlock(Block block) {
+        // FIXME: binding.getMethod does not appear to be the right name in defined_method bodies... WHY?
+        return block.getBinding().getFrame().getName();
+    }
+
+    @Interp @JIT
+    public static Block getFrameBlockFromBlock(Block block) {
+        return block.getBinding().getFrame().getBlock();
     }
 }

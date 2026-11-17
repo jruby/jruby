@@ -1,0 +1,3 @@
+fails:Kernel#singleton_method finds a method defined in a module included in the singleton class
+fails:Kernel#singleton_method finds a method defined in a module prepended in the singleton class
+fails:Kernel#singleton_method finds a method defined in a module that an object is extended with

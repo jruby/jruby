@@ -9,11 +9,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-class ReifyingAllocator implements ObjectAllocator {
-    private final Class klass;
-    private final Constructor cons;
+import static org.jruby.api.Error.typeError;
 
-    public ReifyingAllocator(Class klass) {
+class ReifyingAllocator implements ObjectAllocator {
+    private final Class<? extends IRubyObject> klass;
+    private final Constructor<? extends IRubyObject> cons;
+
+    public ReifyingAllocator(Class<? extends IRubyObject> klass) {
         this.klass = klass;
         try {
             this.cons = klass.getDeclaredConstructor(Ruby.class, RubyClass.class);
@@ -24,15 +26,15 @@ class ReifyingAllocator implements ObjectAllocator {
 
     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
         try {
-            if (klazz.getReifiedClass() == this.klass) {
-                return (IRubyObject) cons.newInstance(runtime, klazz);
+            if (klazz.getReifiedRubyClass() == this.klass) {
+                return cons.newInstance(runtime, klazz);
             }
 
             reifyWithAncestors(klazz);
             return klazz.getAllocator().allocate(runtime, klazz);
 
         } catch (InstantiationException ie) {
-            throw runtime.newTypeError("could not allocate " + this.klass + " with default constructor:\n" + ie);
+            throw typeError(runtime.getCurrentContext(), "could not allocate " + klass + " with default constructor:\n" + ie);
         } catch (IllegalAccessException iae) {
             throw runtime.newSecurityError("could not allocate " + this.klass + " due to inaccessible default constructor:\n" + iae);
         } catch (InvocationTargetException ite) {
@@ -44,10 +46,10 @@ class ReifyingAllocator implements ObjectAllocator {
         
         RubyClass realSuper = klazz.getSuperClass().getRealClass();
 
-        if (realSuper.getReifiedClass() == null) reifyWithAncestors(realSuper);
+        if (realSuper.getReifiedRubyClass() == null) reifyWithAncestors(realSuper);
         synchronized (klazz) {
             klazz.reify();
-            klazz.setAllocator(new ReifyingAllocator(klazz.getReifiedClass()));
+            klazz.allocator(new ReifyingAllocator(klazz.getReifiedRubyClass()));
         }
     }
 }

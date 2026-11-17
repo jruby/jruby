@@ -39,7 +39,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -56,6 +55,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -129,8 +129,6 @@ public class IndyBinder extends AbstractProcessor {
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
-            cw.visitAnnotation(p(Generated.class), true);
-
             cw.visit(Opcodes.V1_8, ACC_PUBLIC, ("org.jruby.gen." + qualifiedName + POPULATOR_SUFFIX).replace('.', '/'), null, "org/jruby/anno/TypePopulator", null);
 
             mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", "()V", null, null);
@@ -190,8 +188,6 @@ public class IndyBinder extends AbstractProcessor {
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
                 if (anno == null) continue;
-
-                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
 
                 methodCount++;
 
@@ -319,7 +315,7 @@ public class IndyBinder extends AbstractProcessor {
     }
 
     public void processMethodDeclaration(ExecutableElement method) {
-        processMethodDeclarationMulti(Arrays.asList(method));
+        processMethodDeclarationMulti(Collections.singletonList(method));
     }
 
     public static long getEncodedSignature(JRubyMethod anno) {
@@ -391,8 +387,9 @@ public class IndyBinder extends AbstractProcessor {
         mv.dup();
 
         mv.aload(implClass);
-        mv.getstatic(p(Visibility.class), anno.visibility().name(), ci(Visibility.class));
-        mv.ldc(AnnotationBinder.getBaseName(anno.name(), methods.get(0)));
+        String baseName = AnnotationBinder.getBaseName(anno.name(), methods.get(0));
+        mv.getstatic(p(Visibility.class), anno.visibility().getDefaultVisibilityFor(baseName).name(), ci(Visibility.class));
+        mv.ldc(baseName);
         mv.ldc(encodeSignature(0, 0, 0, 0, 0, true, false));
         mv.ldc(true);
         mv.ldc(anno.notImplemented());

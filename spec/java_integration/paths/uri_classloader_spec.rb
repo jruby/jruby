@@ -2,12 +2,12 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "uri:classloader path strings" do
   let(:many_slashes_path) { "uri:classloader:////foo/b.gemspec" }
-  let(:unc_like_path) { "uri:classloader://foo/b.gemspec" }
+  let(:unc_like_path) { "uri:classloader:/foo/b.gemspec" }
   let(:normal_path) { "uri:classloader:/foo/b.gemspec" }
 
   let(:sub_path) { "../../../vendor/jface/*.jar" }
   let(:base_path) { "uri:classloader:/gems/swt-4.6.1/lib/swt/full.rb" }
-  let(:resolved_path) { "uri:classloader://gems/swt-4.6.1/vendor/jface/*.jar" }
+  let(:resolved_path) { "uri:classloader:/gems/swt-4.6.1/vendor/jface/*.jar" }
   let(:resolved_path_win) { "uri:classloader:/gems/swt-4.6.1/vendor/jface/*.jar" }
   let(:windows) { RbConfig::CONFIG['host_os'] =~ /Windows|mswin/ }
 

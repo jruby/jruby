@@ -1,0 +1,1 @@
+fails:ARGF.each is an alias of ARGF.each_line
