@@ -4481,10 +4481,12 @@ public class RubyModule extends RubyObject {
      * @return A list of all modules that would be included by including the given module
      */
     private List<RubyModule> gatherModules(RubyModule baseModule) {
-        // build a list of all modules to consider for inclusion
         List<RubyModule> modulesToInclude = new ArrayList<>(4);
 
         for (; baseModule != null; baseModule = baseModule.superClass) {
+            // skip prepended roots
+            if (baseModule != baseModule.getMethodLocation()) continue;
+
             modulesToInclude.add(baseModule.getDelegate());
         }
 
