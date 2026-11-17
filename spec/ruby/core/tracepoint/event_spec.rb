@@ -19,4 +19,18 @@ describe 'TracePoint#event' do
     end
 
   end
+
+  it 'returns :b_call and :b_return for a lambda' do
+    events = []
+    lambda = -> { 1 }
+    _, line = lambda.source_location
+    TracePoint.new(:b_call, :b_return) do |tp|
+      next unless TracePointSpec.target_thread?
+      events << tp.event if tp.lineno == line
+    end.enable do
+      lambda.call
+    end
+
+    events.should == [:b_call, :b_return]
+  end
 end

@@ -1,18 +1,40 @@
 package org.jruby.ext.tracepoint;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.TraceInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
@@ -26,6 +48,8 @@ import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.checkUnsignedInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -105,7 +129,13 @@ public class TracePoint extends RubyObject {
 
         @Override
         public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type, IRubyObject value) {
+            // Read target before and after enabled. Enabling sets target before enabled and disabling clears it
+            // after, so if target changed in between, a targeted enable or disable is running: skip the event
+            // instead of firing it without the right filter.
+            Target target = TracePoint.this.target;
             if (!enabled || (threadToTrace != null && threadToTrace != context) || context.isWithinTrace()) return;
+            if (target != TracePoint.this.target) return;
+            if (target != null && !target.covers(event, file, line, name)) return;
 
             int savedCallInfo = ThreadContext.resetCallInfo(context);
 
@@ -172,48 +202,141 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod
     public IRubyObject disable(ThreadContext context, Block block) {
+        if (block.isGiven() && target != null) throw argumentError(context, "can't disable a targeting TracePoint in a block");
+
         return doToggle(context, null, block, false);
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject enable(ThreadContext context, Block block) {
-        return doToggle(context, null, block, true);
-    }
-    
-    @JRubyMethod
-    public IRubyObject enable(ThreadContext context, IRubyObject target, Block block) {
-        // TODO: implement target
-        if (!target.isNil()) {
-            context.runtime.getWarnings().warning("target argument to TracePoint.enable is unsupported");
-        }
+        ThreadContext.resetCallInfo(context);
+        if (target != null) throw argumentError(context, "can't nest-enable a targeting TracePoint");
 
         return doToggle(context, null, block, true);
     }
 
-    @JRubyMethod
-    public IRubyObject enable(ThreadContext context, IRubyObject target, IRubyObject targetLine, Block block) {
-        // TODO: implement target, target_line
-        if (!target.isNil() || !targetLine.isNil()) {
-            context.runtime.getWarnings().warning("target and target_line arguments to TracePoint.enable are unsupported");
-        }
+    @CRuby(value = "tracepoint_enable_m", file = "vm_trace.c",
+            note = "target_thread: :default does not limit a block form enable to the current thread")
+    @JRubyMethod(keywords = true)
+    public IRubyObject enable(ThreadContext context, IRubyObject opts, Block block) {
+        // A ruby2_keywords Hash at the end of a splat does not set CALL_KEYWORD, but is passed as keywords
+        int callInfo = ThreadContext.resetCallInfo(context);
+        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ||
+                (callInfo & ThreadContext.CALL_SPLATS) != 0 && opts instanceof RubyHash hash && hash.isRuby2KeywordHash();
+        IRubyObject[] args = keywords ?
+                ArgsUtil.extractKeywordArgs(context, opts, "target", "target_line", "target_thread") : null;
+        if (args == null) throw argumentError(context, 1, 0);
 
-        return doToggle(context, null, block, true);
-    }
-
-    @JRubyMethod
-    public IRubyObject enable(ThreadContext context, IRubyObject target, IRubyObject targetLine, IRubyObject _targetThread, Block block) {
-        // TODO: implement target, target_line
-        if (!target.isNil() || !targetLine.isNil()) {
-            context.runtime.getWarnings().warning("target and target_line arguments to TracePoint.enable are unsupported");
-        }
+        IRubyObject target = args[0] == null ? context.nil : args[0];
+        IRubyObject targetLine = args[1] == null ? context.nil : args[1];
 
         RubyThread targetThread = null;
-        if (_targetThread != asSymbol(context, "default")) {
-            if (!(_targetThread instanceof RubyThread th)) throw argumentError(context, "target must be a Thread");
+        IRubyObject thread = args[2];
+        if (thread != null && !thread.isNil() && thread != asSymbol(context, "default")) {
+            if (!(thread instanceof RubyThread th)) throw argumentError(context, "target must be a Thread");
             targetThread = th;
         }
 
-        return doToggle(context, targetThread, block, true);
+        if (target.isNil()) {
+            if (!targetLine.isNil()) throw argumentError(context, "only target_line is specified");
+            if (this.target != null) throw argumentError(context, "can't nest-enable a targeting TracePoint");
+
+            return doToggle(context, targetThread, block, true);
+        }
+
+        // CRuby ignores target_thread for a targeted TracePoint, which fires on every thread
+        return enableForTarget(context, target, targetLine, block);
+    }
+
+    @CRuby(value = "rb_tracepoint_enable_for_target", file = "vm_trace.c",
+            note = "only raises \"can not enable any hooks\" with --debug")
+    private synchronized IRubyObject enableForTarget(ThreadContext context, IRubyObject target, IRubyObject targetLine, Block block) {
+        IRScope scope = targetScope(context, target);
+
+        if (enabled) throw argumentError(context, "can't nest-enable a targeting TracePoint");
+
+        int line = 0;
+        if (!targetLine.isNil()) {
+            if (!hook.eventSet().contains(RubyEvent.LINE)) {
+                throw argumentError(context, "target_line is specified, but line event is not specified");
+            }
+            // NUM2UINT in CRuby. Equality on the int bits gives the same result as its unsigned compare.
+            // 0 means no line filter.
+            line = checkUnsignedInt(context, toLong(context, targetLine));
+        }
+
+        EnumMap<RubyEvent, Map<String, Set<Integer>>> found = new EnumMap<>(RubyEvent.class);
+        collectTargetEvents(scope, hook.eventSet(), line, found);
+
+        // Without --debug no trace instructions are built and nothing can be found. Enable anyway instead of
+        // raising, so code that targets a method still runs. The hook then fires no events.
+        if (found.isEmpty() && RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            throw argumentError(context, "can not enable any hooks");
+        }
+
+        this.target = Target.of(scope.getFile(), found);
+        updateEnabled(context, null, true);
+        if (!block.isGiven()) return context.fals;
+
+        try {
+            return block.yieldSpecific(context);
+        } finally {
+            updateEnabled(context, null, false);
+        }
+    }
+
+    private static IRScope targetScope(ThreadContext context, IRubyObject target) {
+        IRScope scope = null;
+
+        if (target instanceof RubyProc proc) {
+            scope = blockScope(proc);
+        } else if (target instanceof AbstractRubyMethod method) {
+            DynamicMethod real = method.getMethod().getRealMethod();
+            if (real instanceof AbstractIRMethod irMethod) {
+                scope = irMethod.getIRScope();
+            } else if (real instanceof ProcMethod procMethod) {
+                scope = blockScope(procMethod.getProc());
+            }
+        }
+
+        if (scope == null) throw argumentError(context, "specified target is not supported");
+
+        return scope;
+    }
+
+    // Procs from Method#to_proc or Symbol#to_proc have no Ruby code of their own
+    private static IRScope blockScope(RubyProc proc) {
+        return proc.getBlock().getBody() instanceof IRBlockBody body ? body.getStaticScope().getIRScope() : null;
+    }
+
+    /**
+     * Add the event, scope name and line of each trace instruction in scope and the scopes nested in it. With a
+     * target line, :line events are only added for that line.
+     */
+    @CRuby(value = "rb_iseq_add_local_tracepoint_recursively", file = "iseq.c",
+            note = "records the events to filter on instead of turning on hooks in the code")
+    private static void collectTargetEvents(IRScope scope, EnumSet<RubyEvent> events, int targetLine,
+                                            EnumMap<RubyEvent, Map<String, Set<Integer>>> found) {
+        InterpreterContext ic = scope instanceof IRMethod method ?
+                method.lazilyAcquireInterpreterContext() :
+                scope.getInterpreterContext();
+
+        if (ic != null) {
+            for (Instr instr : ic.getInstructions()) {
+                if (!(instr instanceof TraceInstr trace) || !events.contains(trace.getEvent())) continue;
+
+                int line = trace.getLinenumber();
+                if (trace.getEvent() == RubyEvent.LINE && targetLine != 0 && targetLine != line) continue;
+
+                found.computeIfAbsent(trace.getEvent(), e -> new HashMap<>())
+                        .computeIfAbsent(scopeName(trace.getName()), n -> new HashSet<>())
+                        .add(line);
+            }
+        }
+
+        for (IRScope child : List.copyOf(scope.getLexicalScopes())) {
+            collectTargetEvents(child, events, targetLine, found);
+        }
     }
     
     @JRubyMethod(name = "enabled?")
@@ -346,6 +469,7 @@ public class TracePoint extends RubyObject {
             context.traceEvents.addEventHook(context, hook);
         } else {
             hook.threadToTrace = null;
+            target = null;
             context.traceEvents.removeEventHook(hook);
         }
     }
@@ -358,7 +482,42 @@ public class TracePoint extends RubyObject {
         return context.sites.TracePoint;
     }
     
+    // The JIT passes a missing name as "null"
+    private static String scopeName(String name) {
+        return name == null ? "null" : name;
+    }
+
+    /**
+     * Where a TracePoint enabled with target: fires: for each event, the names of the methods and blocks in the
+     * target's code with the sorted lines of their trace instructions.
+     *
+     * Events are matched by file, event, name and line, not by the code they come from. A method or block with the
+     * same name on the same line also matches, such as a method of another class. A :line event in a block has the
+     * name of the enclosing method, so it matches other :line events of that method on the same line.
+     */
+    private record Target(String file, EnumMap<RubyEvent, Map<String, int[]>> lines) {
+        static Target of(String file, EnumMap<RubyEvent, Map<String, Set<Integer>>> found) {
+            EnumMap<RubyEvent, Map<String, int[]>> lines = new EnumMap<>(RubyEvent.class);
+            found.forEach((event, names) -> {
+                Map<String, int[]> byName = new HashMap<>();
+                names.forEach((name, set) -> byName.put(name, set.stream().mapToInt(Integer::intValue).sorted().toArray()));
+                lines.put(event, byName);
+            });
+
+            return new Target(file, lines);
+        }
+
+        boolean covers(RubyEvent event, String file, int line, String name) {
+            Map<String, int[]> byName = lines.get(event);
+            if (byName == null || !this.file.equals(file)) return false;
+
+            int[] nameLines = byName.get(scopeName(name));
+            return nameLines != null && Arrays.binarySearch(nameLines, line) >= 0;
+        }
+    }
+
     private TracePointEventHook hook;
+    private volatile Target target;
     private volatile boolean enabled = false;
     private String eventName;
     private String file;
