@@ -252,10 +252,8 @@ public class RubyTime extends RubyObject {
 
     // MRI: utc_offset_arg
     public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject arg) {
-        String strOffset = arg.toString();
-        DateTimeZone cachedZone = context.runtime.getTimezoneCache().get(strOffset);
-        if (cachedZone != null) return cachedZone;
-
+        // No lookup by arg.toString() in the runtime's timezone cache: it also holds TZ values (TZ "UTC" is
+        // Etc/UTC there) and 3600 and "3600" would share a key. getTimeZoneWithOffset caches the zone.
         DateTimeZone dtz;
         IRubyObject tmp;
 
@@ -344,8 +342,6 @@ public class RubyTime extends RubyObject {
             int newOffset = (int) Math.round(numericOffset.convertToFloat().value * 1000);
             dtz = getTimeZoneWithOffset(context, "", newOffset);
         }
-
-        context.runtime.getTimezoneCache().put(strOffset, dtz);
 
         return dtz;
     }
