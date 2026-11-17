@@ -859,6 +859,21 @@ modes.each do |mode|
       end
     end
 
+    it "evaluates every statement of a parenthesized when value" do
+      run('
+        n = 0
+        r = case "a"
+            when (n += 1; "b")
+              :b
+            when (n += 10; "a")
+              :a
+            end
+        [r, n]
+      ') do |result|
+        expect(result).to eq [:a, 11]
+      end
+    end
+
     it "properly handles method-root rescue logic with returns (GH\#733)" do
       run("def foo; return 1; rescue; return 2; else; return 3; end; foo") {|result| expect(result).to eq 1 }
       run("def foo; 1; rescue; return 2; else; return 3; end; foo") {|result| expect(result).to eq 3 }
@@ -1001,6 +1016,12 @@ modes.each do |mode|
       # JRUBY-1388, Foo::Bar broke in the compiler
       silence_warnings do
         run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      end
+    end
+
+    it "assigns a scoped constant with ||= when only a top-level constant has the same name" do
+      run('m = Module.new; m::String ||= :assigned; m::String') do |result|
+        expect(result).to eq :assigned
       end
     end
 

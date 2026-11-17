@@ -1855,7 +1855,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
                 if (block.isGiven()) {
                     IRubyObject existing = internalGet(key);
                     if (existing != null) {
-                        value = block.yield(ctxt, newArray(ctxt, key, existing, value));
+                        value = block.yieldValues(ctxt, new IRubyObject[] { key, existing, value });
                     }
                 }
                 op_aset(ctxt, key, value);

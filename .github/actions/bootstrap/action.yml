@@ -37,20 +37,17 @@ runs:
         cache-dependency-path: "**/pom.rb"
         cache-read-only: true
 
-    # tool/ci-retry.sh needs bash, so Windows builds run the wrapper directly and are not retried.
+    # tool/ci-retry.sh is a bash script. It also runs on Windows because GitHub's
+    # Windows runner images include Git for Windows, and `shell: bash` uses its bash:
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell
+    # A Windows runner without Git for Windows (e.g. a bare self-hosted one) fails here.
     - name: build
-      if: runner.os != 'Windows'
       shell: bash
+      # ./mvnw is the POSIX Maven wrapper script, which supports Git Bash (MINGW).
       run: tool/ci-retry.sh ./mvnw -ntp ${{ inputs.build-args }}
-    - name: build (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: ./mvnw -ntp ${{ inputs.build-args }}
     - name: bundle install
-      if: runner.os != 'Windows' && inputs.bundle-install == 'true'
+      if: inputs.bundle-install == 'true'
       shell: bash
-      run: tool/ci-retry.sh bin/jruby ${{ inputs.jruby-flags }} -S bundle install
-    - name: bundle install (Windows)
-      if: runner.os == 'Windows' && inputs.bundle-install == 'true'
-      shell: pwsh
-      run: bin/jruby ${{ inputs.jruby-flags }} -S bundle install
+      # bin/jruby is a POSIX launcher script, so Windows calls the native
+      # bin/jruby.exe instead (what PowerShell picked for `bin/jruby` before).
+      run: tool/ci-retry.sh ${{ runner.os == 'Windows' && 'bin/jruby.exe' || 'bin/jruby' }} ${{ inputs.jruby-flags }} -S bundle install
