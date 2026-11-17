@@ -24,6 +24,16 @@ describe "Data#to_h" do
       ScratchPad.recorded.sort.should == [[:amount, 42], [:unit, 'km']]
     end
 
+    it "passes only the key to a block with one parameter" do
+      data = DataSpecs::Measure.new(amount: 42, unit: 'km')
+      data.to_h { |k| [k, 0] }.should == { amount: 0, unit: 0 }
+    end
+
+    it "raises ArgumentError if the block is a lambda that takes one argument" do
+      data = DataSpecs::Measure.new(amount: 42, unit: 'km')
+      -> { data.to_h(&-> pair { pair }) }.should raise_error(ArgumentError)
+    end
+
     it "raises ArgumentError if block returns longer or shorter array" do
       data = DataSpecs::Measure.new(amount: 42, unit: 'km')
       -> do
