@@ -1,1 +1,0 @@
-fails:A Symbol literal raises an EncodingError when an interpolated symbol has invalid bytes
