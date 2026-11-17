@@ -2593,7 +2593,10 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubySymbol newDSymbol(ThreadContext context, IRubyObject symbol) {
-        return asSymbol(context, symbol.asString());
+        RubyString str = symbol.asString();
+        // MRI: intern instruction; rb_str_intern checks only ASCII-compatible strings (sym_check_asciionly)
+        if (str.getEncoding().isAsciiCompatible()) return str.intern(context);
+        return asSymbol(context, str);
     }
 
     @JIT
