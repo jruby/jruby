@@ -1912,14 +1912,20 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
         long[] tuple;
 
+        ShellLauncher.Redirects redirects = ShellLauncher.Redirects.NONE;
+        if (args[args.length - 1] instanceof RubyHash opts) {
+            redirects = ShellLauncher.Redirects.from(context, opts, true);
+            warnUnsupportedSystemOptions(context, opts, redirects);
+            args = Arrays.copyOf(args, args.length - 1);
+        }
+
         try {
-            args = dropLastArgIfOptions(context, args);
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
-                ShellLauncher.runWithoutWait(runtime, args);
+                ShellLauncher.runWithoutWait(runtime, args, redirects);
                 return 0;
             }
-            tuple = ShellLauncher.runAndWaitPid(runtime, args);
+            tuple = ShellLauncher.runAndWaitPid(runtime, args, redirects);
         } catch (Exception e) {
             tuple = new long[] {127, -1};
         }
@@ -1929,14 +1935,15 @@ public class RubyKernel {
         return (int) tuple[0];
     }
 
-    private static IRubyObject[] dropLastArgIfOptions(ThreadContext context, final IRubyObject[] args) {
-        IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash hash) {
-            if (!hash.isEmpty()) Warn.warn(context, "system does not support options in JRuby yet: " + lastArg);
+    private static void warnUnsupportedSystemOptions(ThreadContext context, RubyHash opts,
+                                                     ShellLauncher.Redirects redirects) {
+        RubyHash unsupported = opts.dupFast(context);
+        if (redirects.handlesOut()) unsupported.fastDelete(asSymbol(context, "out"));
+        if (redirects.handlesErr()) unsupported.fastDelete(asSymbol(context, "err"));
 
-            return Arrays.copyOf(args, args.length - 1);
+        if (!unsupported.isEmpty()) {
+            Warn.warn(context, "system does not support options in JRuby yet: " + unsupported);
         }
-        return args;
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
