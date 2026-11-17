@@ -29,6 +29,5 @@ exclude :test_strip_with_selectors, "selectors are not yet supported (https://gi
 exclude :test_sum_2, "needs investigation"
 exclude :test_uminus_dedup_in_place, "depends on MRI-specific interning behavior"
 exclude :test_uminus_frozen, "work in progress"
-exclude :test_uminus_no_freeze_not_bare, "work in progress"
 exclude :test_undump, "unfinished in initial 2.6 work, #6161"
 exclude :test_uplus_minus, "only seems to fail in a full test run"
