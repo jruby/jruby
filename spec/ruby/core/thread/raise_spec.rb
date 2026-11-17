@@ -129,6 +129,19 @@ describe "Thread#raise on a sleeping thread" do
       [ScratchPad.recorded, @thr, []]
     ]
   end
+
+  it "raises the exception in a thread waiting in Queue#pop even if Thread#kill follows" do
+    t = Thread.new do
+      Thread.current.report_on_exception = false
+      Queue.new.pop
+    end
+
+    ThreadSpecs.spin_until_sleeping(t)
+
+    t.raise "raised before kill"
+    t.kill
+    -> { t.join }.should raise_error(RuntimeError, "raised before kill")
+  end
 end
 
 describe "Thread#raise on a running thread" do
