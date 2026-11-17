@@ -133,9 +133,13 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // Call const_missing or cache
         if (constant == null) {
-            return callConstMissing ?
-                    module.callMethod(context, "const_missing", getSymbolicName(context)) :
-                    UndefinedValue.UNDEFINED;
+            if (callConstMissing) {
+                return module.callMethod(context, "const_missing", getSymbolicName(context));
+            }
+
+            // Private constants count as missing; clear the reference const_missing would use
+            context.setPrivateConstantReference(null);
+            return UndefinedValue.UNDEFINED;
         }
 
         // bind constant until invalidated
