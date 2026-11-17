@@ -33,6 +33,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -266,10 +267,18 @@ public class SizedQueue extends Queue {
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            putInternal(context, value);
-            return SizedQueue.this;
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "untimed wait loop")
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            while (true) {
+                try {
+                    putInternal(context, value);
+                    return SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override
@@ -285,10 +294,20 @@ public class SizedQueue extends Queue {
             this.timeoutNS = timeoutNS;
         }
 
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK, until the timeout.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            boolean result = offerInternal(context, value, timeoutNS, TimeUnit.NANOSECONDS);
-            return !result ? context.nil : SizedQueue.this;
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "timed wait loop")
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+                    return !result ? context.nil : SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override

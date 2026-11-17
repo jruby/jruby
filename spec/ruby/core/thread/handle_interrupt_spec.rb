@@ -102,6 +102,70 @@ describe "Thread.handle_interrupt" do
     fiber.resume
   end
 
+  it "defers an interrupt raised while the thread waits in Queue#pop with a timeout" do
+    queue = Queue.new
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        log << queue.pop(timeout: 10)
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    Thread.pass until thread.stop?
+    thread.raise "interrupt in pop"
+    thread.join(0.1).should == nil
+    queue << :popped
+
+    -> { thread.join }.should raise_error(RuntimeError, "interrupt in pop")
+    log.should == [:popped]
+  end
+
+  it "defers an interrupt raised while the thread waits in SizedQueue#push" do
+    queue = SizedQueue.new(1)
+    queue << :first
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        log << queue.push(:second)
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    Thread.pass until thread.stop?
+    thread.raise "interrupt in push"
+    thread.join(0.1).should == nil
+    queue.pop
+
+    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    log.should == [queue]
+    queue.pop.should == :second
+  end
+
+  it "defers an interrupt raised while the thread waits in SizedQueue#push with a timeout" do
+    queue = SizedQueue.new(1)
+    queue << :first
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        log << queue.push(:second, timeout: 10)
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    Thread.pass until thread.stop?
+    thread.raise "interrupt in push"
+    thread.join(0.1).should == nil
+    queue.pop
+
+    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    log.should == [queue]
+    queue.pop.should == :second
+  end
+
   it "runs pending interrupts at the end of the block, even if there was an exception raised in the block" do
     executed = false
     -> {

@@ -76,6 +76,19 @@ describe :queue_deq, shared: true do
       t.join
     end
 
+    it "keeps waiting after Thread#wakeup" do
+      q = @object.call
+
+      t = Thread.new {
+        q.send(@method, timeout: TIME_TOLERANCE)
+      }
+      Thread.pass until t.status == "sleep" && q.num_waiting == 1
+      t.wakeup
+      t.join(0.1).should == nil
+      q << 1
+      t.value.should == 1
+    end
+
     it "returns nil if no item is available in time" do
       q = @object.call
 
