@@ -686,7 +686,9 @@ public class PosixShim {
             return 0;
         }
 
-        return lockFailedReturn(exclusive ? LOCK_EX : LOCK_SH);
+        // null means another process holds the lock, which flock(2) reports as EWOULDBLOCK
+        setErrno(Errno.EWOULDBLOCK);
+        return -1;
     }
 
     /**
