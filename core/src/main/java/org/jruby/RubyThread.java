@@ -1624,7 +1624,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param context the current context
      * @param nanoseconds time to sleep. Zero sleeps until woken.
      */
-    public void sleepUntilWakeup(ThreadContext context, long nanoseconds) throws InterruptedException {
+    void sleepUntilWakeup(ThreadContext context, long nanoseconds) throws InterruptedException {
         sleepTask.nanoseconds = nanoseconds;
         sleepTask.untilWakeup = true;
         try {
