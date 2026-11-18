@@ -25,6 +25,11 @@ describe "Signal.signame" do
     -> { Signal.signame(obj) }.should.raise(TypeError)
   end
 
+  it "raises a RangeError when the passed argument is out of range of int" do
+    -> { Signal.signame(2**31) }.should.raise(RangeError)
+    -> { Signal.signame(-2**31 - 1) }.should.raise(RangeError)
+  end
+
   platform_is_not :windows do
     it "the original should take precedence over alias when looked up by number" do
       Signal.signame(Signal.list["ABRT"]).should == "ABRT"
