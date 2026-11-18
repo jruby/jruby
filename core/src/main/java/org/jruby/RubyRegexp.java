@@ -348,12 +348,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RubyRegexp(runtime, pattern);
     }
 
+    // Used by MatchData#regexp. The result is always a Regexp, so it is frozen like one made by regexpInitialize.
     static RubyRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
         RubyRegexp regexp = new RubyRegexp(runtime);
         assert str != null;
         regexp.str = str;
         regexp.options = RegexpOptions.fromJoniOptions(pattern.getOptions());
         regexp.pattern = pattern;
+        regexp.setFrozen(true);
         return regexp;
     }
 
@@ -992,6 +994,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         pattern = getRegexpFromCache(runtime, unescaped, enc, options);
         assert bytes != null;
         str = bytes;
+
+        // Instances of Regexp itself are always frozen. Subclass instances are not, for compatibility.
+        if (getMetaClass() == runtime.getRegexp()) setFrozen(true);
         return this;
     }
 
