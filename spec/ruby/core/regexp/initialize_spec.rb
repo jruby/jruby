@@ -26,4 +26,11 @@ describe "Regexp#initialize" do
     r = Class.new(Regexp).new("")
     -> { r.send(:initialize, "") }.should.raise(TypeError)
   end
+
+  it "does not change the options or timeout of an initialized Regexp subclass" do
+    r = Class.new(Regexp).new("a")
+    -> { r.send(:initialize, "b", Regexp::IGNORECASE, timeout: 3) }.should.raise(TypeError)
+    r.options.should == 0
+    r.timeout.should == nil
+  end
 end
