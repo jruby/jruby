@@ -1218,6 +1218,9 @@ class Resolv
 
       class Str # :nodoc:
         def initialize(string)
+          if string.bytesize > 63
+            raise ArgumentError, "DNS label is too long (#{string.bytesize} bytes, max 63): #{string.inspect}"
+          end
           @string = string
           # case insensivity of DNS labels doesn't apply non-ASCII characters. [RFC 4343]
           # This assumes @string is given in ASCII compatible encoding.
@@ -1263,7 +1266,22 @@ class Resolv
         when Name
           return arg
         when String
-          return Name.new(Label.split(arg), /\.\z/ =~ arg ? true : false)
+          # A hostname is runtime data, so invalid sizes are reported as
+          # ResolvError alongside other name-resolution failures.
+          begin
+            labels = Label.split(arg)
+          rescue ArgumentError => e
+            raise ResolvError.new(e.message)
+          end
+          # Include the root label's terminating zero octet in the wire size.
+          size = 1
+          labels.each do |label|
+            size += 1 + label.string.bytesize
+            if size > 255
+              raise ResolvError.new("DNS name is too long (#{size} octets, max 255): #{arg.inspect}")
+            end
+          end
+          return Name.new(labels, /\.\z/ =~ arg ? true : false)
         else
           raise ArgumentError.new("cannot interpret as DNS name: #{arg.inspect}")
         end
@@ -1654,6 +1672,8 @@ class Resolv
           prev_index = @index
           save_index = nil
           d = []
+          # Count the expanded name rather than the compressed wire bytes.
+          size = 1
           while true
             raise DecodeError.new("limit exceeded") if @limit <= @index
             case @data.getbyte(@index)
@@ -1674,13 +1694,19 @@ class Resolv
               end
               @index = idx
             else
-              d << self.get_label
+              label = self.get_label
+              d << label
+              size += 1 + label.string.bytesize
+              raise DecodeError.new("name label data exceed 255 octets") if size > 255
             end
           end
         end
 
         def get_label
           return Label::Str.new(self.get_string)
+        rescue ArgumentError => e
+          # Length octets above 63 are reserved by the DNS wire format.
+          raise DecodeError.new(e.message)
         end
 
         def get_question
@@ -1868,8 +1894,9 @@ class Resolv
           key_name = :"key#{key_number}"
           c.const_set(:KeyName, key_name)
           c.const_set(:KeyNumber, key_number)
-          self.const_set(:"Key#{key_number}", c)
-          ClassHash[key_name] = ClassHash[key_number] = c
+          # Do not retain a class for every unknown SvcParam key from a
+          # response. An attacker can otherwise grow these registries without
+          # bound by sending distinct keys.
           return c
         end
       end
@@ -2138,7 +2165,9 @@ class Resolv
       end
 
       def self.get_class(type_value, class_value) # :nodoc:
-        return ClassHash[[type_value, class_value]] ||
+        cache = :"Type#{type_value}_Class#{class_value}"
+
+        return (const_defined?(cache) && const_get(cache)) ||
                Generic.create(type_value, class_value)
       end
 
@@ -2167,12 +2196,27 @@ class Resolv
           return self.new(msg.get_bytes)
         end
 
+        # Generic records are represented by a fresh class for each decoded
+        # response, so equality must compare their DNS type and class values.
+        def self.type_class_equal?(klass, other) # :nodoc:
+          return true if klass.equal?(other)
+          Generic > klass && Generic > other &&
+            klass::TypeValue == other::TypeValue &&
+            klass::ClassValue == other::ClassValue
+        end
+
+        def ==(other) # :nodoc:
+          return other.is_a?(Generic) &&
+                 Generic.type_class_equal?(self.class, other.class) &&
+                 @data == other.data
+        end
+
         def self.create(type_value, class_value) # :nodoc:
           c = Class.new(Generic)
           c.const_set(:TypeValue, type_value)
           c.const_set(:ClassValue, class_value)
-          Generic.const_set("Type#{type_value}_Class#{class_value}", c)
-          ClassHash[[type_value, class_value]] = c
+          # Do not retain classes for unknown records from a response. The
+          # type/class space is attacker controlled and effectively unbounded.
           return c
         end
       end
