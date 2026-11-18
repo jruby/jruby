@@ -1016,13 +1016,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // rb_reg_initialize
     public final RubyRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options, IRubyObject timeout) {
         Ruby runtime = metaClass.runtime;
-        this.options = options;
-        this.timeout = processTimeoutArg(runtime.getCurrentContext(), timeout);
 
         checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         if (pattern != null) throw typeError(runtime.getCurrentContext(), "already initialized regexp");
+
+        this.options = options;
+        this.timeout = processTimeoutArg(runtime.getCurrentContext(), timeout);
         if (enc.isDummy()) RegexpSupport.raiseRegexpError(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
 
         Encoding[]fixedEnc = new Encoding[]{null};
