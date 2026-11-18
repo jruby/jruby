@@ -2499,43 +2499,36 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // Multiple Ruby threads can select the same channel. Keep it nonblocking
     // until the last selector is deregistered, without holding its monitor while waiting.
-    private static final Map<SelectableChannel, SelectMode> SELECT_MODES = new WeakHashMap<>();
+    // State is [original blocking mode, active selector count]. Use a primitive
+    // array so weak-map values do not retain a JRuby-specific value class.
+    private static final Map<SelectableChannel, int[]> SELECT_MODES = new WeakHashMap<>();
 
-    private static final class SelectMode {
-        final boolean blocking;
-        int waiters;
-
-        SelectMode(boolean blocking) {
-            this.blocking = blocking;
-        }
-    }
-
-    private static SelectMode enterSelectMode(SelectableChannel channel) throws IOException {
+    private static int[] enterSelectMode(SelectableChannel channel) throws IOException {
         synchronized (channel.blockingLock()) {
-            SelectMode mode;
+            int[] mode;
             synchronized (SELECT_MODES) {
                 mode = SELECT_MODES.get(channel);
             }
             if (mode == null) {
-                mode = new SelectMode(channel.isBlocking());
+                mode = new int[] {channel.isBlocking() ? 1 : 0, 0};
                 channel.configureBlocking(false);
                 synchronized (SELECT_MODES) {
                     SELECT_MODES.put(channel, mode);
                 }
             }
-            mode.waiters++;
+            mode[1]++;
             return mode;
         }
     }
 
-    private static void leaveSelectMode(SelectableChannel channel, SelectMode mode) {
+    private static void leaveSelectMode(SelectableChannel channel, int[] mode) {
         synchronized (channel.blockingLock()) {
-            if (--mode.waiters == 0) {
+            if (--mode[1] == 0) {
                 synchronized (SELECT_MODES) {
                     SELECT_MODES.remove(channel);
                 }
                 try {
-                    channel.configureBlocking(mode.blocking);
+                    channel.configureBlocking(mode[0] != 0);
                 } catch (Exception e) {
                     // Preserve cleanup when the channel has been closed concurrently.
                 }
@@ -2585,7 +2578,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             boolean locked = fptr.lock();
             fptr.unlock();
             Selector selector = null;
-            SelectMode mode = null;
+            int[] mode = null;
             try {
                 fptr.addBlockingThread(this);
                 selector = getRuntime().getSelectorPool().get(selectable.provider());
