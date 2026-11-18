@@ -5627,10 +5627,7 @@ public class RubyModule extends RubyObject {
             if (hiddenObj != null) hidden = hiddenObj;
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload) {
-                if (warn) {
-                    warn(context, "already initialized constant " +
-                            (this.equals(objectClass(context)) ? name : (this + "::" + name)));
-                }
+                if (warn && context.runtime.warningsEnabled()) warnAlreadyInitialized(context, name);
 
                 storeConstant(context, name, value, hidden, oldEntry.deprecated, file, line);
             } else {
@@ -6129,8 +6126,30 @@ public class RubyModule extends RubyObject {
 
     @CRuby(value = "rb_const_warn_if_deprecated", file = "variable.c", note = "warning only, callers check the deprecated flag")
     private void warnDeprecatedConstant(ThreadContext context, String name) {
-        String parent = "Object".equals(getName(context)) ? "" : getName(context);
-        warnDeprecated(context, "constant " + parent + "::" + name + " is deprecated");
+        Ruby runtime = context.runtime;
+        if (!runtime.warningsEnabled() || !runtime.getWarnings().hasDeprecationWarningEnabled()) return;
+
+        RubyString quotedName = quoteConstantName(context, name);
+        warnDeprecated(context, this == objectClass(context) ?
+                str(runtime, "constant ::", quotedName, " is deprecated") :
+                str(runtime, "constant ", rubyName(context), "::", quotedName, " is deprecated"));
+    }
+
+    @CRuby(value = "const_warning_emit", file = "variable.c", note = "warning only, no previous definition line")
+    private void warnAlreadyInitialized(ThreadContext context, String name) {
+        RubyString quotedName = quoteConstantName(context, name);
+        warn(context, this == objectClass(context) ?
+                str(context.runtime, "already initialized constant ", quotedName) :
+                str(context.runtime, "already initialized constant ", rubyName(context), "::", quotedName));
+    }
+
+    // name is an id string (raw bytes), so it is read through its symbol. A warning must not
+    // raise Encoding::CompatibilityError, so also escape it if it can't join the module name.
+    private RubyString quoteConstantName(ThreadContext context, String name) {
+        RubyString quotedName = asSymbol(context, name).quoteUnprintable(context);
+        if (StringSupport.areCompatible(rubyName(context), quotedName) != null) return quotedName;
+
+        return (RubyString) RubyString.rbStrEscape(context, quotedName);
     }
 
     @Deprecated(since = "10.0.0.0")
