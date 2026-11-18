@@ -94,7 +94,6 @@ public final class StringSupport {
     public static final int CR_VALID     = 0b00100000;
 
     public static final int CHILLED_LITERAL = 0b00000001;
-    public static final int CHILLED_SYMBOL_TO_S = 0b00000010;
 
     public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
     public static final int CR_MASK      = CR_7BIT | CR_VALID;
