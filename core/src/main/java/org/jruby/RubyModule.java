@@ -5624,10 +5624,7 @@ public class RubyModule extends RubyObject {
             if (hiddenObj != null) hidden = hiddenObj;
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload) {
-                if (warn && context.runtime.warningsEnabled()) {
-                    warn(context, newString(context, "already initialized constant ")
-                            .catWithCodeRange(constantPath(context, name, "")).toString());
-                }
+                if (warn && context.runtime.warningsEnabled()) warnAlreadyInitialized(context, name);
 
                 storeConstant(context, name, value, hidden, file, line);
             } else {
@@ -6129,28 +6126,27 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
         if (!runtime.warningsEnabled() || !runtime.getWarnings().hasDeprecationWarningEnabled()) return;
 
-        RubyString msg = newString(context, "constant ").catWithCodeRange(constantPath(context, name, "::"));
-        warnDeprecated(context, msg.catString(" is deprecated").toString());
+        RubyString quotedName = quoteConstantName(context, name);
+        warnDeprecated(context, this == objectClass(context) ?
+                str(runtime, "constant ::", quotedName, " is deprecated") :
+                str(runtime, "constant ", rubyName(context), "::", quotedName, " is deprecated"));
     }
 
-    /**
-     * "Mod::NAME", or objectPrefix + "NAME" for Object, for a constant warning.
-     * name is an id string (raw bytes), so it is read through its symbol.
-     */
-    @CRuby(value = "const_warning_emit", file = "variable.c", note = "constant path in the message")
-    private RubyString constantPath(ThreadContext context, String name, String objectPrefix) {
-        RubyString path = this == objectClass(context) ?
-                newString(context, objectPrefix) :
-                dupString(context, rubyName(context)).catString("::");
+    @CRuby(value = "const_warning_emit", file = "variable.c", note = "warning only, no previous definition line")
+    private void warnAlreadyInitialized(ThreadContext context, String name) {
+        RubyString quotedName = quoteConstantName(context, name);
+        warn(context, this == objectClass(context) ?
+                str(context.runtime, "already initialized constant ", quotedName) :
+                str(context.runtime, "already initialized constant ", rubyName(context), "::", quotedName));
+    }
+
+    // name is an id string (raw bytes), so it is read through its symbol. A warning must not
+    // raise Encoding::CompatibilityError, so also escape it if it can't join the module name.
+    private RubyString quoteConstantName(ThreadContext context, String name) {
         RubyString quotedName = asSymbol(context, name).quoteUnprintable(context);
+        if (StringSupport.areCompatible(rubyName(context), quotedName) != null) return quotedName;
 
-        // A warning must not raise Encoding::CompatibilityError, so escape the name
-        // if its encoding can't join the module name's.
-        if (StringSupport.areCompatible(path, quotedName) == null) {
-            quotedName = (RubyString) RubyString.rbStrEscape(context, quotedName);
-        }
-
-        return path.catWithCodeRange(quotedName);
+        return (RubyString) RubyString.rbStrEscape(context, quotedName);
     }
 
     @Deprecated(since = "10.0.0.0")
