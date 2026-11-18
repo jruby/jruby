@@ -2629,7 +2629,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "insert")
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject arg) {
         RubyString str = arg.convertToString();
-        int index = toInt(context, indexArg);
+        long index = toLong(context, indexArg);
         if (index == -1) {
             modifyCheck();
             return catWithCodeRange(str);
@@ -4293,7 +4293,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        if (arg0 instanceof RubyFixnum fixnum) return op_aset(context, fixnum.asInt(context), arg1);
+        if (arg0 instanceof RubyFixnum fixnum) return op_aset(context, fixnum.getValue(), arg1);
         if (arg0 instanceof RubyRegexp regexp) {
             subpatSet(context, regexp, null, arg1);
             return arg1;
@@ -4305,23 +4305,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             strUpdate(context, beg, len, this, arg1.convertToString());
             return arg1;
         } else if (arg0 instanceof RubyRange range) {
-            int[] begLen = range.begLenInt(context, strLength(), 2);
+            long[] begLen = range.begLen(context, strLength(), 2);
             strUpdate(context, begLen[0], begLen[1], this, arg1.convertToString());
             return arg1;
         } else {
             StringSites sites = sites(context);
             if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
                 RubyRange rng = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
-                int[] begLen = rng.begLenInt(context, strLength(), 2);
+                long[] begLen = rng.begLen(context, strLength(), 2);
                 strUpdate(context, begLen[0], begLen[1], this, arg1.convertToString());
 
                 return arg1;
             }
         }
-        return op_aset(context, toInt(context, arg0), arg1);
+        return op_aset(context, toLong(context, arg0), arg1);
     }
 
-    private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
+    private IRubyObject op_aset(ThreadContext context, long idx, IRubyObject arg1) {
         strUpdate(context, idx, 1, this, arg1.convertToString());
         return arg1;
     }
@@ -4331,8 +4331,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (arg0 instanceof RubyRegexp regexp) {
             subpatSet(context, regexp, arg1, arg2);
         } else {
-            int beg = toInt(context, arg0);
-            int len = checkLength(context, toInt(context, arg1));
+            long beg = toLong(context, arg0);
+            long len = toLong(context, arg1);
+            // before converting arg2, like CRuby
+            if (len < 0) throw indexError(context, "negative length " + len);
             strUpdate(context, beg, len, this, arg2.convertToString());
         }
         return arg2;
