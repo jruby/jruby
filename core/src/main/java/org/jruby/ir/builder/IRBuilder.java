@@ -1714,6 +1714,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand closureRetVal = body == null ? nil() : build(body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // The block is at its end line while the hook runs, as a method is for :return
+            addInstr(new LineNumberInstr(endLine));
             addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(closureRetVal)));
         }
 
@@ -1764,6 +1766,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand closureRetVal = build(body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // The lambda is at its end line while the hook runs, as a method is for :return
+            addInstr(new LineNumberInstr(scope.getEndLine()));
             addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), scope.getEndLine() + 1, traceValue(closureRetVal)));
         }
 
@@ -3199,7 +3203,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine, traceValue(rv)));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(rv)));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
