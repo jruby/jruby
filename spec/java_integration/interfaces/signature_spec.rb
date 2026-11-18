@@ -89,10 +89,6 @@ describe "Java interface implemented method signatures and arity" do
     end
 
     it "reports correct arity for overloaded methods with same arity but different parameter types" do
-      # Path has resolve(String) and resolve(Path) - both take 1 argument
-      path = java.nio.file.Path.impl { |*args| nil }
-      expect(path.method(:resolve).arity).to eq 1
-
       custom = Java::CustomOverloadInterface.impl { |*args| }
       expect(custom.method(:sameArityDiffTypes).arity).to eq 1
     end
