@@ -442,7 +442,7 @@ public class TypeConverter {
         }
 
         if (!(tmp = TypeConverter.checkStringType(context.runtime, val)).isNil()) {
-            return ConvertBytes.byteListToInum(context.runtime, ((RubyString) tmp).getByteList(), base, exception);
+            return RubyNumeric.str2inum(context.runtime, (RubyString) tmp, base, true, exception);
         }
 
         if (!exception) {
