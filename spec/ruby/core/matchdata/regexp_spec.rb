@@ -21,4 +21,11 @@ describe "MatchData#regexp" do
     'he[[o'.gsub('[', ']')
     $~.regexp.should == /\[/
   end
+
+  ruby_version_is "4.1" do
+    it "returns a frozen Regexp for the result of gsub(String)" do
+      'he[[o'.gsub('[', ']')
+      $~.regexp.should.frozen?
+    end
+  end
 end
