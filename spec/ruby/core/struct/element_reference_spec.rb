@@ -32,6 +32,24 @@ describe "Struct#[]" do
     -> { car['wheels'] }.should.raise(NameError)
   end
 
+  ruby_version_is ""..."4.1" do
+    it "raises a RangeError for an Integer index outside the int range" do
+      car = StructClasses::Car.new('Ford', 'Ranger')
+      -> { car[2**40]  }.should.raise(RangeError)
+      -> { car[-2**40] }.should.raise(RangeError)
+    end
+  end
+
+  ruby_version_is "4.1" do
+    platform_is c_long_size: 64 do
+      it "raises an IndexError for an Integer index outside the int range" do
+        car = StructClasses::Car.new('Ford', 'Ranger')
+        -> { car[2**40]  }.should.raise(IndexError, "offset 1099511627776 too large for struct(size:3)")
+        -> { car[-2**40] }.should.raise(IndexError, "offset -1099511627776 too small for struct(size:3)")
+      end
+    end
+  end
+
   it "fails if passed too many arguments" do
     car = StructClasses::Car.new('Ford', 'Ranger')
     -> { car[:make, :model] }.should.raise(ArgumentError)

@@ -840,6 +840,7 @@ public class RubyStruct extends RubyObject {
         return aref(getCurrentContext(), key);
     }
 
+    @CRuby(value = "rb_struct_aref", file = "struct.c")
     @JRubyMethod(name = "[]")
     public IRubyObject aref(ThreadContext context, IRubyObject key) {
         return arefImpl(context, key, false);
@@ -855,7 +856,7 @@ public class RubyStruct extends RubyObject {
             }
             return value;
         }
-        return aref(context, toInt(context, key));
+        return aref(context, toLong(context, key));
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -863,17 +864,18 @@ public class RubyStruct extends RubyObject {
         return aref(getCurrentContext(), idx);
     }
 
-    private static void checkIndexBounds(ThreadContext context, int i, int index, int length) {
+    @CRuby(value = "invalid_struct_pos", file = "struct.c", note = "Integer index branch")
+    private static void checkIndexBounds(ThreadContext context, long i, long index, int length) {
         if (i < 0) throw indexError(context, "offset " + index + " too small for struct(size:" + length + ")");
         if (i >= length) throw indexError(context, "offset " + index + " too large for struct(size:" + length + ")");
     }
 
-    final IRubyObject aref(ThreadContext context, int originalIndex) {
-        int index = originalIndex < 0 ? values.length + originalIndex : originalIndex;
+    final IRubyObject aref(ThreadContext context, long originalIndex) {
+        long index = originalIndex < 0 ? values.length + originalIndex : originalIndex;
 
         checkIndexBounds(context, index, originalIndex, values.length);
 
-        return values[index];
+        return values[(int) index];
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -881,6 +883,7 @@ public class RubyStruct extends RubyObject {
         return aset(getCurrentContext(), key, value);
     }
 
+    @CRuby(value = "rb_struct_aset", file = "struct.c")
     @JRubyMethod(name = "[]=")
     public IRubyObject aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
@@ -890,16 +893,16 @@ public class RubyStruct extends RubyObject {
             return value;
         }
 
-        return aset(context, toInt(context, key), value);
+        return aset(context, toLong(context, key), value);
     }
 
-    private IRubyObject aset(ThreadContext context, int originalIndex, IRubyObject value) {
-        int index = originalIndex < 0 ? values.length + originalIndex : originalIndex;
+    private IRubyObject aset(ThreadContext context, long originalIndex, IRubyObject value) {
+        long index = originalIndex < 0 ? values.length + originalIndex : originalIndex;
 
         checkIndexBounds(context, index, originalIndex, values.length);
         modify(context);
 
-        return values[index] = value;
+        return values[(int) index] = value;
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -936,7 +939,7 @@ public class RubyStruct extends RubyObject {
                 }
                 continue;
             }
-            result.push(context, aref(context, toInt(context, arg)));
+            result.push(context, aref(context, toLong(context, arg)));
         }
 
         return result;
