@@ -2165,9 +2165,7 @@ class Resolv
       end
 
       def self.get_class(type_value, class_value) # :nodoc:
-        cache = :"Type#{type_value}_Class#{class_value}"
-
-        return (const_defined?(cache) && const_get(cache)) ||
+        return ClassHash[[type_value, class_value]] ||
                Generic.create(type_value, class_value)
       end
 
