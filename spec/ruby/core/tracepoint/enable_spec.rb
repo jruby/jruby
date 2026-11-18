@@ -46,6 +46,35 @@ describe 'TracePoint#enable' do
         trace.should_not.enabled?
       end
     end
+
+    it 'runs the hook on another thread while the hook is running on this thread' do
+      main = Thread.current
+      go = Queue.new
+      thread = Thread.new { go.pop; TracePointSpec.test }
+      joined = other = main_event = nil
+      trace = TracePoint.new(:call) do |tp|
+        if Thread.current == main && tp.method_id == :foo
+          go << true
+          joined = thread.join(5)
+          main_event = [tp.event, tp.method_id]
+        elsif Thread.current == thread && tp.method_id == :test
+          other = [tp.event, tp.method_id]
+        end
+      end
+
+      trace.enable
+      begin
+        TracePointSpec::B.new.foo
+      ensure
+        trace.disable
+        go << true
+        thread.join
+      end
+
+      joined.should == thread
+      other.should == [:call, :test]
+      main_event.should == [:call, :foo]
+    end
   end
 
   describe 'with a block' do

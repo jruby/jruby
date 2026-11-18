@@ -64,14 +64,6 @@ public class TracePoint extends RubyObject {
     
     public TracePoint(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        
-        this.eventName = "";
-        this.file = "";
-        this.line = -1;
-        this.name = "";
-        this.type = runtime.getNil();
-        this.exception = runtime.getNil();
-        this.returnValue = runtime.getNil();
     }
     
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
@@ -139,34 +131,33 @@ public class TracePoint extends RubyObject {
 
             int savedCallInfo = ThreadContext.resetCallInfo(context);
 
-            synchronized (this) {
-                inside = true;
+            if (type == null) type = context.fals;
 
-                if (type == null) type = context.fals;
+            IRubyObject binding;
+            if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
+                binding = context.nil;
+            } else {
+                binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
+            }
 
-                IRubyObject binding;
-                if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
-                    binding = context.nil;
-                } else {
-                    binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
-                }
+            context.preTrace();
 
-                context.preTrace();
+            final IRubyObject errorInfo = context.getErrorInfo();
+            // The event is kept on the thread, not on this TracePoint, so the hook can run on several threads at
+            // once. A hook that stops, like a debugger waiting for a command, does not hold up other threads.
+            Event previous = context.getTraceEvent();
+            context.setTraceEvent(new Event(event.getName(), file, line, name, type, errorInfo,
+                    value == null ? context.nil : value, binding));
 
-                final IRubyObject errorInfo = context.getErrorInfo();
-                update(event.getName(), file, line, name, type, errorInfo, value == null ? context.nil : value, binding);
-
-                // MRI clears $! while a hook runs and restores it after (unless the hook raises)
-                context.setErrorInfo(context.nil);
-                try {
-                    block.yieldSpecific(context, TracePoint.this);
-                    context.setErrorInfo(errorInfo);
-                } finally {
-                    update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
-                    context.postTrace();
-                    inside = false;
-                    context.callInfo = savedCallInfo;
-                }
+            // MRI clears $! while a hook runs and restores it after (unless the hook raises)
+            context.setErrorInfo(context.nil);
+            try {
+                block.yieldSpecific(context, TracePoint.this);
+                context.setErrorInfo(errorInfo);
+            } finally {
+                context.setTraceEvent(previous);
+                context.postTrace();
+                context.callInfo = savedCallInfo;
             }
         }
 
@@ -188,16 +179,12 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod
     public IRubyObject binding(ThreadContext context) {
-        checkInside(context);
-        
-        return binding == null ? context.nil : binding;
+        return currentEvent(context).binding();
     }
     
     @JRubyMethod
     public IRubyObject defined_class(ThreadContext context) {
-        checkInside(context);
-        
-        return type;
+        return currentEvent(context).type();
     }
     
     @JRubyMethod
@@ -346,69 +333,62 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod
     public IRubyObject event(ThreadContext context) {
-        checkInside(context);
-        
-        return eventName == null ? context.nil : asSymbol(context, eventName);
+        return asSymbol(context, currentEvent(context).eventName());
     }
     
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return inside ? // TODO: event-specific inspect output
-                newString(context, "#<TracePoint:" + eventName + ">") :
+        Event event = context.getTraceEvent();
+        return event != null ? // TODO: event-specific inspect output
+                newString(context, "#<TracePoint:" + event.eventName() + ">") :
                 newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
     }
     
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
-        checkInside(context);
-        
-        return asFixnum(context, line);
+        return asFixnum(context, currentEvent(context).line());
     }
     
     @JRubyMethod
     public IRubyObject method_id(ThreadContext context) {
-        checkInside(context);
-        
+        String name = currentEvent(context).name();
         return name == null ? context.nil : asSymbol(context, name);
     }
 
     @JRubyMethod
     public IRubyObject callee_id(ThreadContext context) {
-        checkInside(context);
-
         // TODO: actually get called name, requires modifying trace handling in bindings
+        String name = currentEvent(context).name();
         return name == null ? context.nil : asSymbol(context, name);
     }
     
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
-        checkInside(context);
-        
+        String file = currentEvent(context).file();
         return file == null ? context.nil : newString(context, file);
     }
     
     @JRubyMethod
     public IRubyObject raised_exception(ThreadContext context) {
-        checkInside(context);
-        
-        return exception;
+        return currentEvent(context).exception();
     }
     
     @JRubyMethod
     public IRubyObject return_value(ThreadContext context) {
-        checkInside(context);
+        Event event = currentEvent(context);
 
         // FIXME: :c_return events do not pass the return value through yet, so it is always nil for them
-        switch (eventName) {
+        switch (event.eventName()) {
             case "return", "b_return", "c_return" -> {}
             default -> throw runtimeError(context, "not supported by this event");
         }
 
-        return returnValue;
+        return event.returnValue();
     }
     
     @JRubyMethod
     public IRubyObject self(ThreadContext context) {
+        IRubyObject binding = currentEvent(context).binding();
         return binding.isNil() ? context.nil : ((RubyBinding)binding).getBinding().getSelf();
     }
 
@@ -428,17 +408,6 @@ public class TracePoint extends RubyObject {
                 newArray(context, asFixnum(context, stats[0]), asFixnum(context, stats[1])));
     }
     
-    private void update(String eventName, String file, int line, String name, IRubyObject type, IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {
-        this.eventName = eventName;
-        this.file = file;
-        this.line = line;
-        this.name = name;
-        this.type = type;
-        this.exception = exception;
-        this.returnValue = returnValue;
-        this.binding = binding;
-    }
-
     private synchronized IRubyObject doToggle(ThreadContext context, RubyThread _targetThread, Block block, boolean toggle) {
         if (block.isGiven()) {
             boolean old = enabled;
@@ -474,9 +443,22 @@ public class TracePoint extends RubyObject {
         }
     }
 
-    private void checkInside(ThreadContext context) throws RaiseException {
-        if (!inside) throw runtimeError(context, "access from outside");
+    /**
+     * The event of the hook running on this thread. Like CRuby, which keeps it per execution context, this does not
+     * check which TracePoint the hook belongs to.
+     */
+    @CRuby(value = "get_trace_arg", file = "vm_trace.c")
+    private static Event currentEvent(ThreadContext context) throws RaiseException {
+        Event event = context.getTraceEvent();
+        if (event == null) throw runtimeError(context, "access from outside");
+        return event;
     }
+
+    /**
+     * The data of an event, kept on the thread while a TracePoint hook runs for it.
+     */
+    public record Event(String eventName, String file, int line, String name, IRubyObject type,
+                        IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {}
 
     private static JavaSites.TracePointSites sites(ThreadContext context) {
         return context.sites.TracePoint;
@@ -519,13 +501,4 @@ public class TracePoint extends RubyObject {
     private TracePointEventHook hook;
     private volatile Target target;
     private volatile boolean enabled = false;
-    private String eventName;
-    private String file;
-    private int line;
-    private String name;
-    private IRubyObject type;
-    private IRubyObject exception;
-    private IRubyObject returnValue;
-    private IRubyObject binding;
-    private volatile boolean inside = false;
 }
