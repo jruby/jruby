@@ -95,6 +95,7 @@ import org.jruby.util.PerlHash;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
+import org.jruby.util.StringBits;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
@@ -4548,6 +4549,156 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyAndClearCodeRange();
         value.getUnsafeBytes()[normalizedIndex] = (byte)b;
         return val;
+    }
+
+    // The bit methods below take keywords = true, so a positional Hash is not read as lsb_first:.
+
+    /**
+     * Resets the call info and returns whether the last argument holds keywords.
+     */
+    private static boolean takeKeywords(ThreadContext context) {
+        return ThreadContext.hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
+    }
+
+    @CRuby(value = "rb_str_bit_get", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_get", keywords = true)
+    public IRubyObject bit_get(ThreadContext context, IRubyObject offset) {
+        if (takeKeywords(context)) throw argumentError(context, 0, 1);
+        return bitGetResult(context, StringBits.bitGet(context, this, offset, null));
+    }
+
+    @CRuby(value = "rb_str_bit_get", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_get", keywords = true)
+    public IRubyObject bit_get(ThreadContext context, IRubyObject offset, IRubyObject opts) {
+        if (!takeKeywords(context)) throw argumentError(context, 2, 1);
+        return bitGetResult(context, StringBits.bitGet(context, this, offset, opts));
+    }
+
+    private static IRubyObject bitGetResult(ThreadContext context, int bit) {
+        return bit < 0 ? context.nil : asFixnum(context, bit);
+    }
+
+    @CRuby(value = "rb_str_bit_set_p", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_set?", keywords = true)
+    public IRubyObject bit_set_p(ThreadContext context, IRubyObject offset) {
+        if (takeKeywords(context)) throw argumentError(context, 0, 1);
+        return bitSetPResult(context, StringBits.bitGet(context, this, offset, null));
+    }
+
+    @CRuby(value = "rb_str_bit_set_p", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_set?", keywords = true)
+    public IRubyObject bit_set_p(ThreadContext context, IRubyObject offset, IRubyObject opts) {
+        if (!takeKeywords(context)) throw argumentError(context, 2, 1);
+        return bitSetPResult(context, StringBits.bitGet(context, this, offset, opts));
+    }
+
+    private static IRubyObject bitSetPResult(ThreadContext context, int bit) {
+        return bit < 0 ? context.nil : asBoolean(context, bit == 1);
+    }
+
+    @CRuby(value = "rb_str_bit_set", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_set", keywords = true)
+    public IRubyObject bit_set(ThreadContext context, IRubyObject target) {
+        return mutateBits(context, target, StringBits.Mutation.SET);
+    }
+
+    @CRuby(value = "rb_str_bit_set", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_set", keywords = true)
+    public IRubyObject bit_set(ThreadContext context, IRubyObject target, IRubyObject arg) {
+        return mutateBits(context, target, arg, StringBits.Mutation.SET);
+    }
+
+    @CRuby(value = "rb_str_bit_set", file = "string.c", note = "three arguments")
+    @JRubyMethod(name = "bit_set", keywords = true)
+    public IRubyObject bit_set(ThreadContext context, IRubyObject target, IRubyObject length, IRubyObject opts) {
+        return mutateBits(context, target, length, opts, StringBits.Mutation.SET);
+    }
+
+    @CRuby(value = "rb_str_bit_clear", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_clear", keywords = true)
+    public IRubyObject bit_clear(ThreadContext context, IRubyObject target) {
+        return mutateBits(context, target, StringBits.Mutation.CLEAR);
+    }
+
+    @CRuby(value = "rb_str_bit_clear", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_clear", keywords = true)
+    public IRubyObject bit_clear(ThreadContext context, IRubyObject target, IRubyObject arg) {
+        return mutateBits(context, target, arg, StringBits.Mutation.CLEAR);
+    }
+
+    @CRuby(value = "rb_str_bit_clear", file = "string.c", note = "three arguments")
+    @JRubyMethod(name = "bit_clear", keywords = true)
+    public IRubyObject bit_clear(ThreadContext context, IRubyObject target, IRubyObject length, IRubyObject opts) {
+        return mutateBits(context, target, length, opts, StringBits.Mutation.CLEAR);
+    }
+
+    @CRuby(value = "rb_str_bit_flip", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_flip", keywords = true)
+    public IRubyObject bit_flip(ThreadContext context, IRubyObject target) {
+        return mutateBits(context, target, StringBits.Mutation.FLIP);
+    }
+
+    @CRuby(value = "rb_str_bit_flip", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_flip", keywords = true)
+    public IRubyObject bit_flip(ThreadContext context, IRubyObject target, IRubyObject arg) {
+        return mutateBits(context, target, arg, StringBits.Mutation.FLIP);
+    }
+
+    @CRuby(value = "rb_str_bit_flip", file = "string.c", note = "three arguments")
+    @JRubyMethod(name = "bit_flip", keywords = true)
+    public IRubyObject bit_flip(ThreadContext context, IRubyObject target, IRubyObject length, IRubyObject opts) {
+        return mutateBits(context, target, length, opts, StringBits.Mutation.FLIP);
+    }
+
+    private IRubyObject mutateBits(ThreadContext context, IRubyObject target, StringBits.Mutation mutation) {
+        if (takeKeywords(context)) throw argumentError(context, 0, 1, 2);
+        return StringBits.mutate(context, this, target, null, null, mutation);
+    }
+
+    private IRubyObject mutateBits(ThreadContext context, IRubyObject target, IRubyObject arg,
+                                   StringBits.Mutation mutation) {
+        if (takeKeywords(context)) {
+            return StringBits.mutate(context, this, target, null, arg, mutation);
+        }
+        return StringBits.mutate(context, this, target, arg, null, mutation);
+    }
+
+    private IRubyObject mutateBits(ThreadContext context, IRubyObject target, IRubyObject length, IRubyObject opts,
+                                   StringBits.Mutation mutation) {
+        if (!takeKeywords(context)) throw argumentError(context, 3, 1, 2);
+        return StringBits.mutate(context, this, target, length, opts, mutation);
+    }
+
+    @CRuby(value = "rb_str_bit_count", file = "string.c", note = "no arguments")
+    @JRubyMethod(name = "bit_count", keywords = true)
+    public IRubyObject bit_count(ThreadContext context) {
+        ThreadContext.resetCallInfo(context);
+        return asFixnum(context, StringBits.bitCount(context, this, null, null, null));
+    }
+
+    @CRuby(value = "rb_str_bit_count", file = "string.c", note = "one argument")
+    @JRubyMethod(name = "bit_count", keywords = true)
+    public IRubyObject bit_count(ThreadContext context, IRubyObject arg) {
+        if (takeKeywords(context)) {
+            return asFixnum(context, StringBits.bitCount(context, this, null, null, arg));
+        }
+        return asFixnum(context, StringBits.bitCount(context, this, arg, null, null));
+    }
+
+    @CRuby(value = "rb_str_bit_count", file = "string.c", note = "two arguments")
+    @JRubyMethod(name = "bit_count", keywords = true)
+    public IRubyObject bit_count(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        if (takeKeywords(context)) {
+            return asFixnum(context, StringBits.bitCount(context, this, arg0, null, arg1));
+        }
+        return asFixnum(context, StringBits.bitCount(context, this, arg0, arg1, null));
+    }
+
+    @CRuby(value = "rb_str_bit_count", file = "string.c", note = "three arguments")
+    @JRubyMethod(name = "bit_count", keywords = true)
+    public IRubyObject bit_count(ThreadContext context, IRubyObject offset, IRubyObject length, IRubyObject opts) {
+        if (!takeKeywords(context)) throw argumentError(context, 3, 0, 2);
+        return asFixnum(context, StringBits.bitCount(context, this, offset, length, opts));
     }
 
     @Deprecated(since = "10.0.0.0")
