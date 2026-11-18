@@ -81,20 +81,25 @@ public class RubySignal {
     private static final Map<String, Integer> SIGNAME_MAP;
     private static final Map<Integer, String> SIGNUM_MAP;
 
+    // Signal names in the order of CRuby's siglist, where signo2signm
+    // returns the first name for a number.
+    private static final String[] SIGLIST = {
+        "EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "IOT", "EMT", "FPE",
+        "KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG", "STOP", "TSTP",
+        "CONT", "CHLD", "CLD", "TTIN", "TTOU", "IO", "XCPU", "XFSZ", "VTALRM", "PROF",
+        "WINCH", "USR1", "USR2", "LOST", "MSG", "PWR", "POLL", "DANGER", "MIGRATE",
+        "PRE", "GRANT", "RETRACT", "SOUND", "INFO"
+    };
+
     static {
         HashMap<String, Integer> signals = new HashMap<>(Signal.values().length);
         HashMap<Integer, String> signums = new HashMap<>(Signal.values().length);
 
-        Signal[] values = Signal.values();
-        for (Signal s : values) {
+        for (String desc : SIGLIST) {
+            Signal s = jnrSignal(desc);
+
             // Skip signals not defined on this platform
-            if (!s.defined()) continue;
-
-            String desc = s.description();
-            if (!desc.startsWith(SIGNAME_PREFIX)) continue;
-
-            desc = signmWithoutPrefix(desc);
-            if (!SIGNAME(desc)) continue;
+            if (s == null || !s.defined()) continue;
 
             // replace CLD with CHLD value
             int signo = s.intValue();
@@ -107,7 +112,8 @@ public class RubySignal {
             if (signo >= 20000) continue;
 
             signals.put(desc, signo);
-            signums.put(signo, desc);
+            // the first name in SIGLIST wins, so an alias doesn't replace the original
+            signums.putIfAbsent(signo, desc);
         }
 
         // We always define KILL as 9 on Windows
@@ -237,55 +243,11 @@ public class RubySignal {
         return (nm.startsWith(SIGNAME_PREFIX)) ? nm.substring(SIGNAME_PREFIX.length()) : nm;
     }
 
-    private static boolean SIGNAME(final String name) {
-        switch (name) {
-            case "EXIT":
-            case "HUP" :
-            case "INT" :
-            case "QUIT":
-            case "ILL" :
-            case "TRAP":
-            case "IOT" :
-            case "ABRT":
-            case "EMT" :
-            case "FPE" :
-            case "KILL":
-            case "BUS" :
-            case "SEGV":
-            case "SYS" :
-            case "PIPE":
-            case "ALRM":
-            case "TERM":
-            case "URG" :
-            case "STOP":
-            case "TSTP":
-            case "CONT":
-            case "CHLD":
-            case "CLD" :
-            case "TTIN":
-            case "TTOU":
-            case "IO"  :
-            case "XCPU":
-            case "XFSZ":
-            case "PROF":
-            case "VTALRM":
-            case "WINCH":
-            case "USR1":
-            case "USR2":
-            case "LOST":
-            case "MSG" :
-            case "PWR" :
-            case "POLL":
-            case "DANGER":
-            case "MIGRATE":
-            case "PRE" :
-            case "GRANT":
-            case "RETRACT":
-            case "SOUND":
-            case "INFO":
-                return true;
-            default:
-                return false;
+    private static Signal jnrSignal(String name) {
+        try {
+            return Signal.valueOf(SIGNAME_PREFIX + name);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
