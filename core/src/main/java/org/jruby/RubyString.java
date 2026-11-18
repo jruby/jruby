@@ -4701,6 +4701,52 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return asFixnum(context, StringBits.bitCount(context, this, offset, length, opts));
     }
 
+    @JRubyMethod(name = "bitwise_not")
+    public IRubyObject bitwise_not(ThreadContext context) {
+        return StringBits.bitwiseNot(context, this);
+    }
+
+    @JRubyMethod(name = "bitwise_not!")
+    public IRubyObject bitwise_not_bang(ThreadContext context) {
+        return StringBits.bitwiseNotBang(this);
+    }
+
+    @CRuby(value = "rb_str_bitwise_and", file = "string.c")
+    @JRubyMethod(name = "bitwise_and")
+    public IRubyObject bitwise_and(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwise(context, this, other, StringBits.Bitwise.AND);
+    }
+
+    @CRuby(value = "rb_str_bitwise_and_bang", file = "string.c")
+    @JRubyMethod(name = "bitwise_and!")
+    public IRubyObject bitwise_and_bang(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwiseBang(context, this, other, StringBits.Bitwise.AND);
+    }
+
+    @CRuby(value = "rb_str_bitwise_or", file = "string.c")
+    @JRubyMethod(name = "bitwise_or")
+    public IRubyObject bitwise_or(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwise(context, this, other, StringBits.Bitwise.OR);
+    }
+
+    @CRuby(value = "rb_str_bitwise_or_bang", file = "string.c")
+    @JRubyMethod(name = "bitwise_or!")
+    public IRubyObject bitwise_or_bang(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwiseBang(context, this, other, StringBits.Bitwise.OR);
+    }
+
+    @CRuby(value = "rb_str_bitwise_xor", file = "string.c")
+    @JRubyMethod(name = "bitwise_xor")
+    public IRubyObject bitwise_xor(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwise(context, this, other, StringBits.Bitwise.XOR);
+    }
+
+    @CRuby(value = "rb_str_bitwise_xor_bang", file = "string.c")
+    @JRubyMethod(name = "bitwise_xor!")
+    public IRubyObject bitwise_xor_bang(ThreadContext context, IRubyObject other) {
+        return StringBits.bitwiseBang(context, this, other, StringBits.Bitwise.XOR);
+    }
+
     @Deprecated(since = "10.0.0.0")
     public IRubyObject to_i() {
         return to_i(getCurrentContext());
