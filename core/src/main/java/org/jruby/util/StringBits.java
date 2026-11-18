@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
@@ -13,6 +14,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.anno.CRuby;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,7 +25,8 @@ import static org.jruby.api.Error.indexError;
 
 /**
  * Bit access to the bytes of a String: {@code String#bit_get}, {@code #bit_set?}, {@code #bit_set},
- * {@code #bit_clear}, {@code #bit_flip} and {@code #bit_count}.
+ * {@code #bit_clear}, {@code #bit_flip} and {@code #bit_count}, and the byte-wise operations
+ * {@code #bitwise_not}, {@code #bitwise_and}, {@code #bitwise_or} and {@code #bitwise_xor}.
  *
  * <p>Bit positions count from the first byte of the string. Within a byte, bit 0 is the least
  * significant bit by default ({@code lsb_first: true}). With {@code lsb_first: false} the bytes stay
@@ -57,6 +60,22 @@ public final class StringBits {
                 case SET -> (byte) (value | mask);
                 case CLEAR -> (byte) (value & ~mask);
                 case FLIP -> (byte) (value ^ mask);
+            };
+        }
+    }
+
+    /**
+     * The operation that {@code bitwise_and}, {@code bitwise_or} and {@code bitwise_xor} apply to each
+     * pair of bytes. It works the same on eight bytes packed in a long.
+     */
+    public enum Bitwise {
+        AND, OR, XOR;
+
+        long apply(long left, long right) {
+            return switch (this) {
+                case AND -> left & right;
+                case OR -> left | right;
+                case XOR -> left ^ right;
             };
         }
     }
@@ -399,5 +418,108 @@ public final class StringBits {
             count += Integer.bitCount(Byte.toUnsignedInt(bytes[i]));
         }
         return count;
+    }
+
+    /**
+     * Returns a new BINARY string with every bit of {@code str} inverted.
+     */
+    @CRuby(value = "rb_str_bitwise_not", file = "string.c")
+    public static RubyString bitwiseNot(ThreadContext context, RubyString str) {
+        ByteList bytes = str.getByteList();
+        byte[] result = new byte[bytes.realSize()];
+        not(bytes.unsafeBytes(), bytes.begin(), result, 0, result.length);
+
+        return Create.newString(context, new ByteList(result, ASCIIEncoding.INSTANCE, false));
+    }
+
+    /**
+     * Inverts every bit of {@code str} in place. The encoding does not change.
+     */
+    @CRuby(value = "rb_str_bitwise_not_bang", file = "string.c")
+    public static RubyString bitwiseNotBang(RubyString str) {
+        str.modifyAndClearCodeRange();
+        ByteList bytes = str.getByteList();
+        not(bytes.unsafeBytes(), bytes.begin(), bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+
+        return str;
+    }
+
+    /**
+     * Returns a new BINARY string with {@code operator} applied to each byte of {@code str} and the
+     * byte at the same index of {@code other}, which is converted with {@code to_str}.
+     */
+    @CRuby(value = "STR_DEFINE_BINARY_BITWISE_METHOD", file = "string.c", note = "new string")
+    public static RubyString bitwise(ThreadContext context, RubyString str, IRubyObject other, Bitwise operator) {
+        RubyString otherString = RubyString.stringValue(other);
+        checkSameLength(context, str, otherString);
+
+        ByteList left = str.getByteList();
+        ByteList right = otherString.getByteList();
+        byte[] result = new byte[left.realSize()];
+        apply(operator, left.unsafeBytes(), left.begin(), right.unsafeBytes(), right.begin(), result, 0, result.length);
+
+        return Create.newString(context, new ByteList(result, ASCIIEncoding.INSTANCE, false));
+    }
+
+    /**
+     * Applies {@code operator} to each byte of {@code str} and the byte at the same index of
+     * {@code other}, in place. The encoding of {@code str} does not change.
+     */
+    @CRuby(value = "STR_DEFINE_BINARY_BITWISE_METHOD", file = "string.c", note = "bang method")
+    public static RubyString bitwiseBang(ThreadContext context, RubyString str, IRubyObject other, Bitwise operator) {
+        RubyString otherString = RubyString.stringValue(other);
+        checkSameLength(context, str, otherString);
+        str.modifyAndClearCodeRange();
+
+        // Read both after modify, which may copy the bytes of str (and of other when it is str).
+        ByteList left = str.getByteList();
+        ByteList right = otherString.getByteList();
+        byte[] bytes = left.unsafeBytes();
+        apply(operator, bytes, left.begin(), right.unsafeBytes(), right.begin(), bytes, left.begin(), left.realSize());
+
+        return str;
+    }
+
+    @CRuby(value = "str_check_bitwise_length", file = "string.c")
+    private static void checkSameLength(ThreadContext context, RubyString str, RubyString other) {
+        int length = str.getByteList().realSize();
+        int otherLength = other.getByteList().realSize();
+        if (length != otherLength) {
+            throw argumentError(context, "operands must have the same length (" + length + " vs " + otherLength + ")");
+        }
+    }
+
+    /**
+     * Writes the complement of {@code length} bytes from {@code src} to {@code dst}, eight bytes at a
+     * time. {@code src} and {@code dst} may be the same bytes.
+     */
+    @CRuby(value = "str_bitwise_not", file = "string.c")
+    private static void not(byte[] src, int srcBegin, byte[] dst, int dstBegin, int length) {
+        int i = 0;
+        for (; i + Long.BYTES <= length; i += Long.BYTES) {
+            BYTES_AS_LONGS.set(dst, dstBegin + i, ~(long) BYTES_AS_LONGS.get(src, srcBegin + i));
+        }
+        for (; i < length; i++) {
+            dst[dstBegin + i] = (byte) ~src[srcBegin + i];
+        }
+    }
+
+    /**
+     * Writes {@code operator} applied to {@code length} pairs of bytes from {@code left} and
+     * {@code right} to {@code dst}, eight bytes at a time. {@code dst} may be the same bytes as an
+     * operand.
+     */
+    @CRuby(value = "STR_DEFINE_BINARY_BITWISE_KERNEL", file = "string.c")
+    private static void apply(Bitwise operator, byte[] left, int leftBegin, byte[] right, int rightBegin,
+                              byte[] dst, int dstBegin, int length) {
+        int i = 0;
+        for (; i + Long.BYTES <= length; i += Long.BYTES) {
+            long leftWord = (long) BYTES_AS_LONGS.get(left, leftBegin + i);
+            long rightWord = (long) BYTES_AS_LONGS.get(right, rightBegin + i);
+            BYTES_AS_LONGS.set(dst, dstBegin + i, operator.apply(leftWord, rightWord));
+        }
+        for (; i < length; i++) {
+            dst[dstBegin + i] = (byte) operator.apply(left[leftBegin + i], right[rightBegin + i]);
+        }
     }
 }
