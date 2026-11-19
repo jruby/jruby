@@ -58,6 +58,12 @@ describe :file_size_raise_when_missing, shared: true do
   it "raises an error if file_name doesn't exist" do
     -> {@object.send(@method, @missing)}.should raise_error(Errno::ENOENT)
   end
+
+  it "raises an error if the file given as an object that has a #to_path method doesn't exist" do
+    path = mock("path")
+    path.should_receive(:to_path).at_least(:once).and_return(@missing)
+    -> {@object.send(@method, path)}.should raise_error(Errno::ENOENT)
+  end
 end
 
 describe :file_size_nil_when_missing, shared: true do
