@@ -20,6 +20,19 @@ class TestResolvResource < Test::Unit::TestCase
     assert_equal(@name1.hash, @name2.hash, bug10857)
   end
 
+  def test_generic_resource_classes_are_not_cached
+    type_class = [65280, Resolv::DNS::Resource::IN::ClassValue]
+    registry = Resolv::DNS::Resource::ClassHash
+    assert_equal false, registry.key?(type_class)
+
+    first_class = Resolv::DNS::Resource.get_class(*type_class)
+    assert_equal false, registry.key?(type_class)
+    second_class = Resolv::DNS::Resource.get_class(*type_class)
+
+    assert_not_same first_class, second_class
+    assert_equal first_class.new('data'), second_class.new('data')
+  end
+
   def test_coord
     Resolv::LOC::Coord.create('1 2 1.1 N')
   end

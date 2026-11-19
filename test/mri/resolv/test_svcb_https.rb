@@ -137,6 +137,18 @@ class TestResolvSvcbHttps < Test::Unit::TestCase
     assert_equal wire, msg.encode
   end
 
+  def test_generic_keys_are_not_cached
+    registry = Resolv::DNS::SvcParam::ClassHash
+    key_number = 65000
+    assert_equal false, registry.key?(key_number)
+
+    first_class = registry[key_number]
+    assert_equal false, registry.key?(key_number)
+    second_class = registry[key_number]
+
+    assert_not_same first_class, second_class
+  end
+
   def test_two_ipv6hints
     wire = wrap_rdata 64, 1, "\x00\x01\x03foo\x07example\x03com\x00" +
       "\x00\x06\x00\x20" +
