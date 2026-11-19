@@ -79,6 +79,12 @@ describe "Enumerable#each_cons" do
             enum.each_cons(1).size.should == 10
           end
 
+          it "converts the argument with #to_int" do
+            obj = mock("3")
+            obj.should_receive(:to_int).at_least(:once).and_return(3)
+            EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).each_cons(obj).size.should == 8
+          end
+
           it "returns 0 when the argument is larger than self" do
             enum = EnumerableSpecs::NumerousWithSize.new(1, 2, 3)
             enum.each_cons(20).size.should == 0

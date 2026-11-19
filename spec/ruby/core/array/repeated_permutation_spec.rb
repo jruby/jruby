@@ -88,6 +88,12 @@ describe "Array#repeated_permutation" do
           [].repeated_permutation(1).size.should == 0
           [].repeated_permutation(0).size.should == 1
         end
+
+        it "converts the argument with #to_int" do
+          obj = mock("2")
+          obj.should_receive(:to_int).at_least(:once).and_return(2)
+          @numbers.repeated_permutation(obj).size.should == 9
+        end
       end
     end
   end
