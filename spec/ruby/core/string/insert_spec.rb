@@ -25,6 +25,8 @@ describe "String#insert with index, other" do
   it "raises an IndexError if the index is beyond string" do
     -> { "abcd".insert(5, 'X')  }.should.raise(IndexError)
     -> { "abcd".insert(-6, 'X') }.should.raise(IndexError)
+    -> { "abcd".insert(fixnum_max, 'X') }.should.raise(IndexError)
+    -> { "abcd".insert(fixnum_min, 'X') }.should.raise(IndexError)
   end
 
   it "converts index to an integer using to_int" do
