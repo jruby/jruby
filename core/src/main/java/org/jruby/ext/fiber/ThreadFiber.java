@@ -200,7 +200,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         FiberRequest result;
         try {
-            result = exchangeWithFiber(context, currentFiberData, data, val);
+            result = exchangeWithFiber(context, currentFiberData, data, val, true);
         } finally {
             data.prev = null;
             currentFiberData.resumingFiber = null;
@@ -249,10 +249,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     private static final FiberRequest NEVER = new FiberRequest(RubyBasicObject.NEVER, RequestType.DATA);
-
-    private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, FiberRequest request) {
-        return exchangeWithFiber(context, currentFiberData, targetFiberData, request, true);
-    }
 
     private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData,
                                                   FiberRequest request, boolean checkKilled) {
@@ -369,7 +365,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         FiberRequest result;
         try {
-            result = exchangeWithFiber(context, currentFiberData, data, val);
+            result = exchangeWithFiber(context, currentFiberData, data, val, true);
         } finally {
             currentFiberData.transferred = false;
         }
@@ -428,7 +424,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         FiberRequest result = null;
         try {
-            result = exchangeWithFiber(context, currentFiberData, data, val);
+            result = exchangeWithFiber(context, currentFiberData, data, val, true);
         } finally {
             if (transfer) {
                 currentFiberData.transferred = false;
@@ -468,7 +464,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberRequest result;
         currentFiberData.yielding = true;
         try {
-            result = exchangeWithFiber(context, currentFiberData, prevFiberData, request);
+            result = exchangeWithFiber(context, currentFiberData, prevFiberData, request, true);
         } finally {
             currentFiberData.yielding = false;
         }
