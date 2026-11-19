@@ -78,6 +78,12 @@ describe "Array#repeated_combination" do
           [].repeated_combination(0).size.should == 1
           [].repeated_combination(1).size.should == 0
         end
+
+        it "converts the argument with #to_int" do
+          obj = mock("2")
+          obj.should_receive(:to_int).at_least(:once).and_return(2)
+          @array.repeated_combination(obj).size.should == 6
+        end
       end
     end
   end
