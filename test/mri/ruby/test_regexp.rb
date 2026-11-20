@@ -73,7 +73,6 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def test_to_s_under_gc_compact_stress
-    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
     EnvUtil.under_gc_compact_stress do
       str = "abcd\u3042"
       [:UTF_16BE, :UTF_16LE, :UTF_32BE, :UTF_32LE].each do |es|
@@ -142,6 +141,16 @@ class TestRegexp < Test::Unit::TestCase
     assert_raise(SyntaxError) {eval "/[\\users]/x"}
     assert_raise(SyntaxError) {eval "/(?<\\users)/x"}
     assert_raise(SyntaxError) {eval "/# \\users/"}
+  end
+
+  def test_extended_comment_invalid_unicode_escape_with_multibyte_characters
+    ["\u3042", "\u00e9z", "\u{1f600}"].each do |content|
+      source = "a # \\u{#{content}}\n"
+      re = eval("/#{source}/x")
+      assert_equal(source, re.source)
+      assert_predicate(re.source, :valid_encoding?)
+      assert_match(re, "a")
+    end
   end
 
   def test_nonextended_section_of_extended_regexp_bug_19379
@@ -471,7 +480,6 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def test_inspect_under_gc_compact_stress
-    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
     EnvUtil.under_gc_compact_stress do
       assert_equal('/(?-mix:\\/)|/', Regexp.union(/\//, "").inspect)
     end
@@ -625,6 +633,10 @@ class TestRegexp < Test::Unit::TestCase
     assert_raise(IndexError) { m[:foo] }
     assert_raise(TypeError) { m[nil] }
     assert_equal(["baz", nil], m[-2, 3])
+
+    require "rbconfig/sizeof"
+    max = 2 ** (RbConfig::SIZEOF['rb_len_t'] * 8 - 1) - 1
+    assert_equal(["foo", "bar", "baz", nil], m[1..max])
   end
 
   def test_match_values_at
@@ -740,6 +752,7 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(/foo/, assert_warning(/ignored/) {Regexp.new(/foo/, Regexp::IGNORECASE)})
     assert_equal(/foo/, assert_no_warning(/ignored/) {Regexp.new(/foo/)})
     assert_equal(/foo/, assert_no_warning(/ignored/) {Regexp.new(/foo/, timeout: nil)})
+    assert_equal(/foo/, Regexp.new(Regexp.new("foo")))
 
     arg_encoding_none = //n.options # ARG_ENCODING_NONE is implementation defined value
 
@@ -903,7 +916,6 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def test_match_under_gc_compact_stress
-    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
     EnvUtil.under_gc_compact_stress do
       m = /(?<foo>.)(?<n>[^aeiou])?(?<bar>.+)/.match("hoge\u3042")
       assert_equal("h", m.match(:foo))
@@ -936,6 +948,30 @@ class TestRegexp < Test::Unit::TestCase
 
   def test_eqq
     assert_equal(false, /../ === nil)
+  end
+
+  def test_eql
+    require '-test-/regexp'
+  rescue LoadError
+  else
+    assert_equal(/^[0-9]/, Bug::Regexp.new_binary("^[0-9]"))
+  end
+
+  def test_match_encodings
+    re = Regexp.new('(?<letter>.)a', Regexp::IGNORECASE)
+    strings = [Encoding::UTF_8, Encoding::EUC_JP, Encoding::Windows_31J].map do |enc|
+      "\u3042A".encode(enc)
+    end
+    strings.each do |str|
+      assert_equal str[0], re.match(str)[:letter]
+    end
+
+    GC.start
+    strings.reverse_each do |str|
+      assert_equal str[0], re.match(str)[:letter]
+    end
+    assert_equal Encoding::US_ASCII, re.encoding
+    assert_equal "b", re.match("bA")[:letter]
   end
 
   def test_quote
@@ -975,7 +1011,7 @@ class TestRegexp < Test::Unit::TestCase
 
   def test_dup
     assert_equal(//, //.dup)
-    assert_raise(TypeError) { //.dup.instance_eval { initialize_copy(nil) } }
+    assert_raise(FrozenError) { //.dup.instance_eval { initialize_copy(/a/) } }
   end
 
   def test_regsub
@@ -999,16 +1035,56 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal('foobazquux/foobazquux', result, bug8856)
   end
 
+  def test_alternation_compile_error_no_memory_leak
+    # A compile error in the 2nd+ branch of a top-level alternation leaked the
+    # partially parsed branch (parse_subexp freed the alternation list but not
+    # the node parse_branch had built so far). Regexp#to_s reaches this path
+    # for every /(?:a|b)c(d)/-shaped regexp.
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~"end;"}", "[Bug #22384]", rss: true, samples: 2..100)
+      code = proc do
+        Regexp.new("a|b(c") rescue nil
+        /(?:a|b)c(d)/.to_s
+      end
+
+    begin;
+      3_000.times(&code)
+    end;
+  end
+
   def test_regsub_no_memory_leak
-    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~"end;"}", rss: true)
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~"end;"}", rss: true, samples: 2..100)
       code = proc do
         "aaaaaaaaaaa".gsub(/a/, "")
       end
 
-      1_000.times(&code)
     begin;
-      100_000.times(&code)
+      1_000.times(&code)
     end;
+  end
+
+  def test_regsub_no_memory_leak_many_captures
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~"end;"}", rss: true, samples: 2..100)
+      code = proc do
+        "aaaaaaaaaaa".gsub(/(a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?/, "")
+      end
+
+    begin;
+      1_000.times(&code)
+    end;
+  end
+
+  def test_extended_comment_compiled_again_for_string
+    e = Encoding::EMACS_MULE
+    c = "\x8E\xDA".dup.force_encoding(e)
+    re = Regexp.new("()()#\x8E\xDA()()".dup.force_encoding(e), Regexp::EXTENDED)
+    assert_equal(3, re.match("ab").size)
+    assert_equal(3, re.match(c).size)
+    assert_send([c, :start_with?, re])
+    assert_equal(3, $~.size)
+    re = Regexp.new("a#\x8E\xDAb\nc".dup.force_encoding(e), Regexp::EXTENDED)
+    assert_match(re, "ac")
+    assert_match(re, c + "ac")
+    assert_no_match(re, c + "ab")
   end
 
   def test_ignorecase
@@ -1023,6 +1099,19 @@ class TestRegexp < Test::Unit::TestCase
     /bar/ =~ "bar"
     $~ = m
     assert_equal("foo", $&)
+  end
+
+  def test_match_setter_with_copy
+    [:dup, :clone].each do |copy|
+      [false, true].each do |freeze|
+        m = /a/.match("a").public_send(copy)
+        m.freeze if freeze
+        $~ = m
+        /b/ =~ "b"
+        assert_equal("a", m[0], "#{copy}, freeze: #{freeze}")
+        assert_equal("b", $&)
+      end
+    end
   end
 
   def test_match_without_regexp
@@ -1082,10 +1171,30 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal("baz", $+)
   end
 
+  def test_index_with_assertion_before_leading_anychar_star
+    assert_equal(4, "xxx\n\0".index(/^.*\0/m, 1))
+    assert_equal(4, "aaaa \0".index(/\b.*\0/m, 1))
+    assert_equal(4, "aaaa bx".index(/\b.*x/, 1))
+    assert_equal(3, "aa\nb\0".index(/(?=b).*\0/m))
+    assert_equal(2, "ab\n\0".index(/$.*\0/m))
+    assert_equal(2, "aa\0".index(/(?!a).*\0/m))
+    assert_equal(3, "xxx \0".index(/(?:^|\b).*\0/m, 1))
+    assert_equal(2, "x\nyx".index(/^.*x/, 1))
+  end
+
   def test_rindex_regexp
     # use eval because only one warning is shown for the same regexp literal
     pat = eval('/b../n')
     assert_equal(3, assert_warning(/binary regexp/) {"foobarbaz\u3042".rindex(pat, 5)})
+  end
+
+  def test_rindex_with_leading_anychar_star_multiline
+    s = "0\n" + " " * 5
+    assert_equal(0, s.rindex(/.*\S\R/m))
+    assert_equal(0, s.rindex(/.*\S\R/m, 4))
+    assert_equal(2, "ab0\n   ".rindex(/.*0\n/m))
+    assert_equal(0, "abc".rindex(/.*/m, 0))
+    assert_equal(3, "abc".rindex(/.*/m))
   end
 
   def assert_regexp(re, ss, fs = [], msg = nil)
@@ -1412,6 +1521,10 @@ class TestRegexp < Test::Unit::TestCase
     assert_match(/^\u00df$/i, "ss")
     #assert_match(/^(\u00df)\1$/i, "\u00dfss") # this must be bug...
     assert_match(/^\u00df{2}$/i, "\u00dfss")
+    assert_no_match(/s/i, "\u00df")
+    assert_no_match(/is/i, "i\u00df")
+    assert_no_match(/f/i, "\ufb03")
+    assert_match(/ss/i, "\u00df")
     assert_match(/^\u00c5$/i, "\u00c5")
     assert_match(/^\u00c5$/i, "\u00e5")
     assert_match(/^\u00c5$/i, "\u212b")
@@ -1669,6 +1782,74 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal("hoge fuga", h["body"])
   end
 
+  def test_matchdata_large_capture_groups_stack
+    env = {"RUBY_THREAD_MACHINE_STACK_SIZE" => (256 * 1024).to_s}
+    assert_separately([env], <<~'RUBY')
+      n = 20000
+      require "rbconfig/sizeof"
+      stack = RubyVM::DEFAULT_PARAMS[:thread_machine_stack_size]
+      size = RbConfig::SIZEOF["long"]
+      required = (n + 1) * 4 * size
+      if !stack || stack == 0 || stack >= required
+        omit "thread machine stack size not reduced (#{stack}:#{required})"
+      end
+
+      inspect = Thread.new do
+        str = "\u{3042}" * n
+        m = Regexp.new("(.)" * n).match(str)
+        assert_not_nil(m)
+        assert_equal([n - 1, n], m.offset(n))
+        m.inspect
+      end.value
+
+      assert_include(inspect, "MatchData")
+    RUBY
+  end
+
+  def test_match_integer_at
+    m = /(\d{4})(\d{2})(\d{2})/.match("20260308")
+    assert_equal(20260308, m.integer_at(0))
+    assert_equal(2026,     m.integer_at(1))
+    assert_equal(3,        m.integer_at(2))
+    assert_equal(8,        m.integer_at(3))
+    assert_equal(nil,      m.integer_at(4))
+    assert_equal(8,        m.integer_at(-1))
+    assert_equal(3,        m.integer_at(-2))
+    assert_equal(2026,     m.integer_at(-3))
+    assert_equal(nil,      m.integer_at(-4))
+
+    re = /[a-z]+|(\d+)/
+    assert_equal(123, re.match("123").integer_at(1))
+    assert_equal(nil, re.match("abc").integer_at(1))
+  end
+
+  def test_match_integer_at_name
+    m = /(?<y>\d{4})(?<m>\d{2})(?<d>\d{2})/.match("20260308")
+    assert_equal(2026,     m.integer_at("y"))
+    assert_equal(3,        m.integer_at("m"))
+    assert_equal(8,        m.integer_at("d"))
+  end
+
+  def test_match_integer_at_base
+    assert_equal(91, /\w+/.match("111").integer_at(0, 9))
+    assert_equal(10_0000, /\w+/.match("10_0000").integer_at(0))
+    assert_equal(0d1_0000, /\w+/.match("01_0000").integer_at(0))
+    assert_equal(0o1_0000, /\w+/.match("01_0000").integer_at(0, 0))
+    assert_equal(0b1_0000, /\w+/.match("0b1_0000").integer_at(0, 0))
+    assert_equal(0o1_0000, /\w+/.match("0o1_0000").integer_at(0, 0))
+    assert_equal(0d1_0000, /\w+/.match("0d1_0000").integer_at(0, 0))
+    assert_equal(0x1_0000, /\w+/.match("0x1_0000").integer_at(0, 0))
+  end
+
+  def test_match_integer_at_empty_capture
+    # An empty capture must not parse bytes after it, even when those bytes
+    # form a 0x/0b/0o/0d prefix for the requested base. [Bug #NNNNN]
+    assert_nil(/(?<h>[g-z]*)/.match("0xff").integer_at(:h, 16))
+    assert_nil(/(?<b>[2-9]*)/.match("0b11").integer_at(:b, 2))
+    assert_nil(/(?<o>[89]*)/.match("0o17").integer_at(:o, 8))
+    assert_nil(/x(?<d>[a-z]*)/.match("x0d42").integer_at(:d))
+  end
+
   def test_regexp_popped
     EnvUtil.suppress_warning do
       assert_nothing_raised { eval("a = 1; /\#{ a }/; a") }
@@ -1805,6 +1986,42 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(/0/, pr1.call(2))
   end
 
+  def test_once_implicit_match
+    assert_separately(["-W0"], <<~'RUBY')
+      count = 0
+      matches = []
+      ["a", "b", "a"].each do |line|
+        $_ = line
+        if /#{count += 1; "a"}/o
+          matches << $&
+        end
+      end
+      assert_equal(1, count)
+      assert_equal(["a", "a"], matches)
+
+      matches = ["a", "b"].map do |line|
+        $_ = line
+        /#{"a"}/o ? true : false
+      end
+      assert_equal([true, false], matches)
+    RUBY
+  end
+
+  def test_once_constant_interpolation
+    # A /o regexp whose interpolation folds to a constant must build a Regexp,
+    # not resurrect it as a String.  The peephole optimizer rewrites
+    # "dupstring str; toregexp" into a single literal-push instruction; that
+    # instruction must become putobject (not keep dupstring).
+    assert_separately([], <<~'RUBY')
+      def m; /#{"a"}#{"b"}/o; end
+      assert_equal(/ab/, m)
+      assert_equal(/ab/, m)
+      assert_predicate(m, :frozen?)
+      assert_equal(/a/i, eval('/#{"a"}/io'))
+      assert_equal(0, ("ab" =~ /#{"a"}/o))
+    RUBY
+  end
+
   def test_once_recursive
     pr2 = proc{|i|
       if i > 0
@@ -1907,6 +2124,15 @@ class TestRegexp < Test::Unit::TestCase
     end;
   end
 
+  def test_invalid_condition_in_alternation_and_call
+    assert_raise_with_message(RegexpError, /invalid conditional pattern/) do
+      Regexp.new("(x)|(?(1)x|x|)")
+    end
+    assert_raise_with_message(RegexpError, /invalid conditional pattern/) do
+      Regexp.new("(?<b>x)(?<a>(?(<b>)x|x|))\\g<a>")
+    end
+  end
+
   def test_too_big_number_for_repeat_range
     assert_raise_with_message(SyntaxError, /too big number for repeat range/) do
       eval(%[/|{1000000}/])
@@ -1976,6 +2202,7 @@ class TestRegexp < Test::Unit::TestCase
       Regexp.timeout = 1e300
       assert_equal(((1<<64)-1) / 1000000000.0, Regexp.timeout)
 
+      assert_raise(ArgumentError) { Regexp.timeout = Float::NAN }
       assert_raise(ArgumentError) { Regexp.timeout = 0 }
       assert_raise(ArgumentError) { Regexp.timeout = -1 }
 
@@ -1985,10 +2212,10 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def test_s_timeout_memory_leak
-    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~"end;"}", "[Bug #20228]", rss: true)
-      Regexp.timeout = 0.001
-      regex = /^(a*)*$/
-      str = "a" * 1000000 + "x"
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", "[Bug #20228]", rss: true, samples: 100..200)
+      Regexp.timeout = 0.000001
+      regex = Regexp.new("^#{"(a*)" * 10_000}x$")
+      str = "a" * 1_000_000 + "x"
 
       code = proc do
         regex =~ str
@@ -1997,7 +2224,7 @@ class TestRegexp < Test::Unit::TestCase
 
       10.times(&code)
     begin;
-      1_000.times(&code)
+      100.times(&code)
     end;
   end
 
@@ -2047,7 +2274,6 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def test_timeout_longer_than_global
-    omit "timeout test is too unstable on s390x" if RUBY_PLATFORM =~ /s390x/
     per_instance_redos_test(0.01, 0.5, 0.5)
   end
 
@@ -2068,13 +2294,14 @@ class TestRegexp < Test::Unit::TestCase
 
       assert_equal(((1<<64)-1) / 1000000000.0, Regexp.new("foo", timeout: 1e300).timeout)
 
+      assert_raise(ArgumentError) { Regexp.new("foo", timeout: Float::NAN) }
       assert_raise(ArgumentError) { Regexp.new("foo", timeout: 0) }
       assert_raise(ArgumentError) { Regexp.new("foo", timeout: -1) }
     end;
   end
 
   def test_timeout_memory_leak
-    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", "[Bug #20650]", timeout: 100, rss: true)
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", "[Bug #20650]", rss: true, samples: 100..200)
       regex = Regexp.new("^#{"(a*)" * 10_000}x$", timeout: 0.000001)
       str = "a" * 1_000_000 + "x"
 
@@ -2085,7 +2312,7 @@ class TestRegexp < Test::Unit::TestCase
 
       10.times(&code)
     begin;
-      1_000.times(&code)
+      100.times(&code)
     end;
   end
 
@@ -2290,5 +2517,29 @@ class TestRegexp < Test::Unit::TestCase
       e_acute_upper = "\u00C9".encode(enc)
       assert_match(/[x#{e_acute_lower}]/i, "CAF#{e_acute_upper}", "should match e acute case insensitive")
     end
+  end
+
+  def test_too_many_range_repeat
+    source = '(?:foobar){0,100}' * 100000
+    assert_raise(RegexpError) { Regexp.new(source) }
+    assert_raise(SyntaxError) { eval("/#{source}/") }
+  end
+
+  def test_too_many_null_check
+    source = '(?:(?:foo)?|(?:bar)?)*' * 100000
+    assert_raise(RegexpError) { Regexp.new(source) }
+    assert_raise(SyntaxError) { eval("/#{source}/") }
+  end
+
+  def test_nested_repeat_expansion_overflow
+    assert_separately([], "#{<<-"begin;"}\n#{<<-'end;'}", timeout: 30)
+    begin;
+      # A nested repeat whose expanded size overflows int must not be
+      # unrolled: the compiler used to hang or emit wrapped jump offsets.
+      ["(?:.{90000,}){90000}", "(?:.{46341,}){46341}"].each do |src|
+        re = Regexp.new(src)
+        assert_nil(re.match("x" * 10), src)
+      end
+    end;
   end
 end
