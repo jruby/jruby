@@ -22,4 +22,8 @@ describe "Symbol#downcase" do
   it "leaves non-alphabetic ASCII characters as they were" do
     "Glark?!?".to_sym.downcase.should == :"glark?!?"
   end
+
+  it "returns the whole result when it is much longer than self" do
+    ("\u0130" * 30).to_sym.downcase.should == ("i\u0307" * 30).to_sym
+  end
 end

@@ -47,7 +47,6 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.CRuby;
@@ -986,23 +985,11 @@ public class RubyKernel {
         final long startTime = System.nanoTime();
         final RubyThread rubyThread = context.getThread();
 
-        boolean interrupted = false;
         try {
-            // Spurious wakeup-loop
-            do {
-                long loopStartTime = System.nanoTime();
-                long milliseconds = TimeUnit.NANOSECONDS.toMillis(nanoseconds);
-                long remainingNanos = nanoseconds - TimeUnit.MILLISECONDS.toNanos(milliseconds);
-
-                if (!rubyThread.sleep(milliseconds, remainingNanos)) break;
-
-                nanoseconds -= (System.nanoTime() - loopStartTime);
-            } while (nanoseconds > 0);
+            rubyThread.sleepUntilWakeup(context, nanoseconds);
         } catch (InterruptedException ie) {
-            // ignore; sleep gets interrupted
-            interrupted = true;
-        } finally {
-            if (interrupted) Thread.currentThread().interrupt();
+            // A Java interrupt ends the sleep. Keep the flag set for the caller.
+            Thread.currentThread().interrupt();
         }
 
         return sleptSeconds(context, startTime);

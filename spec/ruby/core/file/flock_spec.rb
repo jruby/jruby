@@ -37,6 +37,16 @@ describe "File#flock" do
     END_OF_CODE
   end
 
+  it "returns false if trying to non-exclusively lock an exclusively locked file" do
+    @file.flock File::LOCK_EX
+
+    ruby_exe(<<-END_OF_CODE).should == "false"
+      File.open('#{@name}', "r") do |f2|
+        print f2.flock(File::LOCK_SH | File::LOCK_NB).to_s
+      end
+    END_OF_CODE
+  end
+
   it "blocks if trying to lock an exclusively locked file" do
     @file.flock File::LOCK_EX
 

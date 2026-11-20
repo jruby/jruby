@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -298,7 +299,7 @@ public class SizedQueue extends Queue {
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
         // Retries on interrupt like Queue.BLOCKING_TAKE_TASK.
         @Override
-        // MRI: rb_szqueue_push, untimed wait loop
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "untimed wait loop")
         public IRubyObject run(ThreadContext context, IRubyObject value) {
             while (true) {
                 try {
@@ -325,7 +326,7 @@ public class SizedQueue extends Queue {
 
         // Retries on interrupt like Queue.BLOCKING_TAKE_TASK, until the timeout.
         @Override
-        // MRI: rb_szqueue_push, timed wait loop
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "timed wait loop")
         public IRubyObject run(ThreadContext context, IRubyObject value) {
             long start = System.nanoTime();
             while (true) {
