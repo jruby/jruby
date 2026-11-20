@@ -158,6 +158,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject doSend(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
+        RubyString mesg = _mesg.convertToString();
         final SocketAddress sockaddr;
 
         if (_to instanceof Addrinfo) {
@@ -169,7 +170,6 @@ public class RubyBasicSocket extends RubyIO {
             sockaddr = Sockaddr.addressFromSockaddr(context, _to);
         }
 
-        RubyString mesg = _mesg.convertToString();
         ByteList mesgByteList = mesg.getByteList();
         ByteBuffer mesgBytes = ByteBuffer.wrap(mesgByteList.unsafeBytes(), mesgByteList.begin(), mesgByteList.realSize());
 
@@ -184,7 +184,7 @@ public class RubyBasicSocket extends RubyIO {
 
                 return asFixnum(context, written);
             } else {
-                return syswrite(context, _mesg);
+                return syswrite(context, mesg);
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
