@@ -140,7 +140,7 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue << :popped
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in pop")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in pop")
     log.should == [:popped]
   end
 
@@ -161,7 +161,7 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue.pop
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in push")
     log.should == [queue]
     queue.pop.should == :second
   end
@@ -183,7 +183,7 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue.pop
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in push")
     log.should == [queue]
     queue.pop.should == :second
   end
