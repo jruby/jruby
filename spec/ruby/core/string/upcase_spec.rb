@@ -18,6 +18,11 @@ describe "String#upcase" do
       "äöü".upcase.should == "ÄÖÜ"
     end
 
+    it "returns the whole result when it is much longer than self" do
+      ("\u0390" * 30).upcase.should == "\u0399\u0308\u0301" * 30
+      ("a" + "\u0390" * 30).upcase.should == "A" + "\u0399\u0308\u0301" * 30
+    end
+
     it "updates string metadata" do
       upcased = "aßet".upcase
 

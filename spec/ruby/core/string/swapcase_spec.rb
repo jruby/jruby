@@ -19,6 +19,10 @@ describe "String#swapcase" do
       "äÖü".swapcase.should == "ÄöÜ"
     end
 
+    it "returns the whole result when it is much longer than self" do
+      ("\u0390" * 30).swapcase.should == "\u0399\u0308\u0301" * 30
+    end
+
     it "updates string metadata" do
       swapcased = "Aßet".swapcase
 

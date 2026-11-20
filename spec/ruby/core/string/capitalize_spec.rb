@@ -22,6 +22,10 @@ describe "String#capitalize" do
       "ß".capitalize.should == "Ss"
     end
 
+    it "returns the whole result when it is much longer than self" do
+      ("\u0130" * 30).capitalize.should == "\u0130" + "i\u0307" * 29
+    end
+
     it "updates string metadata" do
       capitalized = "ßeT".capitalize
 

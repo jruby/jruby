@@ -18,4 +18,8 @@ describe "Symbol#upcase" do
   it "leaves non-alphabetic ASCII characters as they were" do
     "Glark?!?".to_sym.upcase.should == :"GLARK?!?"
   end
+
+  it "returns the whole result when it is much longer than self" do
+    ("\u0390" * 30).to_sym.upcase.should == ("\u0399\u0308\u0301" * 30).to_sym
+  end
 end
