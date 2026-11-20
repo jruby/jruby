@@ -1722,7 +1722,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup() {
             synchronized (object) {
-                object.notify();
+                // The interrupt belongs to this thread, but notify() may select
+                // another waiter sharing the monitor. Wake all so the target
+                // can poll its pending interrupt after leaving Object.wait.
+                object.notifyAll();
             }
         }
     }
