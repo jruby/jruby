@@ -35,6 +35,16 @@ describe :process_exit, shared: true do
     }
   end
 
+  it "converts an argument that is not an Object with #to_int" do
+    obj = BasicObject.new
+    def obj.to_int
+      5
+    end
+    -> { @object.exit(obj) }.should raise_error(SystemExit) { |e|
+      e.status.should == 5
+    }
+  end
+
   it "converts the passed Float argument to an Integer" do
     { -2.2 => -2, -0.1 => 0, 5.5 => 5, 827.999 => 827 }.each do |value, status|
       -> { @object.exit(value) }.should raise_error(SystemExit) { |e|
@@ -82,6 +92,12 @@ end
 describe :process_exit!, shared: true do
   it "exits with the given status" do
     out = ruby_exe("#{@object}.send(:exit!, 21)", args: '2>&1', exit_status: 21)
+    out.should == ""
+    $?.exitstatus.should == 21
+  end
+
+  it "converts an argument that is not an Object with #to_int" do
+    out = ruby_exe("status = BasicObject.new; def status.to_int; 21; end; #{@object}.send(:exit!, status)", args: '2>&1', exit_status: 21)
     out.should == ""
     $?.exitstatus.should == 21
   end
