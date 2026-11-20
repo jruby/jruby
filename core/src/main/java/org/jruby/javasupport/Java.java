@@ -68,6 +68,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1198,12 +1199,13 @@ public class Java implements Library {
             return this;
         }
 
-        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
+        final ConcreteMethod getConcreteMethod(String name, Signature signature) { return new ConcreteMethod(name, signature); }
 
         final class ConcreteMethod extends org.jruby.internal.runtime.methods.JavaMethod {
 
-            ConcreteMethod(String name) {
+            ConcreteMethod(String name, Signature signature) {
                 super(ProcToInterface.this.implementationClass, Visibility.PUBLIC, name);
+                setSignature(signature);
             }
 
             @Override
