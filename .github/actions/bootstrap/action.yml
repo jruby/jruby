@@ -20,6 +20,9 @@ inputs:
   jruby-flags:
     description: Flags passed to bin/jruby for bundle install
     default: '--dev'
+  offline:
+    description: Build offline when the Maven cache was restored (only for builds the precache jobs warm)
+    default: 'true'
 
 runs:
   using: composite
@@ -29,6 +32,7 @@ runs:
       shell: bash
       run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
     - name: set up java ${{ inputs.java-version }}
+      id: setup-java
       uses: actions/setup-java@v6
       with:
         distribution: ${{ inputs.distribution }}
@@ -44,7 +48,9 @@ runs:
     - name: build
       shell: bash
       # ./mvnw is the POSIX Maven wrapper script, which supports Git Bash (MINGW).
-      run: tool/ci-retry.sh ./mvnw -ntp ${{ inputs.build-args }}
+      env:
+        MAVEN_OFFLINE: ${{ inputs.offline == 'true' && steps.setup-java.outputs.cache-hit == 'true' }}
+      run: tool/ci-maven-build.sh -ntp ${{ inputs.build-args }}
     - name: bundle install
       if: inputs.bundle-install == 'true'
       shell: bash

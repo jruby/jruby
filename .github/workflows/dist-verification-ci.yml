@@ -38,6 +38,7 @@ jobs:
           distribution: 'temurin'
           remove-old-java: false
           build-args: 'clean package -Pall'
+          offline: false # the precache jobs do not warm -Pall
           jruby-flags: ''
           bundle-install: false
       - name: cache release artifacts
@@ -86,6 +87,7 @@ jobs:
           distribution: 'temurin'
           remove-old-java: false
           build-args: 'clean package -Pall'
+          offline: false # the precache jobs do not warm -Pall
           jruby-flags: ''
       - name: set up install4j
         uses: luangong/setup-install4j@v1
