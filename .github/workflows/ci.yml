@@ -32,12 +32,12 @@ jobs:
         if: steps.setup-java.outputs.cache-hit != 'true'
         # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
         # exclude system scope for jars built by JRuby modules and included in dependencies.
-        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
       - name: fetch what the bootstrap build needs
         if: steps.setup-java.outputs.cache-hit != 'true'
         # go-offline misses artifacts that plugins resolve while they run (e.g. the
         # surefire junit4 provider); the bootstrap action builds offline from this cache.
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
 
   maven-precache-macos:
     runs-on: macos-latest
@@ -61,12 +61,12 @@ jobs:
         if: steps.setup-java.outputs.cache-hit != 'true'
         # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
         # exclude system scope for jars built by JRuby modules and included in dependencies.
-        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
       - name: fetch what the bootstrap build needs
         if: steps.setup-java.outputs.cache-hit != 'true'
         # go-offline misses artifacts that plugins resolve while they run (e.g. the
         # surefire junit4 provider); the bootstrap action builds offline from this cache.
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
 
   maven-precache-windows:
     runs-on: windows-latest
@@ -90,12 +90,15 @@ jobs:
         if: steps.setup-java.outputs.cache-hit != 'true'
         # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
         # exclude system scope for jars built by JRuby modules and included in dependencies.
-        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
+        # bash so tool/ci-retry.sh also runs on Windows (Git Bash), as in the bootstrap action.
+        shell: bash
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
       - name: fetch what the bootstrap build needs
         if: steps.setup-java.outputs.cache-hit != 'true'
         # go-offline misses artifacts that plugins resolve while they run (e.g. the
         # surefire junit4 provider); the bootstrap action builds offline from this cache.
-        run: ./mvnw -ntp -Pbootstrap clean package
+        shell: bash
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
 
   rake-test:
     needs: maven-precache-ubuntu
