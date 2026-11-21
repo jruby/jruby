@@ -618,6 +618,74 @@ describe "Module#autoload" do
     ScratchPad.recorded.should == [:raise, :raise]
   end
 
+  describe "after a NameError left the first load unfinished" do
+    before :each do
+      ScratchPad.record(loads: 0, started: Queue.new, go: Queue.new)
+      ModuleSpecs::Autoload.autoload :NameErrorThenRetried, fixture(__FILE__, "autoload_name_error_then_wait.rb")
+      @remove << :NameErrorThenRetried
+
+      -> { ModuleSpecs::Autoload::NameErrorThenRetried }.should.raise(NameError, "first load fails")
+    end
+
+    it "loads the file again in the same thread" do
+      ScratchPad.recorded[:go] << true
+
+      ModuleSpecs::Autoload::NameErrorThenRetried.should.kind_of?(Class)
+      ScratchPad.recorded[:loads].should == 2
+    end
+
+    it "waits for another thread loading the file again" do
+      main = Thread.current
+      retrying = Thread.new { ModuleSpecs::Autoload::NameErrorThenRetried }
+      ScratchPad.recorded[:started].pop
+      releaser = Thread.new do
+        Thread.pass until main.stop?
+        ScratchPad.recorded[:go] << true
+      end
+
+      ModuleSpecs::Autoload::NameErrorThenRetried.should.equal?(retrying.value)
+      releaser.join
+      ScratchPad.recorded[:loads].should == 2
+    end
+  end
+
+  it "raises a ThreadError when another Fiber of the same thread is still loading the file" do
+    ModuleSpecs::Autoload.autoload :FiberYield, fixture(__FILE__, "autoload_fiber_yield.rb")
+    @remove << :FiberYield
+    loader = Fiber.new { ModuleSpecs::Autoload::FiberYield }
+    loader.resume
+
+    -> { ModuleSpecs::Autoload::FiberYield }.should.raise(ThreadError, "deadlock; lock already owned by another fiber belonging to the same thread")
+  ensure
+    loader.resume while loader&.alive?
+  end
+
+  it "blocks through the Fiber scheduler while another Fiber of the same thread is still loading the file" do
+    require_relative '../fiber/fixtures/scheduler'
+    ModuleSpecs::Autoload.autoload :FiberYield, fixture(__FILE__, "autoload_fiber_yield.rb")
+    @remove << :FiberYield
+    Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
+
+    loader = Fiber.schedule { ModuleSpecs::Autoload::FiberYield }
+    result = nil
+    waiter = Fiber.schedule { result = ModuleSpecs::Autoload::FiberYield }
+    event = Fiber.scheduler.events.last
+    event[:event].should == :block
+    event[:fiber].should.equal?(waiter)
+
+    loader.resume
+    event = Fiber.scheduler.events.last
+    event[:event].should == :unblock
+    event[:fiber].should.equal?(loader)
+    event[:args].last.should.equal?(waiter)
+
+    waiter.resume
+    result.should.equal?(ModuleSpecs::Autoload::FiberYield)
+  ensure
+    [loader, waiter].each { |fiber| fiber.resume while fiber&.alive? }
+    Fiber.set_scheduler(nil)
+  end
+
   it "removes the constant from Module#constants if the loaded file does not define it" do
     path = fixture(__FILE__, "autoload_o.rb")
     ScratchPad.record []
