@@ -27,6 +27,24 @@ describe "Struct#[]=" do
     -> { car[Object.new] = true }.should.raise(TypeError)
   end
 
+  ruby_version_is ""..."4.1" do
+    it "raises a RangeError for an Integer index outside the int range" do
+      car = StructClasses::Car.new('Ford', 'Ranger')
+      -> { car[2**40] = true  }.should.raise(RangeError)
+      -> { car[-2**40] = true }.should.raise(RangeError)
+    end
+  end
+
+  ruby_version_is "4.1" do
+    platform_is c_long_size: 64 do
+      it "raises an IndexError for an Integer index outside the int range" do
+        car = StructClasses::Car.new('Ford', 'Ranger')
+        -> { car[2**40] = true  }.should.raise(IndexError, "offset 1099511627776 too large for struct(size:3)")
+        -> { car[-2**40] = true }.should.raise(IndexError, "offset -1099511627776 too small for struct(size:3)")
+      end
+    end
+  end
+
   it "raises a FrozenError on a frozen struct" do
     car = StructClasses::Car.new('Ford', 'Ranger')
     car.freeze
