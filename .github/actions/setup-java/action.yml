@@ -1,0 +1,45 @@
+name: Set up Java
+description: Remove installed default Temurin JDK packages and set up the requested Java version
+
+inputs:
+  java-version:
+    description: Java version to set up
+    required: true
+  distribution:
+    description: Java distribution to set up
+    default: zulu
+  cache:
+    description: Dependency cache for setup-java
+    default: maven
+  remove-old-java:
+    description: Remove listed Temurin JDK packages on Linux before setup
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: remove installed Temurin JDK packages
+      if: runner.os == 'Linux' && inputs.remove-old-java == 'true'
+      shell: bash
+      run: |
+        packages=(temurin-8-jdk temurin-11-jdk temurin-17-jdk)
+        installed=()
+
+        for package in "${packages[@]}"; do
+          status=$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)
+          if [[ $status == 'install ok installed' ]]; then
+            installed+=("$package")
+          fi
+        done
+
+        if [[ -n ${installed[*]} ]]; then
+          sudo apt-get remove -y "${installed[@]}"
+        else
+          echo 'No listed Temurin JDK packages are installed; skipping removal.'
+        fi
+    - name: set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}
+        cache: ${{ inputs.cache }}

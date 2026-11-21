@@ -248,14 +248,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: ./.github/actions/setup-java
         with:
           distribution: 'zulu'
           java-version: '21'
           cache: 'maven'
+          remove-old-java: 'true'
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -268,14 +267,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: ./.github/actions/setup-java
         with:
           distribution: 'zulu'
-          java-version: 21
+          java-version: '21'
           cache: 'maven'
+          remove-old-java: 'true'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
