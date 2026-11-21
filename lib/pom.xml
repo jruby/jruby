@@ -1521,14 +1521,14 @@ DO NOT MODIFY - GENERATED CODE
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
+            <configuration>
+              <useRepositoryLayout>true</useRepositoryLayout>
+              <outputDirectory>ruby/stdlib</outputDirectory>
+              <excludeGroupIds>rubygems</excludeGroupIds>
+              <includeScope>provided</includeScope>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <useRepositoryLayout>true</useRepositoryLayout>
-          <outputDirectory>ruby/stdlib</outputDirectory>
-          <excludeGroupIds>rubygems</excludeGroupIds>
-          <includeScope>provided</includeScope>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>

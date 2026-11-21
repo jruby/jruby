@@ -199,12 +199,13 @@ project 'JRuby Lib Setup' do
   default_gemnames = default_gems.collect(&:first)
   all_gems = default_gems + bundled_gems
 
-  plugin :dependency,
-         useRepositoryLayout: true,
-         outputDirectory: 'ruby/stdlib',
-         excludeGroupIds: 'rubygems',
-         includeScope: :provided do
-    execute_goal 'copy-dependencies', phase: 'generate-resources'
+  plugin :dependency do
+    # configure the execution, not the plugin, so CLI goals like go-offline still see the gems
+    execute_goal 'copy-dependencies', phase: 'generate-resources',
+                 useRepositoryLayout: true,
+                 outputDirectory: 'ruby/stdlib',
+                 excludeGroupIds: 'rubygems',
+                 includeScope: :provided
   end
 
   # force platform to match build JRuby
