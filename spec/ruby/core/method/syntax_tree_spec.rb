@@ -1,4 +1,5 @@
 require_relative '../../spec_helper'
+require_relative '../../fixtures/source_range_helpers'
 require_relative 'shared/syntax_tree'
 
 ruby_version_is "4.1" do

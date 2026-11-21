@@ -660,7 +660,6 @@ public class RipperParserBase {
 
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
@@ -858,14 +857,6 @@ public class RipperParserBase {
         return lexer.getEncoding();
     }
 
-    public ByteList getCurrentArg() {
-        return currentArg;
-    }
-
-    public void setCurrentArg(IRubyObject arg) {
-        this.currentArg = arg != null ? extractByteList(arg) : null;
-    }
-    
     public boolean getYYDebug() {
         return yydebug;
     }
@@ -1060,7 +1051,6 @@ public class RipperParserBase {
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;
-    private ByteList currentArg;
     protected ScopedParserState scopedParserState;
     private Set<ByteList> keyTable;
     private Set<ByteList> variableTable;

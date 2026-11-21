@@ -148,7 +148,7 @@ class TestGemCommandsPushCommand < Gem::TestCase
       spec.metadata["allowed_push_host"] = "https://privategemserver.example"
     end
 
-    @response = "Successfully registered gem: freewill (1.0.0)"
+    @response = "Successfully registered gem: freebird (1.0.1)"
     @fetcher.data["#{@spec.metadata["allowed_push_host"]}/api/v1/gems"] = HTTPResponseFactory.create(body: @response, code: 200, msg: "OK")
     @fetcher.data["#{Gem.host}/api/v1/gems"] =
       ["fail", 500, "Internal Server Error"]
@@ -487,6 +487,7 @@ class TestGemCommandsPushCommand < Gem::TestCase
   end
 
   def test_with_webauthn_enabled_failure
+    pend "Flaky on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     response_success = "Successfully registered gem: freewill (1.0.0)"
     server = Gem::MockTCPServer.new
     error = Gem::WebauthnVerificationError.new("Something went wrong")

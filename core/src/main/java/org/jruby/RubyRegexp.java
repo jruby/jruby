@@ -403,7 +403,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static void encodingMatchError(ThreadContext context, Regex pattern, Encoding strEnc) {
         throw context.runtime.newEncodingCompatibilityError("incompatible encoding regexp match (" +
-                pattern.getEncoding() + " regexp with " + strEnc + " string)");
+                RubyEncoding.inspectName(pattern.getEncoding()) + " regexp with " + RubyEncoding.inspectName(strEnc) + " string)");
     }
 
     private Encoding prepareEncoding(ThreadContext context, RubyString str, boolean warn) {
@@ -1512,7 +1512,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             for (int idx = 0; idx<backrefs.length; idx++) {
                 ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));
             }
-            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP, ASCIIEncoding.INSTANCE);
             hash.fastASet(name.freeze(context), ary);
         }
         return hash;
@@ -1673,25 +1673,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Matcher matcher) {
-        return regsub(context, str, src, pattern, matcher.getRegion(), matcher.getBegin(), matcher.getEnd());
-    }
-
-    @CRuby(value = "rb_reg_regsub", file = "re.c")
-    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
-                             final int begin, final int end) {
-        RubyString val = null;
-        int no = 0, clen[] = {0};
+    /** Offset of the first backslash in str with a character after it, or -1 when str expands to itself. */
+    // Must step through str like regsubAppend's loop.
+    private static int replacementEscape(ThreadContext context, RubyString str) {
         Encoding strEnc = EncodingUtils.encGet(context, str);
-        Encoding srcEnc = EncodingUtils.encGet(context, src);
         boolean acompat = EncodingUtils.encAsciicompat(strEnc);
+        int[] clen = {0};
 
         ByteList bs = str.getByteList();
-        ByteList srcbs = src.getByteList();
         byte[] sBytes = bs.getUnsafeBytes();
-        int s = bs.getBegin();
-        int p = s;
-        int e = p + bs.getRealSize();
+        int begin = bs.getBegin();
+        int s = begin;
+        int e = s + bs.getRealSize();
 
         while (s < e) {
             int c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
@@ -1703,9 +1696,78 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int ss = s;
             s += clen[0];
 
-            if (c != '\\' || s == e) continue;
+            if (c == '\\' && s != e) return ss - begin;
+        }
+        return -1;
+    }
 
-            if (val == null) val = newString(context, new ByteList(ss - p));
+    /** Expands str for one match into a new string, or returns str itself when there is nothing to expand. */
+    @CRuby(value = "rb_reg_regsub", file = "re.c")
+    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
+                             final int begin, final int end) {
+        int firstEscape = replacementEscape(context, str);
+        if (firstEscape == -1) return str;
+
+        return regsubNew(context, str, src, pattern, regs, begin, end, firstEscape);
+    }
+
+    /** {@link #gsubAppend} has not scanned the replacement yet. */
+    static final int ESCAPE_UNKNOWN = -2;
+
+    /**
+     * Appends one gsub match's replacement to dest. Pass ESCAPE_UNKNOWN first and the returned value after, so repl
+     * is scanned once (like MRI's need_backref_str). Kept out of gsub's loops: extra code there slowed small gsubs.
+     */
+    static int gsubAppend(ThreadContext context, RubyString dest, Encoding destEnc, RubyString repl, RubyString src,
+                          Regex pattern, Region regs, final int begin, final int end, int replEscape) {
+        if (replEscape == ESCAPE_UNKNOWN) replEscape = replacementEscape(context, repl);
+
+        if (replEscape == -1) {
+            dest.catWithCodeRange(repl);
+        } else if (repl.getEncoding() == destEnc) {
+            regsubAppend(context, dest, repl, src, pattern, regs, begin, end, replEscape);
+        } else {
+            dest.catWithCodeRange(regsubNew(context, repl, src, pattern, regs, begin, end, replEscape));
+        }
+        return replEscape;
+    }
+
+    private static RubyString regsubNew(ThreadContext context, RubyString str, RubyString src, Regex pattern,
+                                        Region regs, final int begin, final int end, final int firstEscape) {
+        RubyString val = newString(context, new ByteList(str.getByteList().getRealSize()));
+        regsubAppend(context, val, str, src, pattern, regs, begin, end, firstEscape);
+        return val;
+    }
+
+    /** Appends the expansion of str for one match to val, starting at firstEscape (never -1). */
+    // MRI: do_regsub, after its scan has reached the first escape
+    private static void regsubAppend(ThreadContext context, RubyString val, RubyString str, RubyString src,
+                                     Regex pattern, Region regs, final int begin, final int end, final int firstEscape) {
+        assert firstEscape >= 0 : "no escape in replacement; append it as is";
+        int no = 0, clen[] = {0};
+        Encoding strEnc = EncodingUtils.encGet(context, str);
+        Encoding srcEnc = EncodingUtils.encGet(context, src);
+        boolean acompat = EncodingUtils.encAsciicompat(strEnc);
+
+        ByteList bs = str.getByteList();
+        ByteList srcbs = src.getByteList();
+        byte[] sBytes = bs.getUnsafeBytes();
+        int p = bs.getBegin();
+        int s = p + firstEscape;
+        int e = p + bs.getRealSize();
+
+        // Must step through str like replacementEscape.
+        while (s < e) {
+            int c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
+
+            if (c == -1) {
+                s += StringSupport.length(strEnc, sBytes, s, e);
+                continue;
+            }
+            int ss = s;
+            s += clen[0];
+
+            if (c != '\\' || s == e) continue;
             EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, ss - p, strEnc);
 
             c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
@@ -1788,9 +1850,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
         }
 
-        if (val == null) return str;
         if (p < e) EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, e - p, strEnc);
-        return val;
     }
 
     final int adjustStartPos(ThreadContext context, RubyString str, int pos, boolean reverse) {

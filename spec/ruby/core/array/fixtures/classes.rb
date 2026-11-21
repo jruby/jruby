@@ -40,6 +40,21 @@ module ArraySpecs
     a
   end
 
+  # Redefines Integer#== so that 2 == 42 while the block runs and returns
+  # the block's result after restoring the original method.
+  def self.with_redefined_integer_equality
+    Integer.alias_method :array_specs_original_equal, :==
+    begin
+      Integer.define_method(:==) do |other|
+        (equal?(2) && other.equal?(42)) || array_specs_original_equal(other)
+      end
+      yield
+    ensure
+      Integer.alias_method :==, :array_specs_original_equal
+      Integer.remove_method :array_specs_original_equal
+    end
+  end
+
   # Chi squared critical values for tests with n degrees of freedom at 99% confidence.
   # Values obtained from NIST Engineering Statistic Handbook at
   # https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm

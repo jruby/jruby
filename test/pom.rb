@@ -34,21 +34,6 @@ project 'JRuby Integration Tests' do
       scope: 'system',
       systemPath: '${project.basedir}/jruby/requireTest-1.0.jar')
 
-  overrides do
-    plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
-           lifecycleMappingMetadata: {
-             pluginExecutions: [{ pluginExecutionFilter: {
-                                    groupId: 'org.jruby.maven',
-                                    artifactId: 'gem-maven-plugin',
-                                    versionRange: '[1.0.0-rc3,)',
-                                    goals: ['initialize']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } }]
-           })
-  end
-
   jruby_plugin :gem, '${jruby.plugins.version}' do
     options = { phase: 'initialize',
                 gemPath: '${gem.home}',

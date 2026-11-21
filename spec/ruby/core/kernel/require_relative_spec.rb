@@ -84,6 +84,51 @@ describe "Kernel#require_relative with a relative path" do
 
   end
 
+  describe "in an #eval with a binding and a" do
+    it "synthetic file base name loads a file base name relative to the working directory" do
+      Dir.chdir @abs_dir do
+        eval("require_relative(#{File.basename(@path).inspect})", TOPLEVEL_BINDING, "foo.rb").should == true
+      end
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "synthetic file path loads a relative path relative to the working directory plus the directory of the synthetic path" do
+      Dir.chdir @abs_dir do
+        eval("require_relative(File.join('..', #{File.basename(@path).inspect}))", binding, "bar/foo.rb").should == true
+      end
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "synthetic file path loads a path relative to it from a method defined in the eval" do
+      obj = eval(<<~RUBY, binding, "bar/foo.rb")
+        obj = Object.new
+        def obj.load_fixture = require_relative(File.join('..', #{File.basename(@path).inspect}))
+        obj
+      RUBY
+      Dir.chdir @abs_dir do
+        obj.load_fixture.should == true
+      end
+      ScratchPad.recorded.should == [:loaded]
+    end
+  end
+
+  it "raises a LoadError if eval is not given a file name" do
+    -> { eval("require_relative(#{@path.inspect})", binding) }.should.raise(LoadError, "cannot infer basepath")
+    ScratchPad.recorded.should == []
+  end
+
+  it "raises a LoadError if eval is given a file name like the one it makes up" do
+    -> { eval("require_relative(#{@path.inspect})", binding, "(eval at foo.rb:1)") }.should.raise(LoadError, "cannot infer basepath")
+    ScratchPad.recorded.should == []
+  end
+
+  it "loads a file base name relative to the working directory if eval is given \"(eval)\" as the file name" do
+    Dir.chdir @abs_dir do
+      eval("require_relative(#{File.basename(@path).inspect})", TOPLEVEL_BINDING, "(eval)").should == true
+    end
+    ScratchPad.recorded.should == [:loaded]
+  end
+
   it "loads a file defining many methods" do
     require_relative("#{@dir}/methods_fixture.rb").should == true
     ScratchPad.recorded.should == [:loaded]

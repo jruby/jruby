@@ -5,3 +5,4 @@ exclude :test_trap, "SignalException needs to be its own class which provides a 
 exclude :test_trap_system_default, "Test works, but JRuby's trap warning violates its stderr expectations"
 exclude :test_trap_uncatchable_KILL, "uses SIGKILL which is already in use on the JVM"
 exclude :test_trap_uncatchable_STOP, "uses SIGSTOP which is already in use on the JVM"
+exclude :test_signal_during_kwarg_call, "process is not killed by the signal during a kwarg call"

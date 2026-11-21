@@ -52,3 +52,9 @@ describe "Modifying a frozen object" do
     end
   end
 end
+
+describe "FrozenError#dup" do
+  it "copies the receiver" do
+    FrozenError.new("frozen", receiver: :receiver).dup.receiver.should == :receiver
+  end
+end

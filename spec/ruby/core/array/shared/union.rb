@@ -91,6 +91,6 @@ describe :array_binary_union, shared: true do
     array = Array.new(15) { Object.new }
 
     array.send(@method, [poison]).should == array + [poison]
-    -> { Array.new(16) { Object.new }.send(@method, [poison]) }.should raise_error(RuntimeError, "#hash called")
+    -> { Array.new(16) { Object.new }.send(@method, [poison]) }.should.raise(RuntimeError, "#hash called")
   end
 end

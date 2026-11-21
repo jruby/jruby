@@ -106,7 +106,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         boolean success = false;
 
         try {
-            InetAddress addr = InetAddress.getByName(host);
+            InetAddress addr = SocketUtils.getRubyInetAddress(context, host);
 
             ssc = ServerSocketChannel.open();
             ssc.socket().setReuseAddress(true);
@@ -119,7 +119,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
             success = true;
         } catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         } catch (BindException e) {
             throw runtime.newErrnoFromBindException(e, bindContextMessage(context, _host, port));
         } catch (SocketException e) {

@@ -84,7 +84,7 @@ describe :array_binary_difference, shared: true do
     array = Array.new(17) { Object.new }
 
     array.send(@method, Array.new(16, poison)).should == array
-    -> { array.send(@method, Array.new(17, poison)) }.should raise_error(RuntimeError, "#hash called")
+    -> { array.send(@method, Array.new(17, poison)) }.should.raise(RuntimeError, "#hash called")
   end
 
   it "is not destructive" do

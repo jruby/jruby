@@ -203,3 +203,6 @@ build.eclipse
 .vagrant
 
 .tool-versions
+
+# Never ignore ruby/spec files, only spec/ruby/.gitignore applies there
+!spec/ruby/**

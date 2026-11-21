@@ -29,6 +29,12 @@ describe "IO#syswrite on a file" do
     end
   end
 
+  it "writes all of a large string's bytes" do
+    data = "x" * (10 * 1024 * 1024)
+    @file.syswrite(data).should == data.bytesize
+    File.size(@filename).should == data.bytesize
+  end
+
   it "does not modify the passed argument" do
     File.open(@filename, "w") do |f|
       f.set_encoding(Encoding::IBM437)

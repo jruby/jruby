@@ -291,6 +291,23 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(runtime, object, method, methodArgs, null, null, false);
     }
 
+    /**
+     * The args as kept for the Ruby side of Enumerator, which calls the method with them splatted
+     * in #next and #peek. Keywords are passed as a copy flagged as a ruby2_keywords hash, so the
+     * splat passes them on as keywords instead of as a positional Hash.
+     */
+    private static RubyArray argsForSplat(Ruby runtime, IRubyObject[] methodArgs, boolean keywords) {
+        int last = methodArgs.length - 1;
+        if (keywords && last >= 0 && methodArgs[last] instanceof RubyHash hash) {
+            IRubyObject[] args = methodArgs.clone();
+            RubyHash flagged = (RubyHash) hash.dup();
+            flagged.setRuby2KeywordHash(true);
+            args[last] = flagged;
+            return RubyArray.newArrayNoCopy(runtime, args);
+        }
+        return RubyArray.newArrayMayCopy(runtime, methodArgs);
+    }
+
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs,
                                    IRubyObject size, SizeFn sizeFn, boolean keywords) {
         this.object = object;
@@ -302,7 +319,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         setInstanceVariable(OBJECT, object);
         setInstanceVariable(METHOD, method);
-        setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
+        setInstanceVariable(ARGS, argsForSplat(runtime, methodArgs, keywords));
         setInstanceVariable(GENERATOR, runtime.getNil());
         setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime, 4));
         setInstanceVariable(FEEDVALUE, this.feedValue = new FeedValue(runtime));

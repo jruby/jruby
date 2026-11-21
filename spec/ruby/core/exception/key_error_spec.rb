@@ -17,3 +17,11 @@ describe "KeyError" do
     error.key.should == key
   end
 end
+
+describe "KeyError#dup" do
+  it "copies the receiver and key" do
+    error = KeyError.new("key", receiver: :receiver, key: :key).dup
+    error.receiver.should == :receiver
+    error.key.should == :key
+  end
+end

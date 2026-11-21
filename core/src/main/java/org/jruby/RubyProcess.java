@@ -63,6 +63,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.MonotonicClock;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
@@ -78,6 +79,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.ToIntFunction;
 
 import static org.jruby.api.Convert.asBoolean;
@@ -402,8 +405,17 @@ public class RubyProcess {
 
         @CRuby(value = "pst_message", file = "process.c")
         public static String pst_message(String prefix, long pid, long status) {
+            return pst_message_status(prefix + "pid " + pid, status);
+        }
+
+        /**
+         * @param prefix the text to put before the description
+         * @param status the wait status of a process
+         * @return the prefix, then how the process ended, such as " exit 1"
+         */
+        @CRuby(value = "pst_message_status", file = "process.c")
+        public static String pst_message_status(String prefix, long status) {
             StringBuilder sb = new StringBuilder(prefix);
-            sb.append("pid ").append(pid);
             if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 long stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
                 String signame = RubySignal.signo2signm(stopsig);
@@ -1095,7 +1107,93 @@ public class RubyProcess {
 
     }
 
+    private record NativeWaitResult(int result, int errno) {}
+
+    // Native waits pin virtual-thread carriers. Run just the syscall on a platform
+    // worker, keeping Ruby state and interrupt handling on the calling Ruby thread.
+    private static final class NativeWait {
+        private final ThreadContext context;
+        private final ToIntFunction<ThreadContext> blockingCall;
+        private final boolean signalable = !Platform.IS_WINDOWS && Options.NATIVE_PTHREAD_KILL.load()
+                && NATIVE_THREAD_SIGNAL != null && NATIVE_THREAD_CURRENT != null;
+        private long threadID;
+        private boolean interrupted;
+
+        private NativeWait(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+            this.context = context;
+            this.blockingCall = blockingCall;
+        }
+
+        private NativeWaitResult call() {
+            POSIX posix = context.runtime.getPosix();
+            try {
+                synchronized (this) {
+                    if (signalable) {
+                        if (interrupted) return new NativeWaitResult(-1, jnr.constants.platform.Errno.EINTR.intValue());
+                        threadID = (long) NATIVE_THREAD_CURRENT.invokeExact();
+                    }
+                }
+                try {
+                    posix.errno(0);
+                    int result = blockingCall.applyAsInt(context);
+                    // errno belongs to the native worker, not the virtual caller.
+                    return new NativeWaitResult(result, posix.errno());
+                } finally {
+                    synchronized (this) {
+                        threadID = 0;
+                    }
+                }
+            } catch (Throwable t) {
+                throwException(t);
+                return null; // unreachable
+            }
+        }
+
+        private int await() {
+            NativeWaitResult result;
+            try {
+                result = CompletableFuture.supplyAsync(this::call, context.runtime.getExecutor()).join();
+            } catch (CompletionException e) {
+                throwException(e.getCause());
+                return 0; // unreachable
+            }
+            context.runtime.getPosix().errno(result.errno());
+            return result.result();
+        }
+
+        private synchronized void wakeup() {
+            if (!signalable) return; // Match the existing uninterruptible fallback.
+            interrupted = true;
+            if (threadID == 0) return;
+            try {
+                NATIVE_THREAD_SIGNAL.invokeExact(threadID);
+            } catch (Throwable t) {
+                throwException(t);
+            }
+        }
+    }
+
+    private static final RubyThread.Task<NativeWait, Integer> NATIVE_WAIT_TASK = new RubyThread.Task<>() {
+        @Override
+        public Integer run(ThreadContext context, NativeWait wait) {
+            return wait.await();
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, NativeWait wait) {
+            wait.wakeup();
+        }
+    };
+
     private static int pthreadKillable(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+        if (Thread.currentThread().isVirtual()) {
+            try {
+                return context.getThread().executeTaskBlocking(context, new NativeWait(context, blockingCall), NATIVE_WAIT_TASK);
+            } catch (InterruptedException e) {
+                throwException(e);
+                return 0; // unreachable: NativeWait joins its future without Java interruption.
+            }
+        }
         if (Platform.IS_WINDOWS
                 || !Options.NATIVE_PTHREAD_KILL.load()
                 || NATIVE_THREAD_SIGNAL == null
@@ -1670,7 +1768,7 @@ public class RubyProcess {
     private static long getTimeForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
         if (_clock_id instanceof RubySymbol clock_id) {
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                return System.nanoTime();
+                return MonotonicClock.nanoTime(context.runtime);
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 POSIX posix = context.runtime.getPosix();
                 long nanos;
@@ -1695,7 +1793,7 @@ public class RubyProcess {
         if (_clock_id instanceof RubySymbol) {
             RubySymbol clock_id = (RubySymbol) _clock_id;
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                return 1;
+                return MonotonicClock.resolutionNanos(context.runtime);
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 return 1000000;
             }

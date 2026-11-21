@@ -954,6 +954,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return manager.getNil();
     }
 
+    /**
+     * The value to report for a :return/:b_return trace event. A missing or unexecutable value means control never
+     * reaches the trace instruction with a result, so report nil.
+     */
+    private Operand traceValue(Operand value) {
+        return value == null || value == U_NIL ? nil() : value;
+    }
+
     protected RubySymbol symbol(String id) {
         return manager.runtime.newSymbol(id);
     }
@@ -1136,7 +1144,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 IRScope returnScope = scope.getLexicalParent();
                 if (scope instanceof IREvalScript || returnScope == null) {
                     // We are not in a closure or a loop => bad break instr!
-                    throwSyntaxError(line, "Can't escape from eval with redo");
+                    throwSyntaxError(line, "Invalid break");
                 } else {
                     addInstr(new BreakInstr(value.run(), returnScope.getId()));
                 }
@@ -1371,7 +1379,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected Operand buildDRegex(Variable result, U[] children, RegexpOptions options) {
         Operand[] pieces = new Operand[children.length];
-        Encoding encoding = options.getKCode().getEncoding();
+        // Without an encoding flag, string pieces keep their own encoding,
+        // as in parse_regexp_string_part in CRuby's prism_compile.c.
+        Encoding encoding = options.isKcodeDefault() ? null : options.getKCode().getEncoding();
 
         for (int i = 0; i < children.length; i++) {
             dynamicPiece(pieces, i, children[i], encoding); // dregexp does not use estimated size
@@ -1704,7 +1714,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand closureRetVal = body == null ? nil() : build(body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1));
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(closureRetVal)));
         }
 
         // can be U_NIL if the node is an if node with returns in both branches.
@@ -1720,10 +1730,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-    }
-
-    public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        return buildLambda(args, body, staticScope, signature, line, -1, -1, -1);
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
@@ -1747,11 +1753,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         Variable methodCoverage = receiveMethodCoverage();
 
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
         receiveBlockArgs(blockArgs);
 
         coverMethod(methodCoverage);
 
         Operand closureRetVal = build(body);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), scope.getEndLine() + 1, traceValue(closureRetVal)));
+        }
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
@@ -1927,7 +1941,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // If a closure, the next is simply a return from the closure!
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(line, "Can't escape from eval with next");
+                    throwSyntaxError(line, "Invalid next");
                 } else {
                     addInstr(new ReturnInstr(rv));
                 }
@@ -2646,7 +2660,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(line, "Can't escape from eval with redo");
+                    throwSyntaxError(line, "Invalid redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
                     Label startLabel = new Label(scope.getId() + "_START", 0);
@@ -2913,7 +2927,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), line + 1));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), line + 1, traceValue(retVal)));
             }
             addInstr(new ReturnInstr(retVal));
         }
@@ -3185,7 +3199,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine, traceValue(rv)));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -3362,10 +3376,31 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
     }
 
+    /**
+     * Whether a single **hash in the call arguments being built must be copied, because the block argument is
+     * evaluated after it and may modify it.
+     */
+    protected boolean dupSingleKeywordSplat;
+
+    /**
+     * Whether the block argument of a call, which is evaluated after the other arguments, may modify one of them,
+     * as with <code>t(**h, &amp;h.delete(:a))</code>.
+     */
+    protected boolean blockArgMayModifyArgs(U iter) {
+        return false;
+    }
+
     protected Variable createCall(Variable result, Operand receiver, CallType callType, RubySymbol name, U argsNode,
                                 U iter, int line, boolean isNewline) {
         int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(argsNode, flags);
+        boolean savedDupSingleKeywordSplat = dupSingleKeywordSplat;
+        dupSingleKeywordSplat = blockArgMayModifyArgs(iter);
+        Operand[] args;
+        try {
+            args = setupCallArgs(argsNode, flags);
+        } finally {
+            dupSingleKeywordSplat = savedDupSingleKeywordSplat;
+        }
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);

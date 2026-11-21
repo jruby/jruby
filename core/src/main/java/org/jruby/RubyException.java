@@ -519,6 +519,7 @@ public class RubyException extends RubyObject {
             return;
         }
 
+        if (cause != null && !cause.isNil()) checkCauseType(context, cause);
         checkCircularCause(context, this, cause);
 
         this.cause = cause;
@@ -529,17 +530,17 @@ public class RubyException extends RubyObject {
         if (cause == null || cause.isNil()) return;
 
         Throwable t = toThrowable();
-        Object javaCause;
 
         if (t.getCause() == null) {
-            if (cause instanceof RubyException) {
-                t.initCause(((RubyException) cause).toThrowable());
-            } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
-                t.initCause((Throwable) javaCause);
-            } else {
-                Ruby runtime = getRuntime();
-                throw typeError(runtime.getCurrentContext(), "exception object expected");
-            }
+            t.initCause(cause instanceof RubyException causeException ?
+                    causeException.toThrowable() : (Throwable) ((ConcreteJavaProxy) cause).getObject());
+        }
+    }
+
+    static void checkCauseType(ThreadContext context, IRubyObject cause) {
+        if (!(cause instanceof RubyException) &&
+                !(cause instanceof ConcreteJavaProxy proxy && proxy.getObject() instanceof Throwable)) {
+            throw typeError(context, "exception object expected");
         }
     }
 

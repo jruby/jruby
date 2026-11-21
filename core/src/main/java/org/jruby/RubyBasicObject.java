@@ -1209,13 +1209,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (ivars == null || ivars.isNil()) {
-            // no ivars specified, do all of them
-            boolean first = true;
-            for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
-                VariableAccessor accessor = entry.getValue();
-                String name = entry.getKey();
+            // no ivars specified, do all of them. With more than one ivar, the
+            // values are read up front so an inspect that removes ivars does not
+            // affect the result. The accessor map is copy-on-write, so iterating
+            // it twice sees the same entries in the same order.
+            var accessors = metaClass.getVariableTableManager().getVariableAccessorsForRead();
+            Object[] values = null;
+            if (accessors.size() > 1) {
+                values = new Object[accessors.size()];
+                int i = 0;
+                for (VariableAccessor accessor : accessors.values()) values[i++] = accessor.get(this);
+            }
 
-                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
+            boolean first = true;
+            int i = 0;
+            for (Map.Entry<String, VariableAccessor> entry : accessors.entrySet()) {
+                Object value = values == null ? entry.getValue().get(this) : values[i++];
+                if (appendInstanceVariable(context, part, value, entry.getKey(), first, runtime)) continue;
 
                 first = false;
             }
@@ -1230,7 +1240,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 VariableAccessor accessor = accessors.get(name);
                 if (accessor == null) continue;
 
-                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
+                if (appendInstanceVariable(context, part, accessor.get(this), name, first, runtime)) continue;
 
                 first = false;
             }
@@ -1240,8 +1250,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return part;
     }
 
-    private boolean appendInstanceVariable(ThreadContext context, RubyString part, VariableAccessor accessor, String name, boolean first, Ruby runtime) {
-        Object value = accessor.get(this);
+    private boolean appendInstanceVariable(ThreadContext context, RubyString part, Object value, String name, boolean first, Ruby runtime) {
         if (!(value instanceof IRubyObject)) return true;
         RubySymbol symbol = asSymbol(context, name);
         if (!symbol.validInstanceVariableName()) return true;
@@ -1979,7 +1988,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = "(eval at " + singleBacktrace.getFileName() + ":" +  + singleBacktrace.getLineNumber() + ")";
         int line = 0;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, true);
     }
 
     /**
@@ -2007,7 +2016,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = arg1.convertToString().asJavaString();
         int line = 0;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, false);
     }
 
     /**
@@ -2036,7 +2045,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = arg1.convertToString().asJavaString();
         int line = toInt(context, arg2) - 1;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, false);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -2055,7 +2064,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * using the module under as the context.
      */
     public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line, EvalType evalType) {
-        return Interpreter.evalSimple(context, under, this, src, file, line, evalType);
+        return evalUnder(context, under, src, file, line, evalType, false);
+    }
+
+    public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line, EvalType evalType, boolean syntheticFile) {
+        return Interpreter.evalSimple(context, under, this, src, file, line, evalType, syntheticFile);
     }
 
     /**

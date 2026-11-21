@@ -27,6 +27,39 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  def assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    # Force pending input without depending on packet arrival or read-ahead timing.
+    socket.ungetbyte('body')
+    assert_equal 5, socket.public_send(write_method, 'reply')
+    assert_equal 'body', socket.read_nonblock(4, exception: false)
+    assert_equal 'reply', peer.read(5)
+  end
+
+  def test_tcp_socket_write_preserves_buffered_input
+    [:write, :write_nonblock].each do |write_method|
+      listener = TCPServer.new('127.0.0.1', 0)
+      peer = TCPSocket.new('127.0.0.1', listener.addr[1])
+      socket = listener.accept
+      assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    ensure
+      socket&.close
+      peer&.close
+      listener&.close
+    end
+  end
+
+  if !WINDOWS
+    def test_unix_socket_write_preserves_buffered_input
+      [:write, :write_nonblock].each do |write_method|
+        socket, peer = UNIXSocket.pair
+        assert_buffered_input_survives_socket_write(socket, peer, write_method)
+      ensure
+        socket&.close
+        peer&.close
+      end
+    end
+  end
+
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)
@@ -655,6 +688,53 @@ class UNIXSocketTests < Test::Unit::TestCase
         end
       end
 
+      # nio4r registers the channel with a default java.nio Selector (socketry/nio4r#67)
+      def test_socketpair_registers_with_java_selector
+        [Socket.pair(:UNIX, :STREAM), UNIXSocket.pair].each do |sock1, sock2|
+          selector = java.nio.channels.Selector.open
+          channel = sock2.to_channel
+          channel.configureBlocking(false)
+          channel.register(selector, java.nio.channels.SelectionKey::OP_READ)
+
+          sock1.write("hello")
+          assert_equal 1, selector.select(1000)
+        ensure
+          selector&.close
+          sock1&.close
+          sock2&.close
+        end
+      end
+
+      def test_socketpair_linger
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_equal [false, 0], sock1.getsockopt(:SOCKET, :LINGER).linger
+
+        sock1.setsockopt(Socket::Option.linger(true, 5))
+        assert_equal [true, 5], sock1.getsockopt(:SOCKET, :LINGER).linger
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      # pair ends are JDK channels, which have no java.net.Socket behind them
+      def test_socketpair_close_read_via_plain_io
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        io = IO.for_fd(sock1.fileno, autoclose: false)
+        assert_nil io.close_read
+        assert_raise(IOError) { io.read(1) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      def test_socketpair_bind_raises_einval
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_raise(Errno::EINVAL) { sock1.bind(Addrinfo.unix("/tmp/jruby-pair-bind-#{$$}.sock")) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
       def test_recv_nonblock
         pending_hangs_on_macos_aarch64
         s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
@@ -844,5 +924,46 @@ class AcceptFiberSchedulerTest < Test::Unit::TestCase
     socket&.close
     client&.close
     server&.close
+  end
+end
+
+# Selectors are pooled, and killing a thread wakes its selector. A wakeup that lands after the selector has gone
+# back to the pool must not cut short the next thread's wait: https://github.com/jruby/jruby/issues/9981
+class StaleSelectorWakeupTest < Test::Unit::TestCase
+  ATTEMPTS = 100
+
+  def setup
+    require 'jruby'
+    server = TCPServer.new("127.0.0.1", 0)
+    @socket = TCPSocket.new("127.0.0.1", server.addr[1])
+    @peer = server.accept
+    server.close
+  end
+
+  def teardown
+    [@socket, @peer].each { |io| io&.close }
+  end
+
+  # Kills a thread that keeps taking a selector from the pool and handing it back, so the kill's wakeup sometimes
+  # lands just as the selector goes back. The pool starts empty, so the wait that follows gets that same selector.
+  def test_killing_a_waiting_thread_does_not_wake_the_next_waiter
+    pool = JRuby.runtime.selector_pool
+    early = ATTEMPTS.times.count do
+      pool.cleanup
+      spinner = Thread.new { loop { @socket.wait_readable(0) } }
+      sleep Random.rand(0.002)
+      spinner.kill
+      spinner.join
+      elapsed { @socket.wait_readable(0.02) } < 0.015
+    end
+    assert_equal 0, early, "#{early} of #{ATTEMPTS} waits returned early"
+  end
+
+  private
+
+  def elapsed
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   end
 end

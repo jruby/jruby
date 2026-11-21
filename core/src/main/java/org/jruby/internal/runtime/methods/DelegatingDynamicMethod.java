@@ -168,6 +168,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
+    public Signature getAritySignature() {
+        return delegate.getAritySignature();
+    }
+
+    @Override
     public String getName() {
         return delegate.getName();    //To change body of overridden methods use File | Settings | File Templates.
     }

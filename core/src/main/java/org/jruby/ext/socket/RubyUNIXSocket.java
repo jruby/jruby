@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channel;
+import java.nio.channels.SocketChannel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Access.fixnumClass;
@@ -247,13 +248,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         // TODO: type and protocol
 
-        UnixSocketChannel[] sp;
+        SocketChannel[] sp;
         final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
         RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
         RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
 
         try {
-            sp = UnixSocketChannel.pair();
+            sp = UnixDomain.pair();
 
             sock.init_sock(runtime, sp[0], "");
             sock2.init_sock(runtime, sp[1], "");
@@ -269,22 +270,16 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         SocketLevel level = SocketUtils.levelFromArg(context, _level);
         SocketOption opt = SocketUtils.optionFromArg(context, _opt);
 
-        switch(level) {
-            case SOL_SOCKET:
-                switch(opt) {
-                    case SO_KEEPALIVE: {
-                        // TODO: socket options
-                    }
-                    break;
-                    default:
-                        throw context.runtime.newErrnoENOPROTOOPTError();
-                }
-                break;
-            default:
-                throw context.runtime.newErrnoENOPROTOOPTError();
+        if (level == SocketLevel.SOL_SOCKET) {
+            switch (opt) {
+                case SO_SNDBUF:
+                case SO_RCVBUF:
+                case SO_KEEPALIVE:
+                    return super.setsockopt(context, _level, _opt, val);
+            }
         }
 
-        return asFixnum(context, 0);
+        throw context.runtime.newErrnoENOPROTOOPTError();
     }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
@@ -351,9 +346,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @CRuby(value = "unixsock_path_value", file = "ext/socket/unixsocket.c")
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
-        return checkEmbeddedNulls(context, RubyFile.get_path(context, path));
+        return RubyFile.get_path(context, path);
     }
-
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();
@@ -361,7 +355,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
 
         openFile.setFD(newChannelFD(runtime, channel));
-        openFile.setMode(modes.getOpenFileFlags());
+        openFile.setMode(modes.getOpenFileFlags() | OpenFile.DUPLEX);
         openFile.setSync(true);
         openFile.setPath(path);
     }

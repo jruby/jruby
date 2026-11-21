@@ -113,6 +113,7 @@ public class RubySignal {
         // We always define KILL as 9 on Windows
         if (Platform.IS_WINDOWS) {
             signals.put("KILL", 9);
+            signums.put(9, "KILL");
         }
 
         // map SIGCLD and SIGCHLD like Ruby

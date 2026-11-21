@@ -10,6 +10,12 @@ describe "Dir.glob" do
   it_behaves_like :dir_glob_recursive, :glob
 end
 
+ruby_version_is "4.1" do
+  describe "Dir.glob" do
+    it_behaves_like :dir_glob_recursive_symlinks, :glob
+  end
+end
+
 describe "Dir.glob" do
   before :each do
     DirSpecs.create_mock_dirs
@@ -312,6 +318,18 @@ describe "Dir.glob" do
   end
 
   platform_is_not(:windows) do
+    it "keeps a '\\' before a brace with option File::FNM_NOESCAPE" do
+      Dir.mkdir 'foo\}bar'
+      Dir.mkdir 'foo}bar'
+
+      begin
+        Dir.glob('foo\}bar', File::FNM_NOESCAPE).should == %w|foo\\}bar|
+      ensure
+        Dir.rmdir 'foo\}bar'
+        Dir.rmdir 'foo}bar'
+      end
+    end
+
     it "matches the literal character '\\' with option File::FNM_NOESCAPE" do
       Dir.mkdir 'foo?bar'
 
@@ -371,5 +389,19 @@ describe "Dir.glob" do
   it "preserves the encoding of the path" do
     pattern = "file_one.ext".encode(Encoding::EUC_JP)
     Dir.glob(pattern).first.encoding.should == Encoding::EUC_JP
+  end
+
+  platform_is_not :windows do
+    it "matches below a directory given as a binary path containing non-ASCII bytes" do
+      dir = tmp("dir_glob_binary_\u{3042}")
+      Dir.mkdir(dir)
+      touch("#{dir}/file.txt")
+
+      begin
+        Dir.glob("#{dir}/*".b).should == ["#{dir}/file.txt".b]
+      ensure
+        rm_r dir
+      end
+    end
   end
 end

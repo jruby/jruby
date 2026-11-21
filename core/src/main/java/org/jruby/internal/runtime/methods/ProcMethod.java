@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -94,6 +95,12 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     @Override
     public Signature getSignature() {
         return proc.getBlock().getBody().getSignature();
+    }
+
+    @Override
+    @CRuby(value = "method_def_min_max_arity", file = "proc.c", note = "VM_METHOD_TYPE_BMETHOD case")
+    public Signature getAritySignature() {
+        return proc.getBlock().getBody().getAritySignature();
     }
 
     @Override

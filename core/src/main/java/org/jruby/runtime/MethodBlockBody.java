@@ -74,6 +74,11 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
+    public Signature getAritySignature() {
+        return entry.method.getAritySignature();
+    }
+
+    @Override
     public String getFile() {
         return file;
     }

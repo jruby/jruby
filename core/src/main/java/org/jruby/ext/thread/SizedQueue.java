@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -95,7 +96,7 @@ public class SizedQueue extends Queue {
             fullyUnlock();
         }
 
-        unblockAllSchedulerPutters();
+        unblockAllSchedulerWaiters(schedulerPutters);
 
         return arg;
     }
@@ -118,7 +119,7 @@ public class SizedQueue extends Queue {
                 putLock.lockInterruptibly();
                 try {
                     return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull)
-                            + schedulerTakersWaiting() + schedulerPuttersWaiting());
+                            + schedulerWaiting(schedulerTakers) + schedulerWaiting(schedulerPutters));
                 } finally {
                     putLock.unlock();
                 }
@@ -219,7 +220,7 @@ public class SizedQueue extends Queue {
             // A closed queue never makes room for us, so raise here instead of looping forever.
             if (closed) raiseClosedError(context);
 
-            if (!schedulerBlock(context, scheduler, schedulerPutters(), () -> count.get() < capacity || closed, deadline)) {
+            if (!schedulerBlock(context, scheduler, true, deadline)) {
                 return context.nil;
             }
         }
@@ -246,7 +247,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
-        unblockSchedulerTaker();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 
@@ -291,15 +292,23 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
-        unblockSchedulerTaker();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            putInternal(context, value);
-            return SizedQueue.this;
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "untimed wait loop")
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            while (true) {
+                try {
+                    putInternal(context, value);
+                    return SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override
@@ -315,10 +324,20 @@ public class SizedQueue extends Queue {
             this.timeoutNS = timeoutNS;
         }
 
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK, until the timeout.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            boolean result = offerInternal(context, value, timeoutNS, TimeUnit.NANOSECONDS);
-            return !result ? context.nil : SizedQueue.this;
+        @CRuby(value = "rb_szqueue_push", file = "thread_sync.c", note = "timed wait loop")
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+                    return !result ? context.nil : SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override

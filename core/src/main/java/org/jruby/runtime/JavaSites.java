@@ -115,6 +115,7 @@ public class JavaSites {
         public final CheckedSites end_checked = new CheckedSites("end");
         public final CheckedSites exclude_end_checked = new CheckedSites("exclude_end?");
         public final CheckedSites to_ary_checked = new CheckedSites("to_ary");
+        public final CheckedSites to_str_checked = new CheckedSites("to_str");
         public final RespondToCallSite respond_to_to_ary = new RespondToCallSite("to_ary");
         public final CallSite to_ary = new FunctionalCachingCallSite("to_ary");
         public final CallSite cmp = new FunctionalCachingCallSite("<=>");

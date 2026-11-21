@@ -5,3 +5,5 @@ fails:IO#write on STDOUT raises SignalException SIGPIPE if the stream is closed 
 windows:IO#write on a pipe raises Errno::EPIPE if the read end is closed and does not die from SIGPIPE
 windows:IO#write on a file writes binary data with newline conversion if encoding is ASCII-8BIT
 windows:IO#write on a file writes binary data with newline conversion if no encoding is given
+windows:IO#write on STDOUT buffers output when STDOUT is not a terminal
+windows:IO#write on STDOUT writes immediately when STDOUT.sync is true

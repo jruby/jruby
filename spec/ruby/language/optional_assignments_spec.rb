@@ -656,6 +656,16 @@ describe 'Optional constant assignment' do
       end
     end
 
+    it 'assigns a scoped constant when only a top-level constant has the same name' do
+      m = Module.new
+      m::String ||= :assigned
+      m::String.should == :assigned
+
+      c = Class.new
+      c::String ||= :assigned
+      c::String.should == :assigned
+    end
+
     it 'causes side-effects of the module part to be applied only once (for undefined constant)' do
       x = 0
       (x += 1; ConstantSpecs::ClassA)::OR_ASSIGNED_CONSTANT2 ||= :assigned
@@ -722,6 +732,10 @@ describe 'Optional constant assignment' do
       ConstantSpecs::OpAssignFalse &&= 1
       ConstantSpecs::OpAssignFalse.should == false
       ConstantSpecs.send :remove_const, :OpAssignFalse
+    end
+
+    it "raises a NameError when only a top-level constant has the same name" do
+      -> { Module.new::String &&= :assigned }.should.raise(NameError)
     end
 
     it 'causes side-effects of the module part to be applied only once (when assigns)' do

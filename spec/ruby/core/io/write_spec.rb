@@ -373,6 +373,23 @@ platform_is :windows do
 end
 
 describe "IO#write on STDOUT" do
+  it "buffers output when STDOUT is not a terminal" do
+    code = 'STDOUT.write("out1\\n"); STDERR.write("err\\n"); STDOUT.write("out2\\n")'
+    ruby_exe(code, args: "2>&1").should == "err\nout1\nout2\n"
+  end
+
+  it "writes immediately when STDOUT.sync is true" do
+    code = 'STDOUT.sync = true; STDOUT.write("out1\\n"); STDERR.write("err\\n"); STDOUT.write("out2\\n")'
+    ruby_exe(code, args: "2>&1").should == "out1\nerr\nout2\n"
+  end
+
+  # CRuby 3.4 doesn't offer buffered writes to the scheduler when they're flushed
+  ruby_version_is "4.0" do
+    it "offers buffered STDOUT writes to the scheduler's io_write once, when flushed" do
+      ruby_exe(fixture(__FILE__, "write_stdout_scheduler.rb")).should == "a\nb\n[\"a\\nb\\n\"]\n"
+    end
+  end
+
   # https://bugs.ruby-lang.org/issues/14413
   platform_is_not :windows do
     it "raises SignalException SIGPIPE if the stream is closed instead of Errno::EPIPE like other IOs" do

@@ -294,4 +294,11 @@ public class RubySystemCallError extends RubyStandardError {
     public IRubyObject errno() {
         return errno;
     }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubySystemCallError exception = (RubySystemCallError)clone;
+        exception.errno = errno;
+    }
 }

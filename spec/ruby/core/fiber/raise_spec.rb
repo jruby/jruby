@@ -139,6 +139,19 @@ describe "Fiber#raise" do
     -> { fiber.raise "msg" }.should.raise(RuntimeError, "msg")
   end
 
+  it "sets the backtrace where the fiber is suspended" do
+    suspend_line = __LINE__ + 1
+    suspend = -> { Fiber.yield }
+    fiber = Fiber.new do
+      suspend.call
+    rescue => e
+      e
+    end
+    fiber.resume
+
+    fiber.raise("msg").backtrace_locations.map(&:lineno).should.include?(suspend_line)
+  end
+
   it "lets a transferring fiber that rescues the exception transfer back" do
     root = Fiber.current
     fiber = Fiber.new do

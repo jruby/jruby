@@ -118,24 +118,9 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         if (tempDir != null) return tempDir;
 
         tempDir = new File(tempDir(), tempDirName());
-        if (tempDir.mkdirs()) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    for (File f : tempDir.listFiles()) {
-                        try {
-                            f.delete();
-                        } catch (Exception ex) {
-                            LOG.debug(ex);
-                        }
-                    }
-                    try {
-                        tempDir.delete();
-                    } catch (Exception ex) {
-                        LOG.info("failed to delete temp dir " + tempDir + " : " + ex);
-                    }
-                }
-            });
-        }
+        // Deleted at exit, once the files in it are. A shutdown hook would be a class loaded by the class loader that
+        // loaded JRuby, and keep that class loader alive until the JVM exits.
+        if (tempDir.mkdirs()) tempDir.deleteOnExit();
         return tempDir;
     }
 
@@ -220,9 +205,9 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 // Remove reference from jar cache
                 JarResource.removeJarResource(path);
 
-                // Delete temp jar on disk
+                // Delete temp jar on disk, or at exit if it can't be deleted yet, e.g. while it's open on Windows
                 File jarFile = new File(path);
-                jarFile.delete();
+                if (!jarFile.delete() && jarFile.exists()) jarFile.deleteOnExit();
             } catch (Exception e) {
                 // keep trying to clean up other temp jars
             }

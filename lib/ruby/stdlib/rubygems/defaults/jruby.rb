@@ -2,24 +2,24 @@
 require 'rbconfig'
 require 'jruby/util'
 
-module Gem
+# Because this file redefines several methods from RubyGems, we do the
+# alias dance to avoid method redefinition warnings.
+# See https://github.com/jruby/jruby/pull/9979
+class << Gem
+  alias_method :__ruby__, :ruby
+  def ruby
+    ruby_path = __ruby__
+    ruby_path = JRuby::Util.classpath_launcher if jarred_path?(ruby_path)
+    ruby_path
+  end
 
-  class << self
-    alias_method :__ruby__, :ruby
-    def ruby
-      ruby_path = __ruby__
-      ruby_path = JRuby::Util.classpath_launcher if jarred_path?(ruby_path)
-      ruby_path
-    end
-
-    private
-    def jarred_path?(p)
-      p =~ /^(file|uri|jar|classpath):/
-    end
+  private def jarred_path?(p)
+    p =~ /^(file|uri|jar|classpath):/
   end
 
   unless RbConfig::CONFIG['host_os'].match?(/linux/)
-    def self.platform_defaults
+    alias _old_platform_defaults platform_defaults
+    def platform_defaults
       return {
           'install' => '--env-shebang',
           'update' => '--env-shebang',
@@ -27,6 +27,7 @@ module Gem
           'pristine' => '--env-shebang'
       }
     end
+    undef _old_platform_defaults
   end
 
   # Default home directory path to be used if an alternate value is not
@@ -34,25 +35,31 @@ module Gem
   #
   # JRuby: We don't want gems installed in lib/jruby/gems, but rather
   # to preserve the old location: lib/ruby/gems.
-  def self.default_dir
+  alias _old_default_dir default_dir
+  def default_dir
     dir = RbConfig::CONFIG["default_gem_home"]
     dir ||= File.join(RbConfig::CONFIG['libdir'], 'ruby', 'gems', 'shared')
     dir
   end
+  undef _old_default_dir
 
   # Default locations for RubyGems' .rb and bin files
-  def self.default_rubygems_dirs
+  alias _old_default_rubygems_dirs default_rubygems_dirs
+  def default_rubygems_dirs
     [
         File.join(RbConfig::CONFIG['libdir'], 'ruby', 'stdlib'),
         RbConfig::CONFIG['bindir']
     ]
   end
+  undef _old_default_rubygems_dirs
 
   # Allow specifying jar and classpath type gem path entries
-  def self.path_separator
+  alias _old_path_separator path_separator
+  def path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
     /#{JRuby::Util::SEPARATOR}/
   end
+  undef _old_path_separator
 end
 
 ## JAR FILES: Allow gem path entries to contain jar files
@@ -61,12 +68,15 @@ class Gem::Specification
   # Ignore missing extensions on JRuby
   #
   # See https://github.com/ruby/rubygems/issues/3520
+  alias _old_missing_extensions? missing_extensions?
   def missing_extensions?
     false
   end
+  undef _old_missing_extensions?
 
   class << self
     # Replace existing dirs
+    alias _old_dirs dirs
     def dirs
       @@dirs ||= Gem.path.collect {|dir|
         if File.file?(dir) && dir =~ /\.jar$/
@@ -76,13 +86,16 @@ class Gem::Specification
         end
       }.compact + spec_directories_from_classpath
     end
+    undef _old_dirs
 
     # Replace existing dirs=
+    alias _old_dirs= dirs=
     def dirs= dirs
       self.reset
 
       @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
+    undef _old_dirs=
 
     private
     def spec_directories_from_classpath

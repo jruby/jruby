@@ -22,3 +22,5 @@ windows:Process.exec with multiple arguments does not subject the arguments to s
 windows:Process.exec options validation raises an ArgumentError if :unsetenv_others option is not a boolean or nil
 windows:Process.exec options validation raises an ArgumentError if :close_others option is not a boolean or nil
 fails:Process.exec options validation raises an ArgumentError if :new_pgroup option is not a boolean or nil
+fails:Process.exec sets the umask when given the :umask option
+fails:Process.exec masks all permission bits when given umask: -1

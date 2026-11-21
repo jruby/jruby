@@ -49,6 +49,7 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -738,11 +739,46 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return inspect(context);
     }
 
+    // How searchEqual compares an element with the searched-for item
+    private static final int SEARCH_GENERIC = 0;
+    private static final int SEARCH_FIXNUM = 1;
+    private static final int SEARCH_FLOAT = 2;
+
+    /**
+     * Decide once per search how {@link #searchEqual} compares elements with item. While
+     * Integer#== (or Float#==) is still builtin, a Fixnum (or Float) item is compared with
+     * elements of the same class directly instead of dispatching == for every element.
+     */
+    private static int searchKind(ThreadContext context, IRubyObject item) {
+        if (item instanceof RubyFixnum) {
+            return Builtins.checkIntegerEquals(context) ? SEARCH_FIXNUM : SEARCH_GENERIC;
+        }
+        if (item instanceof RubyFloat) {
+            return Builtins.checkFloatEquals(context) ? SEARCH_FLOAT : SEARCH_GENERIC;
+        }
+        return SEARCH_GENERIC;
+    }
+
+    /**
+     * Same result as {@code element == item}, given the kind {@link #searchKind} chose for item.
+     * Elements of any other class still dispatch ==, so 1.0 == 1 keeps its Float semantics.
+     */
+    private static boolean searchEqual(ThreadContext context, int kind, IRubyObject element, IRubyObject item) {
+        if (kind == SEARCH_FIXNUM) {
+            if (element instanceof RubyFixnum fixnum) return fixnum.fastEqual((RubyFixnum) item);
+        } else if (kind == SEARCH_FLOAT) {
+            // identity first, so the very same NaN object is still found
+            if (element instanceof RubyFloat flote) return element == item || flote.fastEqual((RubyFloat) item);
+        }
+        return equalInternal(context, element, item);
+    }
+
     public boolean includes(ThreadContext context, IRubyObject item) {
+        final int kind = searchKind(context, item);
         int end = realLength;
         for (int i = 0; i < end; i++) {
             final IRubyObject value = eltOk(i);
-            if (equalInternal(context, value, item)) return true;
+            if (searchEqual(context, kind, value, item)) return true;
         }
 
         return false;
@@ -1149,20 +1185,22 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
                 continue;
             }
 
-            final int[] begLen;
-            if (!(arg instanceof RubyRange range)) {
-                // do result.append
-            } else if ((begLen = range.begLenInt(context, length, 1)) == null) {
-                continue;
+            int[] begLen;
+            if (arg instanceof RubyRange range) {
+                if ((begLen = range.begLenInt(context, length, 1)) == null) continue;
+            } else if (!(arg instanceof RubyArithmeticSequence) &&
+                    RubyRange.rangeBeginLength(context, arg, length, begLen = new int[2], 1).isTrue()) {
+                // range-like object responding to begin, end and exclude_end?
             } else {
-                final int beg = begLen[0];
-                final int len = begLen[1];
-                for (int j = 0; j < len; j++) {
-                    result.append(context, entry(j + beg));
-                }
+                result.append(context, entry(toLong(context, arg)));
                 continue;
             }
-            result.append(context, entry(toLong(context, arg)));
+
+            final int beg = begLen[0];
+            final int len = begLen[1];
+            for (int j = 0; j < len; j++) {
+                result.append(context, entry(j + beg));
+            }
         }
 
         return result;
@@ -1753,6 +1791,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     @CRuby(value = "ary_join_1", file = "array.c")
     private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result, boolean[] first) {
         assert i >= 0 : "joining elements before beginning of array";
+        JavaSites.CheckedSites to_str_checked = null;
         JavaSites.CheckedSites to_ary_checked = null;
 
         for (; i < realLength; i++) {
@@ -1767,7 +1806,9 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
             } else if (val instanceof RubyArray) {
                 throw new RuntimeException("unsupported array type: " + val.getClass().getName());
             } else {
-                IRubyObject tmp = val.checkStringType();
+                if (to_str_checked == null) to_str_checked = sites(context).to_str_checked;
+
+                IRubyObject tmp = TypeConverter.checkStringType(context, to_str_checked, val);
                 if (tmp != context.nil) {
                     strJoin(result, (RubyString) tmp, first);
                     continue;
@@ -1916,11 +1957,27 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
         if (realLength != ary.getLength()) return context.fals;
 
+        // Whether a builtin value comparison may stand in for the call. The site calls == or eql?,
+        // and the bits for both are shared, so a redefinition of either (including the Numeric#eql?
+        // that Integer inherits, which dispatches to ==) turns the fast path off. Both Float builtins
+        // are false for NaN and treat 0.0 and -0.0 as equal.
+        boolean fixnumFast = Builtins.checkIntegerEquals(context);
+        boolean floatFast = Builtins.checkFloatEquals(context);
+
         for (int i = 0; i < realLength; i++) {
             IRubyObject a = elt(i);
             IRubyObject b = ary.elt(i);
 
             if (a == b) continue; // matching MRI opt. mock frameworks can throw errors if we don't
+
+            if (fixnumFast && a instanceof RubyFixnum fixA && b instanceof RubyFixnum fixB) {
+                if (fixA.getValue() != fixB.getValue()) return context.fals;
+                continue;
+            }
+            if (floatFast && a instanceof RubyFloat floatA && b instanceof RubyFloat floatB) {
+                if (!floatA.fastEqual(floatB)) return context.fals;
+                continue;
+            }
 
             if (!site.call(context, a, a, b).isTrue()) return context.fals;
         }
@@ -2098,8 +2155,9 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
     @CRuby(value = "rb_ary_index", file = "array.c")
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
+        final int kind = searchKind(context, obj);
         for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
+            if (searchEqual(context, kind, eltOk(i), obj)) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2191,7 +2249,8 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     @CRuby(value = "rb_ary_rindex", file = "array.c")
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
         unpack(context);
-        
+
+        final int kind = searchKind(context, obj);
         int i = realLength;
 
         while (i-- > 0) {
@@ -2199,7 +2258,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
                 i = realLength;
                 continue;
             }
-            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
+            if (searchEqual(context, kind, eltOk(i), obj)) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2776,10 +2835,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
             if (!tmp.isNil()) break;
         }
 
-        safeArrayCopy(context, values, begin, result.values, result.begin, i);
-        result.realLength = i;
+        // to_ary may have shrunk this array, so only copy what is still there
+        int prefix = Math.min(i, realLength);
+        safeArrayCopy(context, values, begin, result.values, result.begin, prefix);
+        result.realLength = prefix;
 
-        if (i == realLength) return false;
+        if (tmp == null || tmp.isNil()) return false;
 
         Stack<Object> stack = new Stack<>();
         stack.push(this);
@@ -2897,9 +2958,10 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     public IRubyObject count(ThreadContext context, IRubyObject obj, Block block) {
         if (block.isGiven()) warn(context, "given block not used");
 
+        final int kind = searchKind(context, obj);
         int n = 0;
         for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, elt(i), obj)) n++;
+            if (searchEqual(context, kind, elt(i), obj)) n++;
         }
         return asFixnum(context, n);
     }

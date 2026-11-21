@@ -48,6 +48,7 @@ import org.jruby.api.API;
 import org.jruby.api.JRubyAPI;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RuntimeError;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -567,11 +568,54 @@ public class RubyRange extends RubyObject {
         return cmp >= 0 && cmp != Integer.MAX_VALUE;
     }
 
-    @JRubyMethod
+    @CRuby(value = "range_to_a", file = "range.c")
+    @JRubyMethod(name = {"to_a", "entries"})
     public IRubyObject to_a(ThreadContext context, final Block block) {
         if (isEndless) throw rangeError(context, "cannot convert endless range to an array");
+        if (begin instanceof RubyFixnum beg && end instanceof RubyFixnum fin && isBuiltinEach(context)) {
+            RubyArray<?> ary = fixnumToA(context, beg.getValue(), fin.getValue());
+            if (ary != null) return ary;
+        }
         return RubyEnumerable.to_a(context, this);
     }
+
+    /**
+     * Whether each on this object is still Range#each. A subclass or a prepended
+     * module that defines each, or an each aliased or copied from another builtin
+     * method such as reverse_each, must be honored by to_a.
+     */
+    private boolean isBuiltinEach(ThreadContext context) {
+        DynamicMethod method = sites(context).each.retrieveCache(this).method;
+        return method.isBuiltin() && "each".equals(method.getRealMethod().getName());
+    }
+
+    /**
+     * Build the array for an Integer range directly at its final size instead of
+     * appending from each. Returns null when the range is too long to fit in an
+     * array, so the caller can fall back to the generic path.
+     */
+    private RubyArray<?> fixnumToA(ThreadContext context, long from, long to) {
+        if (isExclusive) {
+            if (to == Long.MIN_VALUE) return newEmptyArray(context);
+            to--;
+        }
+        if (to < from) return newEmptyArray(context);
+
+        // to - from wraps negative when the range spans more than Long.MAX_VALUE
+        long last = to - from;
+        if (last < 0 || last >= MAX_FIXNUM_TO_A_LENGTH) return null;
+
+        int length = (int) last + 1;
+        Ruby runtime = context.runtime;
+        IRubyObject[] values = new IRubyObject[length];
+        for (int i = 0; i < length; i++) {
+            values[i] = RubyFixnum.newFixnum(runtime, from + i);
+        }
+        return RubyArray.newArrayNoCopy(runtime, values);
+    }
+
+    // Leaves headroom below Integer.MAX_VALUE for the JVM array header limit
+    private static final long MAX_FIXNUM_TO_A_LENGTH = Integer.MAX_VALUE - 8;
 
     @JRubyMethod(name = "each")
     public IRubyObject each(final ThreadContext context, final Block block) {

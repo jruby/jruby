@@ -15,6 +15,41 @@ describe "Kernel#raise" do
     }
   end
 
+  it "raises a frozen exception without a backtrace as is" do
+    frozen = RuntimeError.new("frozen").freeze
+
+    begin
+      raise StandardError, "first"
+    rescue
+      -> { raise frozen }.should.raise(RuntimeError, "frozen") do |error|
+        error.should.equal?(frozen)
+        error.cause.should == nil
+        error.backtrace.should == nil
+      end
+    end
+  end
+
+  it "raises a TypeError when the cause of a frozen exception without a backtrace is not an exception" do
+    frozen = RuntimeError.new("frozen").freeze
+    -> { raise frozen, cause: 1 }.should.raise(TypeError, "exception object expected")
+  end
+
+  it "raises a copy of a frozen exception without a backtrace that already has a cause" do
+    cause = RuntimeError.new("cause")
+    original = RuntimeError.new("original")
+    begin
+      raise original, cause:
+    rescue
+    end
+    original.set_backtrace(nil)
+    original.freeze
+
+    -> { raise original }.should.raise(RuntimeError, "original") do |error|
+      error.should_not.equal?(original)
+      error.cause.should.equal?(cause)
+    end
+  end
+
   # Shared specs expect a public #raise method.
   public_raiser = Object.new
   class << public_raiser

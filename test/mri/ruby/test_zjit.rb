@@ -27,6 +27,18 @@ class TestZJIT < Test::Unit::TestCase
     RUBY
   end
 
+  def test_stats_string_no_zjit
+    assert_runs 'nil', <<~RUBY, zjit: false
+      RubyVM::ZJIT.stats_string
+    RUBY
+    assert_runs 'true', <<~RUBY, stats: false
+      RubyVM::ZJIT.stats_string.is_a?(String)
+    RUBY
+    assert_runs 'true', <<~RUBY, stats: true
+      RubyVM::ZJIT.stats_string.is_a?(String)
+    RUBY
+  end
+
   def test_stats_quiet
     # Test that --zjit-stats-quiet collects stats but doesn't print them
     script = <<~RUBY
@@ -98,6 +110,17 @@ class TestZJIT < Test::Unit::TestCase
       assert_predicate RubyVM::ZJIT, :enabled?
       assert_includes RUBY_DESCRIPTION, "+ZJIT"
     RUBY
+  end
+
+  def test_zjit_prelude_kernel_prepend
+    # Simulate what bundler/setup can do: prepend a module to Kernel during
+    # the prelude via the BUNDLER_SETUP mechanism in rubygems.rb:
+    #   require ENV["BUNDLER_SETUP"] if ENV["BUNDLER_SETUP"] && !defined?(Bundler)
+    Tempfile.create(["kernel_prepend", ".rb"]) do |f|
+      f.write("Kernel.prepend(Module.new)\n")
+      f.flush
+      assert_separately([{ "BUNDLER_SETUP" => f.path }, "--enable=gems", "--zjit"], "", ignore_stderr: true)
+    end
   end
 
   def test_zjit_enable_respects_existing_options
@@ -380,6 +403,43 @@ class TestZJIT < Test::Unit::TestCase
       end
 
       4.times.map { f(1).call }
+    }, call_threshold: 2
+  end
+
+  def test_kwargs_with_exit_and_local_invalidation
+    assert_compiles ':ok', %q{
+      def a(b:, c:)
+        if c == :b
+          return -> {}
+        end
+        Class # invalidate locals
+
+        raise "c is :b!" if c == :b
+      end
+
+      def test
+        # note opposite order of kwargs
+        a(c: :c, b: :b)
+      end
+
+      4.times { test }
+      :ok
+    }, call_threshold: 2
+  end
+
+  def test_kwargs_with_max_direct_send_arg_count
+    # Ensure that we only reorder the args when we _can_ use direct send (< 6 args).
+    assert_compiles '[[1, 2, 3, 4, 5, 6, 7, 8]]', %q{
+      def kwargs(five, six, a:, b:, c:, d:, e:, f:)
+        [a, b, c, d, five, six, e, f]
+      end
+
+      5.times.flat_map do
+        [
+          kwargs(5, 6, d: 4, c: 3, a: 1, b: 2, e: 7, f: 8),
+          kwargs(5, 6, d: 4, c: 3, b: 2, a: 1, e: 7, f: 8)
+        ]
+      end.uniq
     }, call_threshold: 2
   end
 
@@ -2750,6 +2810,13 @@ class TestZJIT < Test::Unit::TestCase
         :compiled_iseq_count.then { |s| initial_stats[s] > 0 && reset_stats[s] < initial_stats[s] }
       ].all?
     }, stats: true
+  end
+
+  def test_reset_stats_with_zjit_off
+    # [Bug #22327]
+    assert_runs 'nil', <<~RUBY, zjit: false
+      RubyVM::ZJIT.reset_stats!
+    RUBY
   end
 
   def test_zjit_option_uses_array_each_in_ruby

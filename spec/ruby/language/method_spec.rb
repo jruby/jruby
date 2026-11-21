@@ -1,4 +1,5 @@
 require_relative '../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "A method send" do
   evaluate <<-ruby do
@@ -1407,7 +1408,7 @@ describe "An endless method definition" do
   context "with an operator name ending in `=`" do
     it "defines the operator methods" do
       eval <<-ruby
-        class OpEndlessOperator
+        class LanguageSpecs::OpEndlessOperator
           def ==(other) = "equal"
           def ===(other) = "case-equal"
           def !=(other) = "not-equal"
@@ -1416,7 +1417,7 @@ describe "An endless method definition" do
         end
       ruby
 
-      obj = OpEndlessOperator.new
+      obj = LanguageSpecs::OpEndlessOperator.new
       obj.send(:==, 1).should == "equal"
       obj.send(:===, 1).should == "case-equal"
       obj.send(:!=, 1).should == "not-equal"
@@ -1435,16 +1436,18 @@ describe "An endless method definition" do
     it "raises a SyntaxError" do
       -> {
         eval("class SetterEndless; def foo=(x) = x; end")
-      }.should raise_error(SyntaxError, /setter method cannot be defined in an endless method definition/)
+      }.should.raise(SyntaxError, /setter method cannot be defined in an endless method definition/)
       -> {
         eval("class SetterEndless; def []=(k, v) = v; end")
-      }.should raise_error(SyntaxError, /setter method cannot be defined in an endless method definition/)
+      }.should.raise(SyntaxError, /setter method cannot be defined in an endless method definition/)
     end
 
-    it "is reported as a parse error by Ripper" do
-      ["def foo=(v) = v", "def []=(k, v) = v"].each do |src|
-        ripper_errors.("class Example; #{src}; end").should ==
-          ["setter method cannot be defined in an endless method definition"]
+    ruby_version_is "3.4" do
+      it "is reported as a parse error by Ripper" do
+        ["def foo=(v) = v", "def []=(k, v) = v"].each do |src|
+          ripper_errors.("class Example; #{src}; end").should ==
+            ["setter method cannot be defined in an endless method definition"]
+        end
       end
     end
   end

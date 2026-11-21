@@ -1,3 +1,4 @@
 fails:IO::Buffer#null? is false for a file-mapped buffer
 fails:IO::Buffer#null? is true for a buffer resized to 0
 fails:IO::Buffer#null? is false for an invalid slice with a recorded address
+fails:IO::Buffer#null? reflects an invalid slice whose source was freed

@@ -69,7 +69,6 @@ import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.toByte;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
@@ -466,6 +465,8 @@ public class RubyArgsFile extends RubyObject {
             return sites(context).readlines.call(context, recv, data.currentFile, args);
         }
 
+        checkReadlinesLimit(context, callInfo, args);
+
         var ary = newArray(context);
         IRubyObject line;
         while(!(line = argf_getline(context, callInfo, args)).isNil()) {
@@ -480,6 +481,24 @@ public class RubyArgsFile extends RubyObject {
         return readlines(context, recv, args);
     }
 
+    // MRI: argf_readlines calls rb_io_readlines, which rejects a limit of 0 since every line would be empty
+    private static void checkReadlinesLimit(ThreadContext context, int callInfo, IRubyObject[] args) {
+        int argc = args.length - (hasKeywords(callInfo) ? 1 : 0);
+        IRubyObject limit = null;
+
+        if (argc == 1) {
+            // a single argument is the limit unless it is a separator
+            IRubyObject arg = args[0];
+            if (!arg.isNil() && TypeConverter.checkStringType(context.runtime, arg).isNil()) limit = arg;
+        } else if (argc == 2) {
+            limit = args[1];
+        }
+
+        if (limit != null && !limit.isNil() && toLong(context, limit) == 0) {
+            throw argumentError(context, "invalid limit: 0 for readlines");
+        }
+    }
+
     // MRI: rb_io_getline takes up to two positional arguments (separator, limit) plus keywords
     private static void checkGetlineArity(ThreadContext context, int callInfo, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args.length - (hasKeywords(callInfo) ? 1 : 0), 0, 2);
@@ -490,7 +509,7 @@ public class RubyArgsFile extends RubyObject {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_byte");
 
         IRubyObject bt;
-        while ((bt = getc(context, recv)) != context.nil) {
+        while ((bt = getbyte(context, recv)) != context.nil) {
             block.yield(context, bt);
         }
 
@@ -519,36 +538,9 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
-        final Ruby runtime = context.runtime;
-
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
-
         IRubyObject ch;
         while ((ch = getc(context, recv)) != context.nil) {
-            boolean cont = true;
-            while (cont) {
-                cont = false;
-                byte c = toByte(context, ch);
-                int n = runtime.getKCode().getEncoding().length(c);
-                IRubyObject file = data.currentFile;
-                RubyString str = runtime.newString();
-                str.cat(c);
-
-                while(--n > 0) {
-                    if ((ch = getc(context, recv)) == context.nil) {
-                        block.yield(context, str);
-                        return recv;
-                    }
-                    if (data.currentFile != file) {
-                        block.yield(context, str);
-                        cont = true;
-                        continue;
-                    }
-                    c = toByte(context, ch);
-                    str.cat(c);
-                }
-                block.yield(context, str);
-            }
+            block.yield(context, ch);
         }
         return recv;
     }
@@ -870,7 +862,7 @@ public class RubyArgsFile extends RubyObject {
 
             IRubyObject bt;
             if (data.currentFile instanceof RubyFile) {
-                bt = ((RubyIO) data.currentFile).getbyte(context);
+                bt = ((RubyIO) data.currentFile).getc(context);
             } else {
                 bt = data.currentFile.callMethod(context,"getc");
             }

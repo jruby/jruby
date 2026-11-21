@@ -2112,7 +2112,16 @@ public class Helpers {
     }
 
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
+        return addInstanceMethod(containingClass, symbol, method, visibility, context, (String) null);
+    }
+
+    /**
+     * Add a method, then give the warning that it replaced another, if there is one, before
+     * calling method_added, as CRuby does.
+     */
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, String redefinitionWarning) {
         containingClass.addMethod(context, symbol.idString(), method);
+        if (redefinitionWarning != null) org.jruby.api.Warn.warning(context, redefinitionWarning);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
         if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);
@@ -3117,6 +3126,20 @@ public class Helpers {
         byte[] newAry = new byte[len];
         System.arraycopy(ary, start, newAry, 0, len);
         return newAry;
+    }
+
+    // For an object without respond_to?, like a BasicObject: look the method up, then ask a user's respond_to_missing?
+    @CRuby(value = "basic_obj_respond_to", file = "vm_method.c")
+    @CRuby(value = "basic_obj_respond_to_missing", file = "vm_method.c")
+    public static boolean basicObjRespondsTo(ThreadContext context, RubyClass klass, IRubyObject self, String name) {
+        DynamicMethod method = klass.searchWithCache(name).method;
+        if (method.isNotImplemented()) return false;
+        if (respondsToMethod(method, true)) return true;
+
+        CacheEntry entry = klass.searchWithCache("respond_to_missing?");
+        if (entry.method.isUndefined() || entry.method == context.runtime.getRespondToMissingMethod()) return false;
+
+        return entry.method.call(context, self, entry.sourceModule, "respond_to_missing?", asSymbol(context, name), context.fals).isTrue();
     }
 
     /**

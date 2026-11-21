@@ -50,6 +50,7 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.*;
@@ -77,6 +78,11 @@ public class JRubyUtilLibrary implements Library {
                 defineConstant(context, "SEPARATOR", newString(context, org.jruby.util.cli.ArgumentProcessor.SEPARATOR)).
                 defineConstant(context, "ON_WINDOWS", asBoolean(context, org.jruby.platform.Platform.IS_WINDOWS)).
                 defineConstant(context, "ON_SOLARIS", asBoolean(context, org.jruby.platform.Platform.IS_SOLARIS));
+    }
+
+    @JRubyMethod(name = "native_popen?", module = true)
+    public static IRubyObject nativePopen(ThreadContext context, IRubyObject recv) {
+        return asBoolean(context, PopenExecutor.nativePopenAvailable(context.runtime));
     }
 
     @JRubyMethod(module = true)

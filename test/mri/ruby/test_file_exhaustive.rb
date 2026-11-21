@@ -301,6 +301,21 @@ class TestFileExhaustive < Test::Unit::TestCase
     end
   end if NTFS
 
+  def test_stat_symlink_loop
+    return unless symlinkfile
+    path = make_tmp_filename("symlink_loop")
+    File.symlink(File.basename(path), path)
+    assert_predicate(File.lstat(path), :symlink?)
+    assert_raise(Errno::ELOOP) { File.stat(path) }
+  end
+
+  def test_exist_p_symlink_loop
+    return unless symlinkfile
+    path = make_tmp_filename("symlink_loop")
+    File.symlink(File.basename(path), path)
+    assert_file.not_exist?(path)
+  end
+
   def test_lstat
     return unless symlinkfile
     assert_equal(false, File.stat(symlinkfile).symlink?)
@@ -713,6 +728,28 @@ class TestFileExhaustive < Test::Unit::TestCase
     assert_equal("link", File.ftype(symlinkfile))
     assert_raise(Errno::EEXIST) { File.symlink(regular_file, regular_file) }
     assert_raise(Errno::EEXIST) { File.symlink(utf8_file, utf8_file) }
+  end
+
+  def test_symlink_to_relative_directory
+    # A relative target is interpreted relative to the link's directory, not the
+    # current directory.  A relative target pointing at a directory must produce
+    # a directory symlink even when the current directory differs from the link's
+    # directory; otherwise Dir operations on the link fail (Windows).
+    Dir.mktmpdir(__method__.to_s) do |tmpdir|
+      Dir.chdir(tmpdir) do
+        Dir.mkdir("subdir")
+        Dir.mkdir(File.join("subdir", "target"))
+        link = File.join("subdir", "link")
+        begin
+          File.symlink("target", link)
+        rescue NotImplementedError, Errno::EACCES, Errno::EPERM => e
+          omit e.message
+        end
+        assert_file.symlink?(link)
+        assert_file.directory?(link)
+        assert(Dir.exist?(link), "relative directory symlink should be a directory")
+      end
+    end
   end
 
   def test_utime

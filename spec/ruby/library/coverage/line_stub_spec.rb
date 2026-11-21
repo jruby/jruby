@@ -1,4 +1,5 @@
 require_relative '../../spec_helper'
+require_relative '../../fixtures/source_range_helpers'
 require_relative 'fixtures/classes'
 require 'coverage'
 
@@ -154,6 +155,8 @@ describe "Coverage.line_stub" do
 
   ruby_version_is "3.4" do
     it "returns 0 for the condition line of a ternary used as an argument" do
+      skip "parse.y" if parse_y?
+
       CoverageSpecs.line_stub(<<~'RUBY').should == [0, 0, 0, 0, 0]
         def value_of(v) = v
         x = true

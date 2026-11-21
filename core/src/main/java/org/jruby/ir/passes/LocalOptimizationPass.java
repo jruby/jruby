@@ -202,7 +202,8 @@ public class LocalOptimizationPass extends CompilerPass {
             //
             // This information is present in instruction flags on CallBase. Use it!
             Operation iop = instr.getOperation();
-            if (iop.isCall() && !instr.isDead()) {
+            // TracePoint hooks can change locals
+            if ((iop.isCall() || iop == Operation.TRACE) && !instr.isDead()) {
                 valueMap = new HashMap<>();
                 simplificationMap = new HashMap<>();
             }

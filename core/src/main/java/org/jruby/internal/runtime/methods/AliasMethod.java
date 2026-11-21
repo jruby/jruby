@@ -157,6 +157,11 @@ public class AliasMethod extends DynamicMethod {
         return entry.method.getSignature();
     }
 
+    @Override
+    public Signature getAritySignature() {
+        return entry.method.getAritySignature();
+    }
+
 
     @Override
     public String getOldName() {

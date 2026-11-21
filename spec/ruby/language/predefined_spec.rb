@@ -1,5 +1,6 @@
 require_relative '../spec_helper'
 require_relative '../core/exception/shared/set_backtrace'
+require_relative '../core/process/fixtures/common'
 require 'stringio'
 
 # The following tables are excerpted from Programming Ruby: The Pragmatic Programmer's Guide'
@@ -81,6 +82,22 @@ describe "Predefined global $~" do
 
     match4.should_not == nil
     $~.should == match4
+  end
+
+  it "is Fiber-local" do
+    match = /foo/.match("foo")
+
+    fiber = Fiber.new do
+      $~.should == nil
+      /bar/ =~ "bar"
+      Fiber.yield
+      $~[0]
+    end
+    fiber.resume
+
+    $~.should.equal?(match)
+    /baz/ =~ "baz"
+    fiber.resume.should == "bar"
   end
 
   it "raises an error if assigned an object not nil or instanceof MatchData" do
@@ -990,6 +1007,22 @@ describe "Predefined global $_" do
     thr.join
   end
 
+  it "is Fiber-local" do
+    $_ = "last line"
+
+    fiber = Fiber.new do
+      $_.should == nil
+      $_ = "fiber line"
+      Fiber.yield
+      $_
+    end
+    fiber.resume
+
+    $_.should == "last line"
+    $_ = "other line"
+    fiber.resume.should == "fiber line"
+  end
+
   it "can be assigned any value" do
     $_ = nil
     $_.should == nil
@@ -1263,7 +1296,7 @@ describe "Global variable $0" do
     it "actually sets the program name" do
       title = "rubyspec-dollar0-test"
       $0 = title
-      `ps -ocommand= -p#{$$}`.should.include?(title)
+      ProcessSpecs.command_line_include?(title).should == true
     end
   end
 

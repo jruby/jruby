@@ -38,6 +38,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 
@@ -48,10 +49,46 @@ public class AttrWriterMethod extends JavaMethodOne {
     private MethodData methodData;
     private final String variableName;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
+    private String file;
+    private int line;
+
+    private boolean fromRuby;
+
+    /**
+     * @param fromRuby whether Ruby code called attr_* to make this method, rather than Java code
+     */
+    public void setFromRuby(boolean fromRuby) {
+        this.fromRuby = fromRuby;
+    }
+
+    public boolean isFromRuby() {
+        return fromRuby;
+    }
 
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
         super(implementationClass, visibility, variableName + "=");
         this.variableName = variableName;
+    }
+
+    /**
+     * Record where the attribute was declared, for source_location.
+     *
+     * @param file the file of the attr_* call
+     * @param line its 0-based line
+     */
+    public void setSourcePosition(String file, int line) {
+        this.file = file;
+        this.line = line;
+    }
+
+    @Override
+    public String getSourceFile() {
+        return file == null ? null : TraceType.maskInternalFiles(file);
+    }
+
+    @Override
+    public int getSourceLine() {
+        return file == null ? -1 : line + 1;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {

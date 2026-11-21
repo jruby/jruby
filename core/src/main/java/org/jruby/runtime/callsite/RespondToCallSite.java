@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyBoolean;
+import org.jruby.anno.CRuby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -105,6 +106,18 @@ public class RespondToCallSite extends MonomorphicCallSite {
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
+    }
+
+    // Like respondsTo, but without respond_to? this skips method_missing. Only for CRuby's rb_respond_to callers;
+    // code ported from rb_check_funcall does go to method_missing.
+    @CRuby(value = "rb_respond_to", file = "vm_method.c")
+    public boolean rbRespondTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
+        RubyClass klass = getMetaClass(self);
+        RespondToTuple tuple = respondToTuple; // only cached for the builtin respond_to?
+        if (tuple.cacheOk(klass) && respondToName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
+        if (klass.searchWithCache(methodName).method.isUndefined()) return Helpers.basicObjRespondsTo(context, klass, self, respondToName);
+        // go through normal call logic, which will hit overridden cacheAndCall
+        return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {

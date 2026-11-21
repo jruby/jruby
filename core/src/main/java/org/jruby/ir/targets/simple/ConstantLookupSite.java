@@ -117,9 +117,10 @@ public class ConstantLookupSite {
         IRubyObject result = !ConstantCache.isCachedFrom(module, cache) ?
                 cacheSearchModuleForConst(context, module, publicOnly) : cache.value;
         if (result != null) return result;
+        if (callConstMissing) return module.callMethod(context, "const_missing", name);
 
-        return callConstMissing ?
-                module.callMethod(context, "const_missing", name) :
-                UndefinedValue.UNDEFINED;
+        // Private constants count as missing; clear the reference const_missing would use
+        context.setPrivateConstantReference(null);
+        return UndefinedValue.UNDEFINED;
     }
 }

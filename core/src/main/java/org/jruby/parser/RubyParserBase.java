@@ -51,6 +51,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -166,20 +168,23 @@ public abstract class RubyParserBase {
             scopedParserState.warnUnusedVariables(this, currentScope.getFile());
         }
 
+        warnOnUnusedVariables = scopedParserState.getEnclosingWarnOnUnusedVariables();
         currentScope = currentScope.getEnclosingScope();
         scopedParserState = scopedParserState.getEnclosingScope();
     }
     
     public void pushBlockScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState);
+        // blocks inherit unused variable tracking from their enclosing scope (MRI dyna_push).
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
     }
     
     public void pushLocalScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
+        warnOnUnusedVariables = getWarnings().isVerbose();
         lexer.getCmdArgumentState().push0();
         lexer.getConditionState().push0();
     }
@@ -357,13 +362,24 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    // MRI: it_used_p
     private boolean isItUsed() {
-        if (it_id() != null) {
-            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
-                    (numParamOuter != null ? "outer" : "inner") + " block here");
-            // FIXME: Show error line
-        }
-        return false;
+        if (it_id() == null) return false;
+
+        compile_error("numbered parameters are not allowed when 'it' is already used\n" + lexer.getFile() + ":" +
+                it_id().getLine() + ": 'it' is already used here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    // MRI: numparam_used_p
+    private boolean isNumParamUsed() {
+        if (numParamCurrent == null) return false;
+
+        compile_error("'it' is not allowed when a numbered parameter is already used\n" + lexer.getFile() + ":" +
+                numParamCurrent.getLine() + ": numbered parameter is already used here");
+        // FIXME: Show error line
+        return true;
     }
 
     private boolean isNumParamId(String id) {
@@ -392,7 +408,7 @@ public abstract class RubyParserBase {
         Node node;
         int slot;
         if (isNumParam && numberedParam(id)) {
-            if (isNumParamNested()) return null;
+            if (isNumParamNested() || isItUsed()) return null;
 
             // We go over the top here and make sure the order is always ascending even if the other
             // numbered params are not used. This is so local_variables will properly display in
@@ -409,6 +425,12 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
+                if (isNumParamUsed()) return null;
+                if (maxNumParam == ORDINAL_PARAM) { // {|| it} and {|;a| it} declare parameters, if none
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
+
                 int existing = currentScope.isDefinedOrImplicit(id);
                 boolean newIt = false;
 
@@ -431,9 +453,18 @@ public abstract class RubyParserBase {
                 slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
                 if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                // without a local variable named it, it would be the block's implicit parameter
+                if (slot < 0 && maxNumParam == ORDINAL_PARAM) {
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
 
                 node = currentScope.declare(lexer.tokline, name);
             }
+        } else if (id.equals("it") && currentScope.isDefinedOrImplicit(id) == StaticScope.IMPLICIT) {
+            // a block's implicit it is not a variable to code evaluated within the block, as in { it; eval("it") }
+            node = new VCallNode(lexer.tokline, name);
+            slot = -1;
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -994,21 +1025,17 @@ public abstract class RubyParserBase {
             args = ac.getSecondNode();
         }
 
-        if (args != null && args instanceof ArgsPushNode ap) {
-            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
-        } else {
-            if (args instanceof ListNode list) {
-                for (int i = 0; i < list.size(); i++) {
-                    Node next = list.get(i);
-                    if (next instanceof HashNode hash && !hash.isLiteral()) {
-                        keywords = true;
-                    }
-                }
-            }
+        // keywords can only be the last argument, and are a hash written without braces
+        Node last = null;
+        if (args instanceof ArgsPushNode ap) {
+            last = ap.getSecondNode();
+        } else if (args instanceof ListNode list && list.size() > 0) {
+            last = list.getLast();
         }
+        keywords = last instanceof HashNode hash && !hash.isLiteral();
 
         if (keywords) {
-            yyerror("keyword arg given in index");
+            yyerror("keyword arg given in index assignment");
         }
         if (block != null) {
             yyerror("block arg given in index assignment");
@@ -1275,9 +1302,6 @@ public abstract class RubyParserBase {
 
                 if (currentScope.isBlockScope() && slot != -1) {
                     if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new DVarNode(loc, slot, name);
 
@@ -1289,9 +1313,6 @@ public abstract class RubyParserBase {
 
                 StaticScope.Type type = currentScope.getType();
                 if (type == StaticScope.Type.LOCAL && slot != -1) {
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new LocalVarNode(loc, slot, name);
 
@@ -1872,6 +1893,9 @@ public abstract class RubyParserBase {
     }
 
     public void finalizeDynamicScope() {
+        // the top-level scope is never popped so report its unused variables here.
+        if (warnOnUnusedVariables) scopedParserState.warnUnusedVariables(this, lexer.getFile());
+
         getResult().setScope(finalizeDynamicScope(currentScope));
     }
     /**
@@ -2064,8 +2088,8 @@ public abstract class RubyParserBase {
         RubySymbol restKwargsName = symbolID(keywordRestArgName);
         String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(id);
-        if (slot == -1) slot = currentScope.addVariable(id);
+        // a block's own **, named or not, is a new variable even when an enclosing scope has one
+        int slot = currentScope.addVariableThisScope(id);
 
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(line, restKwargsName, slot);
 
@@ -2085,19 +2109,20 @@ public abstract class RubyParserBase {
     }
 
     public Node remove_duplicate_keys(final HashNode hash) {
-        final Map<Node, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
+        final Map<Object, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             final Node key = pair.getKey();
-            if (!(key instanceof LiteralValue)) continue;
-            if (encounteredKeys.containsKey(key)) {
+            Object literalKey = duplicateKeyFor(key);
+            if (literalKey == null) continue;
+            if (encounteredKeys.containsKey(literalKey)) {
                 Ruby runtime = getRuntime();
-                IRubyObject value = ((LiteralValue) key).literalValue(runtime);
+                IRubyObject value = literalKeyValue(runtime, key);
                 warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
-            encounteredKeys.put(key, pair);
+            encounteredKeys.put(literalKey, pair);
         }
 
         // NOTE: we do not really remove the value part (RHS) as in that case we should evaluate the code - despite
@@ -2105,6 +2130,43 @@ public abstract class RubyParserBase {
         // with JRuby the modification of the hash should be done in the IR and not here (during the parsing phase)...
 
         return hash;
+    }
+
+    /**
+     * What a literal hash key is compared by to find duplicates, or null for a key that is not a
+     * literal. Like CRuby, this covers numbers of every kind, Strings, Symbols, Regexps and
+     * __ENCODING__ as well as __FILE__ and __LINE__.
+     */
+    private static Object duplicateKeyFor(Node key) {
+        if (key == null) return null; // a **splat
+
+        return switch (key) {
+            case BignumNode bignum -> List.of("bignum", bignum.getValue());
+            case RationalNode rational -> {
+                Object numerator = duplicateKeyFor(rational.getNumerator());
+                Object denominator = duplicateKeyFor(rational.getDenominator());
+                yield numerator == null || denominator == null ? null : List.of("rational", numerator, denominator);
+            }
+            case ComplexNode complex -> {
+                Object imaginary = duplicateKeyFor(complex.getNumber());
+                yield imaginary == null ? null : List.of("complex", imaginary);
+            }
+            case RegexpNode regexp -> List.of("regexp", regexp.getValue(), regexp.getOptions().toEmbeddedOptions());
+            case EncodingNode encoding -> List.of("encoding", encoding.getEncoding());
+            case LiteralValue literal -> key;
+            default -> null;
+        };
+    }
+
+    // the value of a key duplicateKeyFor accepted, for the warning
+    private static IRubyObject literalKeyValue(Ruby runtime, Node key) {
+        return switch (key) {
+            case BignumNode bignum -> RubyBignum.newBignum(runtime, bignum.getValue());
+            case ComplexNode complex -> RubyComplex.newComplexRaw(runtime, RubyFixnum.zero(runtime), literalKeyValue(runtime, complex.getNumber()));
+            case RegexpNode regexp -> RubyRegexp.newRegexp(runtime, regexp.getValue(), regexp.getOptions());
+            case EncodingNode encoding -> runtime.getEncodingService().getEncoding(encoding.getEncoding());
+            default -> ((LiteralValue) key).literalValue(runtime);
+        };
     }
 
     public static Node newAlias(int line, Node newNode, Node oldNode) {
@@ -2200,6 +2262,14 @@ public abstract class RubyParserBase {
 
     public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
+
+        // a keyword parameter's label still ends with ':' here (see arg_var), so drop it before checking for a
+        // parameter with the same name
+        int length = identifier.length();
+        if (length > 0 && identifier.get(length - 1) == ':') {
+            shadowing_lvar(identifier.makeShared(0, length - 1));
+            return identifier;
+        }
 
         return shadowing_lvar(identifier);
     }
@@ -2505,9 +2575,10 @@ public abstract class RubyParserBase {
         return body;
     }
 
+    // MRI: restore_defun
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
+        restoreMaxNumParam(holder.maxNumParam);
     }
 
     public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
@@ -2578,11 +2649,18 @@ public abstract class RubyParserBase {
         keyTable.add(key);
     }
 
+    // MRI: error_duplicate_pattern_variable
     public void error_duplicate_pattern_variable(ByteList variable) {
         if (is_private_local_id(variable)) return;
-        if (variableTable.contains(variable)) yyerror("duplicated variable name");
 
-        variableTable.add(variable);
+        if (variableTable.contains(variable)) {
+            yyerror("duplicated variable name");
+        } else if (getLexContext().in_alt_pattern) {
+            yyerror("variable capture in alternative pattern");
+        } else {
+            getLexContext().capture_in_pattern = true;
+            variableTable.add(variable);
+        }
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
@@ -2711,14 +2789,6 @@ public abstract class RubyParserBase {
 
     protected void setCommandStart(boolean value) {
         lexer.commandStart = value;
-    }
-
-    protected ByteList getCurrentArg() {
-        return lexer.getCurrentArg();
-    }
-
-    protected void setCurrentArg(RubySymbol value) {
-        lexer.setCurrentArg(value == null ?  null : value.getBytes());
     }
 
     protected StrNode createStr(ByteList buffer, int flags) {
@@ -2999,8 +3069,32 @@ public abstract class RubyParserBase {
         return new ErrorNode(loc);
     }
 
-    protected void forwarding_arg_check(ByteList rest, ByteList all, String var) {
-        // FIXME: Impl
+    // MRI: forwarding_arg_check
+    protected void forwarding_arg_check(ByteList arg, ByteList all, String var) {
+        String argId = symbolID(arg).idString();
+        String allId = symbolID(all).idString();
+
+        // A block between here and the method that declares the same kind of anonymous parameter would take it
+        boolean conflict = false;
+        StaticScope scope = getCurrentScope();
+        while (scope != null && scope.isBlockScope() && scope.getType() != StaticScope.Type.EVAL) {
+            conflict |= scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+            scope = scope.getEnclosingScope();
+        }
+
+        // The method must declare it itself, and not only through ... (eval code sees the scopes around it)
+        boolean found;
+        if (scope != null && scope.getType() == StaticScope.Type.EVAL) {
+            found = scope.isDefined(argId) >= 0 && scope.isDefined(allId) < 0;
+        } else {
+            found = scope != null && scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+        }
+
+        if (!found) {
+            compile_error("no anonymous " + var + " parameter");
+        } else if (conflict) {
+            compile_error("anonymous " + var + " parameter is also used within block");
+        }
     }
 
     protected void WARN_EOL(String name) {
@@ -3012,6 +3106,8 @@ public abstract class RubyParserBase {
     }
 
     private boolean hasArguments() {
-        return !currentScope.getSignature().isNoArguments();
+        // no signature yet means its parameters are still being parsed, as in ->x=it{}
+        Signature signature = currentScope.getSignature();
+        return signature == null || !signature.isNoArguments();
     }
 }

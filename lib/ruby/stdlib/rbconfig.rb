@@ -2,32 +2,8 @@
 JRuby::Util.load_ext("org.jruby.ext.rbconfig.RbConfigLibrary")
 
 module RbConfig
-  # call-seq:
-  #
-  #   RbConfig.expand(val)         -> string
-  #   RbConfig.expand(val, config) -> string
-  #
-  # expands variable with given +val+ value.
-  #
-  #   RbConfig.expand("$(bindir)") # => /home/foobar/all-ruby/ruby19x/bin
-  def RbConfig::expand(val, config = CONFIG)
-    newval = val.gsub(/\$\$|\$\(([^()]+)\)|\$\{([^{}]+)\}/) {
-      var = $&
-      if !(v = $1 || $2)
-        '$'
-      elsif key = config[v = v[/\A[^:]+(?=(?::(.*?)=(.*))?\z)/]]
-        pat, sub = $1, $2
-        config[v] = false
-        config[v] = RbConfig::expand(key, config)
-        key = key.gsub(/#{Regexp.quote(pat)}(?=\s|\z)/n) {sub} if pat
-        key
-      else
-        var
-      end
-    }
-    val.replace(newval) unless newval == val
-    val
-  end
+  # RbConfig.expand and RbConfig.ruby are defined with the rest of the built-in library, in
+  # jruby/kernel/rbconfig.rb
   CONFIG.each_value do |val|
     RbConfig::expand(val)
   end
@@ -61,17 +37,5 @@ module RbConfig
     deps.each {|k| conf[k] = mkconf[k].dup}
     deps.each {|k| expand(conf[k])}
     deps
-  end
-
-  # call-seq:
-  #
-  #   RbConfig.ruby -> path
-  #
-  # returns the absolute pathname of the ruby command.
-  def RbConfig.ruby
-    File.join(
-      RbConfig::CONFIG["bindir"],
-      RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"]
-    )
   end
 end

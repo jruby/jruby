@@ -44,6 +44,39 @@ describe "Array#==" do
     [obj].should == [5]
   end
 
+  it "calls a redefined Integer#== on Integers that are not identical" do
+    ruby_exe(<<~RUBY).should == "[true, true]\n"
+      class Integer
+        def ==(other) = true
+      end
+      p [[1, 2**40] == [3, 2**40 + 1], [2**70] == [2**70 + 1]]
+    RUBY
+  end
+
+  it "calls Integer#== from a module prepended to Integer" do
+    ruby_exe(<<~RUBY).should == "true\n"
+      Integer.prepend(Module.new { def ==(other) = true })
+      p [1, 2**40] == [3, 2**40 + 1]
+    RUBY
+  end
+
+  it "calls a redefined Float#== on Floats that are not identical" do
+    ruby_exe(<<~RUBY).should == "true\n"
+      class Float
+        def ==(other) = true
+      end
+      p [1.5, 1e300] == [2.5, 2e300]
+    RUBY
+  end
+
+  it "returns false for Floats that are NaN and not identical" do
+    [0.0 / 0.0].should_not == [0.0 / 0.0]
+  end
+
+  it "returns true for 0.0 and -0.0" do
+    [0.0].should == [-0.0]
+  end
+
   # See https://bugs.ruby-lang.org/issues/1720
   it "returns true for [NaN] == [NaN] because Array#== first checks with #equal? and NaN.equal?(NaN) is true" do
     [Float::NAN].should == [Float::NAN]

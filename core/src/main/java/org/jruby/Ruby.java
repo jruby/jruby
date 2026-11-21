@@ -189,6 +189,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -551,7 +552,11 @@ public final class Ruby implements Constantizable {
         coreIsBooted = true;
 
         // Don't load boot-time libraries when debugging IR
-        if (!RubyInstanceConfig.DEBUG_PARSER) initBootLibraries(context);
+        if (RubyInstanceConfig.DEBUG_PARSER) {
+            builtinSnapshot = Builtins.snapshot(this);
+        } else {
+            initBootLibraries(context);
+        }
 
         SecurityHelper.checkCryptoRestrictions(this);
 
@@ -588,6 +593,9 @@ public final class Ruby implements Constantizable {
 
         // init Ruby-based kernel
         initRubyKernel();
+
+        // the core methods are all defined, so later changes to them can be detected
+        builtinSnapshot = Builtins.snapshot(this);
 
         // Define blank modules for feature detection in preludes
         if (!this.config.isDisableGems()) {
@@ -2925,6 +2933,16 @@ public final class Ruby implements Constantizable {
      *
      */
     public void printError(final RubyException ex) {
+        printError(ex, new HashSet<>());
+    }
+
+    /**
+     * Prints an exception and its causes to stderr, skipping causes that have already been shown.
+     *
+     * @param ex the exception to print
+     * @param shownCauses causes already shown, which is updated with the causes printed here
+     */
+    public void printError(final RubyException ex, Set<Object> shownCauses) {
         if (ex == null) return;
 
         boolean formatted =
@@ -2932,7 +2950,7 @@ public final class Ruby implements Constantizable {
                         getErr() == System.err &&
                         getPosix().isatty(FileDescriptor.err);
 
-        String backtrace = config.getTraceType().printBacktrace(ex, formatted);
+        String backtrace = config.getTraceType().printBacktrace(ex, formatted, shownCauses);
         printErrorString(backtrace);
     }
 
@@ -3277,7 +3295,8 @@ public final class Ruby implements Constantizable {
 
         int status = userTeardown(context);
 
-        systemTeardown(context);
+        int systemStatus = systemTeardown(context);
+        if (status == 0) status = systemStatus;
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);
@@ -3297,7 +3316,9 @@ public final class Ruby implements Constantizable {
     }
 
     @SuppressWarnings("ReturnValueIgnored")
-    private void systemTeardown(final ThreadContext context) {
+    private int systemTeardown(final ThreadContext context) {
+        int status = 0;
+
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
@@ -3353,7 +3374,19 @@ public final class Ruby implements Constantizable {
             IRubyObject[] trapResultEntries = ary.toJavaArray(context);
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+                IRubyObject previousError = context.getErrorInfo();
+                try {
+                    ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+                } catch (SystemExit exit) {
+                    throw exit;
+                } catch (RaiseException re) {
+                    // report like an at_exit handler, without repeating causes those handlers already reported
+                    Set<Object> shownCauses = exitShownCauses;
+                    if (shownCauses == null) shownCauses = new HashSet<>();
+                    if (previousError instanceof RubyException) shownCauses.add(previousError);
+                    printError(re.getException(), shownCauses);
+                    status = 1;
+                }
             }
         }
 
@@ -3375,6 +3408,11 @@ public final class Ruby implements Constantizable {
 
         javaSupport.tearDown();
         javaSupport = loadJavaSupport();
+
+        // Release parser resources
+        parserManager.tearDown();
+
+        return status;
     }
 
     private int userTeardown(ThreadContext context) {
@@ -3391,7 +3429,9 @@ public final class Ruby implements Constantizable {
         // MRI: rb_ec_teardown. Run out this thread's scheduler before any at-exit handler
         context.getFiberCurrentThread().setFiberScheduler(context, context.nil);
 
-        // Run all exit functions from user hooks like at_exit
+        // Run all exit functions from user hooks like at_exit, sharing the causes they have already
+        // reported so an error is not shown again as the cause of an error from a later handler
+        exitShownCauses = new HashSet<>();
         while (!exitBlocks.isEmpty()) {
             ExitFunction fun = exitBlocks.remove(0);
             int ret = fun.applyAsInt(context);
@@ -4801,17 +4841,29 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Called when a method is defined on a class that might invalidate
-     * builtin optimizations.
+     * Called when a method is defined, removed or undefined in any module. If a core class
+     * with builtin fast paths no longer resolves that name to its builtin method, the fast
+     * paths for it are turned off.
      *
-     * @param module the module/class where the method was defined
-     * @param method the method name
+     * @param location the module or class whose method table changed
+     * @param name the method name
      */
-    void invalidateBuiltin(RubyModule module, String method) {
-        // Don't invalidate during initial core boot (we're defining builtins!)
-        if (!isBootingCore()) {
-            Builtins.invalidateBuiltin(builtinBits, module.getClassIndex(), method);
-        }
+    void recheckBuiltins(RubyModule location, String name) {
+        // Nothing to compare against until the core has booted (we're defining builtins!)
+        Builtins.Snapshot snapshot = builtinSnapshot;
+        if (snapshot != null) snapshot.recheck(builtinBits, location, name);
+    }
+
+    /**
+     * Called when a module is included or prepended into any module, which may put its
+     * methods ahead of the builtin ones of a core class with fast paths.
+     *
+     * @param target the module or class the module was included in or prepended to
+     * @param module the module included or prepended
+     */
+    void recheckBuiltins(RubyModule target, RubyModule module) {
+        Builtins.Snapshot snapshot = builtinSnapshot;
+        if (snapshot != null) snapshot.recheckIncluded(builtinBits, target, module);
     }
 
     /**
@@ -5014,6 +5066,7 @@ public final class Ruby implements Constantizable {
     private RubyString.FString cacheFString(RubyString.FString candidate) {
         // new uncached wrapper since it may get inserted as a new key
         var wrapper = new FStringEqual(candidate);
+        candidate.dedupKey = wrapper;
 
         // try to get or compute until we have a result
         while (true) {
@@ -5083,7 +5136,12 @@ public final class Ruby implements Constantizable {
         RubyString string;
 
         static FStringEqual cached(Ruby runtime, RubyString string) {
-            FStringEqual wrapper = runtime.DEDUP_WRAPPER_CACHE.get();
+            WeakReference<FStringEqual> ref = runtime.DEDUP_WRAPPER_CACHE.get();
+            FStringEqual wrapper;
+            if (ref == null || (wrapper = ref.get()) == null) {
+                wrapper = new FStringEqual();
+                runtime.DEDUP_WRAPPER_CACHE.set(new WeakReference<>(wrapper));
+            }
             wrapper.string = string;
             return wrapper;
         }
@@ -5119,7 +5177,9 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private final ThreadLocal<FStringEqual> DEDUP_WRAPPER_CACHE = ThreadLocal.withInitial(FStringEqual::new);
+    // The wrapper is held weakly, so that the threads that used this runtime only keep JDK types in their
+    // thread-local maps after it is torn down, and not the class loader that loaded JRuby.
+    private final ThreadLocal<WeakReference<FStringEqual>> DEDUP_WRAPPER_CACHE = new ThreadLocal<>();
 
     public int getRuntimeNumber() {
         return runtimeNumber;
@@ -5204,6 +5264,7 @@ public final class Ruby implements Constantizable {
 
     /** Bit flags tracking which builtin methods have been redefined (thread-local builtin tracking system) */
     private final int[] builtinBits = Builtins.allocate();
+    private Builtins.Snapshot builtinSnapshot;
 
     private final POSIX posix;
     private POSIX nativePosix;
@@ -5470,6 +5531,9 @@ public final class Ruby implements Constantizable {
      */
     private final List<ExitFunction> exitBlocks = Collections.synchronizedList(new LinkedList<>());
 
+    // causes already reported by at_exit and END handlers during teardown
+    private volatile Set<Object> exitShownCauses;
+
     /**
      * Registry of shutdown operations that should happen after all user code has been run (e.g. at_exit hooks).
      */
@@ -5656,9 +5720,11 @@ public final class Ruby implements Constantizable {
         }
 
         @Override
+        @CRuby(value = "rb_ec_exec_end_proc", file = "eval_jump.c")
         public int applyAsInt(ThreadContext context) {
+            // the error left in $! by an earlier handler counts as shown
+            IRubyObject previousError = context.getErrorInfo();
             try {
-                // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
                 proc.call(context, IRubyObject.NULL_ARRAY);
 
             } catch (LocalJumpError rj) {
@@ -5683,7 +5749,10 @@ public final class Ruby implements Constantizable {
                 return toInt(context, raisedException.callMethod(context, "status"));
             } catch (RaiseException re) {
                 // display and set error result but do not propagate other errors raised during at_exit
-                Ruby.this.printError(re.getException());
+                Set<Object> shownCauses = exitShownCauses;
+                if (shownCauses == null) shownCauses = new HashSet<>();
+                if (previousError instanceof RubyException) shownCauses.add(previousError);
+                Ruby.this.printError(re.getException(), shownCauses);
                 return 1;
 
             } catch (IRReturnJump e) {

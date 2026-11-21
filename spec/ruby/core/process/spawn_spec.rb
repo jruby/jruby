@@ -48,6 +48,14 @@ describe "Process.spawn" do
     -> { Process.wait Process.spawn("echo spawn") }.should output_to_fd("spawn\n")
   end
 
+  # Without fork, as on Windows, CRuby spawns without flushing first
+  platform_is_not :windows do
+    it "flushes STDOUT before starting the process" do
+      child = ruby_cmd('print "b"')
+      ruby_exe("print 'a'; Process.wait(Process.spawn(#{child.inspect})); print 'c'").should == "abc"
+    end
+  end
+
   it "returns the process ID of the new process as an Integer" do
     pid = Process.spawn(*ruby_exe, "-e", "exit")
     Process.wait pid
@@ -131,12 +139,14 @@ describe "Process.spawn" do
   end
 
   describe "with a command array" do
-    it "uses the first element as the command name and the second as the argv[0] value" do
-      platform_is_not :windows do
-        -> { Process.wait Process.spawn(["/bin/sh", "argv_zero"], "-c", "echo $0") }.should output_to_fd("argv_zero\n")
-      end
-      platform_is :windows do
-        -> { Process.wait Process.spawn(["cmd.exe", "/C"], "/C", "echo", "argv_zero") }.should output_to_fd("argv_zero\n")
+    guard_not -> { ProcessSpecs.busybox_sh? } do
+      it "uses the first element as the command name and the second as the argv[0] value" do
+        platform_is_not :windows do
+          -> { Process.wait Process.spawn(["/bin/sh", "argv_zero"], "-c", "echo $0") }.should output_to_fd("argv_zero\n")
+        end
+        platform_is :windows do
+          -> { Process.wait Process.spawn(["cmd.exe", "/C"], "/C", "echo", "argv_zero") }.should output_to_fd("argv_zero\n")
+        end
       end
     end
 
@@ -153,15 +163,17 @@ describe "Process.spawn" do
       -> { Process.wait Process.spawn(["echo", "echo"], "a b  c   d") }.should output_to_fd(out)
     end
 
-    it "calls #to_ary to convert the argument to an Array" do
-      o = mock("to_ary")
-      platform_is_not :windows do
-        o.should_receive(:to_ary).and_return(["/bin/sh", "argv_zero"])
-        -> { Process.wait Process.spawn(o, "-c", "echo $0") }.should output_to_fd("argv_zero\n")
-      end
-      platform_is :windows do
-        o.should_receive(:to_ary).and_return(["cmd.exe", "/C"])
-        -> { Process.wait Process.spawn(o, "/C", "echo", "argv_zero") }.should output_to_fd("argv_zero\n")
+    guard_not -> { ProcessSpecs.busybox_sh? } do
+      it "calls #to_ary to convert the argument to an Array" do
+        o = mock("to_ary")
+        platform_is_not :windows do
+          o.should_receive(:to_ary).and_return(["/bin/sh", "argv_zero"])
+          -> { Process.wait Process.spawn(o, "-c", "echo $0") }.should output_to_fd("argv_zero\n")
+        end
+        platform_is :windows do
+          o.should_receive(:to_ary).and_return(["cmd.exe", "/C"])
+          -> { Process.wait Process.spawn(o, "/C", "echo", "argv_zero") }.should output_to_fd("argv_zero\n")
+        end
       end
     end
 
@@ -418,6 +430,22 @@ describe "Process.spawn" do
       -> do
         Process.wait Process.spawn(ruby_cmd("print Dir.pwd"), chdir: "nonexistent")
       end.should.raise(Errno::ENOENT, "No such file or directory - nonexistent")
+    end
+
+    platform_is_not :windows do
+      it "changes to a directory given as a binary path containing non-ASCII bytes" do
+        dir = tmp("spawn_chdir_binary_\u{3042}")
+        Dir.mkdir(dir)
+        touch("#{dir}/marker")
+
+        begin
+          -> do
+            Process.wait Process.spawn(ruby_cmd("print File.exist?('marker')"), chdir: dir.b)
+          end.should output_to_fd("true")
+        ensure
+          rm_r dir
+        end
+      end
     end
   end
 

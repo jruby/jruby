@@ -117,11 +117,12 @@ public class DynamicLibrary extends RubyObject {
         String basename = new File(name).getName();
         String[] names = basename.split("\\.");
 
-        // by putting the file into the jruby temp dir, it's automatically cleaned up
         Path tempfile = Files.createTempFile(JRubyClassLoader.getTempDir().toPath(), names[0], "." + names[names.length - 1]);
         Files.copy(resourceAsStream, tempfile, StandardCopyOption.REPLACE_EXISTING);
 
         File file = tempfile.toFile();
+        // the library stays loaded and cached for the life of this JRuby, so it can only be deleted at exit
+        file.deleteOnExit();
         file.setExecutable(true); // do this after we write the file, otherwise dlopen doesn't work
         extractedLibraries.put(name, file.getAbsolutePath());
         return file.getAbsolutePath();

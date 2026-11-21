@@ -117,4 +117,11 @@ describe "Module#private_method_defined?" do
       ModuleSpecs::Child.private_method_defined?(:private_super_module, false).should == false
     end
   end
+
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns false for a method that is not implemented on this platform" do
+      Kernel.private_method_defined?(:syscall).should == false
+      Kernel.private_method_defined?(:syscall, false).should == false
+    end
+  end
 end

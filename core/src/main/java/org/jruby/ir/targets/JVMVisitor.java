@@ -12,7 +12,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
-import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -1310,9 +1309,9 @@ public class JVMVisitor extends IRVisitor {
         int arity = args.length;
 
         if (args.length == 1 && args[0] instanceof Splat) {
-            visit(args[0]);
             m.loadContext();
-            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class, ThreadContext.class));
+            visit(args[0]);
+            m.invokeIRHelper("splatToArgs", sig(IRubyObject[].class, ThreadContext.class, RubyArray.class));
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
             throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
@@ -2318,8 +2317,10 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().loadContext();
             jvmMethod().loadArgs();
+            // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+            visit(instr.getOperand1());
             jvmAdapter().pushInt(instr.getArgIndex());
-            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, IRubyObject.class, int.class));
         }
         jvmStoreLocal(instr.getResult());
     }
@@ -2704,8 +2705,35 @@ public class JVMVisitor extends IRVisitor {
         if (name == null) name = "null";
 
         switch (traceInstr.getEvent()) {
-            case CALL:
             case RETURN:
+                jvmMethod().loadFrameClass();
+                visit(traceInstr.getValue());
+
+                jvmAdapter().invokedynamic(
+                        traceInstr.getEvent().getName(),
+                        sig(void.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
+                        CallTraceSite.BOOTSTRAP,
+                        name,
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            case B_RETURN:
+                jvmMethod().loadSelfBlock();
+                visit(traceInstr.getValue());
+
+                jvmAdapter().invokedynamic(
+                        traceInstr.getEvent().getName(),
+                        sig(void.class, ThreadContext.class, Block.class, IRubyObject.class),
+                        CallTraceSite.BOOTSTRAP,
+                        name,
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            case CALL:
             case CLASS:
             case END:
             case LINE:
@@ -2722,7 +2750,6 @@ public class JVMVisitor extends IRVisitor {
                 break;
 
             case B_CALL:
-            case B_RETURN:
                 jvmMethod().loadSelfBlock();
 
                 jvmAdapter().invokedynamic(
@@ -2899,8 +2926,26 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Complex(Complex complex) {
+        Operand number = complex.getNumber();
+        ValueCompiler valueCompiler = jvmMethod().getValueCompiler();
+
+        if (number instanceof Fixnum f) {
+            valueCompiler.pushComplex(f.getValue());
+            return;
+        } else if (number instanceof Float f) {
+            valueCompiler.pushComplex(f.getValue());
+            return;
+        } else if (number instanceof Bignum b) {
+            valueCompiler.pushComplex(b.value);
+            return;
+        } else if (number instanceof Rational r) {
+            valueCompiler.pushComplex(r.getNumerator(), r.getDenominator());
+            return;
+        }
+
+        // fallback
         jvmMethod().loadContext();
-        visit(complex.getNumber());
+        visit(number);
         jvmMethod().invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
     }
 
@@ -3031,10 +3076,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Rational(Rational rational) {
-        jvmMethod().loadContext();
-        visit(rational.getNumerator());
-        visit(rational.getDenominator());
-        jvmMethod().invokeIRHelper("newRationalCanonicalize", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().getValueCompiler().pushRational(rational.getNumerator(), rational.getDenominator());
     }
 
     @Override

@@ -47,7 +47,6 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.CRuby;
@@ -64,6 +63,8 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -558,12 +559,10 @@ public class RubyKernel {
             }
 
             if (isHexValue(bytes)) {
-                if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
-                    return asFloat(context, parseHexidecimalExponentString2(context, bytes));
-                }
-                IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
-                if (!exception && inum.isNil()) return inum;
-                return ((RubyInteger) inum).toFloat();
+                double value = parseHexFloat(bytes);
+                if (!Double.isNaN(value)) return asFloat(context, value);
+                if (!exception) return context.nil;
+                throw floatError(context, bytes);
             }
             return RubyNumeric.str2fnum(runtime, str, true, exception);
         }
@@ -598,8 +597,94 @@ public class RubyKernel {
 
     static boolean isHexValue(ByteList bytes) {
         int length = bytes.getRealSize();
-        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        int index = 0;
+        while (index < length && isSpace(bytes.get(index))) index++;
+        if (index < length && (bytes.get(index) == '-' || bytes.get(index) == '+')) index++;
         return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
+    }
+
+    /**
+     * Parse a hexadecimal Float such as 0x1.8p3, as strtod does: hex digits with an optional point
+     * and fraction, then an optional binary exponent of decimal digits after a p. An underscore
+     * may only come between two digits, and only spaces may come after the number.
+     *
+     * @param str the text, which starts with 0x after any spaces and sign
+     * @return the value, or NaN if the text is not a valid hexadecimal Float
+     */
+    @CRuby(value = "rb_cstr_to_dbl_raise", file = "object.c")
+    private static double parseHexFloat(ByteList str) {
+        byte[] b = str.unsafeBytes();
+        int p = str.begin();
+        int end = p + str.realSize();
+
+        while (p < end && isSpace(b[p])) p++;
+        boolean negative = false;
+        if (p < end && (b[p] == '-' || b[p] == '+')) negative = b[p++] == '-';
+        p += 2; // 0x
+
+        BigInteger mantissa = BigInteger.ZERO;
+        int digits = 0;
+        int fractionDigits = 0;
+        boolean point = false;
+        int prev = 'x';
+        for (; p < end; p++) {
+            int c = b[p];
+            int digit = Character.digit(c, 16);
+            if (digit >= 0 && c < 0x80) {
+                mantissa = mantissa.shiftLeft(4).add(BigInteger.valueOf(digit));
+                digits++;
+                if (point) fractionDigits++;
+            } else if (c == '_') {
+                if (!isHexDigit(prev) || p + 1 == end || !isHexDigit(b[p + 1])) return Double.NaN;
+            } else if (c == '.' && !point) {
+                point = true;
+            } else {
+                break;
+            }
+            prev = c;
+        }
+        if (digits == 0) return Double.NaN;
+
+        long exponent = 0;
+        if (p < end && (b[p] == 'p' || b[p] == 'P')) {
+            p++;
+            boolean negativeExponent = false;
+            if (p < end && (b[p] == '-' || b[p] == '+')) negativeExponent = b[p++] == '-';
+            int exponentDigits = 0;
+            for (prev = 0; p < end; p++) {
+                int c = b[p];
+                if (c >= '0' && c <= '9') {
+                    if (exponent < 1_000_000_000L) exponent = exponent * 10 + (c - '0');
+                    exponentDigits++;
+                } else if (c == '_') {
+                    if (!(prev >= '0' && prev <= '9') || p + 1 == end || !(b[p + 1] >= '0' && b[p + 1] <= '9')) return Double.NaN;
+                } else {
+                    break;
+                }
+                prev = c;
+            }
+            if (exponentDigits == 0) return Double.NaN;
+            if (negativeExponent) exponent = -exponent;
+        }
+
+        while (p < end && isSpace(b[p])) p++;
+        if (p < end) return Double.NaN;
+
+        // keep the mantissa within a double's range, moving the extra bits into the exponent
+        int extraBits = Math.max(0, mantissa.bitLength() - 1000);
+        long scale = exponent - 4L * fractionDigits + extraBits;
+        double value = mantissa.shiftRight(extraBits).doubleValue();
+        value = Math.scalb(value, (int) Math.max(Integer.MIN_VALUE / 2, Math.min(Integer.MAX_VALUE / 2, scale)));
+
+        return negative ? -value : value;
+    }
+
+    private static boolean isHexDigit(int c) {
+        return c < 0x80 && Character.digit(c, 16) >= 0;
+    }
+
+    private static boolean isSpace(int c) {
+        return c == ' ' || (c >= '\t' && c <= '\r');
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -900,23 +985,11 @@ public class RubyKernel {
         final long startTime = System.nanoTime();
         final RubyThread rubyThread = context.getThread();
 
-        boolean interrupted = false;
         try {
-            // Spurious wakeup-loop
-            do {
-                long loopStartTime = System.nanoTime();
-                long milliseconds = TimeUnit.NANOSECONDS.toMillis(nanoseconds);
-                long remainingNanos = nanoseconds - TimeUnit.MILLISECONDS.toNanos(milliseconds);
-
-                if (!rubyThread.sleep(milliseconds, remainingNanos)) break;
-
-                nanoseconds -= (System.nanoTime() - loopStartTime);
-            } while (nanoseconds > 0);
+            rubyThread.sleepUntilWakeup(context, nanoseconds);
         } catch (InterruptedException ie) {
-            // ignore; sleep gets interrupted
-            interrupted = true;
-        } finally {
-            if (interrupted) Thread.currentThread().interrupt();
+            // A Java interrupt ends the sleep. Keep the flag set for the caller.
+            Thread.currentThread().interrupt();
         }
 
         return sleptSeconds(context, startTime);
@@ -1088,6 +1161,17 @@ public class RubyKernel {
     }
 
     private static IRubyObject raiseWithNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
+        // MRI setup_exception: raise a frozen exception as a copy, or untouched if it has no backtrace and keeps no cause.
+        // The cause is checked against the original first, as MRI exc_setup_message does.
+        if (exception.isFrozen()) {
+            boolean assigns = assignsCause(exception, cause);
+            if (cause.provided && !cause.value.isNil()) RubyException.checkCauseType(context, cause.value);
+            if (assigns && !cause.value.isNil() && cause.value != exception) {
+                RubyException.checkCircularCause(context, exception, cause.value);
+            }
+            if (assigns && exception.getBacktrace().isNil()) return raiseException(context, exception);
+            exception = (RubyException) exception.dup();
+        }
         setNewExceptionCause(context, exception, cause);
         return raiseException(context, exception);
     }
@@ -1097,7 +1181,7 @@ public class RubyKernel {
         context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
         RaiseException throwable = exception.toThrowable();
-        exception.prepareBacktrace(context);
+        if (!exception.isFrozen()) exception.prepareBacktrace(context); // MRI leaves a frozen one without backtrace
         printDebugException(context, exception); // debug output ($DEBUG) after $! is set
         // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
         IRRuntimeHelpers.traceRaise(context);
@@ -1193,11 +1277,7 @@ public class RubyKernel {
         if (!cause.value.isNil() && cause.value != exception) {
             RubyException.checkCircularCause(context, exception, cause.value);
 
-            if (cause.provided) {
-                exception.setCause(context, cause.value);
-            } else if (exception.getCause() == null) {
-                exception.setCause(context, cause.value);
-            }
+            if (assignsCause(exception, cause)) exception.setCause(context, cause.value);
         }
     }
 
@@ -1213,9 +1293,17 @@ public class RubyKernel {
             if (!cause.provided && exception.getCause() == null) {
                 exception.setCause(context, cause.value);
             }
-        } else if ((cause.provided || exception.getCause() == null) && cause.value != exception) {
+        } else if (assignsCause(exception, cause) && cause.value != exception) {
             exception.setCause(context, cause.value);
         }
+    }
+
+    /**
+     * Whether raise takes the given cause: always with cause:, otherwise ($!) only for an exception without a cause
+     * yet. MRI exc_setup_message leaves the cause undefined in the other case.
+     */
+    private static boolean assignsCause(RubyException exception, Cause cause) {
+        return cause.provided || exception.getCause() == null;
     }
 
     /**
@@ -1382,16 +1470,22 @@ public class RubyKernel {
     public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
         RubyString relativePath = RubyFile.get_path(context, name);
         String file = context.getCurrentStaticScope().getFile();
+        IREvalScript evalScript = getEvalScript(context);
 
-        if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
+        if (file == null || (evalScript != null ? evalScript.hasNoRealPath() :
+                (file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")))) {
             throw context.runtime.newLoadError("cannot infer basepath");
         }
 
         file = loadService(context).getPathForLocation(file);
 
         RubyClass fileClass = fileClass(context);
-        IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
+        // Like CRuby, code evaluated with an explicit filename uses that
+        // filename as is. It need not exist on disk, so only resolve the
+        // real path of files that were actually loaded.
+        IRubyObject base = newString(context, file);
+        if (evalScript == null) base = RubyFile.realpath(context, fileClass, base);
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, base);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
@@ -1468,7 +1562,7 @@ public class RubyKernel {
                 binding.setLine(0);
             }
         } else {  // no explicit file/line argument given
-            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")");
+            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")", true);
             binding.setLine(0);
         }
 
@@ -2188,15 +2282,35 @@ public class RubyKernel {
         return frameName == null || frameName == Ruby.ROOT_FRAME_NAME ? context.nil : asSymbol(context, frameName);
     }
 
-    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
+    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = {FILENAME, SCOPE})
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
+
+        IREvalScript evalScript = getEvalScript(context);
+
+        if (evalScript != null) {
+            if (evalScript.hasNoRealPath()) return context.nil;
+
+            return newString(context, RubyFile.dirname(context, __FILE__));
+        }
 
         __FILE__ = loadService(context).getPathForLocation(__FILE__);
 
         RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
         return newString(context, RubyFile.dirname(context, path.asJavaString()));
+    }
+
+    private static IREvalScript getEvalScript(ThreadContext context) {
+        if (context.getCurrentStaticScope() == null) return null;
+
+        IRScope scope = context.getCurrentStaticScope().getIRScope();
+
+        for (; scope != null; scope = scope.getLexicalParent()) {
+            if (scope instanceof IREvalScript evalScript) return evalScript;
+        }
+
+        return null;
     }
 
     @Deprecated(since = "10.0.0.0")

@@ -364,6 +364,30 @@ describe 'Socket.getaddrinfo' do
     end
   end
 
+  # the socket types and their order come from the platform's getaddrinfo(3)
+  platform_is :linux, :darwin do
+    platform_is_not :android do
+      it 'returns an entry for each socket type of an address when no socket type is given' do
+        array = Socket.getaddrinfo('127.0.0.1', 80, :INET)
+
+        array.map { |entry| entry[5..6] }.should == [
+          [Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
+          [Socket::SOCK_DGRAM, Socket::IPPROTO_UDP],
+          [Socket::SOCK_RAW, 0]
+        ]
+      end
+
+      it 'returns an entry for each socket type that can use the given protocol' do
+        array = Socket.getaddrinfo('127.0.0.1', 80, :INET, nil, Socket::IPPROTO_TCP)
+
+        array.map { |entry| entry[5..6] }.should == [
+          [Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
+          [Socket::SOCK_RAW, Socket::IPPROTO_TCP]
+        ]
+      end
+    end
+  end
+
   describe 'with global reverse lookups' do
     before do
       @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
@@ -388,5 +412,30 @@ describe 'Socket.getaddrinfo' do
 
       addr[3].should == '127.0.0.1'
     end
+  end
+end
+
+describe "Socket.getaddrinfo with a Fiber scheduler" do
+  require_relative '../../../core/fiber/fixtures/scheduler'
+
+  before :each do
+    @scheduler = Class.new(FiberSpecs::LoggingScheduler) do
+      def address_resolve(hostname)
+        @events << { event: :address_resolve, fiber: Fiber.current, args: [hostname] }
+        ["127.0.0.1"]
+      end
+    end.new
+    Fiber.set_scheduler(@scheduler)
+  end
+
+  after :each do
+    Fiber.set_scheduler(nil)
+  end
+
+  it "calls the scheduler's #address_resolve with the host name and uses the addresses it returns" do
+    addrs = Fiber.new(blocking: false) { Socket.getaddrinfo("example.invalid", 80, :INET, :STREAM) }.resume
+
+    addrs.map { |addr| addr[3] }.should == ["127.0.0.1"]
+    @scheduler.events.map { |e| [e[:event], e[:args]] }.should == [[:address_resolve, ["example.invalid"]]]
   end
 end

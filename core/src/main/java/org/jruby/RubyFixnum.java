@@ -1239,7 +1239,34 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public IRubyObject op_equal(ThreadContext context, double other) {
-        return asBoolean(context, (double) getValue() == other);
+        return asBoolean(context, floatCmp(getValue(), other) == 0);
+    }
+
+    /**
+     * Compare an Integer with a Float exactly, rather than as doubles, which would round an
+     * Integer above 2**53 to the nearest double.
+     *
+     * @param x the Integer's value
+     * @param yd the Float's value
+     * @return -1, 0 or 1 as x is less than, equal to or greater than yd, or 2 when yd is NaN
+     */
+    @CRuby(value = "rb_integer_float_cmp", file = "bignum.c")
+    static int floatCmp(long x, double yd) {
+        if (Double.isNaN(yd)) return 2;
+        if (Double.isInfinite(yd)) return yd > 0.0 ? -1 : 1;
+
+        double yi = yd > 0.0 ? Math.floor(yd) : Math.ceil(yd);
+        double yf = yd - yi;
+
+        if (yi < -0x1p63) return 1;
+        if (yi >= 0x1p63) return -1;
+
+        long yn = (long) yi;
+        if (x < yn) return -1;
+        if (x > yn) return 1;
+        if (yf < 0.0) return 1;
+        if (yf > 0.0) return -1;
+        return 0;
     }
 
     /** fix_not_equal
@@ -1256,7 +1283,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public IRubyObject op_not_equal(ThreadContext context, double other) {
-        return asBoolean(context, (double) getValue() != other);
+        return asBoolean(context, floatCmp(getValue(), other) != 0);
     }
 
     public boolean op_equal_boolean(ThreadContext context, long other) {
@@ -1298,7 +1325,8 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     private int compareToOther(IRubyObject other) {
         return switch (other) {
             case RubyBignum bignum -> BigInteger.valueOf(getValue()).compareTo(bignum.value);
-            case RubyFloat flote ->Double.compare((double) getValue(), flote.value);
+            case RubyFloat flote -> Double.isNaN(flote.value) ?
+                    Double.compare((double) getValue(), flote.value) : floatCmp(getValue(), flote.value);
             default -> {
                 var context = getRuntime().getCurrentContext();
                 yield toInt(context, coerceCmp(context, sites(context).op_cmp, other));
@@ -1319,13 +1347,14 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public IRubyObject op_cmp(ThreadContext context, double other) {
-        return dbl_cmp(context.runtime, (double) getValue(), other);
+        int rel = floatCmp(getValue(), other);
+        return rel == 2 ? context.nil : asFixnum(context, rel);
     }
 
     private IRubyObject compareOther(ThreadContext context, IRubyObject other) {
         return switch (other) {
             case RubyBignum bignum -> asFixnum(context, BigInteger.valueOf(getValue()).compareTo(bignum.value));
-            case RubyFloat flote -> dbl_cmp(context.runtime, (double) getValue(), flote.value);
+            case RubyFloat flote -> op_cmp(context, flote.value);
             default -> coerceCmp(context, sites(context).op_cmp, other);
         };
     }
@@ -1349,7 +1378,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     private IRubyObject op_gtOther(ThreadContext context, IRubyObject other) {
         return switch (other) {
             case RubyBignum bignum -> asBoolean(context, BigInteger.valueOf(getValue()).compareTo(bignum.value) > 0);
-            case RubyFloat flote -> asBoolean(context, (double) getValue() > flote.value);
+            case RubyFloat flote -> asBoolean(context, floatCmp(getValue(), flote.value) == 1);
             default -> coerceRelOp(context, sites(context).op_gt, other);
         };
     }
@@ -1373,7 +1402,10 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     private IRubyObject op_geOther(ThreadContext context, IRubyObject other) {
         return switch (other) {
             case RubyBignum bignum -> asBoolean(context, BigInteger.valueOf(getValue()).compareTo(bignum.value) >= 0);
-            case RubyFloat flote -> asBoolean(context, (double) getValue() >= flote.value);
+            case RubyFloat flote -> {
+                int rel = floatCmp(getValue(), flote.value);
+                yield asBoolean(context, rel == 0 || rel == 1);
+            }
             default -> coerceRelOp(context, sites(context).op_ge, other);
         };
     }
@@ -1400,8 +1432,8 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
             return asBoolean(context,
                     BigInteger.valueOf(getValue()).compareTo(((RubyBignum) other).value) < 0);
         }
-        if (other instanceof RubyFloat) {
-            return asBoolean(context, (double) getValue() < ((RubyFloat) other).value);
+        if (other instanceof RubyFloat flote) {
+            return asBoolean(context, floatCmp(getValue(), flote.value) == -1);
         }
         return coerceRelOp(context, sites(context).op_lt, other);
     }
@@ -1426,7 +1458,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     private IRubyObject op_leOther(ThreadContext context, IRubyObject other) {
         return switch (other) {
             case RubyBignum bignum -> asBoolean(context, BigInteger.valueOf(getValue()).compareTo(bignum.value) <= 0);
-            case RubyFloat flote -> asBoolean(context, (double) getValue() <= flote.value);
+            case RubyFloat flote -> asBoolean(context, floatCmp(getValue(), flote.value) <= 0);
             default -> coerceRelOp(context, sites(context).op_le, other);
         };
     }

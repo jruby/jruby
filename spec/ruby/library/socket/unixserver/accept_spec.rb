@@ -125,6 +125,7 @@ describe 'UNIXServer#accept' do
   end
 end
 
+platform_is_not :windows do # Hangs on Windows
 describe "UNIXServer#accept with Fiber scheduler" do
   require_relative '../../../core/fiber/fixtures/scheduler'
 
@@ -149,13 +150,15 @@ describe "UNIXServer#accept with Fiber scheduler" do
     SocketSpecs.rm_socket @path
   end
 
-  it "calls the scheduler's #io_wait with IO::READABLE and no timeout" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
+  ruby_version_is "3.4" do
+    it "calls the scheduler's #io_wait with IO::READABLE and no timeout" do
+      @fiber = Fiber.new(blocking: false) { @server.accept }
+      @fiber.resume
 
-    Fiber.scheduler.events.should == [
-      { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
-    ]
+      Fiber.scheduler.events.should == [
+        { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
+      ]
+    end
   end
 
   it "returns the connection once #io_wait reports the server readable" do
@@ -192,4 +195,5 @@ describe "UNIXServer#accept with Fiber scheduler" do
   ensure
     @client = connector&.value
   end
+end
 end

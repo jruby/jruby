@@ -40,7 +40,9 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyException;
+import org.jruby.RubyIO;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -199,23 +201,7 @@ public class RubyZlib {
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(context, args, 0, 2);
-        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
-        long start = !args[1].isNil() ? toLong(context, args[1]) : 0;
-        start &= 0xFFFFFFFFL;
-
-        final boolean slowPath = start != 0;
-        final int bytesLength = bytes == null ? 0 : bytes.length();
-        long result = 0;
-        if (bytes != null) {
-            CRC32 checksum = new CRC32();
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytesLength);
-            result = checksum.getValue();
-        }
-        if (slowPath) {
-            result = JZlib.crc32_combine(start, result, bytesLength);
-        }
-        return asFixnum(context, result);
+        return checksum(context, args, true);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -225,17 +211,51 @@ public class RubyZlib {
 
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return checksum(context, args, false);
+    }
+
+    /**
+     * Zlib.crc32 and Zlib.adler32. The data is a String, or an IO read to its end, and the
+     * optional second argument is the checksum of the data that came before it. Like zlib, a
+     * negative starting value wraps around to an unsigned 32-bit one.
+     */
+    @CRuby(value = "do_checksum", file = "ext/zlib/zlib.c")
+    private static IRubyObject checksum(ThreadContext context, IRubyObject[] args, boolean crc) {
         args = Arity.scanArgs(context, args, 0, 2);
-        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
-        int start = !args[1].isNil() ? (int) toLong(context, args[1]) : 1;
+        IRubyObject str = args[0];
+        IRubyObject vsum = args[1];
+        long initial = crc ? 0 : 1;
+
+        // zlib returns the initial value for no data, whatever the starting value is
+        if (str.isNil()) return asFixnum(context, initial);
+
+        long sum = vsum.isNil() ? initial : toLong(context, vsum) & 0xFFFFFFFFL;
+
+        if (str instanceof RubyIO) {
+            IRubyObject chunkSize = asFixnum(context, 8192);
+            IRubyObject buf;
+            while (!(buf = str.callMethod(context, "read", chunkSize)).isNil()) {
+                sum = updateChecksum(sum, buf.convertToString().getByteList(), crc);
+            }
+        } else {
+            sum = updateChecksum(sum, str.convertToString().getByteList(), crc);
+        }
+
+        return asFixnum(context, sum);
+    }
+
+    // The JDK checksums are intrinsified but cannot be seeded, so a starting value is combined in
+    private static long updateChecksum(long sum, ByteList bytes, boolean crc) {
+        int length = bytes.length();
+        if (crc) {
+            CRC32 checksum = new CRC32();
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), length);
+            return sum == 0 ? checksum.getValue() : JZlib.crc32_combine(sum, checksum.getValue(), length);
+        }
 
         Adler32 checksum = new Adler32();
-        if (bytes != null) checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-
-        long result = checksum.getValue();
-        if (start != 1) result = JZlib.adler32_combine(start, result, bytes.length());
-
-        return asFixnum(context, result);
+        checksum.update(bytes.getUnsafeBytes(), bytes.begin(), length);
+        return sum == 1 ? checksum.getValue() : JZlib.adler32_combine(sum, checksum.getValue(), length);
     }
 
     @Deprecated(since = "10.0.0.0")

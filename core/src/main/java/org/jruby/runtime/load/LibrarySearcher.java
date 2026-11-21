@@ -531,8 +531,10 @@ public class LibrarySearcher {
         private final List<IRubyObject> featurePaths;
     }
 
-    private final ThreadLocal<StringWrapper> keyWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
-    private final ThreadLocal<StringWrapper> rangeWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
+    // Only used while holding this searcher's lock. They are not thread-locals, because a thread would keep its
+    // wrappers after the runtime is torn down, and with them the class loader that loaded JRuby.
+    private final StringWrapper keyWrapper = new StringWrapper(null, 0, 0);
+    private final StringWrapper rangeWrapper = new StringWrapper(null, 0, 0);
 
     protected synchronized void addSingleFeatureToIndex(String key, int beg, int end, IRubyObject featurePath) {
         Map<StringWrapper, Feature> featuresIndex = this.loadedFeaturesIndex;
@@ -556,13 +558,13 @@ public class LibrarySearcher {
     }
 
     private synchronized StringWrapper keyWrapper(String key) {
-        StringWrapper wrapper = keyWrapper.get();
+        StringWrapper wrapper = keyWrapper;
         wrapper.rewrap(key, 0, key.length());
         return wrapper;
     }
 
     private synchronized StringWrapper rangeWrapper(String key, int beg, int len) {
-        StringWrapper wrapper = rangeWrapper.get();
+        StringWrapper wrapper = rangeWrapper;
         wrapper.rewrap(key, beg, len);
         return wrapper;
     }

@@ -132,4 +132,12 @@ public class RubyKeyError extends RubyIndexError {
         if (key == null) throw argumentError(context, "no key is available");
         return key;
     }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyKeyError exception = (RubyKeyError)clone;
+        exception.receiver = receiver;
+        exception.key = key;
+    }
 }

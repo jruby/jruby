@@ -659,10 +659,8 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return pow(context, d);
     }
 
-    private RubyNumeric pow(ThreadContext context, final double d) {
-        double pow = Math.pow(big2dbl(this), d);
-        return Double.isInfinite(pow) ?
-                asFloat(context, pow) : asInteger(context, pow);
+    private RubyFloat pow(ThreadContext context, final double d) {
+        return asFloat(context, Math.pow(big2dbl(this), d));
     }
 
     // adjusted for JDK BigInteger limits
@@ -977,7 +975,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     // mri : rb_integer_float_cmp
-    private IRubyObject float_cmp(ThreadContext context, RubyFloat y) {
+    IRubyObject float_cmp(ThreadContext context, RubyFloat y) {
         Ruby runtime = context.runtime;
         double yd = y.value;
         double yi, yf;
@@ -1022,7 +1020,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
         // compare as integers to avoid precision loss
         IRubyObject rel = op_cmp(context, newBignorm(context.runtime, yd));
-        return rel instanceof RubyFixnum fix && fix.getLongValue() == 0;
+        return rel instanceof RubyFixnum fix && fix.getValue() == 0;
     }
 
     @Override
@@ -1212,8 +1210,10 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     public static RubyNumeric unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
-        boolean positive = input.readUnsignedByte(context, in) == '+';
-        int shortLength = input.unmarshalInt(context, in);
+        int sign = input.readUnsignedByte(context, in);
+        if (sign != '+' && sign != '-') throw argumentError(context, "invalid Bignum sign");
+        boolean positive = sign == '+';
+        int shortLength = MarshalLoader.keepReadable(context, input.unmarshalInt(context, in), 2);
 
         // BigInteger required a sign byte in incoming array
         byte[] digits = new byte[shortLength * 2 + 1];

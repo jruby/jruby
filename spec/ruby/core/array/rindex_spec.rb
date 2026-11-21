@@ -32,6 +32,31 @@ describe "Array#rindex" do
     [1, 1, 3, 2, 1, 3].rindex(4).should == nil
   end
 
+  it "compares an Integer with Float elements using Float#==" do
+    [1.0, 0.5, 1.0, 2.5].rindex(1).should == 2
+    [0.5, 1.5, 2.5].rindex(1).should == nil
+  end
+
+  it "compares a Float with Integer elements using Integer#==" do
+    [1, 0, 1, 2].rindex(1.0).should == 2
+    [0, 1, 2].rindex(1.5).should == nil
+  end
+
+  it "considers 0.0 and -0.0 equal" do
+    [1.0, 0.0, 2.0].rindex(-0.0).should == 1
+  end
+
+  it "finds a NaN element only if it is the same object" do
+    nan = Float::NAN
+    [nan, 1.0, nan, 2.0].rindex(nan).should == 2
+    [nan, 1.0, nan, 2.0].rindex(0.0 / 0.0).should == nil
+  end
+
+  it "uses a redefined Integer#==" do
+    result = ArraySpecs.with_redefined_integer_equality { [1, 2, 3, 2, 1].rindex(42) }
+    result.should == 3
+  end
+
   it "returns correct index even after delete_at" do
     array = ["fish", "bird", "lion", "cat"]
     array.delete_at(0)

@@ -1659,6 +1659,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return id;
         }
 
+        // A symbol block takes a receiver plus any arguments (min 1, max unlimited). getSignature() stays OPTIONAL
+        // so a yielded array is never spread into the receiver and its arguments.
+        @Override
+        @CRuby(value = "rb_vm_block_min_max_arity", file = "proc.c", note = "block_type_symbol case")
+        public Signature getAritySignature() {
+            return Signature.ONE_REQUIRED;
+        }
+
         @Override
         public ArgumentDescriptor[] getArgumentDescriptors() {
             return ArgumentDescriptor.SYMBOL_PROC;

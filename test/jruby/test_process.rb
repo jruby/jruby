@@ -160,4 +160,40 @@ class TestProcess < Test::Unit::TestCase
     end
   end
 
+  # On macOS CLOCK_MONOTONIC keeps counting while the system sleeps, but System.nanoTime() doesn't, so read the
+  # same clock CRuby does: https://github.com/jruby/jruby/issues/9982
+  if RbConfig::CONFIG['host_os'] =~ /darwin/
+    require 'ffi'
+
+    module DarwinClock
+      extend FFI::Library
+      ffi_lib FFI::Library::LIBC
+      attach_function :clock_gettime_nsec_np, [:int], :uint64
+
+      # Darwin's clockid_t for CLOCK_MONOTONIC, since JRuby's Process::CLOCK_MONOTONIC is a Symbol
+      CLOCK_MONOTONIC = 6
+    end
+
+    def test_clock_monotonic_counts_time_asleep_on_macos
+      before = DarwinClock.clock_gettime_nsec_np(DarwinClock::CLOCK_MONOTONIC)
+      monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+      after = DarwinClock.clock_gettime_nsec_np(DarwinClock::CLOCK_MONOTONIC)
+
+      assert_operator monotonic, :>=, before
+      assert_operator monotonic, :<=, after
+      assert_equal 1e-6, Process.clock_getres(Process::CLOCK_MONOTONIC)
+    end
+
+    # The native clock is only for runtimes that allow native access, even when the JVM-wide option does
+    def test_clock_monotonic_without_native_access_on_macos
+      config = org.jruby.RubyInstanceConfig.new
+      config.native_enabled = false
+      runtime = org.jruby.Ruby.new_instance(config)
+
+      assert_equal 1e-9, runtime.eval_scriptlet('Process.clock_getres(Process::CLOCK_MONOTONIC)')
+    ensure
+      runtime&.tear_down
+    end
+  end
+
 end

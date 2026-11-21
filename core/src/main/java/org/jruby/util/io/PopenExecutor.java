@@ -44,9 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
@@ -73,7 +75,8 @@ public class PopenExecutor {
      * @return true if popen can use native code, false otherwise
      */
     public static boolean nativePopenAvailable(Ruby runtime) {
-        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS;
+        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS &&
+                FilenoUtil.nativeFilenoAvailable();
     }
 
     // MRI: check_pipe_command
@@ -154,14 +157,26 @@ public class PopenExecutor {
         if (status == 0) return context.tru;
 
         if (eargp.exception) {
-            throw runtimeError(context, RubyProcess.RubyStatus.pst_message("Command failed with", pid, status));
+            RubyString message = newString(context, RubyProcess.RubyStatus.pst_message_status("Command failed with", status) + ": ");
+            message.append(eargp.command_name);
+            throw RaiseException.from(context.runtime, runtimeErrorClass(context), message);
         }
 
         return context.fals;
     }
 
+    // Flush $stdout and $stderr before starting a child, so output written so far isn't left in our
+    // buffers and can't appear after the child's output.
+    @CRuby(value = "prefork", file = "process.c")
+    private static void prefork(ThreadContext context) {
+        RubyIO.rbIoFlush(context, globalVariables(context).get("$stdout"));
+        RubyIO.rbIoFlush(context, globalVariables(context).get("$stderr"));
+    }
+
     @CRuby(value = "rb_spawn_process", file = "process.c")
     long spawnProcess(ThreadContext context, ExecArg eargp, String[] errmsg) {
+        prefork(context);
+
         RubyString prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
         ExecArg sarg = new ExecArg();
 
@@ -537,8 +552,12 @@ public class PopenExecutor {
         return false;
     }
 
-    // MRI: DO_SPAWN macro in pipe_open
+    // MRI only spawns here without fork. With fork it goes through rb_fork_async_signal_safe, which runs
+    // prefork on every attempt, so we do too.
+    @CRuby(value = "DO_SPAWN", file = "io.c", note = "macro in pipe_open")
     private long DO_SPAWN(ThreadContext context, ExecArg eargp, String cmd, String[] args, String[] envp) {
+        prefork(context);
+
         if (eargp.use_shell) return procSpawnSh(context, eargp, cmd, envp);
 
 //        System.out.println(Arrays.asList(
@@ -1474,9 +1493,8 @@ public class PopenExecutor {
                     if (eargp.chdirGiven) {
                         throw argumentError(context, "chdir option specified twice");
                     }
-                    RubyString valTmp = RubyFile.get_path(context, val);
                     eargp.chdirGiven = true;
-                    eargp.chdir_dir = valTmp.toString();
+                    eargp.chdir_dir = RubyFile.decodePath(context, val);
                 }
                 else if (id.equals("umask")) {
                     int cmask = toInt(context, val);
@@ -1748,7 +1766,7 @@ public class PopenExecutor {
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;
-            eargp.chdir_dir = RubyFile.get_path(context, chdir).toString();
+            eargp.chdir_dir = RubyFile.decodePath(context, chdir);
         }
 
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
@@ -1942,7 +1960,7 @@ public class PopenExecutor {
                         }
                     }
                     eargp.command_name = argv_buf.size() > 0 ?
-                            RubyString.newStringNoCopy(context.runtime, argv_buf.get(0)) :
+                            RubyString.newStringNoCopy(context.runtime, argv_buf.get(0), 0, argv_buf.get(0).length, prog.getEncoding()) :
                             newEmptyString(context); // empty command will get caught below shortly
                 }
             }

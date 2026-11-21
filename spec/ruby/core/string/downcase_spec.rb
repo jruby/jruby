@@ -13,9 +13,17 @@ describe "String#downcase" do
     "hELLO".encode("US-ASCII").downcase.encoding.should == Encoding::US_ASCII
   end
 
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.downcase.should == "ab\xE4\xC4\0cd".b
+  end
+
   describe "full Unicode case mapping" do
     it "works for all of Unicode with no option" do
       "ÄÖÜ".downcase.should == "äöü"
+    end
+
+    it "returns the whole result when it is much longer than self" do
+      ("\u0130" * 30).downcase.should == "i\u0307" * 30
     end
 
     it "updates string metadata" do
@@ -29,6 +37,18 @@ describe "String#downcase" do
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).downcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).downcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).downcase(:ascii).should == "\x83Aab".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
     it "does not downcase non-ASCII characters" do
       "CÅR".downcase(:ascii).should == "cÅr"
     end
@@ -70,6 +90,15 @@ describe "String#downcase" do
     it "case folds special characters" do
       "ß".downcase.should == "ß"
       "ß".downcase(:fold).should == "ss"
+    end
+
+    it "case folds ASCII letters" do
+      "ABC".downcase(:fold).should == "abc"
+      "aB\xE4".b.downcase(:fold).should == "ab\xE4".b
+    end
+
+    it "returns the whole result when it is much longer than self" do
+      ("\u0390" * 30).downcase(:fold).should == "\u03B9\u0308\u0301" * 30
     end
   end
 
@@ -172,10 +201,35 @@ describe "String#downcase!" do
       a.downcase!(:fold)
       a.should == "ss"
     end
+
+    it "case folds ASCII letters" do
+      a = "aB\xE4".b
+      a.downcase!(:fold).should.equal?(a)
+      a.should == "ab\xE4".b
+    end
   end
 
   it "does not allow invalid options" do
     -> { a = "ABC"; a.downcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.downcase!.should.equal?(a)
+    a.should == "ab\xE4\xC4\0cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.downcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.downcase!
+    slice.should == "abcd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do

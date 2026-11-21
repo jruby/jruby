@@ -536,12 +536,23 @@ public class OpenFile implements Finalizable {
 
     // Unlock while io_wait parks us, so sibling fibers can still write to or close this IO.
     private boolean schedulerWaitWritable(ThreadContext context, IRubyObject scheduler) {
+        // the scheduler may change errno while waiting, so keep the original error in case no
+        // events are ready and the caller reports it
+        Errno errno = posix.getErrno();
         unlock();
         try {
-            return FiberScheduler.ioWaitWritable(context, scheduler, io).isTrue();
+            return eventsReady(FiberScheduler.ioWaitWritable(context, scheduler, io));
         } finally {
             lock();
+            posix.setErrno(errno);
         }
+    }
+
+    // nil or 0 from io_wait means no events are ready, so the caller fails with its errno
+    @CRuby(value = "rb_io_maybe_wait_readable", file = "io.c")
+    @CRuby(value = "rb_io_maybe_wait_writable", file = "io.c")
+    private static boolean eventsReady(IRubyObject result) {
+        return result.isTrue() && !(result instanceof RubyFixnum events && events.getValue() == 0);
     }
 
     @CRuby(value = "rb_io_wait_readable", file = "io.c")
@@ -583,11 +594,15 @@ public class OpenFile implements Finalizable {
     // Release the IO lock while io_wait parks this fiber, as selectForRead does, or a sibling
     // fiber closing or reading this IO would block on the lock and never wake us.
     private boolean schedulerWaitReadable(ThreadContext context, IRubyObject scheduler) {
+        // the scheduler may change errno while waiting, so keep the original error in case no
+        // events are ready and the caller reports it
+        Errno errno = posix.getErrno();
         unlock();
         try {
-            return FiberScheduler.ioWaitReadable(context, scheduler, io).isTrue();
+            return eventsReady(FiberScheduler.ioWaitReadable(context, scheduler, io));
         } finally {
             lock();
+            posix.setErrno(errno);
         }
     }
 
@@ -741,7 +756,7 @@ public class OpenFile implements Finalizable {
     public long seek(ThreadContext context, long offset, int whence) {
         boolean locked = lock();
         try {
-            flushBeforeSeek(context);
+            flushBeforeSeek(context, true);
             return posix.lseek(fd, offset, whence);
         } finally {
             if (locked) unlock();
@@ -749,12 +764,12 @@ public class OpenFile implements Finalizable {
     }
 
     @CRuby(value = "flush_before_seek", file = "io.c")
-    private void flushBeforeSeek(ThreadContext context) {
+    private void flushBeforeSeek(ThreadContext context, boolean discardReadBuffer) {
         boolean locked = lock();
         try {
             if (io_fflush(context) < 0)
                 throw context.runtime.newErrnoFromErrno(posix.getErrno(), "");
-            unread(context);
+            unread(context, discardReadBuffer);
             posix.setErrno(null);
         } finally {
             if (locked) unlock();
@@ -928,14 +943,29 @@ public class OpenFile implements Finalizable {
         }
     }
 
+    @CRuby(value = "rb_io_fptr_finalize", file = "io.c", note = "external (prep) streams are flushed, not closed")
     public void finalize() {
-        if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
+        if (fd == null) return;
+
+        if (isAutoclose()) {
+            finalize(runtime.getCurrentContext(), true);
+        } else {
+            // Flush but don't close, like MRI, and write through from now on since nothing will flush again.
+            boolean locked = lock();
+            try {
+                if (wbuf.len != 0) flushBuffer();
+                mode |= SYNC;
+            } finally {
+                if (locked) unlock();
+            }
+        }
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
         finalizeFlush(context, noraise);
     }
 
+    @CRuby(value = "fptr_finalize_flush", file = "io.c")
     public void finalizeFlush(ThreadContext context, boolean noraise) {
         IRubyObject err = context.nil;
         ChannelFD fd = this.fd();
@@ -971,7 +1001,8 @@ public class OpenFile implements Finalizable {
         this.clearStdio();
         mode &= ~(READABLE|WRITABLE);
 
-        if (IS_PREP_STDIO() || isStdio()) {
+        // Like MRI, never close fds 0-2, even through another IO wrapping them such as IO.new(1)
+        if (IS_PREP_STDIO() || isStdio() || (fd != null && fd.realFileno >= 0 && fd.realFileno <= 2)) {
 	        /* need to keep FILE objects of stdin, stdout and stderr */
         } else if (stdio_file != null) {
 	        /* stdio_file is deallocated anyway
@@ -1908,6 +1939,11 @@ public class OpenFile implements Finalizable {
                         readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending - chomplen);
                         rbuf.off += chomplen;
                         rbuf.len -= chomplen;
+                        // the \r of a \r\n split across two reads is already at the end of str
+                        if (pending == 1 && chomplen == 1 && len > 0 && strByteList.get(len - 1) == '\r') {
+                            str.resize(--len);
+                            break;
+                        }
                     }
                     len += pending - chomplen;
                     if (cr != StringSupport.CR_BROKEN) {
@@ -2232,20 +2268,34 @@ public class OpenFile implements Finalizable {
 
     @CRuby(value = "io_tell", file = "io.c")
     public synchronized long tell(ThreadContext context) {
-        flushBeforeSeek(context);
+        flushBeforeSeek(context, false);
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
-    public synchronized void unread(ThreadContext context) {
+    public void unread(ThreadContext context) {
+        unread(context, true);
+    }
+
+    /**
+     * Move the file position back over the bytes read ahead into the read buffer and empty it.
+     *
+     * @param context the current thread context
+     * @param discardReadBuffer whether to empty the read buffer even when the position cannot be
+     * moved back, such as when bytes pushed back by ungetc or ungetbyte go before the start of
+     * the file. A seek passes true so it never returns those bytes, while tell passes false so
+     * the position it reports still counts them.
+     */
+    @CRuby(value = "io_unread", file = "io.c")
+    public synchronized void unread(ThreadContext context, boolean discardReadBuffer) {
         if (Platform.IS_WINDOWS) {
-            unreadWindows(context);
+            unreadWindows(context, discardReadBuffer);
         } else {
-            unreadPosix();
+            unreadPosix(discardReadBuffer);
         }
     }
 
     // io_unread, UNIX version
-    private void unreadPosix() {
+    private void unreadPosix(boolean discardReadBuffer) {
         long r;
         boolean locked = lock();
         try {
@@ -2258,7 +2308,7 @@ public class OpenFile implements Finalizable {
             if (r == -1 && posix.getErrno() != null) {
                 if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
-                return;
+                if (!discardReadBuffer) return;
             }
             rbuf.off = 0;
             rbuf.len = 0;
@@ -2268,7 +2318,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_unread, Windows version
-    private void unreadWindows(ThreadContext context) {
+    private void unreadWindows(ThreadContext context, boolean discardReadBuffer) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
@@ -2305,6 +2355,10 @@ public class OpenFile implements Finalizable {
             if (pos == -1 && posix.getErrno() != null) {
                 if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
+                if (discardReadBuffer) {
+                    rbuf.off = 0;
+                    rbuf.len = 0;
+                }
                 return;
             }
 
@@ -2788,10 +2842,15 @@ public class OpenFile implements Finalizable {
         return !nonblock;
     }
 
-    // MRI: check_tty
+    // Only a real terminal gets TTY|DUPLEX, so stdio redirected to a file or pipe stays buffered like MRI.
+    // Without a native fileno we can't ask isatty, so stdio keeps the old assumption that it's a terminal.
+    @CRuby(value = "io_check_tty", file = "io.c")
     public void checkTTY() {
-        if (fd.realFileno != -1 && runtime.getPosix().isatty(fd.realFileno) != 0
-            || stdio_file != null) {
+        boolean tty = fd.realFileno != -1
+                ? runtime.getPosix().isatty(fd.realFileno) != 0
+                : stdio_file != null;
+
+        if (tty) {
 
             boolean locked = lock();
             try {

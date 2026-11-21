@@ -242,6 +242,16 @@ class TestIOBuffer < Test::Unit::TestCase
     end
   end
 
+  def test_resize_invalidated_slice
+    inner = IO::Buffer.new(IO::Buffer::PAGE_SIZE)
+    slice = inner.slice(0, 8)
+    inner.free
+
+    assert_raise(IO::Buffer::InvalidatedError) do
+      slice.resize(16)
+    end
+  end
+
   def test_compare_same_size
     buffer1 = IO::Buffer.new(1)
     assert_equal buffer1, buffer1
@@ -376,6 +386,26 @@ class TestIOBuffer < Test::Unit::TestCase
     assert_raise_with_message(ArgumentError, /Offset can't be negative/) do
       buffer.get_string(-1)
     end
+
+    encoding = Struct.new(:buffer) do
+      def to_str
+        buffer.free
+        "BINARY"
+      end
+    end.new(buffer.dup)
+    slice = encoding.buffer.slice(0, 8)
+    assert_raise(IO::Buffer::InvalidatedError) do
+      slice.get_string(0, 8, encoding)
+    end
+
+    # [Bug #22336]
+    encoding = Struct.new(:buffer) do
+      def to_str
+        buffer.resize(64 * 1024 * 1024)
+        "UTF-8"
+      end
+    end.new(IO::Buffer.new(2_000_000))
+    assert_equal 1_000_000, encoding.buffer.get_string(0, 1_000_000, encoding).length
   end
 
   def test_zero_length_get_string
@@ -447,6 +477,26 @@ class TestIOBuffer < Test::Unit::TestCase
       buffer.set_values(format, 0, values)
       assert_equal values, buffer.get_values(format, 0), "Converting #{values} as #{format}."
     end
+  end
+
+  def test_set_values_invalidated_slice
+    to_int = Struct.new(:buffer) do
+      def to_int
+        buffer.free
+        0x41
+      end
+    end
+    buffer = IO::Buffer.new(128)
+    slice = buffer.slice(0, 8)
+    value = to_int.new(buffer)
+    assert_raise(IO::Buffer::InvalidatedError) {slice.set_value(:U8, 0, value)}
+
+    buffer = IO::Buffer.new(128)
+    slice = buffer.slice(0, 8)
+    value = to_int.new(buffer)
+    assert_raise(IO::Buffer::InvalidatedError) {
+      slice.set_values([:U8, :U8], 0, [0, value])
+    }
   end
 
   def test_zero_length_get_set_values
@@ -694,6 +744,38 @@ class TestIOBuffer < Test::Unit::TestCase
     assert_equal IO::Buffer.for("\xce\xcd\xcc\xcb\xce\xcd\xcc\xcb\xce\xcd"), source.dup.not!
   end
 
+  def test_operators_raise_on_freed_self
+    inner = IO::Buffer.new(IO::Buffer::PAGE_SIZE)
+    slice = inner.slice(0, 8)
+    inner.free
+
+    mask = IO::Buffer.for("ABCDEFGH")
+    assert_raise(IO::Buffer::InvalidatedError) { slice & mask }
+    assert_raise(IO::Buffer::InvalidatedError) { slice | mask }
+    assert_raise(IO::Buffer::InvalidatedError) { slice ^ mask }
+    assert_raise(IO::Buffer::InvalidatedError) { ~slice }
+
+    assert_raise(IO::Buffer::InvalidatedError) { slice.and!(mask) }
+    assert_raise(IO::Buffer::InvalidatedError) { slice.or!(mask) }
+    assert_raise(IO::Buffer::InvalidatedError) { slice.xor!(mask) }
+  end
+
+  def test_operators_raise_on_freed_mask
+    inner = IO::Buffer.new(IO::Buffer::PAGE_SIZE)
+    mask_slice = inner.slice(0, 8)
+    inner.free
+
+    source = IO::Buffer.for("ABCDEFGH")
+    assert_raise(IO::Buffer::InvalidatedError) { source & mask_slice }
+    assert_raise(IO::Buffer::InvalidatedError) { source | mask_slice }
+    assert_raise(IO::Buffer::InvalidatedError) { source ^ mask_slice }
+
+    source = source.dup
+    assert_raise(IO::Buffer::InvalidatedError) { source.and!(mask_slice) }
+    assert_raise(IO::Buffer::InvalidatedError) { source.or!(mask_slice) }
+    assert_raise(IO::Buffer::InvalidatedError) { source.xor!(mask_slice) }
+  end
+
   def test_shared
     message = "Hello World"
     buffer = IO::Buffer.new(64, IO::Buffer::MAPPED | IO::Buffer::SHARED)
@@ -929,5 +1011,35 @@ class TestIOBuffer < Test::Unit::TestCase
       round_trip_value = buffer.get_value(le_type, 0)
       assert_equal value, round_trip_value, "#{le_type}/#{be_type}: double-swap should restore original value"
     end
+  end
+
+  class Bug21882 < RuntimeError; end
+  def test_locked_exception
+    buf = IO::Buffer.new(10)
+    assert_raise(Bug21882, '#locked should propagate exception') do
+      buf.locked { raise Bug21882 }
+    end
+
+    # should be unlocked now and can be locked again
+    refute_predicate buf, :locked?
+    buf.locked { }
+  end
+
+  def test_locked_break
+    buf = IO::Buffer.new(10)
+    assert_equal :ok, (buf.locked { break :ok })
+
+    # should be unlocked now and can be locked again
+    refute_predicate buf, :locked?
+    buf.locked { }
+  end
+
+  def test_locked_throw
+    buf = IO::Buffer.new(10)
+    assert_equal :ok, (catch(:bug21882) { buf.locked { throw :bug21882, :ok } })
+
+    # should be unlocked now and can be locked again
+    refute_predicate buf, :locked?
+    buf.locked { }
   end
 end

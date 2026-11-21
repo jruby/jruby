@@ -327,6 +327,12 @@ class Gem::TestCase < Test::Unit::TestCase
 
     @tempdir = Dir.mktmpdir("test_rubygems_", @tmp)
 
+    # @tmp lives inside the checkout by default, so stop git repository
+    # discovery from walking up into the checkout itself. Otherwise a git
+    # command run in a non-repository directory under @tempdir could mutate
+    # the checkout's own (possibly worktree-shared) .git/config.
+    ENV["GIT_CEILING_DIRECTORIES"] = File.realpath(top_srcdir)
+
     ENV["GEM_VENDOR"] = nil
     ENV["GEMRC"] = nil
     ENV["XDG_CACHE_HOME"] = nil
@@ -615,9 +621,9 @@ class Gem::TestCase < Test::Unit::TestCase
 
     Dir.chdir directory do
       unless File.exist? ".git"
-        system @git, "init", "--quiet"
-        system @git, "config", "user.name",  "RubyGems Tests"
-        system @git, "config", "user.email", "rubygems@example"
+        system @git, "init", "--quiet", exception: true
+        system @git, "config", "user.name",  "RubyGems Tests", exception: true
+        system @git, "config", "user.email", "rubygems@example", exception: true
       end
 
       system @git, "add", gemspec
@@ -1236,6 +1242,24 @@ Also, a list:
 
   def nmake_found?
     system("nmake /? 1>NUL 2>&1")
+  end
+
+  @@symlink_supported = nil
+
+  # This is needed for Windows environment without symlink support enabled (the default
+  # for non admin) to be able to skip test for features using symlinks.
+  def symlink_supported?
+    if @@symlink_supported.nil?
+      begin
+        File.symlink(File.join(@tempdir, "a"), File.join(@tempdir, "b"))
+      rescue NotImplementedError, SystemCallError
+        @@symlink_supported = false
+      else
+        File.unlink(File.join(@tempdir, "b"))
+        @@symlink_supported = true
+      end
+    end
+    @@symlink_supported
   end
 
   # In case we're building docs in a background process, this method waits for

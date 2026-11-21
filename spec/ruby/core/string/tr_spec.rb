@@ -32,6 +32,11 @@ describe "String#tr" do
     "hello".tr("a-z", "A-H.").should == "HE..."
   end
 
+  it "raises an ArgumentError when the receiver has broken encoding" do
+    -> { "\xFF".tr("€", "b") }.should.raise(ArgumentError)
+    -> { "\xFF".tr("", "") }.should.raise(ArgumentError)
+  end
+
   it "raises an ArgumentError when given wrong number of arguments" do
     -> { "hello".tr }.should.raise(ArgumentError)
     -> { "hello".tr("a", "b", "c") }.should.raise(ArgumentError)
@@ -143,11 +148,53 @@ describe "String#tr" do
     "hello".tr("el", "").should == "ho"
   end
 
+  it "replaces a character at any position in strings of any length" do
+    (1..20).each do |len|
+      len.times do |i|
+        str = "a" * len
+        str[i] = "-"
+        expected = "a" * len
+        expected[i] = "_"
+        str.tr("-", "_").should == expected
+      end
+      ("-" * len).tr("-", "_").should == "_" * len
+    end
+  end
+
+  it "replaces several characters in strings of any length" do
+    (1..20).each do |len|
+      ("ab-_" * 5)[0, len].tr("ab", "ba").should == ("ba-_" * 5)[0, len]
+    end
+  end
+
+  it "uses the last replacement for a repeated character" do
+    "hello".tr("ll", "xy").should == "heyyo"
+  end
+
+  it "translates NUL characters" do
+    "a\0b".tr("\0", "-").should == "a-b"
+    "a-b".tr("-", "\0").should == "a\0b"
+    ("a\0" * 10).tr("\0", "-").should == "a-" * 10
+  end
+
+  it "does not modify the string a substring was taken from" do
+    str = "x-" * 20
+    sub = str[3, 17]
+    sub.tr("-", "_").should == ("_x" * 9)[0, 17]
+    sub.tr!("-", "_")
+    sub.should == ("_x" * 9)[0, 17]
+    str.should == "x-" * 20
+  end
+
   ruby_version_is "4.1" do
     describe "hash form" do
       it "returns a new strings with characters from keys replaced by the associated strings" do
         "hello".tr("e" => "EH! ", "o" => "OH!", "l" => "").should == "hEH! OH!"
         "h€llø".tr("€" => "e", "ø" => "o").should == "hello"
+      end
+
+      it "returns a copy of self if the translation hash is empty" do
+        "hello".tr({}).should == "hello"
       end
 
       it "returns a string in the combined encoding" do
@@ -197,6 +244,11 @@ describe "String#tr" do
         -> { "hello".tr(nil) }.should.raise(TypeError, "wrong argument type nil (expected Hash)")
       end
 
+      it "raises ArgumentError the string encoding is broken" do
+        -> { "\xFF".tr("€" => "b") }.should.raise(ArgumentError)
+        -> { "\xFF".tr({}) }.should.raise(ArgumentError)
+      end
+
       it "raises ArgumentError if a key is more than one codepoint" do
         -> { "hello".tr("hel" => "") }.should.raise(ArgumentError)
         -> { "🤦🏼‍♂️".tr("🤦🏼‍♂️" => "") }.should.raise(ArgumentError)
@@ -222,8 +274,15 @@ describe "String#tr!" do
   it "returns nil if no modification was made" do
     s = "hello"
     s.tr!("za", "yb").should == nil
+    ("hello" * 4).tr!("-", "_").should == nil
     s.tr!("", "").should == nil
     s.should == "hello"
+  end
+
+  it "returns self when a character is replaced by itself" do
+    s = "hello"
+    s.tr!("l", "l").should equal(s)
+    ("hello" * 4).tr!("lo", "lx").should == "hellx" * 4
   end
 
   it "does not modify self if from_str is empty" do
@@ -239,6 +298,11 @@ describe "String#tr!" do
     -> { s.tr!("cdefg", "12") }.should.raise(FrozenError)
     -> { s.tr!("R", "S")      }.should.raise(FrozenError)
     -> { s.tr!("", "")        }.should.raise(FrozenError)
+  end
+
+  it "raises a FrozenError if self is frozen even when nothing would be replaced" do
+    -> { "abc".freeze.tr!("x", "y")       }.should.raise(FrozenError)
+    -> { ("abc" * 10).freeze.tr!("x", "y") }.should.raise(FrozenError)
   end
 
   ruby_version_is "4.1" do
@@ -268,7 +332,18 @@ describe "String#tr!" do
       end
 
       it "returns nil if the string wasn't modified" do
-        "hello".tr!("€" => "", "Ø" => "").should == nil
+        s = "hello"
+        s.tr!({}).should == nil
+        s.should == "hello"
+
+        s = "hello"
+        s.tr!("€" => "", "Ø" => "").should == nil
+        s.should == "hello"
+      end
+
+      it "raises ArgumentError the string encoding is broken" do
+        -> { "\xFF".tr!("€" => "b") }.should.raise(ArgumentError)
+        -> { "\xFF".tr!({}) }.should.raise(ArgumentError)
       end
 
       it "replaces characters above U+00FF" do

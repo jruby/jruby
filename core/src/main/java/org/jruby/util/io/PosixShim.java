@@ -36,6 +36,8 @@ public class PosixShim {
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
 
+    private static final int MAX_HEAP_WRITE = 2 * 1024 * 1024;
+
     public PosixShim(Ruby runtime) {
         this.runtime = runtime;
         this.posix = runtime.getPosix();
@@ -110,7 +112,22 @@ public class PosixShim {
                 setErrno(Errno.EACCES);
                 return -1;
             }
-            int written = fd.chWrite.write(buffer);
+            int written;
+            if (fd.chSelect != null && !buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE) {
+                // NIO copies the whole remaining heap buffer into a temporary direct buffer on every write, even when
+                // the channel only accepts part of it. Retrying a large nonblocking write would copy the rest again
+                // each time, so cap each write and let the caller loop over the remainder. Files are left alone: they
+                // accept the whole buffer in one write, and callers like syswrite expect the full length.
+                int limit = buffer.limit();
+                buffer.limit(buffer.position() + MAX_HEAP_WRITE);
+                try {
+                    written = fd.chWrite.write(buffer);
+                } finally {
+                    buffer.limit(limit);
+                }
+            } else {
+                written = fd.chWrite.write(buffer);
+            }
 
             if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
@@ -320,11 +337,17 @@ public class PosixShim {
      * The appropriate errno value for the last thrown error, if any.
      */
     public Errno getErrno() {
-        return errno.get();
+        int[] errno = this.errno.get();
+        return errno == null || errno[0] < 0 ? null : ERRNOS[errno[0]];
     }
 
     public void setErrno(Errno errno) {
-        this.errno.set(errno);
+        int[] holder = this.errno.get();
+        if (holder == null) {
+            if (errno == null) return;
+            this.errno.set(holder = new int[1]);
+        }
+        holder[0] = errno == null ? -1 : errno.ordinal();
     }
 
     public interface WaitMacros {
@@ -671,7 +694,9 @@ public class PosixShim {
             return 0;
         }
 
-        return lockFailedReturn(exclusive ? LOCK_EX : LOCK_SH);
+        // null means another process holds the lock, which flock(2) reports as EWOULDBLOCK
+        setErrno(Errno.EWOULDBLOCK);
+        return -1;
     }
 
     /**
@@ -679,7 +704,12 @@ public class PosixShim {
      */
     public Throwable error;
 
-    private final ThreadLocal<Errno> errno = new ThreadLocal<>();
+    // The Errno's ordinal, or -1 for none. After this shim is collected, its entry stays in the map of each thread that
+    // set it until the map clears stale entries, and an Errno there would keep the class loader that loaded JRuby alive.
+    // The ordinal keeps the exact constant, unlike intValue(), which aliases like EWOULDBLOCK and EAGAIN share.
+    private final ThreadLocal<int[]> errno = new ThreadLocal<>();
+
+    private static final Errno[] ERRNOS = Errno.values();
 
     /**
      * The recommended error message, if any.

@@ -122,4 +122,10 @@ public class RubySystemExit extends RubyException {
         return runtime.getFalse();
     }
 
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubySystemExit exception = (RubySystemExit)clone;
+        exception.status = status;
+    }
 }
