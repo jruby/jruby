@@ -1,0 +1,1 @@
+fails:IPAddr#new bracketed IPv6 address with a prefix length is warned

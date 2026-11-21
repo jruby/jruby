@@ -49,6 +49,7 @@ import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -75,6 +76,15 @@ public class RipperParserBase {
     public void initTopLocalVariables() {
         scopedParserState = new ScopedParserState(null);
         pushLocalScope();
+    }
+
+    // Ripper builds no AST, so it has no nodes to record source positions on (see RubyParserBase#recordsPositions)
+    public boolean recordsPositions() {
+        return false;
+    }
+
+    public int column(long position) {
+        return ProductionState.column(position);
     }
 
     public void reset() {
@@ -511,7 +521,7 @@ public class RipperParserBase {
         int slot = current.isDefined(id);
         if (slot != -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
 
         return nameBytes;
@@ -650,7 +660,6 @@ public class RipperParserBase {
 
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
@@ -848,14 +857,6 @@ public class RipperParserBase {
         return lexer.getEncoding();
     }
 
-    public ByteList getCurrentArg() {
-        return currentArg;
-    }
-
-    public void setCurrentArg(IRubyObject arg) {
-        this.currentArg = arg != null ? extractByteList(arg) : null;
-    }
-    
     public boolean getYYDebug() {
         return yydebug;
     }
@@ -1050,7 +1051,6 @@ public class RipperParserBase {
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;
-    private ByteList currentArg;
     protected ScopedParserState scopedParserState;
     private Set<ByteList> keyTable;
     private Set<ByteList> variableTable;

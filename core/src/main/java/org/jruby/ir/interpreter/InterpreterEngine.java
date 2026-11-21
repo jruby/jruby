@@ -10,6 +10,8 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.ArgReceiver;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.CoverBranchInstr;
+import org.jruby.ir.instructions.CoverMethodInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.FrameNameCallInstr;
@@ -25,6 +27,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReceiveMethodCoverageInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -269,8 +272,10 @@ public class InterpreterEngine {
 
         switch(operation) {
             case RECV_PRE_REQD_ARG:
-                int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
-                result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
+                ReceivePreReqdArgInstr receivePre = (ReceivePreReqdArgInstr) instr;
+                // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+                IRubyObject keywords = (IRubyObject) receivePre.getOperand1().retrieve(context, self, currScope, currDynScope, temp);
+                result = IRRuntimeHelpers.getPreArgSafe(context, args, keywords, receivePre.getArgIndex());
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
@@ -424,12 +429,21 @@ public class InterpreterEngine {
                 LineNumberInstr line = (LineNumberInstr) instr;
                 context.setLine(line.lineNumber);
                 if (line.coverage) {
-                    IRRuntimeHelpers.updateCoverage(context, currScope.getFile(), line.lineNumber);
-                    if (line.oneshot) line.coverage = false;
+                    boolean covered = IRRuntimeHelpers.coverLine(context, currScope.getFile(), line.lineNumber);
+                    if (covered && line.oneshot) line.coverage = false;
                 }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
+                break;
+            case RECV_METHOD_COVERAGE:
+                setResult(temp, currDynScope, ((ReceiveMethodCoverageInstr) instr).getResult(), context.takePendingMethodCoverage());
+                break;
+            case COVER_METHOD:
+                ((CoverMethodInstr) instr).cover(context, currScope, currDynScope, self, temp);
+                break;
+            case COVER_BRANCH:
+                ((CoverBranchInstr) instr).cover(context);
                 break;
             case TRACE:
                 instr.interpret(context, currScope, currDynScope, self, temp);

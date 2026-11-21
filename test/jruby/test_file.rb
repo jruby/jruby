@@ -489,8 +489,10 @@ class TestFile < Test::Unit::TestCase
     assert_equal("", File.extname("."))
     assert_equal("", File.extname("/."))
     assert_equal("", File.extname(".."))
-    assert_equal(".", File.extname(".foo."))
-    assert_equal(".", File.extname("foo."))
+    # like CRuby, a trailing dot is ignored on Windows, as NTFS does
+    trailing_dot = WINDOWS ? "" : "."
+    assert_equal(trailing_dot, File.extname(".foo."))
+    assert_equal(trailing_dot, File.extname("foo."))
   end
 
   def test_fnmatch

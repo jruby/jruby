@@ -82,11 +82,6 @@ public class NativeException extends RubyException {
         return Java.getInstance(getRuntime(), getCause());
     }
 
-    @Deprecated(since = "9.1.0.0")
-    public final IRubyObject cause(Block unusedBlock) {
-        return cause();
-    }
-
     @Override
     public final IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
@@ -132,45 +127,6 @@ public class NativeException extends RubyException {
         }
         System.arraycopy(rTrace.toJavaArrayMaybeUnsafe(), 0, trace, jTrace.length, rTrace.size());
         return RubyArray.newArrayMayCopy(runtime, trace);
-    }
-
-    @Deprecated(since = "9.1.0.0") // not used
-    public void trimStackTrace(Member target) {
-        Throwable t = new Throwable();
-        StackTraceElement[] origStackTrace = cause.getStackTrace();
-        StackTraceElement[] currentStackTrace = t.getStackTrace();
-        int skip = 0;
-        for (int i = 1;
-                i <= origStackTrace.length && i <= currentStackTrace.length;
-                ++i) {
-            StackTraceElement a = origStackTrace[origStackTrace.length - i];
-            StackTraceElement b = currentStackTrace[currentStackTrace.length - i];
-            if (a.equals(b)) {
-                skip += 1;
-            } else {
-                break;
-            }
-        }
-        // If we know what method was being called, strip everything
-        // before the call. This hides the JRuby and reflection internals.
-        if (target != null) {
-            String className = target.getDeclaringClass().getName();
-            String methodName = target.getName();
-            for (int i = origStackTrace.length - skip - 1; i >= 0; --i) {
-                StackTraceElement frame = origStackTrace[i];
-                if (frame.getClassName().equals(className) &&
-                    frame.getMethodName().equals(methodName)) {
-                    skip = origStackTrace.length - i - 1;
-                    break;
-                }
-            }
-        }
-        if (skip > 0) {
-            final int len = origStackTrace.length - skip;
-            StackTraceElement[] newStackTrace = new StackTraceElement[len];
-            System.arraycopy(origStackTrace, 0, newStackTrace, 0, len);
-            cause.setStackTrace(newStackTrace);
-        }
     }
 
     @Override

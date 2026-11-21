@@ -1,2 +1,3 @@
 fails:File.dirname rejects strings encoded with non ASCII-compatible encodings
 fails:File.dirname works with all ASCII-compatible encodings
+fails:File.dirname preserves the encoding of the path

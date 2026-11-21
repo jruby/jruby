@@ -73,11 +73,6 @@ public class RubyRunnable implements ThreadedRunnable {
         this.creatorContext = creatorContext;
     }
 
-    @Deprecated(since = "1.7.5")
-    public RubyThread getRubyThread() {
-        return rubyThread;
-    }
-
     public Thread getJavaThread() {
         return javaThread;
     }

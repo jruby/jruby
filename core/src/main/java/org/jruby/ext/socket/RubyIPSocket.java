@@ -181,33 +181,4 @@ public class RubyIPSocket extends RubyBasicSocket {
             default -> throw argumentError(context, "invalid reverse_lookup flag: " + noreverse);
         };
     }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject addr() {
-        return addr(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject peeraddr() {
-        return peeraddr(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
-        return getaddress(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return recvfrom(context, args[0]);
-            case 2:
-                return recvfrom(context, args[0], args[1]);
-            default:
-                Arity.raiseArgumentError(context, args, 1, 2);
-                return null; // not reached
-        }
-    }
-
 }// RubyIPSocket

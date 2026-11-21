@@ -42,12 +42,6 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
       '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
   end
 
-  def test_index
-    assert_equal @json, JSON[@hash]
-    assert_equal @json, JSON[@hash_with_method_missing]
-    assert_equal @hash, JSON[@json]
-  end
-
   def test_parser
     assert_match(/::Parser\z/, JSON.parser.name)
   end
@@ -149,12 +143,15 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   def test_load_with_options
     json  = '{ "foo": NaN }'
     assert JSON.load(json, nil, :allow_nan => true)['foo'].nan?
+    assert JSON.load(json, :allow_nan => true)['foo'].nan?
   end
 
   def test_load_null
     assert_equal nil, JSON.load(nil, nil, :allow_blank => true)
     assert_raise(TypeError) { JSON.load(nil, nil, :allow_blank => false) }
     assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
+    assert_raise(TypeError) { JSON.load([], nil, :allow_blank => true) }
+    assert_raise(TypeError) { JSON.load({}, nil, :allow_blank => true) }
   end
 
   def test_unsafe_load
@@ -230,6 +227,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_raise(JSON::ParserError) { JSON.unsafe_load(nan_json, nil, :allow_nan => false)['foo'].nan? }
     # make sure it still uses the defaults when something is provided
     assert JSON.unsafe_load(nan_json, nil, :allow_blank => true)['foo'].nan?
+    assert JSON.unsafe_load(nan_json, :allow_nan => true)['foo'].nan?
   end
 
   def test_unsafe_load_null
@@ -283,6 +281,12 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_equal @json, JSON(@hash)
     assert_equal @json, JSON(@hash_with_method_missing)
     assert_equal @hash, JSON(@json)
+  end
+
+  def test_index
+    assert_equal @json, JSON[@hash]
+    assert_equal @json, JSON[@hash_with_method_missing]
+    assert_equal @hash, JSON[@json]
   end
 
   def test_load_file

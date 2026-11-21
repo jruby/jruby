@@ -369,7 +369,4 @@ public final class Frame {
 
         return sb.toString();
     }
-
-    @Deprecated(since = "9.2.8.0")
-    public static final Frame DUMMY = new Frame();
 }

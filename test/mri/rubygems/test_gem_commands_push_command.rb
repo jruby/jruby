@@ -148,7 +148,7 @@ class TestGemCommandsPushCommand < Gem::TestCase
       spec.metadata["allowed_push_host"] = "https://privategemserver.example"
     end
 
-    @response = "Successfully registered gem: freewill (1.0.0)"
+    @response = "Successfully registered gem: freebird (1.0.1)"
     @fetcher.data["#{@spec.metadata["allowed_push_host"]}/api/v1/gems"] = HTTPResponseFactory.create(body: @response, code: 200, msg: "OK")
     @fetcher.data["#{Gem.host}/api/v1/gems"] =
       ["fail", 500, "Internal Server Error"]
@@ -477,15 +477,17 @@ class TestGemCommandsPushCommand < Gem::TestCase
       end
     end
 
-    assert_match "You have enabled multi-factor authentication. Please visit #{@fetcher.webauthn_url_with_port(server.port)} " \
+    assert_match "You have enabled multi-factor authentication. Please visit the following URL " \
       "to authenticate via security device. If you can't verify using WebAuthn but have OTP enabled, " \
       "you can re-run the gem signin command with the `--otp [your_code]` option.", @ui.output
+    assert_match @fetcher.webauthn_url_with_port(server.port), @ui.output
     assert_match "You are verified with a security device. You may close the browser window.", @ui.output
     assert_equal "Uvh6T57tkWuUnWYo", @fetcher.last_request["OTP"]
     assert_match response_success, @ui.output
   end
 
   def test_with_webauthn_enabled_failure
+    pend "Flaky on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     response_success = "Successfully registered gem: freewill (1.0.0)"
     server = Gem::MockTCPServer.new
     error = Gem::WebauthnVerificationError.new("Something went wrong")
@@ -505,9 +507,10 @@ class TestGemCommandsPushCommand < Gem::TestCase
     assert_equal 1, error.exit_code
 
     assert_match @fetcher.last_request["Authorization"], Gem.configuration.rubygems_api_key
-    assert_match "You have enabled multi-factor authentication. Please visit #{@fetcher.webauthn_url_with_port(server.port)} " \
+    assert_match "You have enabled multi-factor authentication. Please visit the following URL " \
       "to authenticate via security device. If you can't verify using WebAuthn but have OTP enabled, " \
       "you can re-run the gem signin command with the `--otp [your_code]` option.", @ui.output
+    assert_match @fetcher.webauthn_url_with_port(server.port), @ui.output
     assert_match "ERROR:  Security device verification failed: Something went wrong", @ui.error
     refute_match "You are verified with a security device. You may close the browser window.", @ui.output
     refute_match response_success, @ui.output
@@ -527,9 +530,10 @@ class TestGemCommandsPushCommand < Gem::TestCase
       end
     end
 
-    assert_match "You have enabled multi-factor authentication. Please visit #{@fetcher.webauthn_url_with_port(server.port)} " \
+    assert_match "You have enabled multi-factor authentication. Please visit the following URL " \
       "to authenticate via security device. If you can't verify using WebAuthn but have OTP enabled, " \
       "you can re-run the gem signin command with the `--otp [your_code]` option.", @ui.output
+    assert_match @fetcher.webauthn_url_with_port(server.port), @ui.output
     assert_match "You are verified with a security device. You may close the browser window.", @ui.output
     assert_equal "Uvh6T57tkWuUnWYo", @fetcher.last_request["OTP"]
     assert_match response_success, @ui.output
@@ -553,16 +557,17 @@ class TestGemCommandsPushCommand < Gem::TestCase
     assert_equal 1, error.exit_code
 
     assert_match @fetcher.last_request["Authorization"], Gem.configuration.rubygems_api_key
-    assert_match "You have enabled multi-factor authentication. Please visit #{@fetcher.webauthn_url_with_port(server.port)} " \
-      "to authenticate via security device. If you can't verify using WebAuthn but have OTP enabled, you can re-run the gem signin " \
-      "command with the `--otp [your_code]` option.", @ui.output
+    assert_match "You have enabled multi-factor authentication. Please visit the following URL " \
+      "to authenticate via security device. If you can't verify using WebAuthn but have OTP enabled, " \
+      "you can re-run the gem signin command with the `--otp [your_code]` option.", @ui.output
+    assert_match @fetcher.webauthn_url_with_port(server.port), @ui.output
     assert_match "ERROR:  Security device verification failed: The token in the link you used has either expired " \
       "or been used already.", @ui.error
     refute_match "You are verified with a security device. You may close the browser window.", @ui.output
     refute_match response_success, @ui.output
   end
 
-  def test_sending_gem_unathorized_api_key_with_mfa_enabled
+  def test_sending_gem_unauthorized_api_key_with_mfa_enabled
     response_mfa_enabled = "You have enabled multifactor authentication but your request doesn't have the correct OTP code. Please check it and retry."
     response_forbidden = "The API key doesn't have access"
     response_success   = "Successfully registered gem: freewill (1.0.0)"

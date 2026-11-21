@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
@@ -198,7 +199,7 @@ public class Sprintf {
         }
 
 
-        // MRI: GETARG
+        @CRuby(value = "GETARG", file = "sprintf.c")
         private IRubyObject getArg() {
             final IRubyObject nextObject = this.nextObject;
             if (nextObject != null) {
@@ -212,77 +213,40 @@ public class Sprintf {
             return getNextArg();
         }
 
-        // MRI: GETNEXTARG
+        @CRuby(value = "GETNEXTARG", file = "sprintf.c")
         private IRubyObject getNextArg() {
             checkNextArg();
             positionIndex = nextIndex++;
             return getNthArg(positionIndex);
         }
 
-        // MRI: GETPOSARG
+        @CRuby(value = "GETPOSARG", file = "sprintf.c")
         private IRubyObject getPositionArg(int index) {
             checkPositionArg(index);
             positionIndex = -1;
             return getNthArg(index);
         }
 
-        // MRI: check_next_arg
+        @CRuby(value = "check_next_arg", file = "sprintf.c")
         private void checkNextArg() {
             if (positionIndex == -1) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with numbered");
             if (positionIndex == -2) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with named");
         }
 
-        // MRI: check_pos_arg
+        @CRuby(value = "check_pos_arg", file = "sprintf.c")
         private void checkPositionArg(int nthArg) {
             if (positionIndex > 0) raiseArgumentError("numbered(" + nthArg + ") after unnumbered(" + positionIndex + ")");
             if (positionIndex == -2) raiseArgumentError("numbered(" + nthArg + ") after named");
             if (nthArg < 1) raiseArgumentError("invalid index - " + nthArg + "$");
         }
 
-        // MRI: check_name_arg, CHECKNAMEARG
+        @CRuby(value = "check_name_arg", file = "sprintf.c")
+        @CRuby(value = "CHECKNAMEARG", file = "sprintf.c")
         private void checkNameArg(ByteList name, char startDelim, char endDelim) {
             if (positionIndex > 0) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after unnumbered(" + positionIndex + ")");
             if (positionIndex == -1) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after numbered");
 
             positionIndex = -2;
-        }
-
-        @Deprecated(since = "9.1.8.0")
-        IRubyObject next(ByteList name) {
-            // for 1.9 hash args
-            if (name != null) {
-                if (rubyHash == null && positionIndex == -1) raiseArgumentError("positional args mixed with named args");
-
-                RubySymbol nameSym = runtime.newSymbol(name);
-                IRubyObject object = rubyHash.fastARef(nameSym);
-
-                // if not found, try dispatching to pick up default hash value
-                // MRI: spliced together bits from rb_hash_default_value
-                if (object == null) {
-                    object = rubyHash.getIfNone();
-                    if (object == RubyBasicObject.UNDEF) {
-                        RubyString nameStr = RubyString.newString(runtime, name);
-                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
-                    } else if (rubyHash.hasDefaultProc()) {
-                        object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
-                    }
-
-                    if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
-                    }
-                }
-
-                return object;
-            } else if (rubyHash != null) {
-                raiseArgumentError("positional args mixed with named args");
-            }
-
-            // this is the order in which MRI does these two tests
-            if (positionIndex == -1) raiseArgumentError("unnumbered" + (positionIndex + 1) + "mixed with numbered");
-            if (positionIndex >= length) raiseArgumentError("too few arguments");
-            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(positionIndex);
-            positionIndex++;
-            return object;
         }
 
         int intValue(ThreadContext context, IRubyObject obj) {
@@ -581,14 +545,24 @@ public class Sprintf {
                     int c; int n;
                     IRubyObject tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
-                        if (((RubyString) tmp).strLength() == 0) {
-                            c = 0;
-                            n = 0;
-                        } else {
-                            ByteList bl = ((RubyString) tmp).getByteList();
-                            c = StringSupport.codePoint(context, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
-                            n = StringSupport.codeLength(bl.getEncoding(), c);
+                        // like CRuby, a String is formatted as %.1s, so it keeps its own encoding
+                        ByteList bytes = ((RubyString) tmp).getByteList();
+                        Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
+                        int len = 0;
+                        int strLen = 0;
+                        if (bytes.realSize() > 0) {
+                            len = StringSupport.nth(enc, bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize(), 1) - bytes.begin();
+                            strLen = 1;
                         }
+                        int padding = (flags & FLAG_WIDTH) != 0 && width > strLen ? width - strLen : 0;
+                        if ((flags & FLAG_MINUS) == 0) buf.fill(' ', padding);
+                        buf.append(bytes.unsafeBytes(), bytes.begin(), len);
+                        if ((flags & FLAG_MINUS) != 0) buf.fill(' ', padding);
+                        buf.setEncoding(enc);
+
+                        offset++;
+                        incomplete = false;
+                        break;
                     } else {
                         c = (int) toLong(context, arg) & 0xFFFFFFFF;
                         if (c >= 0) {
@@ -1938,7 +1912,7 @@ public class Sprintf {
     private static final long BIASED_EXP_MASK = 0x7ffL << 52;
     private static final long MANTISSA_MASK = ~(SIGN_MASK | BIASED_EXP_MASK);
     private static final byte[] HEX_DIGITS = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-    private static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     private static byte[] getMantissaBytes(ThreadContext context, IRubyObject value) {
         BigInteger bi;

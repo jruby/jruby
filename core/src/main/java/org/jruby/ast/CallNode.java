@@ -129,6 +129,50 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     public boolean isLazy() {
         return isLazy;
     }
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // the call keeps the span of the production that created it, which a block attached by an enclosing
+        // production then extends (see getEndLine)
+        if (!hasSourceSpan()) super.setAutoSourceSpan(start, end);
+    }
+
+    // As in MRI, a call ends with its block, if it has one written out.
+    @Override
+    public int getEndLine() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndLine() : super.getEndLine();
+    }
+
+    @Override
+    public int getEndColumn() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndColumn() : super.getEndColumn();
+    }
+
+    /**
+     * Where the branch of a safe-navigation call ends (see RubyParserBase#safe_navigation_end).
+     */
+    public void setSafeNavigationEnd(long end) {
+        setSourceDetail(SourcePosition.of(end));
+    }
+
+    // null unless this is a safe navigation and positions are recorded
+    private SourcePosition safeNavigationEnd() {
+        return (SourcePosition) getSourceDetail();
+    }
+
+    public boolean hasSafeNavigationEnd() {
+        return safeNavigationEnd() != null;
+    }
+
+    public int getSafeNavigationEndLine() {
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.line();
+    }
+
+    public int getSafeNavigationEndColumn() {
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.column();
+    }
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, iterNode);

@@ -17,7 +17,7 @@ describe "IO#autoclose?" do
 
   it "cannot be queried on a closed IO object" do
     @io.close
-    -> { @io.autoclose? }.should raise_error(IOError, /closed stream/)
+    -> { @io.autoclose? }.should.raise(IOError, /closed stream/)
   end
 end
 
@@ -72,6 +72,26 @@ describe "IO#autoclose=" do
 
   it "cannot be set on a closed IO object" do
     @io.close
-    -> { @io.autoclose = false }.should raise_error(IOError, /closed stream/)
+    -> { @io.autoclose = false }.should.raise(IOError, /closed stream/)
+  end
+
+  it "still flushes buffered writes at exit for an IO created with autoclose: false" do
+    file = tmp("io_autoclose_flush.txt")
+    begin
+      ruby_exe("io = IO.new(IO.sysopen(#{file.inspect}, 'w'), 'w', autoclose: false); io.write('kept')")
+      File.read(file).should == "kept"
+    ensure
+      rm_r file
+    end
+  end
+
+  it "still flushes buffered writes at exit after being set to false" do
+    file = tmp("io_autoclose_flush.txt")
+    begin
+      ruby_exe("io = File.open(#{file.inspect}, 'w'); io.autoclose = false; io.write('kept')")
+      File.read(file).should == "kept"
+    ensure
+      rm_r file
+    end
   end
 end

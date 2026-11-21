@@ -162,14 +162,14 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
         return delegate.isImplementedBy(other);
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return delegate.getArity();
-    }
-
     @Override
     public Signature getSignature() {
         return delegate.getSignature();
+    }
+
+    @Override
+    public Signature getAritySignature() {
+        return delegate.getAritySignature();
     }
 
     @Override
@@ -214,6 +214,16 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
 
     @Override
     public abstract DynamicMethod dup();
+
+    @Override
+    public String getOldName() {
+        return delegate.getOldName();
+    }
+
+    @Override
+    public RubyModule getDefinedClass() {
+        return delegate.getDefinedClass();
+    }
 
     @Override
     /**

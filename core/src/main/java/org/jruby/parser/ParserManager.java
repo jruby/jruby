@@ -12,6 +12,7 @@ import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
 import org.jruby.platform.Platform;
+import org.jruby.parser.prism.ParserProviderPrism;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -48,7 +49,8 @@ public class ParserManager {
         this.runtime = runtime;
         ParserProvider provider;
         try {
-            provider = ParserServiceLoader.provider(Options.PARSER_PRISM.load() || Options.PARSER_WASM.load());
+            boolean loadPrism = Options.PARSER_PRISM.load() || Options.PARSER_WASM.load();
+            provider = loadPrism ? new ParserProviderPrism() : new ParserProviderDefault();
             provider.initialize(runtime.getJRubyHome() + "/lib/libprism." + getLibraryExtension());
         } catch (UnsatisfiedLinkError e) {
             System.err.println("warning: Problem loading requested parser. Falling back to default parser.\nOriginal error message: " + e.getMessage());
@@ -172,10 +174,13 @@ public class ParserManager {
         int length = contents.realSize();
         byte[] bytes = contents.unsafeBytes();
 
+        // One entry per line, as File.foreach yields them: a last line without a newline still counts.
+        int end = begin + length;
         int lineCount = 0;
-        for (int i = begin; i < length; i++) {
+        for (int i = begin; i < end; i++) {
             if (bytes[i] == '\n') lineCount++;
         }
+        if (length > 0 && bytes[end - 1] != '\n') lineCount++;
 
         // FIXME: Semantic problem.  Linenumber affects both differently due to prism being 1-indexed and AST being 0-indexed.
         ParseResult result = parseFile("", Options.PARSER_PRISM.load() ? 0 : -1, new LoadServiceResourceInputStream(contents.bytes()), contents.getEncoding());
@@ -185,5 +190,9 @@ public class ParserManager {
     // Modifies incoming source for -n, -p, and -F
     public ParseResult addGetsLoop(Ruby runtime, ParseResult oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         return parser.addGetsLoop(runtime, oldRoot, printing, processLineEndings, split);
+    }
+
+    public void tearDown() {
+        parser.close();
     }
 }

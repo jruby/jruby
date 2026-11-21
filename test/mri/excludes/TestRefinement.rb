@@ -1,5 +1,4 @@
 exclude :test_ancestors, "work in progress"
-exclude :test_import_methods, "work in progress"
 exclude :test_inlinecache, "needs investigation"
 exclude :test_prepend_refined_module, "work in progress"
 exclude :test_refine_frozen_class, "work in progress"

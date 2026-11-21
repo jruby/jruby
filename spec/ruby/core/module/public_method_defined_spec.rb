@@ -34,25 +34,25 @@ describe "Module#public_method_defined?" do
   it "raises a TypeError if passed an Integer" do
     -> do
       ModuleSpecs::CountsMixin.public_method_defined?(1)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed nil" do
     -> do
       ModuleSpecs::CountsMixin.public_method_defined?(nil)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed false" do
     -> do
       ModuleSpecs::CountsMixin.public_method_defined?(false)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed an object that does not defined #to_str" do
     -> do
       ModuleSpecs::CountsMixin.public_method_defined?(mock('x'))
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "raises a TypeError if passed an object that defines #to_sym" do
@@ -61,12 +61,19 @@ describe "Module#public_method_defined?" do
 
     -> do
       ModuleSpecs::CountsMixin.public_method_defined?(sym)
-    end.should raise_error(TypeError)
+    end.should.raise(TypeError)
   end
 
   it "calls #to_str to convert an Object" do
     str = mock('public_3')
     def str.to_str() 'public_3' end
     ModuleSpecs::CountsMixin.public_method_defined?(str).should == true
+  end
+
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns false for a method that is not implemented on this platform" do
+      Kernel.singleton_class.public_method_defined?(:syscall).should == false
+      Kernel.singleton_class.public_method_defined?(:syscall, false).should == false
+    end
   end
 end

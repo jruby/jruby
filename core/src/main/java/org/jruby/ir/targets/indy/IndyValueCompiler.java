@@ -5,8 +5,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRange;
+import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -180,9 +182,9 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic(RangeObjectSite.RANGE_BEGINLESS, sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_LONG, begin, exclusive ? 1 : 0);
     }
 
-    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_STRING_STRING, RubyEncoding.decodeRaw(begin), begin.getEncoding().toString(), beginCR, RubyEncoding.decodeRaw(end), end.getEncoding().toString(), endCR, exclusive ? 1 : 0);
+        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_STRING_STRING, RubyEncoding.decodeRaw(begin), begin.getEncoding().toString(), beginCR, RubyEncoding.decodeRaw(end), end.getEncoding().toString(), endCR, file, beginLine, endLine, exclusive ? 1 : 0);
     }
 
     public void pushRegexp(ByteList source, int options) {
@@ -264,4 +266,33 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("floatArray", sig(RubyArray.class, ThreadContext.class), ArrayBootstrap.NUMERIC_ARRAY, doubleString);
     }
 
+    @Override
+    public void pushComplex(long value) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("complex", sig(RubyComplex.class, ThreadContext.class), ComplexObjectSite.BOOTSTRAP_LONG, value);
+    }
+
+    @Override
+    public void pushComplex(double value) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("complex", sig(RubyComplex.class, ThreadContext.class), ComplexObjectSite.BOOTSTRAP_DOUBLE, value);
+    }
+
+    @Override
+    public void pushComplex(BigInteger value) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("complex", sig(RubyComplex.class, ThreadContext.class), ComplexObjectSite.BOOTSTRAP_BIGNUM, value.toString());
+    }
+
+    @Override
+    public void pushComplex(BigInteger numerator, BigInteger denominator) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("complex", sig(RubyComplex.class, ThreadContext.class), RationalObjectSite.BOOTSTRAP_COMPLEX, numerator.toString(), denominator.toString());
+    }
+
+    @Override
+    public void pushRational(BigInteger numerator, BigInteger denominator) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("rational", sig(RubyRational.class, ThreadContext.class), RationalObjectSite.BOOTSTRAP, numerator.toString(), denominator.toString());
+    }
 }

@@ -1,0 +1,1 @@
+fails:UnboundMethod#to_s does not annotate a directly looked-up Kernel method with a shared internal name

@@ -845,6 +845,9 @@ CODE
     args = nil
     trace = TracePoint.trace(:call){|tp|
       next if !target_thread?
+      # In parallel testing, unexpected events like IO operations may be traced,
+      # so we filter out events here.
+      next unless [TracePoint, TestSetTraceFunc].include?(tp.defined_class)
       ary << tp.method_id
     }
     foo
@@ -1996,7 +1999,7 @@ CODE
     TracePoint.new(:c_call, &capture_events).enable{
       c.new
     }
-    assert_equal [:c_call, :itself, :initialize], events[1]
+    assert_equal [:c_call, :itself, :initialize], events[0]
     events.clear
 
     o = Class.new{
@@ -2262,9 +2265,6 @@ CODE
     }
     # it is dirty hack. usually we shouldn't use such technique
     Thread.pass until t.status == 'sleep'
-    # When RJIT thread exists, t.status becomes 'sleep' even if it does not reach m2t_q.pop.
-    # This sleep forces it to reach m2t_q.pop for --jit-wait.
-    sleep 1 if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
 
     t.add_trace_func proc{|ev, file, line, *args|
       if file == __FILE__
@@ -2724,7 +2724,7 @@ CODE
   end
 
   def test_disable_local_tracepoint_in_trace
-    assert_normal_exit <<-EOS
+    assert_normal_exit(<<-EOS, timeout: 60)
     def foo
       trace = TracePoint.new(:b_return){|tp|
         tp.disable
@@ -2751,6 +2751,48 @@ CODE
     end
     tp_line.enable(target: method(:bar))
     bar
+    EOS
+
+    # When another event fires at the same pc as a targeted :line hook (here,
+    # COVERAGE_LINE alongside LINE while Coverage is running), disabling the
+    # last targeted TracePoint on the iseq from inside the line hook must not
+    # leave vm_trace() dispatching the remaining event through the freed hook
+    # list.
+    assert_normal_exit(<<-'EOS', 'targeted TracePoint freed mid-dispatch')
+    require "coverage"
+    require "tempfile"
+
+    Coverage.start
+
+    file = Tempfile.new(["cov_tp", ".rb"])
+    50.times { |i| file.puts "def tracee#{i}; 1 + 1; end" }
+    file.close
+    require file.path
+
+    50.times do |i|
+      tp = TracePoint.new(:line) { tp.disable }
+      tp.enable(target: method("tracee#{i}"))
+      send("tracee#{i}")
+    end
+    EOS
+
+    # Same hazard for a bmethod's def-local hook list: a targeted :return
+    # TracePoint on the bmethod fires from vm_trace()'s special RETURN dispatch,
+    # which runs after the b_return event. A targeted :b_return hook that
+    # disables the :return TP frees that list before the special RETURN uses it.
+    assert_normal_exit(<<-'EOS', 'targeted bmethod TracePoint freed mid-dispatch')
+    50.times do
+      obj = Object.new
+      obj.define_singleton_method(:m) { 1 }
+
+      ret_tp = TracePoint.new(:return) { }
+      ret_tp.enable(target: obj.method(:m))
+
+      bret_tp = TracePoint.new(:b_return) { ret_tp.disable }
+      bret_tp.enable(target: obj.method(:m))
+
+      obj.m
+    end
     EOS
   end
 
@@ -2786,6 +2828,62 @@ CODE
       end
     }
     assert_equal [__LINE__ - 5, __LINE__ - 4, __LINE__ - 3], lines, 'Bug #17868'
+  end
+
+  def test_line_event_after_guard_before_while
+    lines = []
+    while_line = body_line = nil
+
+    TracePoint.new(:line) {|tp|
+      next unless target_thread?
+      lines << tp.lineno
+    }.enable {
+      raise if 1 == 2
+      while_line = __LINE__ + 1
+      while true
+        body_line = __LINE__ + 1
+        break
+      end
+    }
+
+    assert_includes lines, while_line
+    assert_includes lines, body_line
+    assert_operator lines.index(while_line), :<, lines.index(body_line)
+  end
+
+  def test_line_event_after_guard_before_while_predicate
+    parent = Class.new do
+      def read
+        @values.shift
+      end
+    end
+
+    child = Class.new(parent) do
+      def initialize
+        @values = ["chunk", nil]
+      end
+    end
+
+    start_line = __LINE__ + 2
+    while_line = start_line + 2
+    child.class_eval <<~RUBY, __FILE__, start_line
+      def read
+        return if @finished
+        while chunk = super
+          chunk.upcase
+        end
+      end
+    RUBY
+
+    lines = []
+    TracePoint.new(:line) {|tp|
+      next unless target_thread?
+      lines << tp.lineno
+    }.enable {
+      child.new.read
+    }
+
+    assert_includes lines, while_line
   end
 
   def test_allow_reentry
@@ -2956,5 +3054,211 @@ CODE
     end
 
     assert_kind_of(Thread, target_thread)
+  end
+
+  def test_tracepoint_garbage_collected_when_disable
+    before_count_stat = 0
+    before_count_objspace = 0
+    TracePoint.stat.each do
+      before_count_stat += 1
+    end
+    ObjectSpace.each_object(TracePoint) do
+      before_count_objspace += 1
+    end
+    tp = TracePoint.new(:c_call, :c_return) do
+    end
+    tp.enable
+    Class.inspect # c_call, c_return invoked
+    tp.disable
+    tp_id = tp.object_id
+    tp = nil
+
+    gc_times = 0
+    gc_max_retries = 10
+    EnvUtil.suppress_warning do
+      until (ObjectSpace._id2ref(tp_id) rescue nil).nil?
+        GC.start
+        gc_times += 1
+        if gc_times == gc_max_retries
+          break
+        end
+      end
+    end
+    return if gc_times == gc_max_retries
+
+    after_count_stat = 0
+    TracePoint.stat.each do |v|
+      after_count_stat += 1
+    end
+    assert after_count_stat <= before_count_stat
+    after_count_objspace = 0
+    ObjectSpace.each_object(TracePoint) do
+      after_count_objspace += 1
+    end
+    assert after_count_objspace <= before_count_objspace
+  end
+
+  def test_tp_ractor_local_untargeted
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+    r = Ractor.new do
+      results = []
+      tp = TracePoint.new(:line) { |tp| results << tp.path }
+      tp.enable
+      Ractor.main << :continue
+      Ractor.receive
+      tp.disable
+      results
+    end
+    outer_results = []
+    outer_tp = TracePoint.new(:line) { |tp| outer_results << tp.path }
+    outer_tp.enable
+    Ractor.receive
+    GC.start # so I can check <internal:gc> path
+    r << :continue
+    inner_results = r.value
+    outer_tp.disable
+    assert_equal 1, outer_results.select { |path| path.match?(/internal:gc/) }.size
+    assert_equal 0, inner_results.select { |path| path.match?(/internal:gc/) }.size
+    end;
+  end
+
+  def test_tp_targeted_ractor_local_bmethod
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+      mname = :foo
+      prok = Ractor.shareable_proc do
+      end
+      klass = EnvUtil.labeled_class(:Klass) do
+        define_method(mname, &prok)
+      end
+      outer_results = 0
+      _outer_tp = TracePoint.new(:call) do
+        outer_results += 1
+      end # not enabled
+      rs = 10.times.map do
+        Ractor.new(mname, klass) do |mname, klass0|
+          inner_results = 0
+          tp = TracePoint.new(:call) { |tp| inner_results += 1 }
+          target = klass0.instance_method(mname)
+          tp.enable(target: target)
+          obj = klass0.new
+          10.times { obj.send(mname) }
+          tp.disable
+          inner_results
+        end
+      end
+      inner_results = rs.map(&:value).sum
+      obj = klass.new
+      10.times { obj.send(mname) }
+      assert_equal 100, inner_results
+      assert_equal 0, outer_results
+    end;
+  end
+
+  def test_tp_targeted_ractor_local_method
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+      def foo
+      end
+      outer_results = 0
+      _outer_tp = TracePoint.new(:call) do
+        outer_results += 1
+      end # not enabled
+
+      rs = 10.times.map do
+        Ractor.new do
+          inner_results = 0
+          tp = TracePoint.new(:call) do
+             inner_results += 1
+          end
+          tp.enable(target: method(:foo))
+          10.times { foo }
+          tp.disable
+          inner_results
+        end
+      end
+
+      inner_results = rs.map(&:value).sum
+      10.times { foo }
+      assert_equal 100, inner_results
+      assert_equal 0,   outer_results
+    end;
+  end
+
+  def test_tracepoints_not_disabled_by_ractor_gc
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+    $-w = nil # uses ObjectSpace._id2ref
+    def hi = "hi"
+    greetings = 0
+    tp_target = TracePoint.new(:call) do |tp|
+      greetings += 1
+    end
+    tp_target.enable(target: method(:hi))
+
+    raises = 0
+    tp_global = TracePoint.new(:raise) do |tp|
+      raises += 1
+    end
+    tp_global.enable
+
+    r = Ractor.new { 10 }
+    r.join
+    ractor_id = r.object_id
+    r = nil # allow gc for ractor
+    gc_max_retries = 15
+    gc_times = 0
+    # force GC of ractor (or try, because we have a conservative GC)
+    until (ObjectSpace._id2ref(ractor_id) rescue nil).nil?
+      GC.start
+      gc_times += 1
+      if gc_times == gc_max_retries
+        break
+      end
+    end
+
+    # tracepoints should still be enabled after GC of `r`
+    5.times {
+      hi
+    }
+    6.times {
+      raise "uh oh" rescue nil
+    }
+    tp_target.disable
+    tp_global.disable
+    assert_equal 5, greetings
+    if gc_times == gc_max_retries # _id2ref never raised
+      assert_equal 6, raises
+    else
+      assert_equal 7, raises
+    end
+    end;
+  end
+
+  def test_lots_of_enabled_tracepoints_ractor_gc
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      def foo; end
+      sum = 8.times.map do
+        Ractor.new do
+          called = 0
+          TracePoint.new(:call) do |tp|
+            next if tp.callee_id != :foo
+            called += 1
+          end.enable
+          200.times do
+            TracePoint.new(:line) {
+              # all these allocations shouldn't GC these tracepoints while the ractor is alive.
+              Object.new
+            }.enable
+          end
+          100.times { foo }
+          called
+        end
+      end.map(&:value).sum
+      assert_equal 800, sum
+      4.times { GC.start } # Now the tracepoints can be GC'd because the ractors can be GC'd
+    end;
   end
 end

@@ -13,6 +13,14 @@ describe "String#capitalize" do
     "abcdef"[1...-1].capitalize.should == "Bcde"
   end
 
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.capitalize.should == "Ab\xE4\xC4\0cd".b
+  end
+
+  it "downcases the rest of a binary String when the first byte is not ASCII" do
+    "\xE4AB".b.capitalize.should == "\xE4ab".b
+  end
+
   describe "full Unicode case mapping" do
     it "works for all of Unicode with no option" do
       "äöÜ".capitalize.should == "Äöü"
@@ -32,17 +40,39 @@ describe "String#capitalize" do
       capitalized.should == "Sset"
       capitalized.size.should == 4
       capitalized.bytesize.should == 4
-      capitalized.ascii_only?.should be_true
+      capitalized.ascii_only?.should == true
     end
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).capitalize(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).capitalize(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).capitalize(:ascii).should == "\x83Aab".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
+    it "capitalizes the first character in UTF-16 and UTF-32 encodings" do
+      [Encoding::UTF_16BE, Encoding::UTF_16LE, Encoding::UTF_32BE, Encoding::UTF_32LE].each do |encoding|
+        "aBc".encode(encoding).capitalize(:ascii).should == "Abc".encode(encoding)
+      end
+    end
+
     it "does not capitalize non-ASCII characters" do
       "ßet".capitalize(:ascii).should == "ßet"
     end
 
     it "handles non-ASCII substrings properly" do
       "garçon"[1...-1].capitalize(:ascii).should == "Arço"
+    end
+
+    it "downcases the rest when the first character is not ASCII" do
+      "éAB".capitalize(:ascii).should == "éab"
     end
   end
 
@@ -56,7 +86,7 @@ describe "String#capitalize" do
     end
 
     it "does not allow any other additional option" do
-      -> { "iSa".capitalize(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { "iSa".capitalize(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -70,21 +100,21 @@ describe "String#capitalize" do
     end
 
     it "does not allow any other additional option" do
-      -> { "iß".capitalize(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { "iß".capitalize(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    -> { "abc".capitalize(:fold) }.should raise_error(ArgumentError)
+    -> { "abc".capitalize(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    -> { "abc".capitalize(:invalid_option) }.should raise_error(ArgumentError)
+    -> { "abc".capitalize(:invalid_option) }.should.raise(ArgumentError)
   end
 
   it "returns String instances when called on a subclass" do
-    StringSpecs::MyString.new("hello").capitalize.should be_an_instance_of(String)
-    StringSpecs::MyString.new("Hello").capitalize.should be_an_instance_of(String)
+    StringSpecs::MyString.new("hello").capitalize.should.instance_of?(String)
+    StringSpecs::MyString.new("Hello").capitalize.should.instance_of?(String)
   end
 
   it "returns a String in the same encoding as self" do
@@ -95,7 +125,7 @@ end
 describe "String#capitalize!" do
   it "capitalizes self in place" do
     a = +"hello"
-    a.capitalize!.should equal(a)
+    a.capitalize!.should.equal?(a)
     a.should == "Hello"
   end
 
@@ -131,7 +161,7 @@ describe "String#capitalize!" do
       capitalized.should == "Sset"
       capitalized.size.should == 4
       capitalized.bytesize.should == 4
-      capitalized.ascii_only?.should be_true
+      capitalized.ascii_only?.should == true
     end
   end
 
@@ -163,7 +193,7 @@ describe "String#capitalize!" do
     end
 
     it "does not allow any other additional option" do
-      -> { a = "iSa"; a.capitalize!(:turkic, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "iSa"; a.capitalize!(:turkic, :ascii) }.should.raise(ArgumentError)
     end
   end
 
@@ -181,16 +211,35 @@ describe "String#capitalize!" do
     end
 
     it "does not allow any other additional option" do
-      -> { a = "iß"; a.capitalize!(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+      -> { a = "iß"; a.capitalize!(:lithuanian, :ascii) }.should.raise(ArgumentError)
     end
   end
 
   it "does not allow the :fold option for upcasing" do
-    -> { a = "abc"; a.capitalize!(:fold) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.capitalize!(:fold) }.should.raise(ArgumentError)
   end
 
   it "does not allow invalid options" do
-    -> { a = "abc"; a.capitalize!(:invalid_option) }.should raise_error(ArgumentError)
+    -> { a = "abc"; a.capitalize!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.capitalize!.should.equal?(a)
+    a.should == "Ab\xE4\xC4\0cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.capitalize!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.capitalize!
+    slice.should == "Abcd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil when no changes are made" do
@@ -205,7 +254,7 @@ describe "String#capitalize!" do
   it "raises a FrozenError when self is frozen" do
     ["", "Hello", "hello"].each do |a|
       a.freeze
-      -> { a.capitalize! }.should raise_error(FrozenError)
+      -> { a.capitalize! }.should.raise(FrozenError)
     end
   end
 end

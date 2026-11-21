@@ -186,6 +186,15 @@ class TestParse < Test::Unit::TestCase
       end;
     end
 
+    c = Class.new
+    c.freeze
+    assert_valid_syntax("#{<<~"begin;"}\n#{<<~'end;'}") do
+      begin;
+        c::FOO &= p 1
+        ::FOO &= p 1
+      end;
+    end
+
     assert_syntax_error("#{<<~"begin;"}\n#{<<~'end;'}", /Can't set variable/) do
       begin;
         $1 &= 1
@@ -314,6 +323,12 @@ class TestParse < Test::Unit::TestCase
     end
     a.call
     assert_equal(42, b)
+
+    obj = BasicObject.new
+    assert_nothing_raised do
+      a = obj.instance_eval('-> a = "#{foo do end}" do end', __FILE__, __LINE__)
+    end
+    assert_raise_with_message(NoMethodError, /foo/) {a.call}
   end
 
   def test_block_call_colon2
@@ -341,6 +356,21 @@ class TestParse < Test::Unit::TestCase
     end
     assert_equal("foobar", a)
     assert_equal("foobar", b)
+  end
+
+  def test_call_command
+    a = b = nil
+    o = Object.new
+    def o.m(*arg); proc {|a| arg.join + a }; end
+
+    assert_nothing_raised do
+      o.instance_eval <<-END, __FILE__, __LINE__+1
+        a = o.m "foo", "bar" do end.("buz")
+        b = o.m "foo", "bar" do end::("buz")
+      END
+    end
+    assert_equal("foobarbuz", a)
+    assert_equal("foobarbuz", b)
   end
 
   def test_xstring
@@ -466,6 +496,12 @@ class TestParse < Test::Unit::TestCase
     assert_parse_error(%q[def (:"#{42}").foo; end], msg)
     assert_parse_error(%q[def ([]).foo; end], msg)
     assert_parse_error(%q[def ([1]).foo; end], msg)
+    assert_parse_error(%q[def (__FILE__).foo; end], msg)
+    assert_parse_error(%q[def (__LINE__).foo; end], msg)
+    assert_parse_error(%q[def (__ENCODING__).foo; end], msg)
+    assert_parse_error(%q[def __FILE__.foo; end], msg)
+    assert_parse_error(%q[def __LINE__.foo; end], msg)
+    assert_parse_error(%q[def __ENCODING__.foo; end], msg)
   end
 
   def test_flip_flop
@@ -648,6 +684,8 @@ class TestParse < Test::Unit::TestCase
     assert_equal("\u{1234}", eval('?\u{1234}'))
     assert_equal("\u{1234}", eval('?\u1234'))
     assert_syntax_error('?\u{41 42}', 'Multiple codepoints at single character literal')
+    assert_syntax_error("?and", /unexpected '\?'/)
+    assert_syntax_error("?\u1234and", /unexpected '\?'/)
     e = assert_syntax_error('"#{?\u123}"', 'invalid Unicode escape')
     assert_not_match(/end-of-input/, e.message)
 
@@ -1373,6 +1411,10 @@ x = __ENCODING__
     assert_not_match(/unexpected tSTRING_END/, e.message)
   end
 
+  def test_invalid_character_regexp_error
+    assert_syntax_error('/#{"\xcd"}/', /invalid multibyte character/)
+  end
+
   def test_lparenarg
     o = Struct.new(:x).new
     def o.i(x)
@@ -1484,6 +1526,10 @@ x = __ENCODING__
       "x = begin return ensure return end",
       "x = begin return; rescue; return end",
       "x = begin return; rescue; return; else return end",
+      "x = return",
+      "x = return a",
+      "x = return a do end",
+      "x = return a b do end",
     ].each do |code|
       ex = assert_syntax_error(code, w)
       assert_equal(1, ex.message.scan(w).size, ->{"same #{w.inspect} warning should be just once\n#{w.message}"})
@@ -1527,7 +1573,7 @@ x = __ENCODING__
   end
 
   def test_shareable_constant_value_simple
-    obj = [['unsharable_value']]
+    obj = [['unshareable_value']]
     a, b, c = eval_separately("#{<<~"begin;"}\n#{<<~'end;'}")
     begin;
       # shareable_constant_value: experimental_everything
@@ -1719,6 +1765,15 @@ x = __ENCODING__
       def o.freeze; self; end
       C = [o]
     end;
+  end
+
+  def test_shareable_constant_value_massign
+    a = eval_separately("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      # shareable_constant_value: experimental_everything
+      A, = 1
+    end;
+    assert_equal(1, a)
   end
 
   def test_if_after_class

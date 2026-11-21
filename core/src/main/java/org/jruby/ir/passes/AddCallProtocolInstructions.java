@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.apache.tools.ant.util.CollectionUtils;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;

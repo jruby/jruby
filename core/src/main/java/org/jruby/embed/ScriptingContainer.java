@@ -43,6 +43,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyGlobal.InputGlobalVariable;
 import org.jruby.RubyGlobal.OutputGlobalVariable;
 import org.jruby.RubyIO;
+import org.jruby.RubySymbol;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.RubyInstanceConfig.ProfilingMode;
@@ -476,8 +477,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @return true if Ruby is configured to run in a process, otherwise, false.
      */
+    @Deprecated(since = "10.1.0.0")
     public boolean isRunRubyInProcess() {
-        return provider.getRubyInstanceConfig().isRunRubyInProcess();
+        return false;
     }
 
     /**
@@ -491,8 +493,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @param inprocess true when Ruby is set to run in the process, or false not to
      * run in the process.
      */
+    @Deprecated(since = "10.1.0.0")
     public void setRunRubyInProcess(boolean inprocess) {
-        provider.getRubyInstanceConfig().setRunRubyInProcess(inprocess);
+
     }
 
     /**
@@ -704,29 +707,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public ProfilingMode getProfilingMode() {
         return provider.getRubyInstanceConfig().getProfilingMode();
-    }
-
-    /**
-     * Changes a ProfilingMode to a given one. The default value is Profiling.OFF.
-     * Call this method before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
-     *
-     * ProfilingMode allows you to change profiling style.
-     *
-     * Profiling.OFF - default. profiling off.
-     * Profiling.API - activates Ruby profiler API. equivalent to --profile.api command line option
-     * Profiling.FLAT - synonym for --profile command line option equivalent to --profile.flat command line option
-     * Profiling.GRAPH - runs with instrumented (timed) profiling, graph format. equivalent to --profile.graph command line option.
-     *
-     * @since JRuby 1.6.6.
-     *
-     * @deprecated Use setProfilingMode instead
-     *
-     * @param mode a new profiling mode to be set.
-     */
-    @Deprecated(since = "1.7.17")
-    public void setProfile(ProfilingMode mode) {
-        provider.getRubyInstanceConfig().setProfilingMode(mode);
     }
 
     /**
@@ -1039,18 +1019,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public LocalContextProvider getProvider() {
         return provider;
-    }
-
-    /**
-     * Returns a Ruby runtime in one of {@link LocalContextScope}.
-     *
-     * @deprecated As of JRuby 1.5.0. Use getProvider().getRuntime() method instead.
-     *
-     * @return Ruby runtime of a specified local context
-     */
-    @Deprecated(since = "1.5.0")
-    public Ruby getRuntime() {
-        return provider.getRuntime();
     }
 
     /**
@@ -1538,6 +1506,143 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
+     * Executes a method defined in Ruby script, passing keyword arguments only.
+     * <p>
+     * Use this overload when the target Ruby method declares only keyword
+     * parameters (e.g. {@code def greet(name:, greeting: 'Hello')}). Each map
+     * key is treated as a kwarg name and resolved to a Ruby {@code Symbol}.
+     * The accepted key types are {@link RubySymbol} (used directly),
+     * {@link String}, and {@link org.jruby.RubyString} (both converted via
+     * {@code toString()} + {@code newSymbol(...)}). Any other key type causes
+     * an {@link IllegalArgumentException}. Values are converted from Java to
+     * Ruby via the standard JavaEmbedUtils conversions. A {@code null} or
+     * empty {@code kwargs} map results in a call with no keyword arguments.
+     *
+     * <pre>Example
+     *     ScriptingContainer container = new ScriptingContainer();
+     *     Object receiver = container.runScriptlet(
+     *         "def greet(name:, greeting: 'Hello')\n" +
+     *         "  \"#{greeting}, #{name}!\"\n" +
+     *         "end\n" +
+     *         "self");
+     *
+     *     Map&lt;String, Object&gt; kwargs = new HashMap&lt;&gt;();
+     *     kwargs.put("name", "World");
+     *     Object result = container.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+     *     // result == "Hello, World!"</pre>
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @return an instance automatically converted from Ruby to Java
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              container is configured to wrap exceptions (the default).
+     * @since JRuby 10.1.1.0
+     */
+    public Object callMethodWithKeywordArgs(Object receiver, String methodName, Map<?, Object> kwargs) {
+        return objectAdapter.callMethodWithKeywordArgs(receiver, methodName, kwargs);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     * <p>
+     * Use this overload when the target Ruby method declares both positional
+     * parameters and keyword parameters (e.g.
+     * {@code def combine(a, b, separator: ', ')}). See
+     * {@link #callMethodWithKeywordArgs(Object, String, Map)} for details on
+     * how kwarg keys and values are converted.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @return an instance automatically converted from Ruby to Java
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              container is configured to wrap exceptions (the default).
+     * @since JRuby 10.1.1.0
+     */
+    public Object callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs) {
+        return objectAdapter.callMethodWithKeywordArgs(receiver, methodName, args, kwargs);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments,
+     * and converts the result to the given Java type.
+     * <p>
+     * See {@link #callMethodWithKeywordArgs(Object, String, Map)} for details
+     * on how kwarg keys and values are converted.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @param returnType is the Java type to convert the return value to. Pass
+     *              {@code null} to discard the result and return {@code null}.
+     * @param <T> the Java type to convert the return value to
+     * @return an instance of the requested Java type, or {@code null} if
+     *              {@code returnType} is {@code null}
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              container is configured to wrap exceptions (the default).
+     * @since JRuby 10.1.1.0
+     */
+    public <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Class<T> returnType) {
+        return objectAdapter.callMethodWithKeywordArgs(receiver, methodName, args, kwargs, returnType);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional args, keyword
+     * args, and a block, and converts the result to the given Java type.
+     * <p>
+     * Pass {@link org.jruby.runtime.Block#NULL_BLOCK} for {@code block} to
+     * indicate "no block" — equivalent to a Ruby call without a block (any
+     * {@code yield} in the callee will raise {@code LocalJumpError} unless
+     * guarded by {@code block_given?}). See
+     * {@link #callMethodWithKeywordArgs(Object, String, Map)} for details on
+     * how kwarg keys and values are converted.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @param block is a block to be executed in this method, or
+     *              {@link org.jruby.runtime.Block#NULL_BLOCK} for no block.
+     * @param returnType is the Java type to convert the return value to. Pass
+     *              {@code null} to discard the result and return {@code null}.
+     * @param <T> the Java type to convert the return value to
+     * @return an instance of the requested Java type, or {@code null} if
+     *              {@code returnType} is {@code null}
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              container is configured to wrap exceptions (the default).
+     * @since JRuby 10.1.1.0
+     */
+    public <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Block block, Class<T> returnType) {
+        return objectAdapter.callMethodWithKeywordArgs(receiver, methodName, args, kwargs, block, returnType);
+    }
+
+    /**
      *
      * @param receiver is an instance that will receive this method call.
      *                 Ruby's self object will be used if no appropriate receiver
@@ -1691,19 +1796,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns an input stream that Ruby runtime has. The stream is set when
-     * Ruby runtime is initialized.
-     *
-     * @deprecated As of JRuby 1.5.0, replaced by getInput().
-     *
-     * @return an input stream that Ruby runtime has.
-     */
-    @Deprecated(since = "1.5.0")
-    public InputStream getIn() {
-        return getInput();
-    }
-
-    /**
      * Replaces a standard output by a specified writer.
      *
      * @param writer is a writer to be set
@@ -1754,19 +1846,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns an output stream that Ruby runtime has. The stream is set when
-     * Ruby runtime is initialized.
-     *
-     * @deprecated As of JRuby 1.5.0, replaced by getOutput().
-     *
-     * @return an output stream that Ruby runtime has
-     */
-    @Deprecated(since = "1.5.0")
-    public PrintStream getOut() {
-        return getOutput();
-    }
-
-    /**
      * Replaces a standard error by a specified writer.
      *
      * @param errorWriter is a writer to be set
@@ -1814,19 +1893,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
             return (Writer) map.get(AttributeName.ERROR_WRITER);
         }
         return null;
-    }
-
-    /**
-     * Returns an error output stream that Ruby runtime has. The stream is set when
-     * Ruby runtime is initialized.
-     *
-     * @deprecated As of JRuby 1.5.0, Replaced by getError()
-     *
-     * @return an error output stream that Ruby runtime has
-     */
-    @Deprecated(since = "1.5.0")
-    public PrintStream getErr() {
-        return getError();
     }
 
     /**
@@ -1895,40 +1961,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public void addClassLoader(ClassLoader classLoader) {
         getProvider().getRubyInstanceConfig().addLoader(classLoader);
-    }
-
-    /**
-     * add the given classloader to the LOAD_PATH
-     * @param classloader
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addLoadPath(ClassLoader classloader) {
-        addLoadPath(createUri(classloader, "/.jrubydir"));
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    protected void addLoadPath(String uri) {
-        runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
-    }
-
-    /**
-     * add the given classloader to the GEM_PATH
-     * @param classloader
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addGemPath(ClassLoader classloader) {
-        addGemPath(createUri(classloader, "/specifications/.jrubydir"));
-    }
-
-    private String createUri(ClassLoader cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
 
     protected void addGemPath(String uri) {

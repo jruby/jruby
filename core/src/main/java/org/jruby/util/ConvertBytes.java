@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConvertBytes {
@@ -36,11 +37,6 @@ public class ConvertBytes {
         this.end = str.getBegin() + end;
         this.badcheck = badcheck;
         this.base = base;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
-        this(runtime, str, base, badcheck);
     }
 
     public static final byte[] intToBinaryBytes(int i) {
@@ -354,19 +350,17 @@ public class ConvertBytes {
         return out;
     }
 
-    /** rb_cstr_to_inum
-     *
-     */
+    @CRuby(value = "rb_cstr_to_inum", file = "bignum.c")
     public static IRubyObject byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck, boolean exception) {
         return new ConvertBytes(runtime, str, base, badcheck).byteListToInum(exception);
     }
 
-    // MRI: rb_str_convert_to_inum
+    @CRuby(value = "rb_str_convert_to_inum", file = "bignum.c")
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
         return (RubyInteger) byteListToInum(runtime, str, base, badcheck, true);
     }
 
-    // MRI: rb_str_convert_to_inum
+    @CRuby(value = "rb_str_convert_to_inum", file = "bignum.c")
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
         return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
@@ -470,9 +464,7 @@ public class ConvertBytes {
         };
     }
 
-    /** conv_digit
-     *
-     */
+    @CRuby(value = "conv_digit", file = "bignum.c")
     private byte convertDigit(byte c) {
         if(c < 0) return -1;
         return conv_digit[c];
@@ -886,9 +878,7 @@ public class ConvertBytes {
         }
     }
 
-    /** rb_invalid_str
-     *
-     */
+    @CRuby(value = "rb_invalid_str", file = "error.c")
     private void invalidString(String type) {
         IRubyObject s = RubyString.newString(runtime, str).inspect(runtime.getCurrentContext());
         throw runtime.newArgumentError("invalid value for " + type + "(): " + s);

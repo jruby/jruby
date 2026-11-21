@@ -20,7 +20,7 @@
 
 require_relative 'tables'
 
-
+# :stopdoc:
 module UnicodeNormalize  # :nodoc:
   ## Constant for max hash capacity to avoid DoS attack
   MAX_HASH_LENGTH = 18000 # enough for all test cases, otherwise tests get slow
@@ -111,16 +111,22 @@ module UnicodeNormalize  # :nodoc:
     start = nfd_string[0]
     last_class = CLASS_TABLE[start]-1
     accents = ''
+    result = ''
     nfd_string[1..-1].each_char do |accent|
       accent_class = CLASS_TABLE[accent]
       if last_class<accent_class and composite = COMPOSITION_TABLE[start+accent]
         start = composite
+      elsif accent_class == 0
+        result << start << accents
+        start = accent
+        accents = ''
+        last_class = -1
       else
         accents << accent
         last_class = accent_class
       end
     end
-    hangul_comp_one(start+accents)
+    hangul_comp_one(result+start+accents)
   end
 
   def self.normalize(string, form = :nfc)

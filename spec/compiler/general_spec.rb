@@ -10,6 +10,16 @@ module CompilerSpecUtils
   ensure
     $VERBOSE = verb
   end
+
+  # Create interpreted block bodies even when the host uses forced compilation or a zero JIT threshold.
+  def without_compilation
+    config = JRuby.runtime.instance_config
+    previous_mode = config.compile_mode
+    config.compile_mode = org.jruby.RubyInstanceConfig::CompileMode::OFF
+    yield
+  ensure
+    config.compile_mode = previous_mode
+  end
 end
 
 module InterpreterSpecUtils
@@ -20,7 +30,8 @@ module InterpreterSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield eval(src, TOPLEVEL_BINDING, filename, line)
+    result = without_compilation { eval(src, TOPLEVEL_BINDING, filename, line) }
+    yield result
   end
 
   def self.name; "interpreter"; end
@@ -41,7 +52,8 @@ module PersistenceSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield encode_decode_run(src, filename, line)
+    result = without_compilation { encode_decode_run(src, filename, line) }
+    yield result
   end
 
   def self.name; "persistence"; end
@@ -198,6 +210,81 @@ modes.each do |mode|
       run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))}
     end
 
+    it "compiles Complex literals with integer, float, bignum, and rational imaginary parts" do
+      run('[1i, -1i, 1.1i, -1.1i, 18446744073709551616i, -18446744073709551616i, 1.1ri]') do |result|
+        expect(result).to eq [Complex(0, 1), Complex(0, -1), Complex(0, 1.1), Complex(0, -1.1),
+                             Complex(0, 18446744073709551616), Complex(0, -18446744073709551616),
+                             Complex(0, Rational(11, 10))]
+      end
+    end
+
+    it "reuses Complex literals on repeated evaluation" do
+      run('a = []; 2.times { a << [1i, 1.1i, 18446744073709551616i, 1ri, 1.1ri, 18446744073709551616ri, 0.00000000000000000001ri] }; a') do |result|
+        first, second = result
+        first.each_index do |index|
+          expect(first[index]).to equal(second[index])
+          expect(first[index]).to be_frozen
+        end
+      end
+    end
+
+    it "caches Rational literals with large numerators and denominators" do
+      run('a = []; 2.times { a << [1r, 1.1r, 18446744073709551616r, 0.00000000000000000001r] }; a') do |result|
+        first, second = result
+        expect(first).to eq [Rational(1), Rational(11, 10), Rational(18446744073709551616), Rational(1, 100000000000000000000)]
+        first.each_index { |index| expect(first[index]).to equal(second[index]) }
+      end
+    end
+
+    it "caches normalized Rational literals with small and large numerators and denominators" do
+      forms = {
+        '0.5000000000000000000000000000' => [1, 2],
+        '0.00000000000000000001' => [1, 100000000000000000000],
+        '100000000000000000000.5000000000000000000000' => [200000000000000000001, 2],
+        '1.23456789012345678901' => [123456789012345678901, 100000000000000000000],
+        '-9223372036854775808' => [-9223372036854775808, 1],
+        '0.0000000000000000000000000000' => [0, 1]
+      }
+      forms.each do |literal, parts|
+        run("a = []; 2.times { a << [#{literal}r, #{literal}ri] }; a") do |result|
+          first, second = result
+          first_rational, first_complex = first
+          second_rational, second_complex = second
+          expect(first_rational).to equal(second_rational)
+          expect(first_complex).to equal(second_complex)
+          expect(first_rational).to be_frozen
+          expect(first_complex).to be_frozen
+          expect([first_rational.numerator, first_rational.denominator]).to eq parts
+          expect([first_complex.imaginary.numerator, first_complex.imaginary.denominator]).to eq parts
+        end
+      end
+    end
+
+    it "preserves the numeric types of Complex imaginary parts" do
+      run('[1i, 1.0i, 1ri].map { |c| c.imaginary.class }') do |result|
+        expect(result).to eq [Integer, Float, Rational]
+      end
+      run('[18446744073709551616ri, -0.00000000000000000001ri]') do |result|
+        expect(result).to eq [Complex(0, Rational(18446744073709551616)), Complex(0, Rational(-1, 100000000000000000000))]
+      end
+    end
+
+    it "preserves the sign of zero in Complex float literals" do
+      run('[0.0i, -0.0i].map { |c| 1.0 / c.imaginary }') do |result|
+        expect(result).to eq [Float::INFINITY, -Float::INFINITY]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9823
+    it "compiles a range with an Integer begin and a non-Integer literal end" do
+      run('[(1..2.0), (1...2.5).include?(2), (1..2r), (1..18446744073709551616).size]') do |x|
+        expect(x).to eq [1..2.0, true, 1..2r, 18446744073709551616]
+      end
+      run('[(1..2.0).exclude_end?, (1...2.0).exclude_end?, (1.0...2.0).exclude_end?]') do |x|
+        expect(x).to eq [false, true, true]
+      end
+    end
+
     it "compiles interpolated strings" do
       run('a = "hello#{42}"; a') {|result| expect(result).to eq('hello42') }
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
@@ -208,6 +295,25 @@ modes.each do |mode|
       pid_dstr_32_times = '#{$$}' * 32
       pid_32_times = ([$$] * 32).join('')
       run("\"hello#{pid_dstr_32_times}\"") {|result| expect(result).to eq('hello' + pid_32_times) }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9822
+    it "compiles a range with one string literal endpoint" do
+      run('x = "c"; ["a"..x, x..."e", ("a"..), (.."b")]') do |x|
+        expect(x).to eq ["a".."c", "c"..."e", ("a"..), (.."b")]
+      end
+    end
+
+    it "raises from building a range of incomparable literals where the range appears" do
+      run('begin; (1.."3"); rescue ArgumentError; :rescued; end') do |x|
+        expect(x).to eq :rescued
+      end
+      run('def __range_error = yield rescue $!.class; [__range_error { (1.."3") }, __range_error { (:a..1) }, __range_error { (true..false) }]') do |x|
+        expect(x).to eq [ArgumentError, ArgumentError, ArgumentError]
+      end
+      run('[(:a..:c), (1r..2), (nil.."a"), ("a"..nil)]') do |x|
+        expect(x).to eq [:a..:c, 1r..2, nil.."a", "a"..nil]
+      end
     end
 
     it "compiles calls" do
@@ -270,6 +376,13 @@ modes.each do |mode|
       run(str8bit) do |str8bit_result|
         expect(str8bit_result).to eq "\300"
         expect(str8bit_result.encoding).to eq Encoding::UTF_8
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9825
+    it "compiles __ENCODING__ on one side of a branch" do
+      run('v = true; [v ? __ENCODING__ : nil, v && __ENCODING__]') do |x|
+        expect(x).to eq [Encoding::UTF_8, Encoding::UTF_8]
       end
     end
 
@@ -720,6 +833,21 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9827
+    it "compiles a splatted when clause in the presence of refinements" do
+      run(<<~'RUBY') do |x|
+        module RefineEqqForSplat; refine(String) { def ===(other) = other == :hit }; end
+        class SplatWhenWithUsing
+          using RefineEqqForSplat
+          WORDS = ["x"]
+          def self.go(v) = case v; when *WORDS then :matched; else :unmatched; end
+        end
+        [SplatWhenWithUsing.go(:hit), SplatWhenWithUsing.go("x")]
+      RUBY
+        expect(x).to eq [:matched, :unmatched]
+      end
+    end
+
     it "matches any true value for a caseless case/when with > 3 args" do
       result = run('
         case
@@ -860,6 +988,25 @@ modes.each do |mode|
       run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end") {|result| expect(result).to_not be_nil }
     end
 
+    # See https://github.com/jruby/jruby/issues/9828
+    it "checks the operator's visibility in element operator assignment on self" do
+      run(<<~'RUBY') do |x|
+        class PrivatePlusElement; private def +(other) = :private_plus; end
+        class PrivatePlusBox
+          def [](i) = PrivatePlusElement.new
+          def []=(i, v); end
+          def bump
+            self[0] += 1
+          rescue NoMethodError => e
+            e.message
+          end
+        end
+        PrivatePlusBox.new.bump
+      RUBY
+        expect(x).to match(/private method '\+' called/)
+      end
+    end
+
     it "executes ensure wrapping a while body that breaks after the loop has terminated" do
       # break in a while in an ensure
       run("begin; x = while true; break 5; end; ensure; end") {|result| expect(result).to eq 5 }
@@ -869,6 +1016,12 @@ modes.each do |mode|
       # JRUBY-1388, Foo::Bar broke in the compiler
       silence_warnings do
         run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      end
+    end
+
+    it "assigns a scoped constant with ||= when only a top-level constant has the same name" do
+      run('m = Module.new; m::String ||= :assigned; m::String') do |result|
+        expect(result).to eq :assigned
       end
     end
 
@@ -977,6 +1130,44 @@ modes.each do |mode|
       # non-expr case statement with return with if modified with call
       # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
       run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo") {|result| expect(result).to eq 3 }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9834
+    it "compiles array patterns" do
+      run('[([1] in [1]), ([1, 2] in [_, 2]), ([1, 2, 3] in [1, *r]) && r, (case [3]; in [x] then x; end)]') do |x|
+        expect(x).to eq [true, true, [2, 3], 3]
+      end
+    end
+
+    it "compiles array patterns with elements after a rest" do
+      run('case [1, 2, 3, 4]; in [a, *r, c, d] then [a, r, c, d]; end') do |x|
+        expect(x).to eq [1, [2], 3, 4]
+      end
+    end
+
+    it "compiles find patterns" do
+      run('[(case [1, 2, 3, 4]; in [*pre, 2, 3, *post] then [pre, post]; end), ([1, 2] in [*, 3, *])]') do |x|
+        expect(x).to eq [[[1], [4]], false]
+      end
+    end
+
+    it "compiles local variables with non-ASCII names" do
+      run('ä = 1; [ä, binding.local_variable_get(:ä)]') {|x| expect(x).to eq [1, 1] }
+    end
+
+    # See https://github.com/jruby/jruby/issues/9854
+    it "raises the length mismatch error of a single array pattern" do
+      run('[(begin; [1] => [_, _]; rescue NoMatchingPatternError => e; [e.class, e.message]; end), ' \
+          '(begin; [1] => [_, _, *]; rescue NoMatchingPatternError => e; [e.class, e.message]; end)]') do |x|
+        expect(x).to eq [[NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2)"],
+                         [NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2+)"]]
+      end
+    end
+
+    it "raises the missing key error of a single hash pattern" do
+      run('begin; {a: 1} => {b:}; rescue NoMatchingPatternKeyError => e; [e.class, e.message, e.key]; end') do |x|
+        expect(x).to eq [NoMatchingPatternKeyError, "{a: 1}: key not found: :b", :b]
+      end
     end
 
     it "assigns named groups in regular expressions to local variables" do
@@ -1149,6 +1340,61 @@ modes.each do |mode|
       expect {run('def foo(a:); end; foo'){}}.to raise_error(ArgumentError)
     end
 
+    # See https://github.com/jruby/jruby/issues/9814
+    it "compiles calls with braceless hash arguments whose keys are not plain symbols" do
+      run <<~'RUBY' do |x|
+        def foo(*a, **kw) = [a, kw]
+        k = :k
+        y = 1
+        [
+          {}.merge("a" => 1),
+          {}.merge(1 => 1),
+          {}.merge(k => 1),
+          {}.merge(a: 1, "b" => 2),
+          {}.merge("a-b": 1),
+          {}.merge("a#{y}": 1),
+          foo("a" => 1),
+          foo(1, a: 2, "b" => 3),
+          [1].map { {}.merge("a" => 1) }
+        ]
+      RUBY
+        expect(x).to eq [
+          {"a" => 1},
+          {1 => 1},
+          {k: 1},
+          {a: 1, "b" => 2},
+          {"a-b": 1},
+          {a1: 1},
+          [[], {"a" => 1}],
+          [[1], {a: 2, "b" => 3}],
+          [{"a" => 1}]
+        ]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9820
+    it "compiles calls with keyword arguments and a block-pass argument" do
+      run(<<~'RUBY') do |x|
+        def kw_block_pass(*a, **kw, &b) = [a, kw, b&.call(2)]
+        pr = proc { |v| v * 10 }
+        [
+          kw_block_pass(a: 1, &:to_s),
+          kw_block_pass(1, a: 2, &pr),
+          kw_block_pass(a: 1, &nil),
+          kw_block_pass(a: 1, &method(:Integer)),
+          [1].map { kw_block_pass(a: 3, &pr) }
+        ]
+      RUBY
+        expect(x).to eq [
+          [[], {a: 1}, "2"],
+          [[1], {a: 2}, 20],
+          [[], {a: 1}, nil],
+          [[], {a: 1}, 2],
+          [[[], {a: 3}, 20]]
+        ]
+      end
+    end
+
     it "passes keyrest arguments through zsuper correctly" do
       run '
         class C
@@ -1196,6 +1442,13 @@ modes.each do |mode|
     it "handles literal arrays in case/when" do
       run('$case_ary = [1,2,3]; case $case_ary; when [1,2,3]; true; else; false; end') do |x|
         expect(x).to eq(true)
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9829
+    it "compiles a case/in with several in clauses inside a block" do
+      run('[0, 1, 2].map { |v| case v; in 0 then :zero; in 1 then :one; else :other; end }') do |x|
+        expect(x).to eq [:zero, :one, :other]
       end
     end
 
@@ -1313,6 +1566,42 @@ modes.each do |mode|
     end
 
     # jruby/jruby#4148
+    # See https://github.com/jruby/jruby/issues/9824
+    it "compiles operator calls on self with a literal Integer or Float argument" do
+      run(<<~'RUBY') do |x|
+        class Integer
+          def __self_op_spec = [self + 1, self == 0, self > 0.5, self * 2.0]
+        end
+        class SelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self == 3, self * 2.0]
+          def +(other) = @v + other
+          def ==(other) = @v == other
+          def *(other) = @v * other
+        end
+        result = [3.__self_op_spec, 0.__self_op_spec, SelfOperatorBox.new(3).ops]
+        Integer.send(:remove_method, :__self_op_spec)
+        result
+      RUBY
+        expect(x).to eq [[4, false, true, 6.0], [1, true, false, 0.0], [4, true, 6.0]]
+      end
+    end
+
+    # See https://github.com/jruby/jruby/issues/9836
+    it "calls a private operator on self with a literal argument" do
+      run(<<~'RUBY') do |x|
+        class PrivateSelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self * 2.0]
+          private def +(other) = @v + other
+          private def *(other) = @v * other
+        end
+        PrivateSelfOperatorBox.new(3).ops
+      RUBY
+        expect(x).to eq [4, 6.0]
+      end
+    end
+
     it "binds variable-arity calls to attributes properly" do
       run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
         expect(x).to eq(1)
@@ -1589,6 +1878,25 @@ modes.each do |mode|
         str << "hello"
         ""
       CHILLED
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
+
+    it "compiles debug string ranges that know where their endpoints were created" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~RANGE) do |val|
+        range = ("a"..
+                 "z")
+        [range.begin, range.end].map do |s|
+          s << "!"
+        rescue => e
+          e.message
+        end
+      RANGE
+        expect(val).to all(match(/created at .+:\d+\z/m))
+        begin_line, end_line = val.map { it[/\d+\z/].to_i }
+        expect(end_line - begin_line).to eq(1)
+      end
     ensure
       JRuby.runtime.instance_config.debugging_frozen_string_literal = false
     end

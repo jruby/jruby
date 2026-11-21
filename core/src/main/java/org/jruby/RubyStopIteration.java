@@ -88,4 +88,10 @@ public class RubyStopIteration extends RubyIndexError {
         this.result = result;
     }
 
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyStopIteration exception = (RubyStopIteration)clone;
+        exception.result = result;
+    }
 }

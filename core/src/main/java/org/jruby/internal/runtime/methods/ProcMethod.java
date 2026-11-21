@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -59,7 +60,17 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return proc.call(context, args, self, klazz, block);
+        if (methodCoverage == null) return proc.call(context, args, self, klazz, block);
+
+        // A def checks arity inside its body, after ReceiveMethodCoverageInstr has taken the counter. A lambda checks
+        // arity in Java, before the body runs. If that check fails, the counter must not stay pending on the thread.
+        // Otherwise the next run of this block, such as a plain call of the proc, would take it.
+        prepareMethodCoverage(context);
+        try {
+            return proc.call(context, args, self, klazz, block);
+        } finally {
+            context.setPendingMethodCoverage(null);
+        }
     }
     
     public DynamicMethod dup() {
@@ -73,11 +84,6 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
         return ((ProcMethod) method).proc == proc;
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return getSignature().arity();
-    }
-
     public String getFile() {
         return proc.getBlock().getBody().getFile();
     }
@@ -89,6 +95,12 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     @Override
     public Signature getSignature() {
         return proc.getBlock().getBody().getSignature();
+    }
+
+    @Override
+    @CRuby(value = "method_def_min_max_arity", file = "proc.c", note = "VM_METHOD_TYPE_BMETHOD case")
+    public Signature getAritySignature() {
+        return proc.getBlock().getBody().getAritySignature();
     }
 
     @Override

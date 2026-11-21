@@ -28,8 +28,10 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -52,7 +54,9 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -287,6 +291,23 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(runtime, object, method, methodArgs, null, null, false);
     }
 
+    /**
+     * The args as kept for the Ruby side of Enumerator, which calls the method with them splatted
+     * in #next and #peek. Keywords are passed as a copy flagged as a ruby2_keywords hash, so the
+     * splat passes them on as keywords instead of as a positional Hash.
+     */
+    private static RubyArray argsForSplat(Ruby runtime, IRubyObject[] methodArgs, boolean keywords) {
+        int last = methodArgs.length - 1;
+        if (keywords && last >= 0 && methodArgs[last] instanceof RubyHash hash) {
+            IRubyObject[] args = methodArgs.clone();
+            RubyHash flagged = (RubyHash) hash.dup();
+            flagged.setRuby2KeywordHash(true);
+            args[last] = flagged;
+            return RubyArray.newArrayNoCopy(runtime, args);
+        }
+        return RubyArray.newArrayMayCopy(runtime, methodArgs);
+    }
+
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs,
                                    IRubyObject size, SizeFn sizeFn, boolean keywords) {
         this.object = object;
@@ -298,7 +319,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         setInstanceVariable(OBJECT, object);
         setInstanceVariable(METHOD, method);
-        setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
+        setInstanceVariable(ARGS, argsForSplat(runtime, methodArgs, keywords));
         setInstanceVariable(GENERATOR, runtime.getNil());
         setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime, 4));
         setInstanceVariable(FEEDVALUE, this.feedValue = new FeedValue(runtime));
@@ -336,7 +357,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     private IRubyObject __each__(ThreadContext context, final Block block) {
         if (methodArgsHasKeywords) context.callInfo = CALL_KEYWORD;
         return object.callMethod(context, method, methodArgs,
-                CallBlock.newCallClosure(context, this, Signature.OPTIONAL, (ctx, args, blk) -> {
+                CallBlock.newCallClosure(context, this, block.getSignature(), (ctx, args, blk) -> {
                     IRubyObject ret;
 
                     if (args.length == 1) {
@@ -361,7 +382,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
         return new RubyEnumerator(context.runtime, getType(), object, asSymbol(context, method), newArgs,
-                size, sizeFn, methodArgsHasKeywords).each(context, block);
+                null, null, methodArgsHasKeywords).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")
@@ -568,18 +589,43 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return context.sites.Fiber;
     }
 
-    /** MRI: enumerator_s_produce
-     *
-     */
-    @JRubyMethod(meta = true, optional = 1, checkArity = false)
+    @CRuby(value = "enumerator_s_produce", file = "enumerator.c")
+    @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        IRubyObject size = UNDEF;
+        int argc = args.length;
+
+        if (hasKeywords(resetCallInfo(context))) {
+            argc--;
+            IRubyObject maybeSize = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "size");
+            if (maybeSize != null) {
+                size = maybeSize;
+            }
+        }
+
+        size = size == UNDEF ?
+                context.runtime.getFloat().getConstant("INFINITY") :
+                convertToFeasibleSizeValue(context, size);
+
+        Arity.checkArgumentCount(context, argc, 0, 1);
 
         if (!block.isGiven()) throw argumentError(context, "no block given");
 
         IRubyObject init = argc == 0 ? null : args[0];
-        RubyProducer producer = RubyProducer.newProducer(context, init, block);
+        RubyProducer producer = RubyProducer.newProducer(context, init, block, size);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
+    }
+
+    private static IRubyObject convertToFeasibleSizeValue(ThreadContext context, IRubyObject obj) {
+        if (obj.isNil()) {
+            return obj;
+        } else if (obj.respondsTo("call")) {
+            return obj;
+        } else if (obj instanceof RubyFloat flote && flote.value == Double.POSITIVE_INFINITY) {
+            return obj;
+        } else {
+            return toInteger(context, obj);
+        }
     }
 
     @Deprecated(since = "9.4.3.0")

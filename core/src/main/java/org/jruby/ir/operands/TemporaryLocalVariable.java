@@ -90,6 +90,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
             case CURRENT_MODULE: return TemporaryCurrentModuleVariable.decode(d);
             case FLOAT: return TemporaryFloatVariable.decode(d);
             case FIXNUM: return TemporaryFixnumVariable.decode(d);
+            case INT: return TemporaryIntVariable.decode(d);
             case BOOLEAN: return TemporaryBooleanVariable.decode(d);
             case LOCAL: return d.getCurrentScope().getManager().newTemporaryLocalVariable(d.decodeInt());
         }

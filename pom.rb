@@ -71,9 +71,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
              # versions for default gems with bin executables
              # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-             "rake.version": '13.2.1',
+             "rake.version": '13.4.2',
              "jruby-launcher.version": '1.1.6',
-             "ant.version": '1.9.8',
              "asm.version": '9.11.1',
              "jar-dependencies.version": '0.4.1',
              "jffi.version": '1.4.7',
@@ -113,7 +112,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :javadoc, '3.2.0'
     plugin :resources, '3.2.0'
     plugin :clean, '3.1.0'
-    plugin :dependency, '2.8'
+    plugin :dependency, '3.11.0'
     plugin :release, '3.0.0-M1'
     plugin :jar, '3.2.0'
 
@@ -142,7 +141,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                     id: 'integration-test')
     end
 
-    plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '3.1.0'
   end
 

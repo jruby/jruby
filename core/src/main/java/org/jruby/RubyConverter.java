@@ -40,6 +40,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -221,7 +222,7 @@ public class RubyConverter extends RubyObject {
         return encodingService(context).convertEncodingToRubyEncoding(ec.destinationEncoding);
     }
 
-    // econv_primitive_convert
+    @CRuby(value = "econv_primitive_convert", file = "transcode.c")
     @JRubyMethod(required = 2, optional = 4, checkArity = false)
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 6);
@@ -504,7 +505,7 @@ public class RubyConverter extends RubyObject {
         return convpath[0];
     }
 
-    // econv_insert_output
+    @CRuby(value = "econv_insert_output", file = "transcode.c")
     @JRubyMethod
     public IRubyObject insert_output(ThreadContext context, IRubyObject string) {
         string = string.convertToString();
@@ -523,7 +524,7 @@ public class RubyConverter extends RubyObject {
         return context.nil;
     }
 
-    // econv_putback
+    @CRuby(value = "econv_putback", file = "transcode.c")
     @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject putback(ThreadContext context, IRubyObject[] argv) {
         int argc = Arity.checkArgumentCount(context, argv, 0, 1);
@@ -540,7 +541,7 @@ public class RubyConverter extends RubyObject {
         return str;
     }
 
-    // econv_equal
+    @CRuby(value = "econv_equal", file = "transcode.c")
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyConverter)) return context.nil;

@@ -59,8 +59,15 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
      * @param setter the setter handle for the field
      */
     public RawFieldVariableAccessor(RubyClass realClass, boolean unwrapInSet, Class<?> toJava, Class<?> returnType, String name, int index, int classId, MethodHandle getter, MethodHandle setter) {
-        super(realClass, name, index, classId, wrapGetter(getter, realClass, returnType), wrapSetter(setter, realClass, unwrapInSet, toJava, returnType));
+        this(realClass, name, index, classId, wrapGetter(getter, realClass, returnType), wrapSetter(setter, realClass, unwrapInSet, toJava, returnType));
+    }
 
+    private RawFieldVariableAccessor(RubyClass realClass, String name, int index, int classId, MethodHandle getter, MethodHandle setter) {
+        super(realClass, name, index, classId, getter, setter);
+    }
+
+    public RawFieldVariableAccessor cloneFor(RubyClass newRealClass) {
+        return new RawFieldVariableAccessor(newRealClass, name, index, classId, getter, setter);
     }
     
     @Override

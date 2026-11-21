@@ -1,1 +1,2 @@
 fails:Hash#to_s can be evaled when Encoding.default_external is changed
+fails:Hash#to_s is an alias of Hash#inspect

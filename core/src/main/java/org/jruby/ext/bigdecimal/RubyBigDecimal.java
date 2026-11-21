@@ -51,6 +51,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,7 +70,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-public class RubyBigDecimal extends RubyNumeric {
+public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
 
     @JRubyConstant
     public final static int ROUND_DOWN = 2;
@@ -143,6 +144,8 @@ public class RubyBigDecimal extends RubyNumeric {
                 defineConstants(context, RubyBigDecimal.class).
                 defineConstant(context, "VERSION", newSharedString(context, VERSION));
 
+        bigDecimal.singletonClass(context).undefMethods(context, "new");
+
         kernelModule(context).defineMethods(context, BigDecimalKernelMethods.class);
 
         bigDecimal.setInternalModuleVariable("vpPrecLimit", asFixnum(context, 0));
@@ -183,7 +186,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = BigDecimal.ZERO;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
@@ -192,7 +195,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value) {
@@ -201,7 +204,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign) {
@@ -214,7 +217,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, boolean isNan) {
@@ -223,7 +226,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value, int zeroSign, int infinitySign, boolean isNaN) {
@@ -232,7 +235,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     @Override
@@ -494,7 +497,8 @@ public class RubyBigDecimal extends RubyNumeric {
             case BIGDECIMAL -> (RubyBigDecimal) value;
             case FIXNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
             case BIGNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
-            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
+            // MRI truncates float strings to double_fig digits during coercion
+            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(VP_DOUBLE_FIG, RoundingMode.DOWN));
             case RATIONAL -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
             default -> cannotBeCoerced(context, value, must);
         };
@@ -943,7 +947,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, absStripTrailingZeros().hashCode() * value.signum());
+        return asFixnum(context, hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return absStripTrailingZeros().hashCode() * value.signum();
+    }
+
+    @Override
+    public long longHashCode() {
+        return hashCode();
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
@@ -1828,11 +1842,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return isZero(context) ? context.nil : this;
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject nonzero_p() {
-        return nonzero_p(getCurrentContext());
-    }
-
     @JRubyMethod
     public  IRubyObject n_significant_digits(ThreadContext context) {
         return value.equals(BigDecimal.ZERO) ?
@@ -1859,9 +1868,11 @@ public class RubyBigDecimal extends RubyNumeric {
     private int [] getPrecisionScale() {
         int precision = 0;
         int scale = 0;
-        String plainString = value.toPlainString();
+        // MRI skips trailing zeros and counts exponent zeros and leading fractional zeros
+        final BigDecimal normalized = absStripTrailingZeros();
+        String plainString = normalized.toPlainString();
 
-        if (value.equals(BigDecimal.ZERO)) {
+        if (normalized.equals(BigDecimal.ZERO)) {
             // special case
         } else {
             if (!plainString.contains(".")) {
@@ -1869,13 +1880,13 @@ public class RubyBigDecimal extends RubyNumeric {
                 precision = plainString.replace("-", "").length();
             } else {
                 // integer and fraction
-                String [] params = plainString.split("\\.");
+                String[] params = plainString.split("\\.");
                 if (new BigDecimal(params[1]).equals(BigDecimal.ZERO)) {
                     // special case
                     precision = params[0].replace("-", "").length();
                 } else {
-                    precision = Math.max(value.precision(), value.scale());
-                    scale = value.scale();
+                    precision = Math.max(normalized.precision(), normalized.scale());
+                    scale = normalized.scale();
                 }
             }
         }
@@ -1895,20 +1906,11 @@ public class RubyBigDecimal extends RubyNumeric {
         // e.g. "0.000123456789" is represented as "0 .000123456 789 * 1000000000 ^ 0" in MRI BigDecimal internal.
         // so, in this case Prec becomes 2.
         if (getExponent(context) > -9) {
-            return (value.toString().length() - 2 + 8) / BASE_FIG;
+            return (absStripTrailingZeros().toString().length() - 2 + 8) / BASE_FIG;
         }
         // e.g. "0.0000000000123456789" is represented as "0 .012345678 9 * 1000000000 ^ -1" in MRI BigDecimal internal.
         // so, in this case Prec becomes 2.
-        return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
-    }
-
-    @Deprecated(since = "9.4.3.0")
-    @JRubyMethod
-    public IRubyObject precs(ThreadContext context) {
-        warnDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
-        return newArray(context,
-                asFixnum(context, getSignificantDigits().length()),
-                asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));
+        return (absStripTrailingZeros().unscaledValue().toString().length() + 8) / BASE_FIG;
     }
 
     @JRubyMethod(name = "round", optional = 2, checkArity = false)
@@ -2362,11 +2364,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return engineeringValue(context, null).toString();
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject to_s(IRubyObject[] args) {
-        return toStringImpl(getCurrentContext(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
-    }
-
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
     @Deprecated(since = "10.0.0.0")
     public IRubyObject fix() {
@@ -2403,11 +2400,6 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
         return asBoolean(context, isZero(context));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
     }
 
     @Override
@@ -2525,21 +2517,6 @@ public class RubyBigDecimal extends RubyNumeric {
         if (x instanceof RubyBignum bignum) return bignum.asBigInteger(context).testBit(0) == false; // 0-th bit -> 0
 
         return false;
-    }
-
-    @Deprecated(since = "9.3.0.0") // no longer used
-    public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
-        this(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"), rbd);
-    }
-
-    @Deprecated(since = "9.3.0.0") // no longer used
-    public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
-        super(runtime, klass);
-        this.isNaN = rbd.isNaN;
-        this.infinitySign = rbd.infinitySign;
-        this.zeroSign = rbd.zeroSign;
-        this.value = rbd.value;
-        this.flags |= FROZEN_F;
     }
 
     private static JavaSites.BigDecimalSites sites(ThreadContext context) {

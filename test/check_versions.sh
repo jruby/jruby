@@ -65,16 +65,16 @@ function check {
 
 }
 
-check lib/target/jruby-stdlib-$jar_version.jar 20
-check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 35
-check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 17
-check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 20
-check maven/jruby-complete/target/jruby-complete-$jar_version.jar 36
+check lib/target/jruby-stdlib-$jar_version.jar 25
+check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 45
+check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 22
+check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 25
+check maven/jruby-complete/target/jruby-complete-$jar_version.jar 48
 check maven/jruby/target/jruby-$jar_version.jar 9
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 48 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 54 jruby-$jar_version
 check core/target/jruby-base-$jar_version.jar 10
-check shaded/target/jruby-core-$jar_version.jar 17
+check shaded/target/jruby-core-$jar_version.jar 22
 
 exit "${failed[0]}"

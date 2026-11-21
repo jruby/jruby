@@ -12,7 +12,7 @@ require "rubygems/request"
 
 # = Testing Bundled CA
 #
-# The tested hosts are explained in detail here: https://github.com/rubygems/rubygems/commit/5e16a5428f973667cabfa07e94ff939e7a83ebd9
+# The tested hosts are explained in detail here: https://github.com/ruby/rubygems/commit/5e16a5428f973667cabfa07e94ff939e7a83ebd9
 #
 
 class TestGemBundledCA < Gem::TestCase
@@ -33,7 +33,8 @@ class TestGemBundledCA < Gem::TestCase
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
     http.cert_store = bundled_certificate_store
     http.get("/")
-  rescue Errno::ENOENT, Errno::ETIMEDOUT, SocketError, Gem::Net::OpenTimeout
+  rescue Errno::ENOENT, Errno::ETIMEDOUT, Errno::ECONNRESET, Errno::ECONNREFUSED,
+         EOFError, SocketError, Gem::Net::OpenTimeout
     pend "#{host} seems offline, I can't tell whether ssl would work."
   rescue OpenSSL::SSL::SSLError => e
     # Only fail for certificate verification errors

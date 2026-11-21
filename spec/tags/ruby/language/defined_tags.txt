@@ -1,1 +1,3 @@
 fails:The defined? keyword when called with a method name in a void context does not execute the receiver
+fails:The defined? keyword when called with a method name for a protected method returns 'method' when the receiver is a subclass instance
+fails:The defined? keyword when called with a method name for a protected method returns 'method' when the receiver is a sibling class instance via a shared included module

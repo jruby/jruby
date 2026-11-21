@@ -58,6 +58,8 @@ public abstract class IRVisitor {
     public void CheckForLJEInstr(CheckForLJEInstr checkforljeinstr) { error(checkforljeinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
+    public void CoverBranchInstr(CoverBranchInstr coverbranchinstr) { error(coverbranchinstr); }
+    public void CoverMethodInstr(CoverMethodInstr covermethodinstr) { error(covermethodinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) { error(defineclassmethodinstr); }
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) { error(defineinstancemethodinstr); }
@@ -76,6 +78,7 @@ public abstract class IRVisitor {
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) { error(instancesuperinstr); }
     public void Instr(Instr instr) { error(instr); }
     public void IntegerMathInstr(IntegerMathInstr instr) { error(instr); }
+    public void JavaCtorSuperInstr(JavaCtorSuperInstr instr) { error(instr); }
     public void JumpInstr(JumpInstr jumpinstr) { error(jumpinstr); }
     public void LabelInstr(LabelInstr labelinstr) { error(labelinstr); }
     public void LexicalSearchConstInstr(LexicalSearchConstInstr lexicalsearchconstinstr) { error(lexicalsearchconstinstr); }
@@ -89,9 +92,6 @@ public abstract class IRVisitor {
     public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
     public void NopInstr(NopInstr nopinstr) { error(nopinstr); }
     public void NoResultCallInstr(NoResultCallInstr noresultcallinstr) { error(noresultcallinstr); }
-    @Deprecated(since = "9.1.3.0") public void OneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) { error(oneFixnumArgNoBlockCallInstr); }
-    @Deprecated(since = "9.1.3.0") public void OneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) { error(oneFloatArgNoBlockCallInstr); }
-    @Deprecated(since = "9.1.3.0") public void OneOperandArgNoBlockCallInstr(OneOperandArgNoBlockCallInstr oneOperandArgNoBlockCallInstr) { error(oneOperandArgNoBlockCallInstr); }
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) { error(optargmultipleasgninstr); }
     public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
     public void PopBlockFrameInstr(PopBlockFrameInstr instr) { error(instr); }
@@ -130,6 +130,7 @@ public abstract class IRVisitor {
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) { error(instr); }
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
     public void ReturnOrRethrowSavedExcInstr(ReturnOrRethrowSavedExcInstr instr) { error(instr); }
+    public void ReceiveMethodCoverageInstr(ReceiveMethodCoverageInstr receivemethodcoverageinstr) { error(receivemethodcoverageinstr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
@@ -145,7 +146,6 @@ public abstract class IRVisitor {
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
     public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) { error(instr); }
     public void YieldInstr(YieldInstr yieldinstr) { error(yieldinstr); }
-    @Deprecated(since = "9.1.3.0") public void ZeroOperandArgNoBlockCallInstr(ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr) { error(zeroOperandArgNoBlockCallInstr); }
     public void ZSuperInstr(ZSuperInstr zsuperinstr) { error(zsuperinstr); }
 
     // "defined" instructions

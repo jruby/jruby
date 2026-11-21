@@ -53,6 +53,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Create;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
@@ -84,10 +85,11 @@ import static org.jruby.util.RubyStringBuilder.str;
  * Unmarshals objects from strings or streams in Ruby's marshal format.
  */
 public class MarshalLoader {
-    private final List<IRubyObject> links = new ArrayList<>();
-    private final List<RubySymbol> symbols = new ArrayList<>();
-    private final Map<IRubyObject, IRubyObject> partials = new IdentityHashMap<>();
+    private List<IRubyObject> links;
+    private List<RubySymbol> symbols;
+    private final Map<IRubyObject, IRubyObject> partials;
     private final IRubyObject proc;
+    private final boolean hasProc;
     private final boolean freeze;
 
     public MarshalLoader(ThreadContext context, IRubyObject proc) {
@@ -99,6 +101,8 @@ public class MarshalLoader {
         if (proc == null) proc = context.nil;
         
         this.proc = proc;
+        this.hasProc = !(proc == null || proc.isNil());
+        this.partials = hasProc ? new IdentityHashMap<>() : null;
         this.freeze = freeze;
     }
 
@@ -115,7 +119,7 @@ public class MarshalLoader {
         }
     }
 
-    // r_object
+    @CRuby(value = "r_object", file = "marshal.c")
     public IRubyObject unmarshalObject(ThreadContext context, RubyInputStream in) {
         return object0(context, in, new MarshalState(false), false, null);
     }
@@ -153,7 +157,7 @@ public class MarshalLoader {
     }
 
     private IRubyObject doCallProcForObj(ThreadContext context, IRubyObject result) {
-        if (proc == null || proc.isNil()) return result;
+        if (!hasProc) return result;
 
         return Helpers.invoke(context, proc, "call", result);
     }
@@ -206,21 +210,31 @@ public class MarshalLoader {
         if (!partial) {
             noLongerPartial(value);
             if (freeze) {
-                RubyClass metaClass = value.getMetaClass();
-                if (metaClass == stringClass(context)) {
-                    IRubyObject original = value;
-                    // FIXME: We need to modify original to be frozen but we also need it to be part of the deduped table.
-                    value = context.runtime.freezeAndDedupString((RubyString) value);
-                    if (value != original) {
-                        original.setFrozen(value.isFrozen());
-                    }
-                } else if (!value.isModule() && !value.isClass()) {
-                    value.setFrozen(true);
-                }
+                value = freezeObject(context, value);
             }
             value = postProc(context, value);
         }
 
+        return value;
+    }
+
+    private static IRubyObject freezeObject(ThreadContext context, IRubyObject value) {
+        RubyClass metaClass = value.getMetaClass();
+        if (metaClass == stringClass(context)) {
+            value = freezeString(context, value);
+        } else if (!value.isModule() && !value.isClass()) {
+            value.setFrozen(true);
+        }
+        return value;
+    }
+
+    private static IRubyObject freezeString(ThreadContext context, IRubyObject value) {
+        IRubyObject original = value;
+        // FIXME: We need to modify original to be frozen but we also need it to be part of the deduped table.
+        value = context.runtime.freezeAndDedupString((RubyString) value);
+        if (value != original) {
+            original.setFrozen(value.isFrozen());
+        }
         return value;
     }
 
@@ -366,19 +380,19 @@ public class MarshalLoader {
     }
 
     private IRubyObject objectForFixnum(ThreadContext context, RubyInputStream in) {
-        return leave(context, RubyFixnum.unmarshalFrom(context, in, this), false);
+        return postProc(context, RubyFixnum.unmarshalFrom(context, in, this));
     }
 
     private IRubyObject objectForFalse(ThreadContext context) {
-        return leave(context, context.fals, false);
+        return postProc(context, context.fals);
     }
 
     private IRubyObject objectForTrue(ThreadContext context) {
-        return leave(context, context.tru, false);
+        return postProc(context, context.tru);
     }
 
     private IRubyObject objectForNil(ThreadContext context) {
-        return leave(context, context.nil, false);
+        return postProc(context, context.nil);
     }
 
     private IRubyObject objectForUClass(ThreadContext context, RubyInputStream in, boolean partial, List<RubyModule> extendedModules) {
@@ -613,8 +627,23 @@ public class MarshalLoader {
         return (byte) b;
     }
 
+    /**
+     * Validate a length read from the stream before allocating storage for it.
+     *
+     * @param context the current context
+     * @param length the length read from the stream
+     * @param size the number of bytes per unit of length
+     * @return the length, if it is usable
+     */
+    @CRuby(value = "r_keep_readable", file = "marshal.c")
+    public static int keepReadable(ThreadContext context, int length, int size) {
+        if (length < 0) throw argumentError(context, "negative length");
+        if ((long) length * size >= Integer.MAX_VALUE - 8) throw argumentError(context, "marshaled data too big");
+        return length;
+    }
+
     public ByteList unmarshalString(ThreadContext context, RubyInputStream in) {
-        int length = unmarshalInt(context, in);
+        int length = keepReadable(context, unmarshalInt(context, in), 1);
         byte[] buffer = new byte[length];
 
         int readLength = 0;
@@ -654,7 +683,7 @@ public class MarshalLoader {
         return (int) result;
     }
 
-    // MRI: sym2encidx
+    @CRuby(value = "sym2encidx", file = "marshal.c")
     private Encoding symbolToEncoding(ThreadContext context, RubySymbol symbol, IRubyObject value) {
         if (symbol.getEncoding() != USASCIIEncoding.INSTANCE) return null;
 
@@ -733,19 +762,20 @@ public class MarshalLoader {
     }
 
     private boolean isPartialObject(IRubyObject value) {
-        return partials.containsKey(value);
+        return hasProc && partials.containsKey(value);
     }
 
     private void markAsPartialObject(IRubyObject value) {
-        partials.put(value, value);
+        if (hasProc) partials.put(value, value);
     }
 
     private void noLongerPartial(IRubyObject value) {
-        partials.remove(value);
+        if (hasProc) partials.remove(value);
     }
 
     private IRubyObject readSymbolLink(ThreadContext context, RubyInputStream in, MarshalLoader input) {
         try {
+            assert symbols != null : "symbols were found but symbols list was uninitialized";
             return symbols.get(input.unmarshalInt(context, in));
         } catch (IndexOutOfBoundsException e) {
             throw typeError(context,"bad symbol");
@@ -755,6 +785,7 @@ public class MarshalLoader {
     private IRubyObject readDataLink(ThreadContext context, RubyInputStream in, MarshalLoader input) {
         int index = input.unmarshalInt(context, in);
         try {
+            assert links != null : "links were found but links list was uninitialized";
             return links.get(index);
         } catch (IndexOutOfBoundsException e) {
             throw argumentError(context, "dump format error (unlinked, index: " + index + ")");
@@ -762,10 +793,12 @@ public class MarshalLoader {
     }
 
     private void registerDataLink(IRubyObject value) {
+        if (links == null) links = new ArrayList<>(4);
         links.add(value);
     }
 
     private void registerSymbolLink(RubySymbol value) {
+        if (symbols == null) symbols = new ArrayList<>(4);
         symbols.add(value);
     }
 }

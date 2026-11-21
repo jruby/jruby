@@ -98,4 +98,15 @@ public class PatternCaseNode extends Node {
         return Node.createList(caseNode, cases);
     }
 
+    // expr => pattern or expr in pattern, which MRI reports no branch for
+    private boolean oneLine;
+
+    public void setOneLine() {
+        oneLine = true;
+    }
+
+    public boolean isOneLine() {
+        return oneLine;
+    }
+
 }

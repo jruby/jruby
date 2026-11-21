@@ -1,1 +1,11 @@
 fails:File.lutime allows Time instances in the far future to set mtime and atime (but some filesystems limit it up to 2446-05-10 or 2038-01-19 or 2486-07-02)
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime sets the access and modification time of each file
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime uses the current times if two nil values are passed
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime accepts an object that has a #to_path method
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime accepts an object that has a #to_path method
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime accepts numeric atime and mtime arguments
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime may set nanosecond precision
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime returns the number of filenames in the arguments
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime sets the access and modification time for a regular file
+fails(OpenBSD, may be broken native access, https://github.com/jruby/jruby/issues/9438):File.lutime sets the access and modification time for a symlink
+

@@ -537,10 +537,16 @@ public class RubyDate extends RubyObject {
 
         long hour = normIntValue(context, h, 24);
         long min = normIntValue(context, m, 60);
-        long sec = normIntValue(context, s, 60);
+        final long[] rest = new long[] { 0, 1 };
+        long sec = RubyDateTime.getSecond(context, s, rest);
 
         if (valid_time_p(hour, min, sec)) {
-            return timeToDayFraction(context, (int) hour, (int) min, (int) sec);
+            RubyNumeric fr = timeToDayFraction(context, (int) hour, (int) min, (int) sec);
+            if (rest[0] != 0) {
+                RubyRational subsec = (RubyRational) RubyRational.newRationalCanonicalize(context, rest[0], rest[1]);
+                fr = (RubyNumeric) fr.op_plus(context, subsec.op_div(context, asFixnum(context, DAY_IN_SECONDS)));
+            }
+            return fr;
         }
         return context.nil;
     }
@@ -975,7 +981,7 @@ public class RubyDate extends RubyObject {
             return getMetaClass().getConstant(context, "JULIAN"); // Date::JULIAN (+Date::Infinity)
         }
         long cutover = DateTimeUtils.toJulianDayNumber(((GJChronology) chrono).getGregorianCutover().getMillis());
-        return new RubyFixnum(context.runtime, cutover);
+        return asFixnum(context, cutover);
     }
 
     final int adjustJodaYear(int year) {
@@ -1685,15 +1691,6 @@ public class RubyDate extends RubyObject {
         string = TypeConverter.checkStringType(context.runtime, string);
 
         return new RubyDateParser().parse(context, format, (RubyString) string);
-    }
-
-    // @Deprecated(since = "9.2.0.0")
-    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return switch (args.length) {
-            case 1 -> _strptime(context, self, args[0]);
-            case 2 -> _strptime(context, self, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 1);
-        };
     }
 
     @JRubyMethod(name = "zone_to_diff", meta = true, visibility = Visibility.PRIVATE)

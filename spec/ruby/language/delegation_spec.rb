@@ -73,6 +73,24 @@ describe "delegation with def(...)" do
     h2 = a.new.delegate(h)
     h2.should.equal?(h)
   end
+
+  it "preserves positional arguments when forwarding to super" do
+    forwarding = Module.new
+    forwarding.module_eval(<<-RUBY)
+      def initialize(...)
+        super(...)
+      end
+    RUBY
+
+    prepended = included = nil
+    -> {
+      prepended = Struct.new(:a, :b, :c) { prepend forwarding }.new(1, 2, 3)
+      included = Struct.new(:a, :b, :c) { include forwarding }.new(1, 2, 3)
+    }.should_not complain
+
+    [prepended.a, prepended.b, prepended.c].should == [1, 2, 3]
+    [included.a, included.b, included.c].should == [1, 2, 3]
+  end
 end
 
 describe "delegation with def(x, ...)" do
@@ -127,7 +145,7 @@ describe "delegation with def(*)" do
     it "does not allow delegating rest" do
       -> {
         eval "def m(*); proc { |*| n(*) } end"
-      }.should raise_error(SyntaxError, /anonymous rest parameter is also used within block/)
+      }.should.raise(SyntaxError, /anonymous rest parameter is also used within block/)
     end
   end
 end
@@ -148,7 +166,7 @@ describe "delegation with def(**)" do
     it "does not allow delegating kwargs" do
       -> {
         eval "def m(**); proc { |**| n(**) } end"
-      }.should raise_error(SyntaxError, /anonymous keyword rest parameter is also used within block/)
+      }.should.raise(SyntaxError, /anonymous keyword rest parameter is also used within block/)
     end
   end
 end
@@ -170,7 +188,7 @@ describe "delegation with def(&)" do
     it "does not allow delegating a block" do
       -> {
         eval "def m(&); proc { |&| n(&) } end"
-      }.should raise_error(SyntaxError, /anonymous block parameter is also used within block/)
+      }.should.raise(SyntaxError, /anonymous block parameter is also used within block/)
     end
   end
 end

@@ -45,6 +45,11 @@ public class JVM {
 
     public void pushscript(JVMVisitor visitor, String clsName, String filename) {
         writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+
+        // The maxBytes and maxOperations limits are raised from 10MB and 100M ops to allow very large methods.
+        // This limit does not override Options.JIT_MAXSIZE and is only used for exercising the JIT.
+        writer.setComputeLimits(20_000_000, 400_000_000);
+
         classStack.push(new ClassData(clsName, writer, visitor));
 
         cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, clsName, null, p(Object.class), null);

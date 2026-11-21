@@ -81,11 +81,6 @@ public interface Compilable<T> {
 
     public RubyModule getImplementationClass();
 
-    @Deprecated(since = "9.2.9.0")
-    default String getClassName(ThreadContext context) {
-        return getOwnerName(context);
-    }
-
     /**
      * Resolve the fully qualified name.
      * @param implementationClass

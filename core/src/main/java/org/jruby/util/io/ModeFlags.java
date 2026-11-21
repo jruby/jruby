@@ -38,6 +38,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
+import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 
 import java.nio.channels.Channel;
@@ -212,37 +213,6 @@ public class ModeFlags implements Cloneable {
         }
 
         return mode;
-    }
-
-    /**
-     * Build a set of mode flags using the specified channel's actual capabilities.
-     *
-     * @param channel the channel to examine for capabilities
-     * @return the mode flags
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static ModeFlags getModesFromChannel(Channel channel) {
-        try {
-            ModeFlags modes;
-
-            if (channel instanceof ReadableByteChannel) {
-                if (channel instanceof WritableByteChannel) {
-                    modes = new ModeFlags(RDWR);
-                } else {
-                    modes = new ModeFlags(RDONLY);
-                }
-            } else if (channel instanceof WritableByteChannel) {
-                modes = new ModeFlags(WRONLY);
-            } else {
-                // FIXME: I don't like this
-                modes = new ModeFlags(RDWR);
-            }
-
-            return modes;
-        } catch (InvalidValueException ive) {
-            // should never happen, because all values above are valid
-            throw new RuntimeException(ive);
-        }
     }
 
     /**
@@ -488,11 +458,11 @@ public class ModeFlags implements Cloneable {
     }
 
 
-    // MRI: rb_io_oflags_fmode
     /**
      * With the provided open flags parameter what fmode values should be
      * set (fmode for us is represented by OpenFile).
      */
+    @CRuby(value = "rb_io_oflags_fmode", file = "io.c")
     public static int getOpenFileFlagsFor(int flags) {
         int fmodeFlags;
 

@@ -77,28 +77,6 @@ public class MethodIndex {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodIndex.class);
 
-    @Deprecated(since = "1.7.1")
-    public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
-    @Deprecated(since = "1.7.1")
-    public static final int OP_EQUAL = MethodNames.OP_EQUAL.ordinal();
-    @Deprecated(since = "1.7.1")
-    public static final int EQL = MethodNames.EQL.ordinal();
-    @Deprecated(since = "1.7.1")
-    public static final int HASH = MethodNames.HASH.ordinal();
-    @Deprecated(since = "1.7.1")
-    public static final int OP_CMP = MethodNames.OP_CMP.ordinal();
-    @Deprecated(since = "1.7.1")
-    public static final int MAX_METHODS = MethodNames.values().length;
-
-    @Deprecated(since = "1.7.1")
-    public static final String[] METHOD_NAMES = {
-        "",
-        "==",
-        "eql?",
-        "hash",
-        "<=>"
-    };
-
     public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
@@ -153,26 +131,31 @@ public class MethodIndex {
     }
 
     public static CallSite getFastFixnumOpsCallSite(String name) {
+        return getFastFixnumOpsCallSite(name, CallType.NORMAL);
+    }
+
+    // callType is FUNCTIONAL for a call like self + 1, which may call a private operator
+    public static CallSite getFastFixnumOpsCallSite(String name, CallType callType) {
         switch (name) {
-            case "+"   : return new PlusCallSite();
-            case "-"   : return new MinusCallSite();
-            case "*"   : return new MulCallSite();
-            case "%"   : return new ModCallSite();
-            case "/"   : return new DivCallSite();
+            case "+"   : return new PlusCallSite(callType);
+            case "-"   : return new MinusCallSite(callType);
+            case "*"   : return new MulCallSite(callType);
+            case "%"   : return new ModCallSite(callType);
+            case "/"   : return new DivCallSite(callType);
 
-            case "&"   : return new BitAndCallSite();
-            case "|"   : return new BitOrCallSite();
-            case "^"   : return new XorCallSite();
-            case ">>"  : return new ShiftRightCallSite();
-            case "<<"  : return new ShiftLeftCallSite();
+            case "&"   : return new BitAndCallSite(callType);
+            case "|"   : return new BitOrCallSite(callType);
+            case "^"   : return new XorCallSite(callType);
+            case ">>"  : return new ShiftRightCallSite(callType);
+            case "<<"  : return new ShiftLeftCallSite(callType);
 
-            case "!="  : return new NotEqCallSite();
-            case "=="  : return new EqCallSite();
-            case "<"   : return new LtCallSite();
-            case "<="  : return new LeCallSite();
-            case ">"   : return new GtCallSite();
-            case ">="  : return new GeCallSite();
-            case "<=>" : return new CmpCallSite();
+            case "!="  : return new NotEqCallSite(callType);
+            case "=="  : return new EqCallSite(callType);
+            case "<"   : return new LtCallSite(callType);
+            case "<="  : return new LeCallSite(callType);
+            case ">"   : return new GtCallSite(callType);
+            case ">="  : return new GeCallSite(callType);
+            case "<=>" : return new CmpCallSite(callType);
         }
         return null;
     }
@@ -200,19 +183,24 @@ public class MethodIndex {
     }
 
     public static CallSite getFastFloatOpsCallSite(String name) {
-        switch (name) {
-            case "+"   : return new PlusCallSite();
-            case "-"   : return new MinusCallSite();
-            case "*"   : return new MulCallSite();
-            case "%"   : return new ModCallSite();
-            case "/"   : return new DivCallSite();
+        return getFastFloatOpsCallSite(name, CallType.NORMAL);
+    }
 
-            case "=="  : return new EqCallSite();
-            case "<"   : return new LtCallSite();
-            case "<="  : return new LeCallSite();
-            case ">"   : return new GtCallSite();
-            case ">="  : return new GeCallSite();
-            case "<=>" : return new CmpCallSite();
+    // callType is FUNCTIONAL for a call like self + 1, which may call a private operator
+    public static CallSite getFastFloatOpsCallSite(String name, CallType callType) {
+        switch (name) {
+            case "+"   : return new PlusCallSite(callType);
+            case "-"   : return new MinusCallSite(callType);
+            case "*"   : return new MulCallSite(callType);
+            case "%"   : return new ModCallSite(callType);
+            case "/"   : return new DivCallSite(callType);
+
+            case "=="  : return new EqCallSite(callType);
+            case "<"   : return new LtCallSite(callType);
+            case "<="  : return new LeCallSite(callType);
+            case ">"   : return new GtCallSite(callType);
+            case ">="  : return new GeCallSite(callType);
+            case "<=>" : return new CmpCallSite(callType);
         }
         return null;
     }
@@ -273,17 +261,5 @@ public class MethodIndex {
 
     public static void addMethodWriteFields(String name, FrameField... write) {
         addMethodWriteFieldsPacked(FrameField.pack(write), name);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static void addFrameAwareMethods(String... methods) {
-        if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
-        FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static void addScopeAwareMethods(String... methods) {
-        if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
-        SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 }

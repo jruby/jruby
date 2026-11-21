@@ -2,11 +2,23 @@ require_relative '../../spec_helper'
 
 describe "String#unpack" do
   it "raises a TypeError when passed nil" do
-    -> { "abc".unpack(nil) }.should raise_error(TypeError)
+    -> { "abc".unpack(nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when passed an Integer" do
-    -> { "abc".unpack(1) }.should raise_error(TypeError)
+    -> { "abc".unpack(1) }.should.raise(TypeError)
+  end
+
+  it "yields each value to a block and returns nil" do
+    yielded = []
+    "abc".unpack("C*") { |x| yielded << x }.should == nil
+    yielded.should == [97, 98, 99]
+  end
+
+  it "returns nil with a block when given an offset" do
+    yielded = []
+    ["abc".unpack("C*", offset: 1) { |x| yielded << x }].should == [nil]
+    yielded.should == [98, 99]
   end
 
   it "starts unpacking from the given offset" do
@@ -18,8 +30,22 @@ describe "String#unpack" do
     "؈".unpack("CC", offset: 1).should == [136, nil]
   end
 
-  it "raises an ArgumentError when the offset is negative" do
-    -> { "a".unpack("C", offset: -1) }.should raise_error(ArgumentError, "offset can't be negative")
+  describe "when the offset is negative" do
+    ruby_version_is "4.1" do
+      it "starts unpacking from the end" do
+        "abc".unpack("CC", offset: -2).should == [98, 99]
+      end
+
+      it "raises an ArgumentError if it is less than -length" do
+        -> { "a".unpack("C", offset: -2) }.should.raise(ArgumentError, "offset outside of string")
+      end
+    end
+
+    ruby_version_is ""..."4.1" do
+      it "raises an ArgumentError" do
+        -> { "a".unpack("C", offset: -1) }.should.raise(ArgumentError, "offset can't be negative")
+      end
+    end
   end
 
   it "returns nil if the offset is at the end of the string" do
@@ -27,6 +53,6 @@ describe "String#unpack" do
   end
 
   it "raises an ArgumentError when the offset is larger than the string" do
-    -> { "a".unpack("C", offset: 2) }.should raise_error(ArgumentError, "offset outside of string")
+    -> { "a".unpack("C", offset: 2) }.should.raise(ArgumentError, "offset outside of string")
   end
 end

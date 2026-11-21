@@ -43,8 +43,8 @@ import java.lang.invoke.MethodHandles;
  * A variable accessor that accesses a field directly;
  */
 public class FieldVariableAccessor extends VariableAccessor {
-    private final MethodHandle getter;
-    private final MethodHandle setter;
+    protected final MethodHandle getter;
+    protected final MethodHandle setter;
     
     /**
      * Construct a new FieldVariableAccessor for the given "real" class,
@@ -62,6 +62,10 @@ public class FieldVariableAccessor extends VariableAccessor {
 
         this.getter = getter;
         this.setter = wrapSetter(setter);
+    }
+
+    public FieldVariableAccessor cloneFor(RubyClass newRealClass) {
+        return new FieldVariableAccessor(newRealClass, name, index, classId, getter, setter);
     }
 
     protected MethodHandle wrapSetter(MethodHandle setter) {

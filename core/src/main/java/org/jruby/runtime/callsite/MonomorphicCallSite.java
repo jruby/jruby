@@ -9,6 +9,10 @@ import org.jruby.runtime.CallType;
  */
 public class MonomorphicCallSite extends CachingCallSite {
     public MonomorphicCallSite(String methodName) {
-        super(methodName, CallType.NORMAL);
+        this(methodName, CallType.NORMAL);
+    }
+
+    public MonomorphicCallSite(String methodName, CallType callType) {
+        super(methodName, callType);
     }
 }

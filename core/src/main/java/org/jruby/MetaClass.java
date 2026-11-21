@@ -30,6 +30,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
@@ -40,11 +41,6 @@ import static org.jruby.api.Access.classClass;
 import static org.jruby.api.Error.typeError;
 
 public final class MetaClass extends RubyClass {
-
-    @Deprecated(since = "9.2.1.0")
-    public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
-        this(runtime, superClass, (RubyBasicObject) attached);
-    }
 
     /**
      * rb_class_boot for meta classes ({@link #makeMetaClass(ThreadContext, RubyClass)})
@@ -100,10 +96,10 @@ public final class MetaClass extends RubyClass {
     }
 
     /**
-     * rb_make_metaclass
      * @param superClass
      * @return singleton-class for this (singleton) class
      */
+    @CRuby(value = "rb_make_metaclass", file = "class.c")
     @Override
     public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
         MetaClass klass = new MetaClass(context.runtime, getSuperSingletonMetaClass(context), this);

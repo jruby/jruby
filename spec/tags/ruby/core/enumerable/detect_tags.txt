@@ -1,0 +1,1 @@
+fails:Enumerable#detect is an alias of Enumerable#find

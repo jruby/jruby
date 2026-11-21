@@ -1,7 +1,6 @@
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
 fails:Marshal.dump with an Object dumps an Object with a non-US-ASCII instance variable
-fails:Marshal.dump with an Exception dumps the cause for the exception
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
 fails:Marshal.dump with an Exception dumps instance variables if they exist
 fails:Marshal.dump with a Symbol dumps multiple Symbols sharing the same encoding
@@ -19,5 +18,3 @@ fails:Marshal.dump with a Float uses object links for objects repeatedly dumped
 fails:Marshal.dump with a Time uses object links for objects repeatedly dumped
 fails:Marshal.dump with a Time adds instance variables before the object itself into the objects table
 fails:Marshal.dump with an Exception adds instance variables after the object itself into the objects table
-fails:Marshal.dump with a Data dumps an extended Data
-fails:Marshal.dump with a Data ignores overridden name method

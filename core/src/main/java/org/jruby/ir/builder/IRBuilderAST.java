@@ -9,8 +9,12 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ext.coverage.BranchCoverage;
+import org.jruby.ext.coverage.BranchTarget;
+import org.jruby.ext.coverage.FileCoverage;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -54,6 +58,8 @@ import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
@@ -65,6 +71,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -170,7 +177,15 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+        if (node.isNewline()) {
+            if (coverageMode != 0 && !node.isLineEvent()) {
+                determineIfWeNeedLineNumberForCall(node.getLine(), true); // only for backtraces
+            } else if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
+                determineIfWeNeedCoverageLine(node.getLine(), LineEvents.firstInstruction(node));
+            } else {
+                determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+            }
+        }
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -288,6 +303,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (node == null) return null;
 
         boolean savedExecuteOnce = executesOnce;
+        if (lineNumberInfo != null) lineNumberInfo.enter();
         try {
             if (executesOnce) executesOnce = node.executesOnce();
 
@@ -299,12 +315,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             return operand;
         } finally {
+            if (lineNumberInfo != null) lineNumberInfo.exit();
             executesOnce = savedExecuteOnce;
         }
     }
 
     public Operand buildLambda(LambdaNode node) {
-        return buildLambda(node.getArgs(), node.getBody(), node.getScope(), Signature.from(node), node.getLine());
+        return buildLambda(node.getArgs(), node.getBody(), node.getScope(), Signature.from(node), node.getLine(),
+                node.getStartColumn(), node.getEndLine(), node.getEndColumn());
     }
 
     public Operand buildEncoding(EncodingNode node) {
@@ -533,6 +551,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             Operand splat = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
 
+            // copy the hash now, before the block argument gets a chance to change it
+            if (dupSingleKeywordSplat) {
+                Variable copy = copy(new Hash(new ArrayList<>(1)));
+                addInstr(new RuntimeHelperCall(copy, MERGE_KWARGS, new Operand[] { copy, splat, fals() }));
+                return copy;
+            }
+
             return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
         }
 
@@ -607,6 +632,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     protected Operand[] buildCallArgs(Node args, int[] flags) {
         switch (args.getNodeType()) {
+            case DEFNNODE:
+            case DEFSNODE:
+                build(args);
+                return new Operand[] { new Symbol(((MethodDefNode) args).getName()) };
             case ARGSCATNODE:
             case ARGSPUSHNODE:
                 Operand lhs = build(((TwoValueNode) args).getFirstNode());
@@ -822,26 +851,82 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, false, false));
     }
 
+    @Override
+    protected boolean blockArgMayModifyArgs(Node iter) {
+        return iter instanceof BlockPassNode blockPass && mayHaveSideEffects(blockPass.getBodyNode());
+    }
+
+    // MRI: setup_args_dup_rest_p, the nodes that cannot change anything when evaluated
+    private static boolean mayHaveSideEffects(Node node) {
+        return switch (node) {
+            case LocalVarNode n -> false;
+            case DVarNode n -> false;
+            case GlobalVarNode n -> false;
+            case InstVarNode n -> false;
+            case ClassVarNode n -> false;
+            case ConstNode n -> false;
+            case Colon3Node n when !(n instanceof Colon2Node) -> false;
+            case Colon2Node n -> n.getLeftNode() != null && mayHaveSideEffects(n.getLeftNode());
+            case FixnumNode n -> false;
+            case BignumNode n -> false;
+            case FloatNode n -> false;
+            case RationalNode n -> false;
+            case ComplexNode n -> false;
+            case StrNode n -> false;
+            case SymbolNode n -> false;
+            case RegexpNode n -> false;
+            case SelfNode n -> false;
+            case NilNode n -> false;
+            case TrueNode n -> false;
+            case FalseNode n -> false;
+            case LambdaNode n -> false;
+            case NthRefNode n -> false;
+            case BackRefNode n -> false;
+            case null, default -> true;
+        };
+    }
+
     public Operand buildArgsPush(Variable result, ArgsPushNode node) {
         if (result == null) result = temp();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
+
+        // Like buildArray, leave out a trailing ** that is empty, as in [*a, **{}]
+        if (node.getSecondNode() instanceof HashNode hash && hash.hasOnlyRestKwargs()) {
+            Variable empty = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { rhs }));
+            final Variable array = result;
+            if_else(empty, tru(),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, new Array(), false, false)),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, rhs, true, false)));
+            return array;
+        }
 
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, true, false));
     }
 
     private Operand buildAttrAssign(Variable result, AttrAssignNode node) {
         return buildAttrAssign(result, node.getReceiverNode(), node.getArgsNode(), node.getBlockNode(),
-                node.getName(), node.isLazy(), node.containsVariableAssignment());
+                node.getName(), node.isLazy(), node.containsVariableAssignment(),
+                node.isLazy() ? () -> declareSafeNavigationBranches(node) : null);
     }
 
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand obj = build(attrAssignNode.getReceiverNode());
+
+        // a safe-navigation target such as the variable of "for foo&.bar in" is skipped when the receiver is nil
+        Label skipLabel = null;
+        if (attrAssignNode.isLazy()) {
+            skipLabel = getNewLabel();
+            addInstr(new BNilInstr(skipLabel, obj));
+        }
+
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, flags[0], scope.maybeUsingRefinements()));
+
+        if (skipLabel != null) addInstr(new LabelInstr(skipLabel));
         return value;
     }
 
@@ -904,10 +989,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         // to preserve expected code execution order
         Operand receiver;
         if (receiverNode instanceof CallNode && ((CallNode) receiverNode).isLazy()) {
-            receiver = buildLazyWithOrder((CallNode) receiverNode, lazyLabel, endLabel, callNode.containsVariableAssignment());
+            // Branch coverage counts the nil path of every call in a chain, so each call gets its own nil check
+            // rather than sharing the chain's exit.
+            boolean shareLazyLabels = !isBranchCoverageEnabled();
+            receiver = buildLazyWithOrder((CallNode) receiverNode, shareLazyLabels ? lazyLabel : null, shareLazyLabels ? endLabel : null,
+                    callNode.containsVariableAssignment());
         } else {
             receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         }
+
+        // MRI declares a safe-navigation branch once the receiver is built and before the arguments
+        BranchTarget[] safeNavigation = callNode.isLazy() ? declareSafeNavigationBranches(callNode) : null;
 
         final Variable result = aResult == null ? temp() : aResult;
 
@@ -938,18 +1030,33 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             return result;
         }
 
-        if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
+        if (callNode.isLazy()) {
+            addInstr(new BNilInstr(lazyLabel, receiver));
+            if (safeNavigation != null) coverBranch(safeNavigation[0]);
+        }
 
         createCall(result, receiver, NORMAL, name, callNode.getArgsNode(), callNode.getIterNode(), callNode.getLine(), callNode.isNewline());
 
         if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
+            if (safeNavigation != null) coverBranch(safeNavigation[1]);
             addInstr(new CopyInstr(result, nil()));
             addInstr(new LabelInstr(endLabel));
         }
 
         return result;
+    }
+
+    /**
+     * Targets of the call path and of the nil path of a safe-navigation call or assignment (both reported at
+     * the whole call, as MRI does).
+     */
+    private BranchTarget[] declareSafeNavigationBranches(Node node) {
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, safeNavigationSpanOf(node));
+        if (branch == null) return null;
+
+        return new BranchTarget[] { declareTarget(branch, BranchTarget.Label.THEN, null), declareTarget(branch, BranchTarget.Label.ELSE, null) };
     }
 
     protected boolean isNilRest(Node rest) {
@@ -1030,22 +1137,49 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildPatternCase(PatternCaseNode node) {
-        return buildPatternCase(node.getCaseNode(), node.getCases(), node.getElseNode());
+        Node[] cases = node.getCases();
+        BranchTarget[] inTargets = null;
+        BranchTarget elseTarget = null;
+        BranchCoverage branch = node.isOneLine() ? null : declareBranch(BranchCoverage.Type.CASE, node);
+
+        if (branch != null) {
+            inTargets = new BranchTarget[cases.length];
+            for (int i = 0; i < cases.length; i++) {
+                InNode in = (InNode) cases[i];
+                int[] span = armSpanOf(in.getBody());
+                inTargets[i] = declareTarget(branch, BranchTarget.Label.IN, span == null ? spanOf(in) : span); // an empty in is reported at its clause
+            }
+            InNode last = cases.length == 0 ? null : (InNode) cases[cases.length - 1];
+            elseTarget = declareTarget(branch, BranchTarget.Label.ELSE, caseElseSpan(branch, node.getElseNode(), last != null && last.hasElseStart(),
+                    last == null ? -1 : last.getElseStartLine(), last == null ? -1 : last.getElseStartColumn()));
+        }
+
+        return buildPatternCase(node.getCaseNode(), cases, node.getElseNode(), inTargets, elseTarget);
     }
 
     public Operand buildCase(CaseNode caseNode) {
-        if (caseNode.getCaseNode() != null && !scope.maybeUsingRefinements()) {
+        // the homogeneous-literal fast path has no place for branch probes; measure through the general path
+        if (caseNode.getCaseNode() != null && !scope.maybeUsingRefinements() && !isBranchCoverageEnabled()) {
             // scan all cases to see if we have a homogeneous literal case/when
             NodeType seenType = null;
             for (Node aCase : caseNode.getCases().children()) {
                 WhenNode whenNode = (WhenNode) aCase;
-                NodeType exprNodeType = whenNode.getExpressionNodes().getNodeType();
+                Node exprNode = whenNode.getExpressionNodes();
+                NodeType exprNodeType = exprNode.getNodeType();
 
                 if (seenType == null) {
                     seenType = exprNodeType;
                 } else if (seenType != exprNodeType) {
                     seenType = null;
                     break;
+                }
+
+                if (exprNode instanceof FixnumNode fixnum) {
+                    long value = fixnum.getValue();
+                    if (value > java.lang.Integer.MAX_VALUE || value < java.lang.Integer.MIN_VALUE) {
+                        seenType = null;
+                        break;
+                    }
                 }
             }
 
@@ -1059,7 +1193,24 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             }
         }
 
-        return buildCase(caseNode.getCaseNode(), caseNode.getCases().children(), caseNode.getElseNode());
+        Node[] arms = caseNode.getCases().children();
+        BranchTarget[] armTargets = null;
+        BranchTarget elseTarget = null;
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.CASE, caseNode);
+
+        if (branch != null) {
+            armTargets = new BranchTarget[arms.length];
+            for (int i = 0; i < arms.length; i++) {
+                WhenNode when = (WhenNode) arms[i];
+                int[] span = armSpanOf(when.getBodyNode());
+                armTargets[i] = declareTarget(branch, BranchTarget.Label.WHEN, span == null ? spanOf(when) : span); // an empty when is reported at its clause
+            }
+            WhenNode last = arms.length == 0 ? null : (WhenNode) arms[arms.length - 1];
+            elseTarget = declareTarget(branch, BranchTarget.Label.ELSE, caseElseSpan(branch, caseNode.getElseNode(), last != null && last.hasElseStart(),
+                    last == null ? -1 : last.getElseStartLine(), last == null ? -1 : last.getElseStartColumn()));
+        }
+
+        return buildCase(caseNode.getCaseNode(), arms, caseNode.getElseNode(), armTargets, elseTarget);
     }
 
     protected Node whenBody(WhenNode when) {
@@ -1197,7 +1348,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             T expr = (T) whenNode.getExpressionNodes();
             long exprLong = caseFunction.apply(expr);
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, new Tuple<>(buildOptimizedWhenOperand(expr), bodyLabel));
@@ -1611,7 +1761,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                                     }
                             )
                     );
-                    return buildDefnCheckIfThenPaths(undefLabel, tmpVar);
+                    addInstr(createBranch(tmpVar, nil(), undefLabel));
+                    Operand argsCheckDefn = buildGetArgumentDefinition(callNode.getArgsNode(), "method");
+                    return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
                 }
             };
 
@@ -1959,6 +2111,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      */
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
+
+        // If the method is forwarding arguments, preserve callInfo for later use.
+        if (scope instanceof IRMethod && scope.getStaticScope().exists(CommonByteLists.FWD_ALL.toString()) >= 0) {
+            forwardingCallInfo = temp();
+            addInstr(new RuntimeHelperCall(forwardingCallInfo, CAPTURE_CALL_INFO, Operand.EMPTY_ARRAY));
+        }
 
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
@@ -2321,8 +2479,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildHash(HashNode hashNode) {
+        if (hashNode.isLiteral() || hashNode.hasRestKwarg() || !hashNode.hasOnlySymbolKeys()) {
+            // not kwargs or non-simple kwargs, build as a normal Hash
+            return buildLiteralHash(hashNode);
+        }
+
+        // simple kwargs, build as KeywordHash
+        return buildKeywordHash(hashNode);
+    }
+
+    private Variable buildLiteralHash(HashNode hashNode) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>(1);
         boolean hasAssignments = hashNode.containsVariableAssignment();
+
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
@@ -2361,8 +2530,168 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return hash;
     }
 
+    public Operand buildKeywordHash(HashNode hashNode) {
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>(1);
+        boolean hasAssignments = hashNode.containsVariableAssignment();
+
+        for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
+            Node key = pair.getKey();
+            assert key instanceof SymbolNode : "simple kwargs should only have symbol keys: " + getFileName() + ":" + getLine(hashNode);
+
+            args.add(new KeyValuePair<>(buildSymbol((SymbolNode) key), buildWithOrder(pair.getValue(), hasAssignments)));
+        }
+
+        return new Hash(args, true);
+    }
+
     public Operand buildIf(Variable result, final IfNode ifNode) {
-        return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody());
+        if (!isBranchCoverageEnabled()) return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody());
+
+        // MRI folds a conditional on a literal predicate away: no branch is reported and the arm that cannot
+        // run is not compiled, so nothing in it is measured
+        if (ifNode.hasConstantPredicate()) {
+            return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody(), null,
+                    ifNode.isConstantlyTrue() ? DeadArm.CONSEQUENT : DeadArm.STATEMENTS);
+        }
+
+        Supplier<BranchTarget[]> branches = ifNode.isBranch() ? () -> declareIfBranches(ifNode) : null;
+
+        return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody(), branches);
+    }
+
+    // ---- branch coverage: the locations follow MRI's compiler (prism) ----
+
+    /**
+     * [start_line, start_column, end_line, end_column] of a node as Coverage reports it (one-based lines), or
+     * null when it has no source span (nothing, an implicit nil, a synthesized node).
+     */
+    private static int[] spanOf(Node node) {
+        if (node == null || node instanceof NilImplicitNode || !node.hasSourceSpan()) return null;
+
+        return new int[] { node.getStartLine() + 1, node.getStartColumn(), node.getEndLine() + 1, node.getEndColumn() };
+    }
+
+    /**
+     * The span of a branch arm made of the given code: a parenthesized expression is reported at its parentheses
+     * (MRI's parentheses node), anything else at the node itself.
+     */
+    private static int[] armSpanOf(Node node) {
+        SourceSpan parens = node == null ? null : node.getParenSpan();
+        if (parens != null) {
+            return new int[] { parens.startLine() + 1, parens.startColumn(), parens.endLine() + 1, parens.endColumn() };
+        }
+
+        // MRI's lambda node starts at its ->
+        if (node instanceof LambdaNode lambda && lambda.getOperatorColumn() >= 0 && lambda.hasSourceSpan()) {
+            return new int[] { lambda.getLine() + 1, lambda.getOperatorColumn(), lambda.getEndLine() + 1, lambda.getEndColumn() };
+        }
+
+        return spanOf(node);
+    }
+
+    /**
+     * A safe-navigation call's branch ends where MRI ends it (see CallNode#setSafeNavigationEnd), short of its
+     * block; an assignment's is the whole assignment.
+     */
+    private static int[] safeNavigationSpanOf(Node node) {
+        int[] span = spanOf(node);
+
+        if (span != null && node instanceof CallNode call && call.hasSafeNavigationEnd()) {
+            span[2] = call.getSafeNavigationEndLine() + 1;
+            span[3] = call.getSafeNavigationEndColumn();
+        }
+
+        return span;
+    }
+
+    private static int[] spanOf(BranchCoverage branch) {
+        return new int[] { branch.getStartLine(), branch.getStartColumn(), branch.getEndLine(), branch.getEndColumn() };
+    }
+
+    private BranchCoverage declareBranch(BranchCoverage.Type type, Node node) {
+        return declareBranch(type, spanOf(node));
+    }
+
+    private BranchCoverage declareBranch(BranchCoverage.Type type, int[] span) {
+        FileCoverage file = branchCoverageFile();
+        if (file == null) return null;
+
+        if (span == null) return null;
+
+        return file.declareBranch(type, span[0], span[1], span[2], span[3]);
+    }
+
+    /**
+     * Declare a target of the construct; a null span means the target is reported at the whole construct (a
+     * missing else, an empty loop body, ...).
+     */
+    private static BranchTarget declareTarget(BranchCoverage branch, BranchTarget.Label label, int[] span) {
+        if (branch == null) return null;
+        if (span == null) span = spanOf(branch);
+
+        return branch.declareTarget(label, span[0], span[1], span[2], span[3]);
+    }
+
+    /**
+     * Targets of the statements arm and of the consequent arm of an if/unless (in that order).
+     */
+    private BranchTarget[] declareIfBranches(IfNode node) {
+        BranchCoverage branch = declareBranch(node.isUnless() ? BranchCoverage.Type.UNLESS : BranchCoverage.Type.IF, node);
+        if (branch == null) return null;
+
+        Node statements = node.getThenBody();
+        Node consequent = node.getElseBody();
+        Node sourceBody = node.getSourceBody(); // a modifier's statement as written (begin/end included)
+        if (sourceBody != null) {
+            if (statements != null) statements = sourceBody; else consequent = sourceBody;
+        }
+
+        BranchTarget[] targets = new BranchTarget[2];
+        if (node.isUnless()) {
+            // 'unless c; A; else; B; end' is IfNode(c, then: B, else: A): MRI lists the else clause first, then
+            // the body, and reports either at the whole unless when it is missing or empty.
+            targets[0] = declareTarget(branch, BranchTarget.Label.ELSE, armSpanOf(statements));
+            targets[1] = declareTarget(branch, BranchTarget.Label.THEN, armSpanOf(consequent));
+        } else {
+            int[] thenSpan = armSpanOf(statements);
+            if (thenSpan == null && node.hasPredicateEnd()) { // an empty then arm sits, empty, just past the condition
+                int line = node.getPredicateEndLine() + 1;
+                int column = node.getPredicateEndColumn();
+                thenSpan = new int[] { line, column, line, column };
+            }
+            targets[0] = declareTarget(branch, BranchTarget.Label.THEN, thenSpan);
+
+            int[] elseSpan;
+            if (consequent instanceof NilImplicitNode && node.hasElseStart()) { // 'else' with nothing after it: from the keyword to 'end'
+                elseSpan = new int[] { node.getElseStartLine() + 1, node.getElseStartColumn(), branch.getEndLine(), branch.getEndColumn() };
+            } else {
+                elseSpan = armSpanOf(consequent); // an elsif clause, the else statements, or null (no else: the whole if)
+            }
+            targets[1] = declareTarget(branch, BranchTarget.Label.ELSE, elseSpan);
+        }
+
+        return targets;
+    }
+
+    private BranchTarget declareLoopBranch(BranchCoverage.Type type, Node loop, Node body, boolean hasBodySpan, int bodyStartLine, int bodyStartColumn, int bodyEndLine, int bodyEndColumn) {
+        BranchCoverage branch = declareBranch(type, loop);
+        if (branch == null) return null;
+
+        int[] bodySpan = hasBodySpan ? new int[] { bodyStartLine + 1, bodyStartColumn, bodyEndLine + 1, bodyEndColumn } : armSpanOf(body);
+
+        return declareTarget(branch, BranchTarget.Label.BODY, bodySpan); // an empty body is reported at the whole loop
+    }
+
+    /**
+     * The span of a case/in else: its statements, 'else' through 'end' when it has none, or null (the whole
+     * case) when there is no else at all.
+     */
+    private static int[] caseElseSpan(BranchCoverage branch, Node elseNode, boolean hasElseStart, int elseStartLine, int elseStartColumn) {
+        if (elseNode instanceof NilImplicitNode && hasElseStart) {
+            return new int[] { elseStartLine + 1, elseStartColumn, branch.getEndLine(), branch.getEndColumn() };
+        }
+
+        return armSpanOf(elseNode);
     }
 
     public Operand buildInstAsgn(final InstAsgnNode node) {
@@ -2374,7 +2703,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildIter(final IterNode iter) {
-        return buildIter(iter.getVarNode(), iter.getBodyNode(), iter.getScope(), Signature.from(iter), iter.getLine(), iter.getEndLine());
+        return buildIter(iter.getVarNode(), iter.getBodyNode(), iter.getScope(), Signature.from(iter), iter.getLine(),
+                iter.getStartColumn(), iter.getEndLine(), iter.getEndColumn());
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
@@ -2433,8 +2763,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
             for (int slot:  m2c.getScopeOffsets()) {
                 // Static scope scope offsets store both depth and offset
-                int depth = slot >> 16;
-                int offset = slot & 0xffff;
+                int depth = unpackHighChar(slot);
+                int offset = unpackLowChar(slot);
 
                 // For now, we'll continue to implicitly reference "$~"
                 RubySymbol var = getManager().runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset));
@@ -2504,7 +2834,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         RubySymbol name = ((INameNode) lhs).getName();
         Variable leftModule = copy(lhs instanceof Colon2Node ?
                 build(((Colon2Node) lhs).getLeftNode()) : getManager().getObjectClass());
-        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, true, constMissing));
 
         return leftModule;
     }
@@ -2706,7 +3036,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildUntil(UntilNode node) {
-        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), false, node.evaluateAtStart());
+        BranchTarget body = declareLoopBranch(BranchCoverage.Type.UNTIL, node, node.getBodyNode(), node.hasBodySpan(),
+                node.getBodyStartLine(), node.getBodyStartColumn(), node.getBodyEndLine(), node.getBodyEndColumn());
+
+        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), false, node.evaluateAtStart(), body);
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
@@ -2734,7 +3067,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildWhile(WhileNode node) {
-        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), true, node.evaluateAtStart());
+        BranchTarget body = declareLoopBranch(BranchCoverage.Type.WHILE, node, node.getBodyNode(), node.hasBodySpan(),
+                node.getBodyStartLine(), node.getBodyStartColumn(), node.getBodyEndLine(), node.getBodyEndColumn());
+
+        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), true, node.evaluateAtStart(), body);
     }
 
     public Operand buildXStr(Variable result, XStrNode node) {

@@ -26,6 +26,10 @@
 
 package org.jruby.util;
 
+import static org.jruby.util.BitPacker.packInts;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
+
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
@@ -47,6 +51,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Check;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
@@ -77,23 +82,25 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Warn.warn;
 
 public final class StringSupport {
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
     public static final int CR_VALID_F   = ObjectFlags.CR_VALID_F;
-    public static final int CR_UNKNOWN   = 0;
 
     // We hardcode these so they can be used in a switch.
     // These values also must continue to match the same values in the Prism parser so we perform a hard check.
-    public static final int CR_7BIT      = 16;
-    public static final int CR_VALID     = 32;
-    static {
-        if (CR_7BIT != CR_7BIT_F) throw new RuntimeException("BUG: CR_7BIT_F = " + CR_7BIT_F + " but should be " + CR_7BIT);
-        if (CR_VALID != CR_VALID_F) throw new RuntimeException("BUG: CR_VALID_F = " + CR_VALID_F + " but should be " + CR_VALID);
-    }
+    public static final int CR_UNKNOWN   = 0;
+    public static final int CR_7BIT      = 0b00010000;
+    public static final int CR_VALID     = 0b00100000;
+
+    public static final int CHILLED_LITERAL = 0b00000001;
+    public static final int CHILLED_SYMBOL_TO_S = 0b00000010;
 
     public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
     public static final int CR_MASK      = CR_7BIT | CR_VALID;
 
     private static final VarHandle BYTES_AS_LONGS = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+    private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     public static final int TRANS_SIZE = 256;
 
@@ -268,12 +275,12 @@ public final class StringSupport {
         return "???";  // Not reached unless something seriously boned
     }
 
-    // rb_enc_fast_mbclen
+    @CRuby(value = "rb_enc_fast_mbclen", file = "encoding.c")
     public static int encFastMBCLen(byte[] bytes, int p, int e, Encoding enc) {
         return enc.length(bytes, p, e);
     }
 
-    // rb_enc_mbclen
+    @CRuby(value = "rb_enc_mbclen", file = "encoding.c")
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);
         if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) <= end - p) return MBCLEN_CHARFOUND_LEN(n);
@@ -281,7 +288,7 @@ public final class StringSupport {
         return min <= end - p ? min : end - p;
     }
 
-    // rb_enc_precise_mbclen
+    @CRuby("rb_enc_precise_mbclen")
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) return MBCLEN_NEEDMORE(1);
         int n = enc.length(bytes, p, end);
@@ -324,8 +331,17 @@ public final class StringSupport {
         return n;
     }
 
-    // MRI: search_nonascii
+    @CRuby(value = "search_nonascii", file = "string.c")
     public static int searchNonAscii(byte[]bytes, int p, int end) {
+        if (p < end && !Encoding.isAscii(bytes[p])) return p;
+
+        while (p + LONG_SIZE <= end) {
+            long hits = (long) BYTES_AS_LONGS.get(bytes, p) & NONASCII_MASK;
+            if (hits != 0) {
+                return p + ((BIG_ENDIAN ? Long.numberOfLeadingZeros(hits) : Long.numberOfTrailingZeros(hits)) >>> 3);
+            }
+            p += LONG_SIZE;
+        }
         while (p < end) {
             if (!Encoding.isAscii(bytes[p])) return p;
             p++;
@@ -451,12 +467,12 @@ public final class StringSupport {
         return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
-    // MRI: rb_enc_strlen
+    @CRuby(value = "rb_enc_strlen", file = "string.c")
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
         return strLength(enc, bytes, p, end, CR_UNKNOWN);
     }
 
-    // MRI: enc_strlen
+    @CRuby(value = "enc_strlen", file = "string.c")
     public static int strLength(Encoding enc, byte[]bytes, int p, int e, int cr) {
         int c;
         if (enc.isFixedWidth()) {
@@ -558,17 +574,17 @@ public final class StringSupport {
         return strLengthWithCodeRange(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
-    // arg cannot be negative
+    // Keep result in the low bits so a plain positive long can still be unpacked as a result.
     public static long pack(int result, int arg) {
-        return ((long)arg << 31) | result;
+        return packInts(arg, result);
     }
 
     public static int unpackResult(long len) {
-        return (int)len & 0x7fffffff;
+        return unpackLow(len);
     }
 
     public static int unpackArg(long cr) {
-        return (int)(cr >>> 31);
+        return unpackHigh(cr);
     }
 
     public static int codePoint(Encoding enc, byte[] bytes, int p, int end) {
@@ -622,7 +638,7 @@ public final class StringSupport {
         if (p >= end) return pack(-1, len);
 
         if (enc.isAsciiCompatible()) {
-            int c = bytes[p] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p]);
             if (!Encoding.isAscii(c)) return pack(-1, len);
             return pack(c, len == 0 ? 0 : 1);
         } else {
@@ -745,20 +761,10 @@ public final class StringSupport {
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static int toLower(Encoding enc, int c) {
-        return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static int toUpper(Encoding enc, int c) {
-        return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
-    }
-
     public static int caseCmp(byte[]bytes1, int p1, byte[]bytes2, int p2, int len) {
         int i = -1;
         for (; ++i < len && bytes1[p1 + i] == bytes2[p2 + i];) {}
-        if (i < len) return (bytes1[p1 + i] & 0xff) > (bytes2[p2 + i] & 0xff) ? 1 : -1;
+        if (i < len) return Byte.toUnsignedInt(bytes1[p1 + i]) > Byte.toUnsignedInt(bytes2[p2 + i]) ? 1 : -1;
         return 0;
     }
 
@@ -769,7 +775,7 @@ public final class StringSupport {
     public static int scanHex(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && enc.isXDigit(c = bytes[p++] & 0xff)) {
+        while (len-- > 0 && enc.isXDigit(c = Byte.toUnsignedInt(bytes[p++]))) {
             v = (v << 4) + enc.xdigitVal(c);
         }
         return v;
@@ -781,7 +787,7 @@ public final class StringSupport {
 
     public static int hexLength(byte[]bytes, int p, int len, Encoding enc) {
         int hlen = 0;
-        while (len-- > 0 && enc.isXDigit(bytes[p++] & 0xff)) hlen++;
+        while (len-- > 0 && enc.isXDigit(Byte.toUnsignedInt(bytes[p++]))) hlen++;
         return hlen;
     }
 
@@ -792,7 +798,7 @@ public final class StringSupport {
     public static int scanOct(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
+        while (len-- > 0 && enc.isDigit(c = Byte.toUnsignedInt(bytes[p++])) && c < '8') {
             v = (v << 3) + Encoding.digitVal(c);
         }
         return v;
@@ -805,7 +811,7 @@ public final class StringSupport {
     public static int octLength(byte[]bytes, int p, int len, Encoding enc) {
         int olen = 0;
         int c;
-        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') olen++;
+        while (len-- > 0 && enc.isDigit(c = Byte.toUnsignedInt(bytes[p++])) && c < '8') olen++;
         return olen;
     }
 
@@ -893,7 +899,7 @@ public final class StringSupport {
             charHead -= begin;
 
             // byte at char head
-            byte byteHead = (byte)(bytes[begin + charHead] & 0xFF);
+            byte byteHead = bytes[begin + charHead];
 
             // total bytes we would need to complete character
             int extra = encoding.length(byteHead);
@@ -907,6 +913,7 @@ public final class StringSupport {
         return 0;
     }
 
+    // Deprecated but still used by StringIO
     @Deprecated(since = "10.0.0.0")
     public static int memchr(byte[] ptr, int start, final int find, int len) {
         return Helpers.memchr(ptr, start, find, len);
@@ -944,7 +951,7 @@ public final class StringSupport {
         return new Object[] {s, false};
     }
 
-    // MRI: str_null_char
+    @CRuby(value = "str_null_char", file = "string.c")
     private static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
         int e = s + len;
 
@@ -954,7 +961,7 @@ public final class StringSupport {
         return -1;
     }
 
-    // MRI: zero_filled
+    @CRuby(value = "zero_filled", file = "string.c")
     private static boolean zeroFilled(byte[] sBytes, int s, int n) {
         for (; n > 0; --n) {
             if (sBytes[s++] != 0) return false;
@@ -962,7 +969,7 @@ public final class StringSupport {
         return true;
     }
 
-    // MRI: str_fill_term
+    @CRuby(value = "str_fill_term", file = "string.c")
     private static RubyString strFillTerm(RubyString str, byte[] sBytes, int beg, int len, int termlen) {
         int capa = sBytes.length - beg;
 
@@ -988,10 +995,8 @@ public final class StringSupport {
         final int p = beg + len; Arrays.fill(ptr, p, p + termlen, (byte) '\0');
     }
 
-    /**
-     * rb_str_scan
-     */
 
+    @CRuby(value = "rb_str_scan", file = "string.c")
     public static int positionEndForScan(ByteList value, Matcher matcher, Encoding enc, int begin, int range) {
         int end = matcher.getEnd();
         if (matcher.getBegin() == end) {
@@ -1005,9 +1010,20 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * rb_str_dump
-     */
+    // Printable ASCII bytes that String#dump copies as is: everything in 0x20-0x7E but '"', '#' and '\\'.
+    private static final boolean[] ASCII_NO_ESCAPE = new boolean[256];
+    static {
+        for (int c = 0x20; c < 0x7F; c++) ASCII_NO_ESCAPE[c] = true;
+        ASCII_NO_ESCAPE['"'] = ASCII_NO_ESCAPE['#'] = ASCII_NO_ESCAPE['\\'] = false;
+    }
+
+    // same as "%0<digits>X", value must fit in digits
+    private static int writeHex(byte[] out, int q, int value, int digits) {
+        for (int i = q + digits - 1; i >= q; i--, value >>>= 4) out[i] = Sprintf.HEX_DIGITS_UPPER_CASE[value & 0xf];
+        return q + digits;
+    }
+
+    @CRuby(value = "rb_str_dump", file = "string.c")
     public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
         return dumpCommon(runtime, bytelist, false);
     }
@@ -1022,7 +1038,7 @@ public final class StringSupport {
 
         int len = 2;
         while (p < end) {
-            int c = bytes[p++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p++]);
 
             switch (c) {
             case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
@@ -1034,7 +1050,9 @@ public final class StringSupport {
                 break;
             default:
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
-                    len++;
+                    int run = p;
+                    while (p < end && ASCII_NO_ESCAPE[Byte.toUnsignedInt(bytes[p])]) p++;
+                    len += 1 + p - run;
                 } else {
                     includingsNonprintable = true;
                     if (enc.isUTF8() && c > 0x7F) {
@@ -1070,7 +1088,7 @@ public final class StringSupport {
 
         if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         while (p < end) {
-            int c = bytes[p++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p++]);
             switch (c) {
                 case '"': case '\\':
                     out[q++] = '\\'; out[q++] = (byte)c; break;
@@ -1097,47 +1115,48 @@ public final class StringSupport {
                 default:
                     if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                         out[q++] = (byte)c;
+                        int run = p;
+                        while (p < end && ASCII_NO_ESCAPE[Byte.toUnsignedInt(bytes[p])]) p++;
+                        System.arraycopy(bytes, run, out, q, p - run);
+                        q += p - run;
                     } else {
                         out[q++] = '\\';
-                        outBytes.setRealSize(q);
                         if (enc.isUTF8()) {
                             int n = preciseLength(enc, bytes, p - 1, end) - 1;
                             if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                                 int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                                outBytes.setRealSize(q);
                                 p += n;
+                                out[q++] = 'u';
                                 if (cc <= 0xFFFF) {
-                                    Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
+                                    q = writeHex(out, q, cc, 4);
                                 } else {
-                                    Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                                    out[q++] = '{';
+                                    q = writeHex(out, q, cc, cc <= 0xFFFFF ? 5 : 6);
+                                    out[q++] = '}';
                                 }
-                                q = outBytes.getRealSize();
                                 continue;
                             }
                         }
-                        Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                        q = outBytes.getRealSize();
+                        out[q++] = 'x';
+                        q = writeHex(out, q, c, 2);
                     }
             }
         }
         if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         outBytes.setRealSize(q);
-        assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
         return outBytes;
     }
 
     public static boolean isEVStr(byte[] bytes, int p, int end) {
-        return p < end ? isEVStr(bytes[p] & 0xff) : false;
+        return p < end ? isEVStr(Byte.toUnsignedInt(bytes[p])) : false;
     }
 
     public static boolean isEVStr(int c) {
         return c == '$' || c == '@' || c == '{';
     }
 
-    /**
-     * rb_str_count
-     */
+    @CRuby(value = "rb_str_count", file = "string.c")
     public static int strCount(ByteList str, boolean[] table, TrTables tables, Encoding enc) {
         final byte[] bytes = str.getUnsafeBytes();
         int p = str.getBegin();
@@ -1147,7 +1166,7 @@ public final class StringSupport {
         int count = 0;
         while (p < end) {
             int c;
-            if (asciiCompat && (c = bytes[p] & 0xff) < 0x80) {
+            if (asciiCompat && (c = Byte.toUnsignedInt(bytes[p])) < 0x80) {
                 if (table[c]) count++;
                 p++;
             } else {
@@ -1174,7 +1193,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: rb_str_rindex
+    @CRuby(value = "rb_str_rindex", file = "string.c")
     public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
@@ -1315,9 +1334,7 @@ public final class StringSupport {
         boolean gen;
     }
 
-    /**
-     * tr_setup_table
-     */
+    @CRuby(value = "tr_setup_table", file = "string.c")
     public static final class TrTables {
         IntHashMap<Object> del, noDel; // used as ~ Set
     }
@@ -1491,9 +1508,11 @@ public final class StringSupport {
                     }
 
                     throw new IllegalArgumentException("invalid range in string transliteration");
+                } else if (tr.now < c) {
+                    // a range of one character ("a-a") is just that character
+                    tr.gen = true;
+                    tr.max = c;
                 }
-                tr.gen = true;
-                tr.max = c;
             }
         }
         return tr.now;
@@ -1501,7 +1520,7 @@ public final class StringSupport {
 
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
-    // MRI: str_succ
+    @CRuby(value = "str_succ", file = "string.c")
     public static ByteList succCommon(ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
@@ -1522,10 +1541,10 @@ public final class StringSupport {
         while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
             if (neighbor == NeighborChar.NOT_CHAR && lastAlnum != -1) {
                 ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
-                if (ascii.isAlpha(bytes[lastAlnum] & 0xff) ?
-                        ascii.isDigit(bytes[s] & 0xff) :
-                        ascii.isDigit(bytes[lastAlnum] & 0xff) ?
-                                ascii.isAlpha(bytes[s] & 0xff) : false) {
+                if (ascii.isAlpha(Byte.toUnsignedInt(bytes[lastAlnum])) ?
+                        ascii.isDigit(Byte.toUnsignedInt(bytes[s])) :
+                        ascii.isDigit(Byte.toUnsignedInt(bytes[lastAlnum])) ?
+                                ascii.isAlpha(Byte.toUnsignedInt(bytes[s])) : false) {
                     s = lastAlnum;
                     break;
                 }
@@ -1587,7 +1606,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: enc_succ_char
+    @CRuby(value = "enc_succ_char", file = "string.c")
     public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
         int l;
         if (enc.minLength() > 1) {
@@ -1612,7 +1631,7 @@ public final class StringSupport {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == (byte)0xff; i--) bytes[p + i] = 0;
             if (i < 0) return NeighborChar.WRAPPED;
-            bytes[p + i] = (byte)((bytes[p + i] & 0xff) + 1);
+            bytes[p + i] = (byte)(Byte.toUnsignedInt(bytes[p + i]) + 1);
             l = preciseLength(enc, bytes, p, p + len);
             if (MBCLEN_CHARFOUND_P(l)) {
                 l = MBCLEN_CHARFOUND_LEN(l);
@@ -1647,7 +1666,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: enc_succ_alnum_char
+    @CRuby(value = "enc_succ_alnum_char", file = "string.c")
     private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
         NeighborChar ret;
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
@@ -1732,7 +1751,7 @@ public final class StringSupport {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == 0; i--) bytes[p + i] = (byte)0xff;
             if (i < 0) return NeighborChar.WRAPPED;
-            bytes[p + i] = (byte)((bytes[p + i] & 0xff) - 1);
+            bytes[p + i] = (byte)(Byte.toUnsignedInt(bytes[p + i]) - 1);
             l = preciseLength(enc, bytes, p, p + len);
             if (MBCLEN_CHARFOUND_P(l)) {
                 l = MBCLEN_CHARFOUND_LEN(l);
@@ -1959,9 +1978,7 @@ public final class StringSupport {
         return encoding.isAsciiCompatible() && codeRange == CR_7BIT;
     }
 
-    /**
-     * rb_str_delete_bang
-     */
+    @CRuby(value = "rb_str_delete_bang", file = "string.c")
     static CodeRangeable strDeleteBang(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
@@ -1977,7 +1994,7 @@ public final class StringSupport {
         int cr = asciiCompatible ? CR_7BIT : CR_VALID;
         while (s < send) {
             int c;
-            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
+            if (asciiCompatible && Encoding.isAscii(c = Byte.toUnsignedInt(bytes[s]))) {
                 if (squeeze[c]) {
                     modify = true;
                 } else {
@@ -2017,9 +2034,7 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * MRI: chopped_length
-     */
+    @CRuby(value = "chopped_length", file = "string.c")
     public static int choppedLength(CodeRangeable str) {
         ByteList bl = str.getByteList();
         Encoding enc = bl.getEncoding();
@@ -2037,9 +2052,7 @@ public final class StringSupport {
         return p - beg;
     }
 
-    /**
-     * rb_enc_compatible
-     */
+    @CRuby(value = "rb_enc_compatible", file = "encoding.c")
     public static Encoding areCompatible(CodeRangeable str1, CodeRangeable str2) {
         Encoding enc1 = str1.getByteList().getEncoding();
         Encoding enc2 = str2.getByteList().getEncoding();
@@ -2493,7 +2506,7 @@ public final class StringSupport {
             self.getByteList().setRealSize(t);
         } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
             while (s < send) {
-                c = sbytes[s] & 0xff;
+                c = Byte.toUnsignedInt(sbytes[s]);
                 if (trans[c] != -1) {
                     if (!cflag) {
                         c = trans[c];
@@ -2608,8 +2621,8 @@ public final class StringSupport {
         while (p < end && op < oend) {
             final int c, oc;
             if (enc.isAsciiCompatible()) {
-                c = bytes[p] & 0xff;
-                oc = obytes[op] & 0xff;
+                c = Byte.toUnsignedInt(bytes[p]);
+                oc = Byte.toUnsignedInt(obytes[op]);
             } else {
                 c = preciseCodePoint(enc, bytes, p, end);
                 oc = preciseCodePoint(enc, obytes, op, oend);
@@ -2650,7 +2663,7 @@ public final class StringSupport {
         int save = -1;
 
         while (s < send) {
-            int c = bytes[s++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[s++]);
             if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
         }
 
@@ -2671,7 +2684,7 @@ public final class StringSupport {
         int c;
 
         while (s < send) {
-            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
+            if (enc.isAsciiCompatible() && (c = Byte.toUnsignedInt(bytes[s])) < 0x80) {
                 if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
                 s++;
             } else {
@@ -2755,9 +2768,9 @@ public final class StringSupport {
         /* Preprocessing */
         Arrays.fill(qstable, m + 1);
         for (; x < xe; ++x)
-            qstable[xsBytes[x] & 0xFF] = xe - x;
+            qstable[Byte.toUnsignedInt(xsBytes[x])] = xe - x;
         /* Searching */
-        for (; y + m <= ys + n; y += qstable[ysBytes[y + m] & 0xFF]) {
+        for (; y + m <= ys + n; y += qstable[Byte.toUnsignedInt(ysBytes[y + m])]) {
             if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
                 return y - ys;
         }
@@ -2768,7 +2781,7 @@ public final class StringSupport {
         final int mix = 8353;
         int h;
         if (x != xBytes.length) {
-            h = xBytes[x] & 0xFF;
+            h = Byte.toUnsignedInt(xBytes[x]);
         }
         else {
             h = '\0'; // (C) ary end - due y+m at rb_memsearch_qs_utf8
@@ -2778,27 +2791,27 @@ public final class StringSupport {
         }
         else if (h < 0xE0) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
         }
         else if (h < 0xF0) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
             h *= mix;
-            h += xBytes[x + 2] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 2]);
 
         }
         else if (h < 0xF5) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
             h *= mix;
-            h += xBytes[x + 2] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 2]);
             h *= mix;
-            h += xBytes[x + 3] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 3]);
         }
         else {
             return h + 256;
         }
-        return ((byte)h) & 0xff;
+        return Byte.toUnsignedInt((byte) h);
     }
 
     private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
@@ -2933,19 +2946,40 @@ public final class StringSupport {
 
     @Deprecated(since = "10.0.0.0")
     public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
-        asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags);
+        asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags, enc);
     }
 
+    @Deprecated(since = "10.1.3.0")
     public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flags) {
-        if (value.getRealSize() == 0) return;
-        int s = value.getBegin();
-        int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        asciiOnlyCaseMap(context, value, flags, ASCIIEncoding.INSTANCE);
+    }
 
-        IntHolder pp = new IntHolder();
-        pp.value = s;
-        int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
-        if (len < 0) throw argumentError(context, "input string invalid");
+    // Walks characters in enc, so invalid bytes raise and capitalize titlecases the first character, not byte.
+    // ASCII letters keep their length in every encoding, so the mapping is done in place.
+    @CRuby(value = "rb_str_ascii_casemap", file = "string.c")
+    @CRuby(value = "onigenc_ascii_only_case_map", file = "regenc.c")
+    public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flagsP, Encoding enc) {
+        if (value.getRealSize() == 0) return;
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+        byte[] bytes = value.getUnsafeBytes();
+        int flags = flagsP.value;
+
+        while (p < end) {
+            int n = preciseLength(enc, bytes, p, end);
+            if (!MBCLEN_CHARFOUND_P(n)) throw argumentError(context, "input string invalid");
+            int code = enc.mbcToCode(bytes, p, end);
+            if ('a' <= code && code <= 'z' && (flags & Config.CASE_UPCASE) != 0) {
+                flags |= Config.CASE_MODIFIED;
+                enc.codeToMbc(code - ('a' - 'A'), bytes, p);
+            } else if ('A' <= code && code <= 'Z' && (flags & (Config.CASE_DOWNCASE | Config.CASE_FOLD)) != 0) {
+                flags |= Config.CASE_MODIFIED;
+                enc.codeToMbc(code + ('a' - 'A'), bytes, p);
+            }
+            p += MBCLEN_CHARFOUND_LEN(n);
+            if ((flags & Config.CASE_TITLECASE) != 0) flags ^= Config.CASE_UPCASE | Config.CASE_DOWNCASE | Config.CASE_TITLECASE;
+        }
+        flagsP.value = flags;
     }
 
     public static int encCoderangeClean(int cr) {
@@ -2959,10 +2993,5 @@ public final class StringSupport {
         } catch (UnsupportedCharsetException e) {}
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    public static boolean isUnicode(Encoding enc) {
-        return enc.isUnicode();
     }
 }

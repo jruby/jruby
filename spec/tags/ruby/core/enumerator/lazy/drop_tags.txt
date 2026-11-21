@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#drop value packing of source yields (matches Enumerable#drop) yields a single nil for a zero-argument source yield
+fails:Enumerator::Lazy#drop value packing of source yields (matches Enumerable#drop) yields a packed Array for a multi-argument source yield

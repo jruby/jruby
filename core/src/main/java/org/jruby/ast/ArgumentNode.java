@@ -34,6 +34,8 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 /**
  * Simple Node for named entities.  Things like the name of a method will make a node
@@ -43,12 +45,18 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class ArgumentNode extends Node implements INameNode {
     private final RubySymbol identifier;
     private final int location;
+    private final boolean implicit;
 
     public ArgumentNode(int line, RubySymbol identifier, int location) {
+        this(line, identifier, location, false);
+    }
+
+    public ArgumentNode(int line, RubySymbol identifier, int location, boolean implicit) {
         super(line, false);
 
         this.identifier = identifier;
         this.location = location; // All variables should be depth 0 in this case
+        this.implicit = implicit;
     }
 
     public NodeType getNodeType() {
@@ -66,7 +74,7 @@ public class ArgumentNode extends Node implements INameNode {
      * @return 0 for current scope, 1 for one down, ...
      */
     public int getDepth() {
-        return location >> 16;
+        return unpackHighChar(location);
     }
 
     /**
@@ -76,7 +84,7 @@ public class ArgumentNode extends Node implements INameNode {
      * @return Returns an int offset into storage structure
      */
     public int getIndex() {
-        return location & 0xffff;
+        return unpackLowChar(location);
     }
 
     public RubySymbol getName() {
@@ -85,5 +93,9 @@ public class ArgumentNode extends Node implements INameNode {
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    public boolean isImplicit() {
+        return implicit;
     }
 }

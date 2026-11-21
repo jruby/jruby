@@ -38,6 +38,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 
@@ -47,6 +48,21 @@ import org.jruby.runtime.ivars.MethodData;
 public class AttrReaderMethod extends JavaMethodZero {
     private MethodData methodData;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
+    private String file;
+    private int line;
+
+    private boolean fromRuby;
+
+    /**
+     * @param fromRuby whether Ruby code called attr_* to make this method, rather than Java code
+     */
+    public void setFromRuby(boolean fromRuby) {
+        this.fromRuby = fromRuby;
+    }
+
+    public boolean isFromRuby() {
+        return fromRuby;
+    }
 
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
         super(implementationClass, visibility, variableName);
@@ -66,6 +82,27 @@ public class AttrReaderMethod extends JavaMethodZero {
     
     public String getVariableName() {
         return name;
+    }
+
+    /**
+     * Record where the attribute was declared, for source_location.
+     *
+     * @param file the file of the attr_* call
+     * @param line its 0-based line
+     */
+    public void setSourcePosition(String file, int line) {
+        this.file = file;
+        this.line = line;
+    }
+
+    @Override
+    public String getSourceFile() {
+        return file == null ? null : TraceType.maskInternalFiles(file);
+    }
+
+    @Override
+    public int getSourceLine() {
+        return file == null ? -1 : line + 1;
     }
 
     private VariableAccessor verifyAccessor(RubyClass cls) {
@@ -88,11 +125,5 @@ public class AttrReaderMethod extends JavaMethodZero {
     @Override
     public Collection<String> getInstanceVariableNames() {
         return Collections.singletonList(name);
-    }
-
-    // Used by racc extension, needed for backward-compat with 1.7.
-    @Deprecated(since = "9.0.3.0")
-    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
-        this(implementationClass, visibility, variableName);
     }
 }

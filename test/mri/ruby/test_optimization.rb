@@ -591,7 +591,6 @@ class TestRubyOptimization < Test::Unit::TestCase
   end
 
   def test_tailcall_not_to_grow_stack
-    omit 'currently JIT-ed code always creates a new stack frame' if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
     bug16161 = '[ruby-core:94881]'
 
     tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
@@ -607,11 +606,11 @@ class TestRubyOptimization < Test::Unit::TestCase
   end
 
   class Bug10557
-    def [](_)
+    def [](_, &)
       block_given?
     end
 
-    def []=(_, _)
+    def []=(_, _, &)
       block_given?
     end
   end
@@ -1048,6 +1047,21 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_equal(:ok, x.bug)
   end
 
+  def test_peephole_branch_dup_with_label_after_dup
+    assert_ruby_status [], <<-END
+      src = <<~'SRC'
+        $g&.call&.to_s
+        [*d, [__dir__].each(&:each), C1.value(/ab/o, &b)].each {}
+        begin
+          ((-243 != qux) ? (1..2) : 8i&.value) => ^([1].select(&:to_s))
+        rescue
+          ((-243 != qux) ? (1..2) : 8i&.value) => ^([1].select(&:to_s))
+        end
+      SRC
+      RubyVM::InstructionSequence.compile(src)
+    END
+  end
+
   def test_peephole_jump_after_newarray
     i = 0
     %w(1) || 2 while (i += 1) < 100
@@ -1215,5 +1229,59 @@ class TestRubyOptimization < Test::Unit::TestCase
         puts $!
       end
     RUBY
+  end
+
+  def test_opt_new_with_safe_navigation
+    payload = nil
+    assert_nil payload&.new
+  end
+
+  def test_opt_new
+    pos_initialize = "
+      def initialize a, b
+        @a = a
+        @b = b
+      end
+    "
+    kw_initialize = "
+      def initialize a:, b:
+        @a = a
+        @b = b
+      end
+    "
+    kw_hash_initialize = "
+      def initialize a, **kw
+        @a = a
+        @b = kw[:b]
+      end
+    "
+    pos_prelude = "class OptNewFoo; #{pos_initialize}; end;"
+    kw_prelude = "class OptNewFoo; #{kw_initialize}; end;"
+    kw_hash_prelude = "class OptNewFoo; #{kw_hash_initialize}; end;"
+    [
+      "#{pos_prelude} OptNewFoo.new 1, 2",
+      "#{pos_prelude} a = 1; b = 2; OptNewFoo.new a, b",
+      "#{pos_prelude} def optnew_foo(a, b) = OptNewFoo.new(a, b); optnew_foo 1, 2",
+      "#{pos_prelude} def optnew_foo(*a) = OptNewFoo.new(*a); optnew_foo 1, 2",
+      "#{pos_prelude} def optnew_foo(...) = OptNewFoo.new(...); optnew_foo 1, 2",
+      "#{kw_prelude} def optnew_foo(**a) = OptNewFoo.new(**a); optnew_foo a: 1, b: 2",
+      "#{kw_hash_prelude} def optnew_foo(*a, **b) = OptNewFoo.new(*a, **b); optnew_foo 1, b: 2",
+    ].each do |code|
+      iseq = RubyVM::InstructionSequence.compile(code)
+      insn = iseq.disasm
+      assert_match(/opt_new/, insn)
+      assert_match(/OptNewFoo:.+@a=1, @b=2/, iseq.eval.inspect)
+      # clean up to avoid warnings
+      Object.send :remove_const, :OptNewFoo
+      Object.remove_method :optnew_foo if defined?(optnew_foo)
+    end
+    [
+      'def optnew_foo(&) = OptNewFoo.new(&)',
+      'def optnew_foo(a, ...) = OptNewFoo.new(a, ...)',
+    ].each do |code|
+      iseq = RubyVM::InstructionSequence.compile(code)
+      insn = iseq.disasm
+      assert_no_match(/opt_new/, insn)
+    end
   end
 end

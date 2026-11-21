@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'tempfile'
 require 'stringio'
+require 'openssl'
 
 # Tests for ThreadContext#callInfo not leaking between method calls.
 #
@@ -383,6 +384,44 @@ class TestCallInfo < Test::Unit::TestCase
     err = NoMatchingPatternKeyError.new("test")
     assert_equal "test", err.message
 
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── `(...)` argument forwarding to a native method ─────────────────
+  #
+  # A `(...)` forward (as Forwardable#def_delegator generates on Ruby >= 2.7)
+  # builds the forwarded call with an empty keyword-rest, which sets
+  # CALL_KEYWORD_EMPTY via Helpers#argsPush. When the forward target is a
+  # native method that does not reset callInfo (e.g. jruby-openssl's
+  # OpenSSL::X509::Certificate#to_pem), that flag survives the call and
+  # IRRuntimeHelpers#setCallInfo then preserves it into the NEXT keyword
+  # call, so the next call's keyword hash is treated as a positional arg.
+
+  def self.signed_certificate
+    key = OpenSSL::PKey::RSA.new(2048)
+    cert = OpenSSL::X509::Certificate.new
+    cert.version = 2
+    cert.serial = 1
+    cert.subject = cert.issuer = OpenSSL::X509::Name.parse("/CN=test")
+    cert.public_key = key.public_key
+    cert.not_before = Time.now - 60
+    cert.not_after = Time.now + 60
+    cert.sign(key, OpenSSL::Digest.new("SHA256"))
+    cert
+  end
+
+  def forward_all(o, ...)
+    o.to_pem(...)
+  end
+
+  def test_forward_dots_to_native_method_does_not_leak
+    cert = self.class.signed_certificate
+    forward_all(cert)   # `(...)` forward to a native method; leaks CALL_KEYWORD_EMPTY.
+
+    # The leaked flag is transient (any intervening call resets it), so the
+    # keyword call must come immediately. If callInfo leaked, it raises
+    # ArgumentError: wrong number of arguments (given 2, expected 1).
     v = KwargsReceiver.new(1, k: 2)
     assert_equal [1, 2], [v.a, v.k]
   end

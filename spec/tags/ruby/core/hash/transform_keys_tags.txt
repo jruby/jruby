@@ -1,0 +1,2 @@
+fails:Hash#transform_keys raises TypeError when the given mapping is nil
+fails:Hash#transform_keys! raises TypeError when the given mapping is nil

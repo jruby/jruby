@@ -28,9 +28,6 @@ public interface InstanceVariables {
      */
     boolean hasInstanceVariable(String name);
 
-    @Deprecated(since = "1.7.0")
-    boolean fastHasInstanceVariable(String internedName);
-    
     /**
      * Returns the named instance variable if present, else null. 
      * 
@@ -38,9 +35,6 @@ public interface InstanceVariables {
      * @return the named instance variable if present, else null
      */
     IRubyObject getInstanceVariable(String name);
-
-    @Deprecated(since = "1.7.0")
-    IRubyObject fastGetInstanceVariable(String internedName);
 
     /**
      * Sets the named instance variable to the specified value.
@@ -50,9 +44,6 @@ public interface InstanceVariables {
      * @return value
      */    
     IRubyObject setInstanceVariable(String name, IRubyObject value);
-
-    @Deprecated(since = "1.7.0")
-    IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value);
 
     /**
      * Removes the named instance variable, if present, returning its

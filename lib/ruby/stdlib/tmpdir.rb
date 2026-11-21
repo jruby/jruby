@@ -96,9 +96,9 @@ class Dir
   #
   def self.mktmpdir(prefix_suffix=nil, *rest, **options, &block)
     base = nil
-    path = Tmpname.create(prefix_suffix || "d", *rest, **options) {|_path, _, _, d|
+    path = Tmpname.create(prefix_suffix || "d", *rest, **options) {|path, _, _, d|
       base = d
-      mkdir(_path, 0700)
+      mkdir(path, 0700)
     }
     if block
       begin
@@ -178,7 +178,6 @@ class Dir
         # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
         # path = File.join(tmpdir, path)
         path = File.expand_path(path, tmpdir)
-
         yield(path, n, opts, origdir)
       rescue Errno::EEXIST
         n ||= 0

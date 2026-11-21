@@ -10,6 +10,12 @@ describe "Dir.glob" do
   it_behaves_like :dir_glob_recursive, :glob
 end
 
+ruby_version_is "4.1" do
+  describe "Dir.glob" do
+    it_behaves_like :dir_glob_recursive_symlinks, :glob
+  end
+end
+
 describe "Dir.glob" do
   before :each do
     DirSpecs.create_mock_dirs
@@ -65,6 +71,14 @@ describe "Dir.glob" do
 
   it "matches any files in the current directory with '**' and option File::FNM_DOTMATCH" do
     Dir.glob('**', File::FNM_DOTMATCH).sort.should == DirSpecs.expected_glob_paths
+  end
+
+  it "accepts the flags keyword argument as an alternative to the positional argument" do
+    Dir.glob('**', flags: File::FNM_DOTMATCH).sort.should == DirSpecs.expected_glob_paths
+  end
+
+  it "prefers the keyword argument over the positional flag argument" do
+    Dir.glob('**', :ignored, flags: File::FNM_DOTMATCH).sort.should == DirSpecs.expected_glob_paths
   end
 
   it "recursively matches any subdirectories except './' or '../' with '**/' from the current directory and option File::FNM_DOTMATCH" do
@@ -149,7 +163,7 @@ describe "Dir.glob" do
   it "accepts a block and yields it with each elements" do
     ary = []
     ret = Dir.glob(["file_o*", "file_t*"]) { |t| ary << t }
-    ret.should be_nil
+    ret.should == nil
     ary.should == %w!file_one.ext file_two.ext!
   end
 
@@ -304,6 +318,18 @@ describe "Dir.glob" do
   end
 
   platform_is_not(:windows) do
+    it "keeps a '\\' before a brace with option File::FNM_NOESCAPE" do
+      Dir.mkdir 'foo\}bar'
+      Dir.mkdir 'foo}bar'
+
+      begin
+        Dir.glob('foo\}bar', File::FNM_NOESCAPE).should == %w|foo\\}bar|
+      ensure
+        Dir.rmdir 'foo\}bar'
+        Dir.rmdir 'foo}bar'
+      end
+    end
+
     it "matches the literal character '\\' with option File::FNM_NOESCAPE" do
       Dir.mkdir 'foo?bar'
 
@@ -357,6 +383,25 @@ describe "Dir.glob" do
         subdir_two/nondotfile
       ]
       Dir.glob('**/*/nondotfile').sort.should == expected
+    end
+  end
+
+  it "preserves the encoding of the path" do
+    pattern = "file_one.ext".encode(Encoding::EUC_JP)
+    Dir.glob(pattern).first.encoding.should == Encoding::EUC_JP
+  end
+
+  platform_is_not :windows do
+    it "matches below a directory given as a binary path containing non-ASCII bytes" do
+      dir = tmp("dir_glob_binary_\u{3042}")
+      Dir.mkdir(dir)
+      touch("#{dir}/file.txt")
+
+      begin
+        Dir.glob("#{dir}/*".b).should == ["#{dir}/file.txt".b]
+      ensure
+        rm_r dir
+      end
     end
   end
 end

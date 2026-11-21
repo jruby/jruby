@@ -107,10 +107,6 @@ class MSpecScript
   instance_config = JRuby.runtime.instance_config
 
   if WINDOWS
-    # Some specs on Windows will fail in we launch JRuby via
-    # ruby_exe() in-process (see core/argf/gets_spec.rb)
-    instance_config.run_ruby_in_process = false
-
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
   end
@@ -119,6 +115,11 @@ class MSpecScript
   if instance_config.compile_mode.to_s == "FORCE" ||
       instance_config.jit_threshold == 0
     get(:ci_xtags) << 'jit'
+  end
+
+  # Specs tagged 'debug' need --debug (full trace) and are run by spec:ruby:debug
+  unless org.jruby.util.cli.Options::DEBUG_FULLTRACE.load
+    get(:ci_xtags) << 'debug'
   end
 
   # This set of files is run by mspec ci

@@ -55,24 +55,6 @@ public class StaticScopeFactory {
         return scope;
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names) {
-        if(names == null) {
-            return new StaticScope(type, parent);
-        } else {
-            return new StaticScope(type, parent, names);
-        }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names, int keywordArgIndex) {
-        if(names == null) {
-            return new StaticScope(type, parent);
-        } else {
-            return new StaticScope(type, parent, names, keywordArgIndex);
-        }
-    }
-
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String file, String[] names, int keywordArgIndex) {
         if(names == null) {
             return new StaticScope(type, parent, file);

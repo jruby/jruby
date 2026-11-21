@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -417,10 +418,10 @@ public class RubyStruct extends RubyObject {
 
     /** Create new Structure.
      *
-     * MRI: struct_alloc
      *
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject[], Block)} instead.
      */
+    @CRuby(value = "struct_alloc", file = "struct.c")
     @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args, block);
@@ -721,9 +722,7 @@ public class RubyStruct extends RubyObject {
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
     private static final byte[] STRUCT_END = { ':','.','.','.','>' };
 
-    /** inspect_struct
-    *
-    */
+    @CRuby(value = "inspect_struct", file = "struct.c")
     private RubyString inspectStruct(final ThreadContext context, final boolean recur) {
         RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);
@@ -770,11 +769,6 @@ public class RubyStruct extends RubyObject {
     @Override
     public RubyArray to_a(ThreadContext context) {
         return newArray(context, values);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash to_h(ThreadContext context) {
-        return to_h(context, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
@@ -991,7 +985,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, MarshalDumper output) {
-        output.registerLinkTarget(struct);
+        output.registerObject(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
         RubyArray member = __member__(context, struct.classOf());
@@ -1096,7 +1090,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 0, 0);
+            Arity.checkArgumentCount(context, args, 0, 0);
             return ((RubyStruct)self).get(index);
         }
 
@@ -1125,7 +1119,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 1, 1);
+            Arity.checkArgumentCount(context, args, 1, 1);
             return ((RubyStruct)self).set(context, args[0], index);
         }
 
@@ -1180,12 +1174,6 @@ public class RubyStruct extends RubyObject {
 
     private static StructSites sites(ThreadContext context) {
         return context.sites.Struct;
-    }
-
-    @Deprecated(since = "9.4-")
-    @Override
-    public RubyArray to_a() {
-        return to_a(getCurrentContext());
     }
 
 }

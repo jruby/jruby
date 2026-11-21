@@ -35,6 +35,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
@@ -161,11 +162,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     // Proc class
 
-    @Deprecated(since = "1.6.0")
-    public static RubyProc newProc(Ruby runtime, Block.Type type) {
-        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
-    }
-
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
         // The three valid types of execution here are PROC/LAMBDA/THREAD.  NORMAL should not normally
         // be passed but when it is we just assume it will be a PROC.
@@ -264,7 +260,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private RubyProc procDup() {
-        return newProc(getRuntime(), getMetaClass(), block, type, file, line);
+        return newProc(getRuntime(), getMetaClass().getRealClass(), block, type, file, line);
     }
 
     @Override
@@ -301,10 +297,10 @@ public class RubyProc extends RubyObject implements DataType {
         BlockBody body = block.getBody();
         if (body.isRubyBlock()) {
             Signature signature = body.getSignature();
-            if (signature.hasRest() && !signature.hasKwargs()) {
+            if (signature.hasRest() && !signature.hasKwargs() && signature.post() == 0) {
                 ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
-                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or post arguments or proc does not accept argument splat)");
             }
 
         } else {
@@ -331,19 +327,9 @@ public class RubyProc extends RubyObject implements DataType {
         return asBoolean(context, getBlock().equals(other.block));
     }
 
-    /**
-     * For non-lambdas transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
-     * arity of one, etc.)
-     *
-     * Note: nothing should be calling this any more.
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        if (type == Block.Type.LAMBDA) return args;
-
-        int arityValue = blockBody.getSignature().arityValue();
-        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
-        return args;
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, block.hashCode());
     }
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
@@ -423,8 +409,9 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = "arity")
+    @CRuby(value = "proc_arity", file = "proc.c")
     public RubyFixnum arity(ThreadContext context) {
-        Signature signature = block.getSignature();
+        Signature signature = block.getBody().getAritySignature();
 
         int min = signature.min();
         int max = signature.max();
@@ -517,11 +504,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     private static JavaSites.ProcSites sites(ThreadContext context) {
         return context.sites.Proc;
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
-        return block.call(context, args, passedBlock);
     }
 
     @Deprecated(since = "10.0.0.0")

@@ -368,10 +368,22 @@ public class RubyLexer extends LexingCommon {
     public void heredoc_dedent(Node root) {
         int indent = heredoc_indent;
 
-        if (indent <= 0) return;
+        if (indent > 0) {
+            heredoc_indent = 0;
+            dedent(root, indent);
+        }
 
-        heredoc_indent = 0;
+        // The newline flag only marked where the heredoc's lines start for dedenting; they are not statements.
+        if (root instanceof StrNode) {
+            root.unsetNewline();
+        } else if (root instanceof ListNode list) {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i) instanceof StrNode child) child.unsetNewline();
+            }
+        }
+    }
 
+    private void dedent(Node root, int indent) {
         if (root == null) return;
 
         if (root instanceof StrNode) {
@@ -523,10 +535,20 @@ public class RubyLexer extends LexingCommon {
         flush();
     }
 
+    // Columns of the heredoc identifier (<<~ID) just read, for its token's position; heredocTokenEnd is -1 otherwise
+    private int heredocTokenStart = -1;
+    private int heredocTokenEnd = -1;
+
     public int nextToken() throws IOException {
         token = yylex();
 
         updateTokenPosition();
+        if (heredocTokenEnd >= 0) {
+            // reading the identifier moved on to the end of its line, where the heredoc's body starts
+            start = ProductionState.pack(ruby_sourceline, heredocTokenStart);
+            end = ProductionState.pack(ruby_sourceline, heredocTokenEnd);
+            heredocTokenEnd = -1;
+        }
 
         return token == EOF ? 0 : token;
     }
@@ -772,6 +794,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     private int hereDocumentIdentifier() {
+        int tokenStart = lex_p - lex_pbeg - 2; // the << just read
         int c = nextc(); 
         int term;
         int indent = 0;
@@ -846,6 +869,8 @@ public class RubyLexer extends LexingCommon {
         }
 
         int len = lex_p - lex_pbeg;
+        heredocTokenStart = tokenStart;
+        heredocTokenEnd = len;
         lex_goto_eol();
         lex_strterm = new HeredocTerm(markerValue, func, len, ruby_sourceline, lex_lastline);
         heredoc_indent = indent;
@@ -1009,6 +1034,7 @@ public class RubyLexer extends LexingCommon {
                         !IS_lex_state(lex_state, EXPR_LABELED);
                 if (normalArg || IS_lex_state_all(lex_state, EXPR_ARG | EXPR_LABELED)) {
                     if (!normalArg && getLexContext().in_kwarg) {
+                        // normal_newline
                         commandStart = true;
                         setState(EXPR_BEG);
                         return '\n';
@@ -1027,7 +1053,44 @@ public class RubyLexer extends LexingCommon {
                     case '#':
                         pushback(c);
                         continue loop;
-                    case '&':
+                    case 'a': {
+                        if (peek('n') && peek('d', 1) && !isIdentifierChar(peekAt(2))) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case 'o': {
+                        if (peek('r') && !isIdentifierChar(peekAt(1))) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case '|': {
+                        if (peek('|')) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case '&': {
+                        if (peek('&')) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                    }
                     case '.': {
                         if (peek('.') == (c == '&')) {
                             pushback(c);
@@ -1503,6 +1566,18 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(ruby_sourceline, ref);
             return tNTH_REF;
         case '0':
+            int c2 = nextc();
+            if (isIdentifierChar(c2)) {
+                // $0<ident-chars> e.g. $01234 is invalid
+                StringBuilder name = new StringBuilder("$0");
+                do {
+                    name.append((char) c2);
+                    c2 = nextc();
+                } while (isIdentifierChar(c2));
+                pushback(c2);
+                compile_error("'" + name + "' is not allowed as a global variable name");
+            }
+            pushback(c2);
             return identifierToken(tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
@@ -1664,7 +1739,7 @@ public class RubyLexer extends LexingCommon {
 
                 if (keyword.id0 == keyword_do) return doKeyword(state);
 
-                if (IS_lex_state(state, EXPR_BEG|EXPR_LABELED)) {
+                if (IS_lex_state(state, EXPR_BEG|EXPR_LABELED|EXPR_CLASS)) {
                     return keyword.id0;
                 } else {
                     if (keyword.id0 != keyword.id1) setState(EXPR_BEG|EXPR_LABEL);
@@ -1944,6 +2019,11 @@ public class RubyLexer extends LexingCommon {
         return warn_balanced(c, spaceSeen, '+', "+", "unary operator");
     }
     
+    // A character literal is a String literal, so it is frozen, chilled or mutable like one
+    private StrNode charLiteral(ByteList value) {
+        return new StrNode(ruby_sourceline, value, StringSupport.codeRangeScan(value.getEncoding(), value), parser.getStringStyle());
+    }
+
     private int questionMark() throws IOException {
         int c;
         
@@ -1991,7 +2071,7 @@ public class RubyLexer extends LexingCommon {
             return '?';
         } else if (!isASCII(c)) {
             if (!tokadd_mbchar(c)) return EOF;
-            yaccValue = new StrNode(ruby_sourceline, createTokenByteList(1));
+            yaccValue = charLiteral(createTokenByteList(1));
             setState(EXPR_END);
             return tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
@@ -2015,20 +2095,19 @@ public class RubyLexer extends LexingCommon {
                 }
                 
                 setState(EXPR_END);
-                yaccValue = new StrNode(ruby_sourceline, oneCharBL);
+                yaccValue = charLiteral(oneCharBL);
                 
                 return tCHAR;
             } else {
                 c = readEscape();
             }
-        } else {
-            newtok(true);
         }
+        // No newtok: the token starts at its ?, which newtok would move past
 
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.setEncoding(getEncoding());
         oneCharBL.append(c);
-        yaccValue = new StrNode(ruby_sourceline, oneCharBL);
+        yaccValue = charLiteral(oneCharBL);
         setState(EXPR_END);
         return tCHAR;
     }

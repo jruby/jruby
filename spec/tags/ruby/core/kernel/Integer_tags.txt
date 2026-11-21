@@ -1,2 +1,10 @@
 fails:Kernel.Integer ignores the base if it is not an integer and does not respond to #to_i
 fails:Kernel#Integer ignores the base if it is not an integer and does not respond to #to_i
+fails:Kernel.Integer raises a TypeError when to_int returns not-an-Integer object and to_i returns nil
+fails:Kernel.Integer raises a TypeError if to_i returns a value that is not an Integer
+fails:Kernel.Integer raises a TypeError if no to_int or to_i methods exist
+fails:Kernel.Integer raises a TypeError if to_int returns nil and no to_i exists
+fails:Kernel#Integer raises a TypeError when to_int returns not-an-Integer object and to_i returns nil
+fails:Kernel#Integer raises a TypeError if to_i returns a value that is not an Integer
+fails:Kernel#Integer raises a TypeError if no to_int or to_i methods exist
+fails:Kernel#Integer raises a TypeError if to_int returns nil and no to_i exists

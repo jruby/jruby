@@ -1,0 +1,14 @@
+fails:String#strip when given character selectors arguments removes leading and trailing characters in the intersection of sets removed
+fails:String#strip when given character selectors arguments negates sets starting with ^
+fails:String#strip when given character selectors arguments removes leading and trailing characters in a sequence
+fails:String#strip when given character selectors arguments removes leading and trailing multibyte characters
+fails:String#strip when given character selectors arguments respects backslash for escaping
+fails:String#strip when given character selectors arguments tries to convert each argument to a string using to_str
+fails:String#strip when given character selectors arguments raises a TypeError when an argument can't be converted to a string
+fails:String#strip when given character selectors arguments returns String instances when called on a subclass
+fails:String#strip when given character selectors arguments returns a String in the same encoding as self
+fails:String#strip when given character selectors arguments raises an Encoding::CompatibilityError when the encodings are incompatible
+fails:String#strip! modifies self in place and returns self
+fails:String#strip! returns nil if no modifications where made
+fails:String#strip! makes a string empty if all characters match given character selectors
+fails:String#strip! raises a FrozenError on a frozen instance that is modified

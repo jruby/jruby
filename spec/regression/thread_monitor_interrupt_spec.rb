@@ -6,7 +6,7 @@ require 'jruby/util'
 describe 'Interrupting a Ruby thread waiting on a Java monitor' do
   [:kill, :raise, :wakeup].product([0, 1]).each do |operation, index|
     it "delivers #{operation} to waiter #{index} when the monitor is shared" do
-      monitor = Object.new
+      monitor = java.lang.Object.new
       ready = Queue.new
       resumed = Queue.new
       raised = Queue.new
@@ -21,7 +21,7 @@ describe 'Interrupting a Ruby thread waiting on a Java monitor' do
               JRuby::Util.synchronized(monitor) do
                 ready << true
                 until stopped
-                  JRuby.reference(Thread.current).wait_timeout(monitor, nil)
+                  JRuby.reference(Thread.current).wait_for_object(monitor)
                   resumed << Thread.current
                 end
               end
@@ -56,7 +56,7 @@ describe 'Interrupting a Ruby thread waiting on a Java monitor' do
       ensure
         JRuby::Util.synchronized(monitor) do
           stopped = true
-          JRuby::Util.notify_all(monitor)
+          monitor.notify_all
         end
         threads.each { |thread| thread.kill; thread.join(5) }
       end

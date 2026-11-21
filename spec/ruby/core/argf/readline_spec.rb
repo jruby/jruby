@@ -17,7 +17,7 @@ describe "ARGF.readline" do
 
   it "raises an EOFError when reaching end of files" do
     argf [@file1, @file2] do
-      -> { while @argf.readline; end }.should raise_error(EOFError)
+      -> { while @argf.readline; end }.should.raise(EOFError)
     end
   end
 end
@@ -41,13 +41,13 @@ describe "ARGF.readline when reading $stdin and $stdin is not an IO" do
     $stdin = StringIO.new("a\n")
     argf = ARGF.class.new
     argf.readline.should == "a\n"
-    -> { argf.readline }.should raise_error(EOFError)
+    -> { argf.readline }.should.raise(EOFError)
   end
 
   it "raises NoMethodError when $stdin has no public readline" do
     stdin = Object.new
     def stdin.gets(*) = "line\n"
     $stdin = stdin
-    -> { ARGF.class.new.readline }.should raise_error(NoMethodError)
+    -> { ARGF.class.new.readline }.should.raise(NoMethodError)
   end
 end

@@ -75,13 +75,6 @@ public class LocalContext {
         this.lazy = lazy;
     }
 
-    // This method is used only from ThreadLocalContextProvider.
-    // Other providers should instantialte runtime in their own way.
-    @Deprecated(since = "1.7.20")
-    public Ruby getThreadSafeRuntime() {
-        return getRuntime();
-    }
-
     public BiVariableMap getVarMap(LocalContextProvider provider) {
         checkTerminated();
 

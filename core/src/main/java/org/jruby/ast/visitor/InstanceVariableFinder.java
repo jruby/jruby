@@ -31,7 +31,7 @@ import org.jruby.ast.PreExeNode;
  *
  * @deprecated See {@link RubyModule#discoverInstanceVariables()} for the working version
  */
-@Deprecated
+@Deprecated(since = "10.0.3.0")
 public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
 
     @Override

@@ -26,6 +26,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
@@ -84,7 +85,7 @@ public class RubyChain extends RubyObject {
         return new RubyChain(context.runtime, context.runtime.getChain(), enums);
     }
 
-    // enum_chain_each
+    @CRuby(value = "enum_chain_each", file = "enumerator.c")
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
@@ -108,7 +109,7 @@ public class RubyChain extends RubyObject {
         return self.size(context);
     }
 
-    // enum_chain_rewind
+    @CRuby(value = "enum_chain_rewind", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject rewind(ThreadContext context) {
         for (int i = pos; 0 <= i && pos < enums.length; i--) {
@@ -145,13 +146,13 @@ public class RubyChain extends RubyObject {
         return RubyString.newStringLight(context.runtime, str);
     }
 
-    // enum_chain_size
+    @CRuby(value = "enum_chain_size", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
         return enumChainTotalSize(context, enums);
     }
 
-    // enum_chain_total_size
+    @CRuby(value = "enum_chain_total_size", file = "enumerator.c")
     private static IRubyObject enumChainTotalSize(ThreadContext context, IRubyObject[] args) {
 
         RubyFixnum total = asFixnum(context, 0);

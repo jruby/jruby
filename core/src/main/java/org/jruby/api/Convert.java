@@ -21,6 +21,8 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,6 +41,7 @@ import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Error.floatDomainError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.util.TypeConverter.convertToType;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
 import static org.jruby.util.TypeConverter.sites;
 
@@ -329,13 +332,13 @@ public class Convert {
     }
 
     // FIXME: Create annotation @MRI so we can formalize these comments and provide a dictionary for embedders.
-    // MRI: rb_check_to_integer
     /**
      * Check whether the given object is an Integer or can be converted to an Integer using #to_int.
      * @param context the current thread context
      * @param obj the object to be converted
      * @return the integer value or nil if the object or conversion is not an Integer.
      */
+    @CRuby(value = "rb_check_to_integer", file = "object.c")
     public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
@@ -397,6 +400,24 @@ public class Convert {
         return (int) num;
     }
 
+    public static final long UNSIGNED_INT_MAX = 4_294_967_295L;
+
+    /**
+     * Check to make sure the long num given will fit into an unsigned int, as CRuby's NUM2UINT does. Like CRuby,
+     * this also accepts negative values that fit into an int.
+     *
+     * @param context the current thread context
+     * @param num the long to check
+     * @return the bits of the unsigned int value
+     */
+    @CRuby(value = "check_uint", file = "numeric.c")
+    public static int checkUnsignedInt(ThreadContext context, long num) {
+        if (num < Integer.MIN_VALUE) throw rangeError(context, "integer " + num + " too small to convert to 'unsigned int'");
+        if (num > UNSIGNED_INT_MAX) throw rangeError(context, "integer " + num + " too big to convert to 'unsigned int'");
+
+        return (int) num;
+    }
+
     /**
      * Create a Ruby Boolean from a java boolean.
      * @param context the current thread context
@@ -410,11 +431,11 @@ public class Convert {
     /**
      * Create a Ruby Fixnum from a java long.
      *
-     * MRI: RB_INT2FIX
      * @param context the current thread context
      * @param value the long value
      * @return the Ruby Fixnum
      */
+    @CRuby(value = "RB_INT2FIX", file = "include/ruby/internal/arithmetic/long.h")
     public static RubyFixnum asFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
@@ -426,6 +447,26 @@ public class Convert {
      * @return the Ruby Fixnum
      */
     public static RubyFixnum asFixnum(ThreadContext context, int value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java short.
+     * @param context the current thread context
+     * @param value the short value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, short value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java byte.
+     * @param context the current thread context
+     * @param value the byte value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, byte value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
 
@@ -482,25 +523,116 @@ public class Convert {
         return (byte) toInt(context, arg);
     }
 
-    // MRI: rb_num2dbl and NUM2DBL
     /**
      * Safely convert a Ruby Numeric into a java double value.  Raising if the value will not fit.
      * @param context the current thread context
-     * @param arg the Object to convert
+     * @param val the Object to convert
      * @return the value
      */
-    public static double toDouble(ThreadContext context, IRubyObject arg) {
-        var sites = context.sites;
-        return switch (arg) {
-            case RubyFloat flote -> flote.getValue();
-            case RubyFixnum fixnum when sites.Fixnum.to_f.isBuiltin(fixnum) -> fixnum.asDouble(context);
-            case RubyBignum bignum when sites.Bignum.to_f.isBuiltin(bignum) -> bignum.asDouble(context);
-            case RubyRational rational when sites.Rational.to_f.isBuiltin(rational) -> rational.asDouble(context);
-            case RubyString a -> throw typeError(context, "no implicit conversion to float from string");
-            case RubyNil a -> throw typeError(context, "no implicit conversion to float from nil");
-            case RubyBoolean a -> throw typeError(context, "no implicit conversion to float from " + (arg.isTrue() ? "true" : "false"));
-            default -> ((RubyFloat) TypeConverter.convertToType(arg, floatClass(context), "to_f")).getValue();
-        };
+    @CRuby(value = "rb_num2dbl", file = "object.c")
+    @CRuby(value = "NUM2DBL", file = "include/ruby/internal/arithmetic/double.h")
+    public static double toDouble(ThreadContext context, IRubyObject val) {
+        if (isSpecialConst(context, val)) {
+            switch (val) {
+                case RubyFixnum fixnum when Builtins.checkIntegerToF(context):
+                    return fixnum.asDouble(context);
+                case RubyFloat flote:
+                    return flote.getValue();
+                default:
+                    implicitConversionToFloat(context, val);
+            }
+        } else {
+            switch (val) {
+                case RubyFloat flote:
+                    return flote.getValue();
+                case RubyInteger integer when Builtins.checkIntegerToF(context):
+                    return integer.asDouble(context);
+                case RubyRational rational when Builtins.checkRationalToF(context):
+                    return rational.asDouble(context);
+                case RubyString a:
+                    throw typeError(context, "no implicit conversion to float from string");
+                default:
+                    // slow path below
+            }
+        }
+        return ((RubyFloat) TypeConverter.convertToType(val, floatClass(context), "to_f")).getValue();
+    }
+
+    /**
+     * Convert value to a double with appropriate optimizations and type checks.
+     *
+     * @param context the current thread context
+     * @param val the Object to convert
+     * @return the value
+     */
+    @CRuby(value = "rb_num_to_dbl", file = "object.c")
+    @CRuby(value = "Get_Double", file = "math.c")
+    public static double numToDouble(ThreadContext context, IRubyObject val) {
+        if (isSpecialConst(context, val)) {
+            switch (val) {
+                case RubyFixnum fixnum:
+                    if (Builtins.checkIntegerToF(context)) {
+                        return fixnum.asDouble(context);
+                    }
+                    break;
+                case RubyFloat flote:
+                    return flote.getValue();
+                default:
+                    conversionToFloat(context, val);
+            }
+        } else {
+            switch (val) {
+                case RubyFloat flote:
+                    return flote.getValue();
+                case RubyInteger fixnum:
+                    if (Builtins.checkIntegerToF(context)) {
+                        return fixnum.asDouble(context);
+                    }
+                    break;
+                case RubyRational rational:
+                    if (Builtins.checkRationalToF(context))
+                        return rational.asDouble(context);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return numericToFloat(context, val).getValue();
+    }
+
+    // MRI: SPECIAL_CONST_P, used to identify false and immediate values nil, true, fixnums, flonums, and symbols
+    private static boolean isSpecialConst(ThreadContext context, IRubyObject val) {
+        return val == context.fals || val.isImmediate();
+    }
+
+    // MRI: conversion_to_float
+    private static void conversionToFloat(ThreadContext context, IRubyObject val) {
+        specialConstToFloat(context, val, "can't convert ", " into Float");
+    }
+
+    // MRI: implicit_conversion_to_float
+    private static void implicitConversionToFloat(ThreadContext context, IRubyObject val) {
+        specialConstToFloat(context, val, "no implicit conversion to float from ", "");
+    }
+
+    private static void specialConstToFloat(ThreadContext context, IRubyObject val, String pre, String post) {
+        switch (val) {
+            case RubyNil nil:
+                throw typeError(context, pre + "nil" + post);
+            case RubyBoolean.True tru:
+                throw typeError(context, pre + "true" + post);
+            case RubyBoolean.False fals:
+                throw typeError(context, pre + "false" + post);
+            default:
+        }
+    }
+
+    private static RubyFloat numericToFloat(ThreadContext context, IRubyObject val) {
+        if (!(val instanceof RubyNumeric)) {
+            throw typeError(context, "can't convert " + val.getMetaClass() + " into Float");
+        }
+        return (RubyFloat) convertToTypeWithCheck(context, val, context.runtime.getFloat(), sites(context).to_f_checked);
     }
 
     // MRI: rb_num2long and FIX2LONG (numeric.c)
@@ -516,6 +648,15 @@ public class Convert {
             case RubyFloat flote -> toLong(context, flote);
             case RubyBignum bignum -> toLong(context, bignum);
             default -> toLongOther(context, arg);
+        };
+    }
+
+    public static BigInteger toLongLong(ThreadContext context, IRubyObject arg) {
+        return switch (arg) {
+            case RubyFixnum fixnum -> BigInteger.valueOf(fixnum.getValue());
+            case RubyFloat flote -> BigInteger.valueOf(toLong(context, flote));
+            case RubyBignum bignum -> bignum.getValue();
+            default -> toLongLongOther(context, arg);
         };
     }
 
@@ -544,6 +685,12 @@ public class Convert {
         if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
 
         return toLong(context, TypeConverter.convertToType(arg, integerClass(context), "to_int"));
+    }
+
+    private static BigInteger toLongLongOther(ThreadContext context, IRubyObject arg) {
+        if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
+
+        return toLongLong(context, TypeConverter.convertToType(arg, integerClass(context), "to_int"));
     }
 
     /**
@@ -645,11 +792,11 @@ public class Convert {
     /**
      * Convert the given object to a Symbol, possibly calling to_str in the process.
      *
-     * MRI: rb_to_symbol
      * @param context the current thread context
      * @param arg the object to convert to a symbol
      * @return the new RubySymbol
      */
+    @CRuby(value = "rb_to_symbol", file = "string.c")
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject arg) {
         return RubySymbol.toSymbol(context, arg);
     }

@@ -134,9 +134,12 @@ public interface ValueCompiler {
      *
      * @param begin begin value
      * @param end end value
+     * @param file file containing the range, for frozen string debugging
+     * @param beginLine line of the begin value, for frozen string debugging
+     * @param endLine line of the end value, for frozen string debugging
      * @param exclusive whether this is an exclusive range
      */
-    void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive);
+    void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive);
 
     /**
      * Build and save a literal regular expression.
@@ -237,6 +240,43 @@ public interface ValueCompiler {
     void pushFixnumArray(List<Long> values);
 
     void pushFloatArray(List<Double> values);
+
+    /**
+     * Push a fixnum-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(long value);
+
+    /**
+     * Push a float-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(double value);
+
+    /**
+     * Push a bignum-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(BigInteger value);
+
+    /**
+     * Push a normalized complex literal with a rational imaginary part on the stack.
+     * Numerator and denominator must be coprime, with a positive denominator.
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(BigInteger numerator, BigInteger denominator);
+
+    /**
+     * Push a normalized rational literal on the stack.
+     * Numerator and denominator must be coprime, with a positive denominator.
+     * </p>
+     * Stack required: none
+     */
+    void pushRational(BigInteger numerator, BigInteger denominator);
 
     enum DStringElementType { STRING, OTHER }
     record DStringElement<T>(DStringElementType type, T value) {}

@@ -13,7 +13,7 @@ import org.jruby.ir.operands.OperandType;
  * @author enebo
  */
 interface IRPersistenceValues {
-    public static final int VERSION = 2;
+    public static final int VERSION = 3;
     public final static int TWO_MEGS = 1024 * 1024 * 2;
 
     // Operands and primitive values can be mixed together

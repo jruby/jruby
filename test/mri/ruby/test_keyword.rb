@@ -2424,6 +2424,21 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_raise(ArgumentError) { m.call(42, a: 1, **h2) }
   end
 
+  def test_ruby2_keywords_post_arg
+    def self.a(*c, **kw) [c, kw] end
+    def self.b(*a, b) a(*a, b) end
+    assert_warn(/Skipping set of ruby2_keywords flag for b \(method accepts keywords or post arguments or method does not accept argument splat\)/) do
+      assert_nil(singleton_class.send(:ruby2_keywords, :b))
+    end
+    assert_equal([[{foo: 1}, {bar: 1}], {}], b({foo: 1}, bar: 1))
+
+    b = ->(*a, b){a(*a, b)}
+    assert_warn(/Skipping set of ruby2_keywords flag for proc \(proc accepts keywords or post arguments or proc does not accept argument splat\)/) do
+      b.ruby2_keywords
+    end
+    assert_equal([[{foo: 1}, {bar: 1}], {}], b.({foo: 1}, bar: 1))
+  end
+
   def test_proc_ruby2_keywords
     h1 = {:a=>1}
     foo = ->(*args, &block){block.call(*args)}
@@ -2436,8 +2451,8 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_raise(ArgumentError) { foo.call(:a=>1, &->(arg, **kw){[arg, kw]}) }
     assert_equal(h1, foo.call(:a=>1, &->(arg){arg}))
 
-    [->(){}, ->(arg){}, ->(*args, **kw){}, ->(*args, k: 1){}, ->(*args, k: ){}].each do |pr|
-      assert_warn(/Skipping set of ruby2_keywords flag for proc \(proc accepts keywords or proc does not accept argument splat\)/) do
+    [->(){}, ->(arg){}, ->(*args, x){}, ->(*args, **kw){}, ->(*args, k: 1){}, ->(*args, k: ){}].each do |pr|
+      assert_warn(/Skipping set of ruby2_keywords flag for proc \(proc accepts keywords or post arguments or proc does not accept argument splat\)/) do
         pr.ruby2_keywords
       end
     end
@@ -2790,8 +2805,19 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal(:opt, o.clear_last_opt(a: 1))
     assert_nothing_raised(ArgumentError) { o.clear_last_empty_method(a: 1) }
 
-    assert_warn(/Skipping set of ruby2_keywords flag for bar \(method accepts keywords or method does not accept argument splat\)/) do
+    assert_warn(/Skipping set of ruby2_keywords flag for bar \(method accepts keywords or post arguments or method does not accept argument splat\)/) do
       assert_nil(c.send(:ruby2_keywords, :bar))
+    end
+
+    c.class_eval do
+      def bar_post(*a, x) = nil
+      define_method(:bar_post_bmethod) { |*a, x| }
+    end
+    assert_warn(/Skipping set of ruby2_keywords flag for bar_post \(method accepts keywords or post arguments or method does not accept argument splat\)/) do
+      assert_nil(c.send(:ruby2_keywords, :bar_post))
+    end
+    assert_warn(/Skipping set of ruby2_keywords flag for bar_post_bmethod \(method accepts keywords or post arguments or method does not accept argument splat\)/) do
+      assert_nil(c.send(:ruby2_keywords, :bar_post_bmethod))
     end
 
     utf16_sym = "abcdef".encode("UTF-16LE").to_sym
@@ -4033,7 +4059,7 @@ class TestKeywordArguments < Test::Unit::TestCase
       tap { m }
       GC.start
       tap { m }
-    }, bug8964
+    }, bug8964, timeout: 30
     assert_normal_exit %q{
       prc = Proc.new {|a: []|}
       GC.stress = true
@@ -4242,6 +4268,31 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal(:ok, many_kwargs(d7: :ok)[i], "#{i}: d7"); i+=1
 
     assert_equal(:ok, many_kwargs(e0: :ok)[i], "#{i}: e0"); i+=1
+  end
+
+  def test_many_kwargs_with_integer_refinement
+    assert_separately([], <<~'RUBY')
+      module Ref
+        refine Integer do
+          def ==(other) super; end
+        end
+      end
+
+      # 257 indices guarantee a collision in the 8-bit hint of a small Hash.
+      # Keep both indices above the keyword bitmask limit.
+      indices = (32...289).to_a
+      a, b = indices.combination(2).find { |x, y| (x.hash & 0xff) == (y.hash & 0xff) }
+      expected = (0...289).to_a
+      expected[a] = {}
+      expected[b] = {}
+      params = expected.each_with_index.map { |value, i| "k#{i}: #{value.inspect}" }
+      eval "def victim(#{params.join(', ')}) [#{expected.each_index.map { |i| "k#{i}" }.join(', ')}]; end"
+
+      assert_equal(expected, victim, '[Bug #22335]')
+      assert_equal(expected, victim(k0: 0), '[Bug #22335]')
+      kwargs = {k0: 0}
+      assert_equal(expected, victim(**kwargs), '[Bug #22335]')
+    RUBY
   end
 
   def test_splat_empty_hash_with_block_passing
@@ -4559,6 +4610,64 @@ class TestKeywordArgumentsSymProcRefinements < Test::Unit::TestCase
     assert_equal([], m_bug20570(*[], **nil))
     assert_equal([1], m_bug20570(*[1], **nil))
     assert_equal([1, 2], m_bug20570(*[1, 2], **nil))
+  end
+
+  def test_keyword_only_method_rejects_positional_after_cache_primed_bug_22099
+    c = Class.new do
+      def bar(a: nil, b: nil)
+        [a, b]
+      end
+    end
+    obj = c.new
+
+    # Prime the per-class call cache with a valid keyword-only call.
+    assert_equal([1, 2], obj.bar(a: 1, b: 2))
+
+    # Different call sites with the same argc/flag but a positional argument
+    # must still raise, not reuse the cached keyword-setup fastpath and bind
+    # the positional value to the first keyword.
+    assert_raise(ArgumentError) { obj.bar(99, a: 0) }
+    assert_raise(ArgumentError) { obj.bar(99, b: 0) }
+
+    # The cache must compare argc and keyword count separately, not their sum.
+    assert_raise(ArgumentError) { obj.bar(7, 8, a: 1) }
+  end
+
+  def test_keyword_call_cache_resolves_keywords_by_name_bug_22099
+    c = Class.new do
+      def bar(a: nil, b: nil, cc: nil)
+        [a, b, cc]
+      end
+    end
+    obj = c.new
+
+    # Call sites sharing argc/flag/keyword-count must still bind each keyword
+    # by name (the cached fastpath reads the keyword names from the live call).
+    assert_equal([1, nil, nil], obj.bar(a: 1))
+    assert_equal([nil, 2, nil], obj.bar(b: 2))
+    assert_equal([nil, nil, 3], obj.bar(cc: 3))
+    assert_equal([1, 2, nil], obj.bar(a: 1, b: 2))
+    assert_equal([8, 9, nil], obj.bar(b: 9, a: 8))
+    assert_raise(ArgumentError) { obj.bar(z: 1) }
+  end
+
+  def test_too_many_keywords_rejected_at_compile_time
+    # The per-class call cache stores the keyword count in an unsigned short
+    # (rb_class_cc_entries_entry.kw_len), so a call site or method may not use
+    # more than that many keyword arguments. It is rejected when compiling.
+    max = 65535
+
+    over_def = "def m(" + Array.new(max + 1) {|i| "k#{i}:" }.join(", ") + "); end"
+    err = assert_raise(SyntaxError) { RubyVM::InstructionSequence.compile(over_def) }
+    assert_match(/too many keyword parameters/, err.message)
+
+    over_call = "m(" + Array.new(max + 1) {|i| "k#{i}: 0" }.join(", ") + ")"
+    err = assert_raise(SyntaxError) { RubyVM::InstructionSequence.compile(over_call) }
+    assert_match(/too many keyword arguments/, err.message)
+
+    # The maximum itself is still accepted.
+    ok_def = "def m(" + Array.new(max) {|i| "k#{i}:" }.join(", ") + "); end"
+    assert_nothing_raised(SyntaxError) { RubyVM::InstructionSequence.compile(ok_def) }
   end
 
   private def one

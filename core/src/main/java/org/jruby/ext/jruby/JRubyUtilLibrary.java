@@ -40,13 +40,17 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
+import org.jruby.util.cli.Options;
+import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.*;
@@ -55,7 +59,7 @@ import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
-import static org.jruby.api.Warn.warningDeprecated;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -74,6 +78,11 @@ public class JRubyUtilLibrary implements Library {
                 defineConstant(context, "SEPARATOR", newString(context, org.jruby.util.cli.ArgumentProcessor.SEPARATOR)).
                 defineConstant(context, "ON_WINDOWS", asBoolean(context, org.jruby.platform.Platform.IS_WINDOWS)).
                 defineConstant(context, "ON_SOLARIS", asBoolean(context, org.jruby.platform.Platform.IS_SOLARIS));
+    }
+
+    @JRubyMethod(name = "native_popen?", module = true)
+    public static IRubyObject nativePopen(ThreadContext context, IRubyObject recv) {
+        return asBoolean(context, PopenExecutor.nativePopenAvailable(context.runtime));
     }
 
     @JRubyMethod(module = true)
@@ -112,9 +121,14 @@ public class JRubyUtilLibrary implements Library {
         return asBoolean(context, context.runtime.getPosix().isNative());
     }
 
-    @Deprecated(since = "9.2.1.0")
-    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
-        return class_loader_resources(((RubyBasicObject) recv).getCurrentContext(), recv, name);
+    @JRubyMethod(meta = true, name = "windows?")
+    public static IRubyObject windows_p(ThreadContext context, IRubyObject self) {
+        return asBoolean(context, Platform.IS_WINDOWS);
+    }
+
+    @JRubyMethod(meta = true, name = "native_exec?")
+    public static IRubyObject native_exec_p(ThreadContext context, IRubyObject self) {
+        return asBoolean(context, Options.NATIVE_EXEC.load());
     }
 
     /**
@@ -404,13 +418,6 @@ public class JRubyUtilLibrary implements Library {
         return obj;
     }
 
-    @Deprecated(since = "9.2.0.0") // since 9.2 only loaded with require 'core_ext/string.rb'
-    public static class StringUtils {
-        public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
-            return CoreExt.String.unseeded_hash(context, recv);
-        }
-    }
-
     /**
      * Provide stats on how many method and constant invalidations have occurred globally.
      * This was added for Pry in https://github.com/jruby/jruby/issues/4384
@@ -444,4 +451,17 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject safe_recurse(ThreadContext context, IRubyObject utilModule, IRubyObject state, IRubyObject obj, IRubyObject name, Block block) {
         return context.safeRecurse(block, state, obj, name.convertToString().toString(), false);
     }
+
+    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
+    public static IRubyObject exec_old(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject env = args[0];
+        IRubyObject prog = args[1];
+        IRubyObject options = args[2];
+        var cmdArgs = (RubyArray<?>) args[3];
+
+        if (options instanceof RubyHash) Helpers.checkExecOptions(context, (RubyHash) options);
+
+        return Helpers.execOldCommon(context, env, prog, options, cmdArgs.toJavaArray(context));
+    }
+
 }

@@ -39,9 +39,25 @@ unless Gem.java_platform? # jruby can't require the simple_gem file
       extracted = File.join @destination, "lib/foo.rb"
       assert_path_exist extracted
 
-      mask = 0o100644 & (~File.umask)
+      mask = 0o100644 & ~File.umask
 
       assert_equal mask, File.stat(extracted).mode unless Gem.win_platform?
+    end
+
+    def test_extract_files_rejects_preexisting_symlink_escape
+      omit "Symlinks not supported or not enabled" unless symlink_supported?
+
+      escape_dir = File.join @tempdir, "escape"
+      FileUtils.mkdir_p escape_dir
+
+      File.symlink escape_dir, File.join(@destination, "lib")
+
+      assert_raise Gem::Package::PathError do
+        @package.extract_files @destination
+      end
+
+      assert_path_not_exist File.join(escape_dir, "foo.rb"),
+                            "must not write outside extraction root via symlink"
     end
 
     def test_extract_files_security_policy

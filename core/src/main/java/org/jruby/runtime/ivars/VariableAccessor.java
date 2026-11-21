@@ -65,7 +65,7 @@ public abstract class VariableAccessor {
 
         VarHandle sh;
         try {
-            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", int.class);
+            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", byte.class);
         } catch (Throwable throwable) {
             throw new ExceptionInInitializerError(throwable);
         }
@@ -146,7 +146,7 @@ public abstract class VariableAccessor {
 
     /**
      * Retrieve the variable's value from the given object. This version is
-     * static, allowing it to be more direct, and accepts nnly with
+     * static, allowing it to be more direct, and accepts only
      * RubyBasicObject and subclasses along with the direct index of the
      * variable.
      * 
@@ -190,6 +190,10 @@ public abstract class VariableAccessor {
     @Override
     public String toString() {
         return "ivar:" + getName() + ":" + index;
+    }
+
+    public VariableAccessor cloneFor(RubyClass newRealClass) {
+        throw new UnsupportedOperationException();
     }
 
     /** a dummy accessor that will always return null */

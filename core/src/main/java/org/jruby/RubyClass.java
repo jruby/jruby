@@ -38,12 +38,15 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -60,10 +63,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
@@ -76,7 +79,7 @@ import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -392,13 +395,14 @@ public class RubyClass extends RubyModule {
         return false;
     }
 
-    /** boot_defclass
+    /**
      * Create an initial Object meta class before Module and Kernel dependencies have
      * squirreled themselves together.
      *
      * @param runtime we need it
      * @return a half-baked meta class for object
      */
+    @CRuby(value = "boot_defclass", file = "class.c")
     public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
         RubyClass obj = superClass == null ?
                 new RubyClass(runtime).marshalWith(DEFAULT_OBJECT_MARSHAL) :
@@ -702,9 +706,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name);
     }
 
-    /**
-    * MRI: rb_funcallv_public
-    */
+    @CRuby(value = "rb_funcallv_public", file = "vm_eval.c")
     public IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
         CacheEntry entry = searchWithCache(name);
         DynamicMethod method = entry.method;
@@ -718,8 +720,9 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
-     * MRI: rb_check_funcall
+     * Return null if the method does not exist.
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
         return checkFuncallDefault(context, self, name, IRubyObject.NULL_ARRAY);
     }
@@ -727,8 +730,9 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
-     * MRI: rb_check_funcall
+     * Return null if the method does not exist.
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return checkFuncallDefault(context, self, sites);
     }
@@ -736,8 +740,9 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
-     * MRI: rb_check_funcall
+     * Return null if the method does not exist.
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return checkFuncallDefault(context, self, name, args);
     }
@@ -745,13 +750,14 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
-     * MRI: rb_check_funcall
+     * Return null if the method does not exist.
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return checkFuncallDefault(context, self, sites, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, name)) return null; // return def;
@@ -763,10 +769,10 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, klass, name, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject[] args) {
         final RubyClass klass = this;
-        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+        if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
 
         CacheEntry entry = sites.site.retrieveCache(klass);
         DynamicMethod method = entry.method;
@@ -776,10 +782,10 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, sites.methodName, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         final RubyClass klass = this;
-        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+        if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
 
         CacheEntry entry = sites.site.retrieveCache(klass);
         DynamicMethod method = entry.method;
@@ -789,17 +795,17 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, sites.methodName);
     }
 
-    // MRI: check_funcall_exec
+    @CRuby(value = "check_funcall_exec", file = "vm_eval.c")
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.callMethod(context, "method_missing", ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
-    // MRI: check_funcall_exec
+    @CRuby(value = "check_funcall_exec", file = "vm_eval.c")
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, CallSite methodMissingSite, IRubyObject... args) {
         return methodMissingSite.call(context, self, self, ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
-    // MRI: check_funcall_failed
+    @CRuby(value = "check_funcall_failed", file = "vm_eval.c")
     private static IRubyObject checkFuncallFailed(ThreadContext context, IRubyObject self, String name, RubyClass expClass, IRubyObject... args) {
         if (self.respondsTo(name)) throw context.runtime.newRaiseException(expClass, name);
 
@@ -809,7 +815,7 @@ public class RubyClass extends RubyModule {
     /**
      * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
      *
-     * MRI: check_funcall_respond_to
+     * MRI: check_funcall_respond_to and the dispatch half of vm_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
         CacheEntry entry = klass.searchWithCache("respond_to?");
@@ -819,42 +825,102 @@ public class RubyClass extends RubyModule {
         //       respond_to_missing? Same effect, I believe.
         if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
-        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, asSymbol(context, mid));
+        int argc = respondToArgCountAndWarn(context, klass, recv, me, mid);
+        RubySymbol name = asSymbol(context, mid);
+
+        return (argc == 1 ?
+                me.call(context, recv, entry.sourceModule, "respond_to?", name) :
+                me.call(context, recv, entry.sourceModule, "respond_to?", name, context.tru)).isTrue();
     }
 
     /**
      * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
      *
-     * MRI: check_funcall_respond_to
+     * MRI: check_funcall_respond_to and the dispatch half of vm_respond_to
      */
-    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, RespondToCallSite respondToSite) {
+    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, JavaSites.CheckedSites sites) {
+        RespondToCallSite respondToSite = sites.respond_to_X;
         DynamicMethod me = respondToSite.retrieveCache(klass).method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
         if (me.isUndefined() || me.isBuiltin()) return true;
 
-        int required = me.getSignature().required();
-
-        if (required > 2) throw argumentError(context, "respond_to? must accept 1 or 2 arguments (requires " + required + ")");
-
-        return required == 1 ?
+        return respondToArgCountAndWarn(context, klass, recv, me, sites.methodName) == 1 ?
                 respondToSite.respondsTo(context, recv, recv) :
                 respondToSite.respondsTo(context, recv, recv, true);
     }
 
-    // MRI: check_funcall_callable
+    // MRI: vm_respond_to, minus the dispatch
+    private static int respondToArgCountAndWarn(ThreadContext context, RubyClass klass, IRubyObject recv, DynamicMethod me, String mid) {
+        int argc = respondToArgCount(context, me);
+
+        // Checked up front because building the message calls the receiver's to_s
+        if (argc == 1 && context.runtime.warningsEnabled() && context.runtime.getWarnings().hasDeprecationWarningEnabled()) {
+            boolean singleton = klass.isSingleton();
+            Ruby runtime = context.runtime;
+
+            warnDeprecated(context, str(runtime, singleton ? recv : klass, (singleton ? "." : "#") + "respond_to?(:",
+                    ids(runtime, mid), ") uses the deprecated method signature, which takes one parameter"));
+
+            String file = me.getSourceFile();
+            int line = me.getSourceLine();
+            if (file != null && line > 0) warnDeprecated(context, file, line, "respond_to? is defined here");
+        }
+
+        return argc;
+    }
+
+    /**
+     * How many arguments to pass a user-defined respond_to?. Arity only matters here because these are
+     * the paths that ask about private methods; {@link DynamicMethod#callRespondTo} is the priv-false
+     * counterpart and deliberately uses a different rule.
+     *
+     * MRI: vm_respond_to, the argument count
+     */
+    private static int respondToArgCount(ThreadContext context, DynamicMethod me) {
+        Signature signature = me.getSignature();
+
+        // Optional and rest keywords give MRI a negative arity, so they never reach its one-parameter case.
+        // Required keywords do reach it, but the call raises either way, so they are folded in here.
+        if (!signature.isFixed() || signature.hasKwargs()) return 2;
+
+        int required = signature.required();
+
+        if (required > 2) {
+            throw argumentError(context, "respond_to? must accept 1 or 2 arguments (requires " + required + ")");
+        }
+
+        // Anything else is called with two arguments and left to raise its own arity error, as MRI does.
+        return required == 1 ? 1 : 2;
+    }
+
+    /**
+     * Ask the receiver whether it handles the given method via respond_to_missing?.
+     *
+     * This goes through rb_check_funcall, so it may also call a user-defined respond_to? and, if
+     * respond_to_missing? has been undefined, method_missing.
+     */
+    @CRuby(value = "check_respond_to_missing", file = "vm_insnhelper.c")
+    public static boolean checkRespondToMissing(ThreadContext context, IRubyObject recv, String mid) {
+        IRubyObject result = getMetaClass(recv).finvokeChecked(context, recv, "respond_to_missing?",
+                asSymbol(context, mid), context.fals);
+
+        return result != null && result.isTrue();
+    }
+
+    @CRuby(value = "check_funcall_callable", file = "vm_eval.c")
     static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return rbMethodCallStatus(context, method, callType, self);
     }
 
-    // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
+    @CRuby(value = "rb_method_call_status", file = "vm_eval.c")
     private static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
-    // MRI: check_funcall_missing
+    @CRuby(value = "check_funcall_missing", file = "vm_eval.c")
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
@@ -877,7 +943,7 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    // MRI: check_funcall_missing
+    @CRuby(value = "check_funcall_missing", file = "vm_eval.c")
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, CachingCallSite respondToMissingSite, CachingCallSite methodMissingSite, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
@@ -942,7 +1008,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
-    // MRI: rb_method_basic_definition_p
+    @CRuby(value = "rb_method_basic_definition_p", file = "vm_method.c")
     public boolean checkMethodBasicDefinition(String name) {
         DynamicMethod method = searchMethod(name);
         return method != null && method.isBuiltin();
@@ -1007,17 +1073,15 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, "inherited", subclass, Block.NULL_BLOCK);
     }
 
-    /** rb_class_new_instance
-    *
-    */
-    @JRubyMethod(name = "new", keywords = true)
+    @CRuby(value = "rb_class_new_instance", file = "object.c")
+    @JRubyMethod(name = "new", keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate(context);
         getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", keywords = true)
+    @JRubyMethod(name = "new", keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
         IRubyObject obj = allocate(context);
         getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
@@ -1030,30 +1094,28 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    @JRubyMethod(name = "new", keywords = true)
+    @JRubyMethod(name = "new", keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject obj = allocate(context);
         getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", keywords = true)
+    @JRubyMethod(name = "new", keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         IRubyObject obj = allocate(context);
         getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", rest = true, keywords = true)
+    @JRubyMethod(name = "new", rest = true, keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate(context);
         getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
         return obj;
     }
 
-    /** rb_class_initialize
-     *
-     */
+    @CRuby(value = "rb_class_initialize", file = "object.c")
     @Override
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
@@ -1090,18 +1152,20 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    /** rb_class_init_copy
-     *
+    /**
+     * Class-specific logic for {@link RubyModule#initializeCopiedModule(ThreadContext, IRubyObject)}
      */
-    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        checkNotInitialized(context);
-        if (original == basicObjectClass(context)) throw typeError(context, "can't copy the root class");
-        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
-
-        super.initialize_copy(context, original);
+    public IRubyObject initializeCopiedModule(ThreadContext context, IRubyObject original) {
+        super.initializeCopiedModule(context, original);
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
+
+        // register the copy with its superclass so it shows up in Class#subclasses
+        RubyClass superClazz = superClass;
+        while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
+            superClazz = superClazz.superClass;
+        }
+        if (superClazz != null) superClazz.addSubclass(this);
 
         // copy over reify options
         javaClassConfiguration = originalClazz.javaClassConfiguration == null ? null : originalClazz.javaClassConfiguration.clone();
@@ -1143,7 +1207,7 @@ public class RubyClass extends RubyModule {
         return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
+    private static class SubclassArray extends RubyArrayNative<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
         public SubclassArray(Ruby runtime, int length) {
             super(runtime, length);
         }
@@ -1278,66 +1342,37 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    // These operations also run under the hierarchy monitor. Avoid parking in
+    // ReentrantLock while that monitor pins a virtual-thread carrier on JDK 21.
     static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
-        final ReentrantLock lock = new ReentrantLock();
 
         public WeakRubyClassSet(int size) {
             super(size);
         }
 
         @Override
-        public void addClass(RubyClass klass) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.put(klass, NEVER);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void addClass(RubyClass klass) {
+            super.put(klass, NEVER);
         }
 
         @Override
-        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.forEach(action);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
+            super.forEach(action);
         }
 
         @Override
-        public void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.forEach((klass,v) -> action.accept(context, klass));
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {
+            super.forEach((klass,v) -> action.accept(context, klass));
         }
 
         @Override
-        public void removeClass(RubyClass klass) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.remove(klass);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void removeClass(RubyClass klass) {
+            super.remove(klass);
         }
 
         @Override
-        public boolean isEmptyOfClasses() {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                return super.isEmpty();
-            } finally {
-                lock.unlock();
-            }
+        public synchronized boolean isEmptyOfClasses() {
+            return super.isEmpty();
         }
     }
 
@@ -1410,6 +1445,15 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) getCachedMethods().clear();
 
+        // After a module is prepended to, each hierarchy that already included it gets its own origin holding
+        // the module's methods, and lookups through the origin are cached there. Nothing else invalidates that
+        // origin when the module's methods change, so do it along with the hierarchy that owns it.
+        RubyModule methodLocation = this.methodLocation;
+        if (methodLocation != null && methodLocation != this && isIncluded()) {
+            methodLocation.methodInvalidator.addIfUsed(invalidators);
+            if (!runtime.isBootingCore()) methodLocation.getCachedMethods().clear();
+        }
+
         getSubclassesForRead().forEachClass(invalidators);
     }
 
@@ -1479,9 +1523,7 @@ public class RubyClass extends RubyModule {
     private void checkNotInitialized(ThreadContext context) {
         if (superClass != null || this == basicObjectClass(context)) throw typeError(context, "already initialized class");
     }
-    /** rb_check_inheritable
-     *
-     */
+    @CRuby(value = "rb_check_inheritable", file = "class.c")
     @Deprecated(since = "10.0.0.0")
     public static void checkInheritable(IRubyObject superClass) {
         checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);
@@ -1537,7 +1579,7 @@ public class RubyClass extends RubyModule {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyClass clazz, MarshalDumper output) {
-        output.registerLinkTarget(clazz);
+        output.registerObject(clazz);
         output.writeString(out, MarshalDumper.getPathFromClass(context, clazz).idString());
     }
 
@@ -1569,7 +1611,7 @@ public class RubyClass extends RubyModule {
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             IRubyObject object = (IRubyObject) obj;
 
-            marshalStream.registerLinkTarget(object);
+            marshalStream.registerObject(object);
             marshalStream.dumpVariables(context, out, object);
         }
 
@@ -1796,12 +1838,10 @@ public class RubyClass extends RubyModule {
 
     public PositionAware getPositionOrDefault(DynamicMethod method) {
         if (method instanceof PositionAware) {
-            PositionAware pos = (PositionAware) method;
-            return new SimpleSourcePosition(pos.getFile(), pos.getLine() + 1); // convert from 0-based to 1-based that
-                                                                               // the JVM requires
-        } else {
-            return defaultSimplePosition;
+            PositionAware pos = (PositionAware) method; // convert from 0-based to 1-based that the JVM requires
+            return new SimpleSourcePosition(pos.getFile(), pos.getLine() + 1);
         }
+        return defaultSimplePosition;
     }
 
     private abstract class BaseReificator implements Reificator {
@@ -1811,7 +1851,7 @@ public class RubyClass extends RubyModule {
         public final String javaPath;
         public final String rubyName;
         public final String rubyPath;
-        protected final JavaClassConfiguration jcc;
+        protected final JavaClassConfiguration classConfig;
         protected final ClassWriter cw;
 
         public final static String RUBY_FIELD = "ruby";
@@ -1823,7 +1863,7 @@ public class RubyClass extends RubyModule {
             this.javaPath = javaPath;
             this.rubyName = rubyName;
             this.rubyPath = rubyPath;
-            jcc = getClassConfig();
+            classConfig = getClassConfig();
 
             cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
@@ -1895,7 +1935,7 @@ public class RubyClass extends RubyModule {
             m.aload(2); // rubyclass
             allocAndInitialize(m, false);
 
-            if (jcc.javaConstructable) {
+            if (classConfig.javaConstructable) {
                 // no-arg constructor using static references to Ruby and RubyClass. For use by java
                 m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
                 m.aload(0); // uninitialized this
@@ -1908,16 +1948,16 @@ public class RubyClass extends RubyModule {
         // java can't pass args to normal ruby classes right now, only concrete (below)
         protected void allocAndInitialize(SkinnyMethodAdapter m, boolean initIfAllowed) {
             m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-            if (jcc.callInitialize && initIfAllowed) { // if we want to initialize
+            if (classConfig.callInitialize && initIfAllowed) { // if we want to initialize
                 m.aload(0); // initialized this
-                m.ldc(jcc.javaCtorMethodName);
+                m.ldc(classConfig.javaCtorMethodName);
                 rubycall(m, sig(IRubyObject.class, String.class));
             }
             m.voidreturn();
             m.end();
         }
 
-        public Class[] join(Class[] base, Class... extra) {
+        public static Class[] join(Class[] base, Class... extra) {
             Class[] more = ArraySupport.newCopy(base, base.length + extra.length);
             ArraySupport.copy(extra, more, base.length, extra.length);
             return more;
@@ -1949,8 +1989,8 @@ public class RubyClass extends RubyModule {
         }
 
         private void addClassAnnotations() {
-            if (jcc.classAnnotations != null && !jcc.classAnnotations.isEmpty()) {
-                for (Map.Entry<Class<?>,Map<String,Object>> entry : jcc.classAnnotations.entrySet()) {
+            if (classConfig.classAnnotations != null && !classConfig.classAnnotations.isEmpty()) {
+                for (Map.Entry<Class<?>,Map<String,Object>> entry : classConfig.classAnnotations.entrySet()) {
                     Class<?> annoType = entry.getKey();
                     Map<String,Object> fields = entry.getValue();
 
@@ -1986,7 +2026,7 @@ public class RubyClass extends RubyModule {
             // define class/static methods
             for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 String id = methodEntry.getKey();
-                if (jcc.getExcluded().contains(id)) continue;
+                if (classConfig.getExcluded().contains(id)) continue;
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
@@ -1998,7 +2038,7 @@ public class RubyClass extends RubyModule {
 
                 String signature;
                 if (methodSignature == null) {
-                    if (!jcc.allClassMethods) continue;
+                    if (!classConfig.allClassMethods) continue;
                     Signature sig = methodEntry.getValue().getSignature();
                     // non-signature signature with just IRubyObject
                     if (sig.isNoArguments()) {
@@ -2056,14 +2096,13 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(ThreadContext context, Set<String> instanceMethods) {
             Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 final String id = methodEntry.getKey();
-                final String callid = jcc.renamedMethods.getOrDefault(id, id);
+                final String callid = classConfig.renamedMethods.getOrDefault(id, id);
 
-                if (defined.contains(id) || jcc.getExcluded().contains(id)) continue;
+                if (defined.contains(id) || classConfig.getExcluded().contains(id)) continue;
 
                 defined.add(callid); // id we won't see again, and are only defining java methods named id
                 
@@ -2078,11 +2117,10 @@ public class RubyClass extends RubyModule {
 
                 Class<?>[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
 
-                // for concrete extension, see if the method is one we are overriding,
-                // even if we didn't specify it manually
+                // For concrete extensions, implicit signatures come from overridden Java methods; explicit signatures
+                // are also generated so Ruby methods can expose new Java-visible entry points.
                 if (methodSignature == null) {
-                    // TODO: should inherited search for java mangledName?
-                    for (Class<?>[] sig : searchInheritedSignatures(id, arity)) { // id (vs callid) here as this is searching in java
+                    for (Class<?>[] sig : searchInheritedSignatures(JavaNameMangler.mangleMethodName(id), arity)) {
                         String signature = defineInstanceMethod(context, id, callid, arity, position, sig);
                         if (signature != null) instanceMethods.add(signature);
                     }
@@ -2103,7 +2141,7 @@ public class RubyClass extends RubyModule {
             final String signature;
             SkinnyMethodAdapter m;
             if (methodSignature == null) { // non-signature signature with just IRubyObject
-                if (!jcc.allMethods) return null;
+                if (!classConfig.allMethods) return null;
                 if (sig.isFixed()) {
                     switch (sig.required()) {
                         case 0:
@@ -2183,7 +2221,7 @@ public class RubyClass extends RubyModule {
 
                 signature = sig(methodSignature[0], params);
                 int mod = ACC_PUBLIC;
-                if ( isVarArgsSignature(callid, methodSignature) ) mod |= ACC_VARARGS;
+                if (isVarArgsSignature(methodSignature)) mod |= ACC_VARARGS;
                 m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                 m.line(position.getLine());
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
@@ -2261,13 +2299,11 @@ public class RubyClass extends RubyModule {
             return types.values();
         }
 
-        protected Collection<Class<?>[]> searchClassMethods(Class<?> clz, Signature arity, String id,
-                HashMap<String, Class<?>[]> options) {
-            if (clz.getSuperclass() != null) searchClassMethods(clz.getSuperclass(), arity, id, options);
-            for (Class<?> intf : clz.getInterfaces())
-                searchClassMethods(intf, arity, id, options);
-            for (Method method : clz.getDeclaredMethods()) {
-                // TODO: java <-> ruby conversion?
+        protected Collection<Class<?>[]> searchClassMethods(Class<?> clazz, Signature arity, String id,
+                                                            Map<String, Class<?>[]> options) {
+            if (clazz.getSuperclass() != null) searchClassMethods(clazz.getSuperclass(), arity, id, options);
+            for (Class<?> intf : clazz.getInterfaces()) searchClassMethods(intf, arity, id, options);
+            for (Method method : clazz.getDeclaredMethods()) {
                 if (!method.getName().equals(id)) continue;
                 final int mod = method.getModifiers();
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
@@ -2286,7 +2322,7 @@ public class RubyClass extends RubyModule {
                 Class<?>[] types = join(new Class[] { method.getReturnType() }, method.getParameterTypes());
                 options.put(sig(types), types);
             }
-            // Note: not stable. May flicker between different arities. TODO: sort?
+
             return options.values();
         }
 
@@ -2332,7 +2368,7 @@ public class RubyClass extends RubyModule {
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD,
                     ci(JavaProxyClass.class), null, null);
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD,
-                    ci(JCtorCache.class), null, null);
+                    ci(ConstructorCache.class), null, null);
             return super.reify();
         }
 
@@ -2352,14 +2388,14 @@ public class RubyClass extends RubyModule {
             // extract cached ctors for lookup ordering
 
             // note: consume top of stack, lookuparray
-            m.newobj(p(JCtorCache.class));
+            m.newobj(p(ConstructorCache.class));
             m.dup_x1(); // jccache, lookuparray, jccache
             m.swap();// jccache, jccache, lookuparray
             m.pushInt(2); // ctor fields = index 2
             m.aaload(); // extract ctors, -> jccache, jccache, ctor[]
             m.checkcast(p(JavaConstructor[].class));
-            m.invokespecial(p(JCtorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
-            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            m.invokespecial(p(ConstructorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
+            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(ConstructorCache.class));
 
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
@@ -2424,7 +2460,6 @@ public class RubyClass extends RubyModule {
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
                 if (Modifier.isAbstract(mod) || Modifier.isFinal(mod)) continue;
 
-                // TODO: is args necessary?
                 if (!method.getReturnType().equals(returns)) continue;
                 if (!Arrays.equals(method.getParameterTypes(), params)) continue;
 
@@ -2462,38 +2497,35 @@ public class RubyClass extends RubyModule {
                 final int mod = constructor.getModifiers();
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
                 candidates.add(constructor);
-                if (constructor.getParameterCount() == 0) zeroArg = Optional.of(constructor); // TODO: varargs?
+                if (constructor.getParameterCount() == 0) zeroArg = Optional.of(constructor);
             }
             boolean isNestedRuby = ReifiedJavaProxy.class.isAssignableFrom(reifiedParent);
 
             // update the source location
-            DynamicMethod methodEntry = searchMethod(jcc.javaCtorMethodName);
+            DynamicMethod methodEntry = searchMethod(classConfig.javaCtorMethodName);
             PositionAware position = getPositionOrDefault(methodEntry);
             cw.visitSource(position.getFile(), null);
-            int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
             Set<String> generatedCtors = new HashSet<>();
 
-            if (candidates.size() > 0) { // TODO: doc: implies javaConstructable?
-                List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
-                for (Constructor<?> constructor : candidates) {
-                    savedCtorsList.add(JavaConstructor.wrap(constructor));
-                }
-                savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
-            } else {
-                // TODO: copy validateArgs
-                // TODO: no ctors = error?
+            if (candidates.isEmpty()) {
                 throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
             }
 
+            List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
+            for (Constructor<?> constructor : candidates) {
+                savedCtorsList.add(JavaConstructor.wrap(constructor));
+            }
+            savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
+
             if (zeroArg.isPresent()) {
                 // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
-                if (!jcc.allCtors) {
+                if (!classConfig.allCtors) {
                     if (!isNestedRuby) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 new Class[0], isNestedRuby));
                     }
 
-                    if (jcc.javaConstructable) {
+                    if (classConfig.javaConstructable) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this,
                                 new Class[0], isNestedRuby));
                     }
@@ -2501,56 +2533,63 @@ public class RubyClass extends RubyModule {
             }
 
             // TODO: remove rubyCtors if IRO is enabled (by default)
-            if (jcc.allCtors && !isNestedRuby) {
+            if (classConfig.allCtors && !isNestedRuby) {
                 for (Constructor<?> constructor : candidates) {
-                    if (jcc.rubyConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
+                    if (classConfig.rubyConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
                             position, true, this, constructor.getParameterTypes(), false));
 
-                    if (jcc.javaConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
+                    if (classConfig.javaConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
                             position, false, this, constructor.getParameterTypes(), false));
 
                 }
             }
 
-            if (jcc.extraCtors != null && jcc.extraCtors.size() > 0) {
-                for (Class<?>[] constructor : jcc.extraCtors) {
+            if (classConfig.extraCtors != null && classConfig.extraCtors.size() > 0) {
+                for (Class<?>[] constructor : classConfig.extraCtors) {
                     // TODO: support annotations in ctor params
 
-                    if (jcc.rubyConstructable && !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
+                    if (classConfig.rubyConstructable && !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 constructor, isNestedRuby));
                     }
 
-                    if (jcc.javaConstructable && !generatedCtors.contains(sig(void.class, constructor))) {
+                    if (classConfig.javaConstructable && !generatedCtors.contains(sig(void.class, constructor))) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this,
                                 constructor, isNestedRuby));
                     }
                 }
             }
-            if (jcc.IroCtors) {
+            if (classConfig.IroCtors) {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
-                //TODO: Warn for static classe?
                 throw typeError(context, "class " + getName(context) + " doesn't have any exposed java constructors");
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
-            RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, isNestedRuby, this,
-                    savedSuperCtors);
+            RealClassGenerator.makeConcreteConstructorSwitch(cw, position, isNestedRuby, this, savedSuperCtors);
         }
 
         /**
-         * Generates an init barrier. NOT Thread-safe, but hopefully nobody has threads in their constructor? This is
-         * used to ensure that self.to_java is valid if the super ctor calls an abstract method that is re-implemented
-         * by ruby
+         * Generates an init barrier.
+         * NOT Thread-safe, but hopefully nobody has threads in their constructor?
          */
         @Override
         protected void generateObjectBarrier(SkinnyMethodAdapter m) {
-            // For non-concrete things, we check, as this is not a RubyObject
+            // Ensures self.to_java is valid if the super ctor calls a Ruby-implemented abstract method.
+            // if (getObject() == null) setObject(this);
             m.aload(0);
             m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
-            m.aload(0);
-            m.invokevirtual(rubyPath, "ensureThis", sig(void.class, Object.class));
+            m.dup();
+            m.invokevirtual(rubyPath, "getObject", sig(Object.class));
+            org.objectweb.asm.Label skip = new org.objectweb.asm.Label();
+            m.ifnonnull(skip);
+            m.aload(0); // stack: rubyObject, this
+            m.invokevirtual(rubyPath, "setObject", sig(void.class, Object.class)); // stack: (empty)
+            org.objectweb.asm.Label done = new org.objectweb.asm.Label();
+            m.go_to(done);
+            m.label(skip);
+            m.pop(); // discard rubyObject
+            m.label(done);
         }
 
         private void defineInterfaceMethods() {
@@ -2570,9 +2609,7 @@ public class RubyClass extends RubyModule {
 
     } // class ConcreteJavaReifier
 
-    private boolean isVarArgsSignature(final String method, final Class[] methodSignature) {
-        // TODO we should simply detect "java.lang.Object m1(java.lang.Object... args)"
-        // var-args distinguished from  "java.lang.Object m2(java.lang.Object[]  args)"
+    private static boolean isVarArgsSignature(final Class[] methodSignature) {
         return methodSignature.length > 1 && // methodSignature[0] is return value
                methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
@@ -2625,7 +2662,6 @@ public class RubyClass extends RubyModule {
      */
     @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
-        // TODO: error type
         if (reifiedClassJava == Boolean.FALSE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Java class for a Ruby class");
 
         return (Class<? extends ReifiedJavaProxy>) reifiedClass;
@@ -3076,11 +3112,6 @@ public class RubyClass extends RubyModule {
 
     // DEPRECATED METHODS
 
-    @Deprecated(since = "9.1.5.0")
-    public IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
-        return invoke(context, self, name, args, callType, block);
-    }
-
     /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
@@ -3306,127 +3337,6 @@ public class RubyClass extends RubyModule {
     @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  Block block) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, block);
-        }
-        return method.call(context, self, entry.sourceModule, name, block);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject[] args, Block block) {
-        assert args != null;
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, block);
-        }
-        return method.call(context, self, entry.sourceModule, name, args, block);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg, Block block) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, block);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg, block);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1, Block block) { // NOT USED?
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, block);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, block);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, entry.sourceModule, name);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject[] args) {
-        assert args != null;
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, entry.sourceModule, name, args);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg0, arg1);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        CacheEntry entry = searchWithCache(name);
-        DynamicMethod method = entry.method;
-
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
     // OBJECT STATE

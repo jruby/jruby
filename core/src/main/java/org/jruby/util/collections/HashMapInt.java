@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.ObjIntConsumer;
 
 public class HashMapInt<V> {
 
@@ -214,6 +215,15 @@ public class HashMapInt<V> {
             tab[index] = null;
         }
         count = 0;
+    }
+
+    public <T> boolean ifPresent(T state, V key, ObjIntConsumer<T> action) {
+        Entry<V> entry = getEntry(key);
+        if (entry != null) {
+            action.accept(state, entry.value);
+            return true;
+        }
+        return false;
     }
 
     private abstract class HashIterator<T> implements Iterator<T> {

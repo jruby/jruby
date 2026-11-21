@@ -1,1 +1,4 @@
-fails:TracePoint#return_value returns value from :return event
+debug:TracePoint#return_value returns value from :return event
+debug:TracePoint#return_value returns value from :b_return event
+debug:TracePoint#return_value returns value from an explicit return
+debug:TracePoint#return_value raises RuntimeError for events without a return value

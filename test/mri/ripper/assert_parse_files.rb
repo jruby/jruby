@@ -3,8 +3,7 @@ require 'test/unit'
 
 module TestRipper; end
 class TestRipper::Generic < Test::Unit::TestCase
-  # Modified for JRuby
-  SRCDIR = File.expand_path("../../../..", __FILE__)
+  SRCDIR = File.expand_path("../../..", __FILE__)
 
   def assert_parse_files(dir, pattern = "**/*.rb", exclude: nil, gc_stress: GC.stress, test_ratio: nil)
     test_ratio ||= ENV["TEST_RIPPER_RATIO"]&.tap {|s|break s.to_f} || 0.05 # testing all files needs too long time...

@@ -8,7 +8,7 @@ class TestObjectSpace < Test::Unit::TestCase
     line = $1.to_i
     code = <<"End"
     define_method("test_id2ref_#{line}") {\
-      o = ObjectSpace._id2ref(obj.object_id);\
+      o = EnvUtil.suppress_warning { ObjectSpace._id2ref(obj.object_id) }
       assert_same(obj, o, "didn't round trip: \#{obj.inspect}");\
     }
 End
@@ -55,22 +55,51 @@ End
     EOS
   end
 
+  def test_id2ref_geniv_liveness
+    assert_in_out_err(["-W0", "-e", <<~'RUBY'], "", %w(:ok), [])
+      ObjectSpace._id2ref(Object.new.object_id)
+
+      strings1 = 10_000.times.map { String.new(capacity: 80) }
+      strings2 = 10_000.times.map { String.new(capacity: 80) }
+
+      object_ids1 = strings1.map(&:object_id)
+      strings1.clear
+      GC.start(immediate_sweep: false)
+
+      object_ids2 = strings2.map(&:object_id)
+
+      GC.start # finish previous sweep
+
+      strings2_round_trip = object_ids2.map { |id| ObjectSpace._id2ref(id) }
+      strings2.zip(strings2_round_trip).each do |str1, str2|
+        raise unless str1.equal?(str2)
+      end
+      p :ok
+    RUBY
+  end
+
   def test_id2ref_invalid_argument
     msg = /no implicit conversion/
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref(nil)}
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref(false)}
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref(true)}
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref(:a)}
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref("0")}
-    assert_raise_with_message(TypeError, msg) {ObjectSpace._id2ref(Object.new)}
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(nil) } }
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(false) } }
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(true) } }
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(:a) } }
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref("0") } }
+    assert_raise_with_message(TypeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(Object.new) } }
   end
 
   def test_id2ref_invalid_symbol_id
     # RB_STATIC_SYM_P checks for static symbols by checking that the bottom
     # 8 bits of the object is equal to RUBY_SYMBOL_FLAG, so we need to make
     # sure that the bottom 8 bits remain unchanged.
-    msg = /is not symbol id value/
-    assert_raise_with_message(RangeError, msg) { ObjectSpace._id2ref(:a.object_id + 256) }
+    msg = /is not a symbol id value/
+    assert_raise_with_message(RangeError, msg) { EnvUtil.suppress_warning { ObjectSpace._id2ref(:a.object_id + 256) } }
+  end
+
+  def test_id2ref_invalid_object_id
+    invalid_id = Object.new.object_id + 1000
+    assert_raise_with_message(RangeError, "#{invalid_id} is not an id value") { EnvUtil.suppress_warning { ObjectSpace._id2ref(invalid_id) } }
+    assert_raise_with_message(RangeError, "#{2**80} is not an id value") { EnvUtil.suppress_warning { ObjectSpace._id2ref(2**80) } }
   end
 
   def test_count_objects
@@ -94,7 +123,7 @@ End
   end
 
   def test_finalizer
-    assert_in_out_err(["-e", <<-END], "", %w(:ok :ok :ok :ok), [])
+    assert_in_out_err(["-e", <<-END], "", %w(:ok :ok :ok), [])
       a = []
       ObjectSpace.define_finalizer(a) { p :ok }
       b = a.dup
@@ -135,6 +164,25 @@ End
     assert_raise_with_message(ArgumentError, /C\u{3042}/) {
       ObjectSpace.define_finalizer(o, c)
     }
+  end
+
+  def test_finalizer_copy
+    assert_in_out_err(["-e", <<~'RUBY'], "", %w(:ok), [])
+      def fin
+        ids = Set.new
+        ->(id) { puts "object_id (#{id}) reused" unless ids.add?(id) }
+      end
+
+      OBJ = Object.new
+      ObjectSpace.define_finalizer(OBJ, fin)
+      OBJ.freeze
+
+      10.times do
+        OBJ.clone
+      end
+
+      p :ok
+    RUBY
   end
 
   def test_finalizer_with_super
@@ -263,6 +311,21 @@ End
       h = {["foo"]=>nil}
       p Thread.current[:__recursive_key__]
     end;
+  end
+
+  def test_id2ref_table_build
+    assert_separately([], <<-End)
+      10.times do
+        Object.new.object_id
+      end
+
+      GC.start(immediate_mark: false)
+
+      obj = Object.new
+      EnvUtil.suppress_warning do
+        assert_equal obj, ObjectSpace._id2ref(obj.object_id)
+      end
+    End
   end
 
   def test_each_object_singleton_class

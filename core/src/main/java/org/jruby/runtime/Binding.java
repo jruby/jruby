@@ -51,6 +51,7 @@ public class Binding {
 
     public String method;
     public String filename;
+    private boolean filenameSynthetic;
     public int line;
 
     private Visibility visibility;
@@ -148,6 +149,7 @@ public class Binding {
     
     private Binding(Binding other) {
         this(other.self, other.frame, other.visibility, other.dynamicScope, other.method, other.filename, other.line, other.dummyScope);
+        this.filenameSynthetic = other.filenameSynthetic;
     }
 
     /**
@@ -221,7 +223,16 @@ public class Binding {
     }
 
     public void setFile(String filename) {
+        setFile(filename, false);
+    }
+
+    public void setFile(String filename, boolean synthetic) {
         this.filename = filename;
+        this.filenameSynthetic = synthetic;
+    }
+
+    public boolean isFileNameSynthetic() {
+        return filenameSynthetic;
     }
 
     public int getLine() {
@@ -258,7 +269,7 @@ public class Binding {
 
     @Override
     public int hashCode() {
-        return (self == null ? 1 : self.hashCode()) * dynamicScope.hashCode();
+        return (self == null ? 1 : self.hashCode()) * (dynamicScope == null ? 1 : dynamicScope.hashCode());
     }
 
     // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame
@@ -280,42 +291,6 @@ public class Binding {
 
         return evalScopeBinding.evalScope;
     }
-
-    @Deprecated(since = "9.0.0.0")
-    public Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
-        this.self = self;
-        this.frame = frame;
-        this.visibility = visibility;
-        this.dynamicScope = dynamicScope;
-        this.method = backtrace.method;
-        this.filename = backtrace.filename;
-        this.line = backtrace.line;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
-        this.self = frame.getSelf();
-        this.frame = frame;
-        this.visibility = frame.getVisibility();
-        this.dynamicScope = dynamicScope;
-        this.method = backtrace.method;
-        this.filename = backtrace.filename;
-        this.line = backtrace.line;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public BacktraceElement getBacktrace() {
-        return new BacktraceElement(method, filename, line);
-    }
-
-    @Deprecated(since = "9.2.8.0")
-    public static final Binding DUMMY =
-            new Binding(
-                    RubyBasicObject.NEVER,
-                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
-                    new Frame(),
-                    Visibility.PUBLIC);
 
     /**
      * Duplicate this binding and setup the proper cloned instance of the eval scope so that any previously

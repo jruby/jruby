@@ -92,6 +92,7 @@ public class Platform {
         ARM,
         AARCH64,
         LOONGARCH64,
+        RISCV64,
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(LOCALE); }
@@ -157,6 +158,8 @@ public class Platform {
             return CPU.AARCH64;
         } else if ("loongarch64".equals(archString)) {
             return CPU.LOONGARCH64;
+        } else if ("riscv64".equals(archString)) {
+            return CPU.RISCV64;
 	} else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
             String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
@@ -217,6 +220,7 @@ public class Platform {
                 case S390X:
                 case AARCH64:
                 case LOONGARCH64:
+                case RISCV64:
                     dataModel = 64;
                     break;
                 default:

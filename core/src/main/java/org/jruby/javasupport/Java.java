@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -141,7 +140,7 @@ public class Java implements Library {
         RubyClass objectClass = (RubyClass) getProxyClass(context, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
-        loadService(context).load("jruby/java.rb", false);
+        loadService(context).loadFromClassLoader("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         Access.getClass(context, "ArrayJavaProxy").
@@ -173,9 +172,6 @@ public class Java implements Library {
 
         var Java = defineModule(context, "Java").
                 defineMethods(context, Java.class);
-
-        //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
-        //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
 
         // set of utility methods for Java-based proxy objects
         var _JavaProxyMethods = JavaProxyMethods.createJavaProxyMethods(context);
@@ -220,11 +216,6 @@ public class Java implements Library {
     }
 
     public static class OldStyleExtensionInherited {
-        @Deprecated(since = "9.1.0.0")
-        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
-        }
-
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
             return invokeProxyClassInherited(context, self, subclass);
@@ -232,11 +223,6 @@ public class Java implements Library {
     };
 
     public static class NewStyleExtensionInherited {
-        @Deprecated(since = "9.1.0.0")
-        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
-        }
-
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
             JavaInterfaceTemplate.addRealImplClassNew(castAsClass(context, subclass));
@@ -315,11 +301,6 @@ public class Java implements Library {
             return allocateProxy(rawJavaObject, proxyClass);
         }
         return runtime.getNil();
-    }
-
-    @Deprecated(since = "9.4-")
-    public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -453,11 +434,6 @@ public class Java implements Library {
             case "Void" : return Void.class;
         }
         return null;
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -612,11 +588,6 @@ public class Java implements Library {
 
     }
 
-    @Deprecated(since = "9.1.0.0")
-    public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
-        return invokeProxyClassInherited(((RubyBasicObject) clazz).getCurrentContext(), clazz, subclazz);
-    }
-
     private static IRubyObject invokeProxyClassInherited(final ThreadContext context,
         final IRubyObject clazz, final IRubyObject subclazz) {
         final JavaSupport javaSupport = context.runtime.getJavaSupport();
@@ -646,36 +617,10 @@ public class Java implements Library {
                 return context.nil;
             }
         });
-        ///TODO: investigate this, should jcreate! still exist?
 
+        // __jcreate! is the fallback constructor dispatch used by NewMethodReified when no reified Java ctor
+        // is available (e.g. interface-only subclasses); also retained for backwards compatibility.
         subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
-    }
-
-    /**
-     * Used for concrete reified classes. Constructed in generated code (RubyClass)
-     */
-    public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
-
-        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
-        public final JavaConstructor[] constructors;
-        private final List<JavaConstructor> constructorList;
-
-        public JCtorCache(JavaConstructor[] constructors) {
-            this.constructors = constructors;
-            constructorList = Arrays.asList(constructors);
-        }
-
-        public int indexOf(JavaConstructor ctor) {
-            return constructorList.indexOf(ctor);
-        }
-
-        public final ParameterTypes getSignature(int signatureCode) {
-            return cache.get(signatureCode);
-        }
-
-        public final void putSignature(int signatureCode, ParameterTypes callable) {
-            cache.put(signatureCode, callable);
-        }
     }
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
@@ -693,7 +638,7 @@ public class Java implements Library {
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
          */
-        public static int forTypes(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
+        public static int forTypes(Ruby runtime, IRubyObject[] args, ConstructorCache cache) {
             JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
                     args.length, args);
             int index = cache.indexOf(ctor);
@@ -1220,10 +1165,6 @@ public class Java implements Library {
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             return this.packageOrClass;
         }
-
-        @Deprecated(since = "9.4.3.0") @Override
-        public Arity getArity() { return Arity.noArguments(); }
-
     }
 
     static final class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
@@ -1368,42 +1309,6 @@ public class Java implements Library {
         final IRubyObject self, final IRubyObject name) {
         final RubyModule result = getTopLevelProxyOrPackage(context, name.asJavaString(), true);
         return result != null ? result : context.nil;
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
-        return getInstance(runtime, ((JavaObject) java_object).getValue());
-    }
-
-    /**
-     * High-level object conversion utility function 'java_to_primitive' is the low-level version
-     */
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        var context = ((RubyBasicObject) recv).getCurrentContext();
-        try {
-            return JavaUtil.java_to_ruby(context.runtime, object);
-        } catch (RuntimeException e) {
-            context.runtime.getJavaSupport().handleNativeException(e, null);
-            // This point is only reached if there was an exception handler installed.
-            return context.nil;
-        }
-    }
-
-    /**
-     * High-level object conversion utility.
-     */
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.ruby_to_java(recv, object, unusedBlock);
-    }
-
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1831,10 +1736,5 @@ public class Java implements Library {
      */
     public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
         return Modules.isAccessible(member, Java.class);
-    }
-
-    public static JavaObject castToJavaObject(ThreadContext context, IRubyObject newValue) {
-        if (!(newValue instanceof JavaObject)) throw typeError(context, newValue, "a java object");
-        return (JavaObject) newValue;
     }
 }

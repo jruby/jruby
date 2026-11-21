@@ -35,6 +35,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -42,6 +43,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Define;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -152,7 +154,8 @@ public class RubyPathname extends RubyObject {
 
     public static RubyPathname newInstance(ThreadContext context, RubyClass klass, IRubyObject path) {
         RubyPathname pathname = new RubyPathname(context.runtime, klass);
-        return (RubyPathname) pathname.initialize(context, path);
+        pathname.initialize(context, path);
+        return pathname;
     }
 
     public static RubyPathname newInstance(ThreadContext context, IRubyObject path) {
@@ -161,13 +164,12 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
-
-        RubyString str = path.convertToString();
-        if (str.getByteList().indexOf('\0') != -1) throw argumentError(context, "pathname contains null byte");
-
-        setPath((RubyString) str.dup());
-        return this;
+        try {
+            setPath((RubyString) RubyFile.get_path(context, path).dup());
+        } catch (TypeError te) {
+            throw typeError(context, "Pathname.new requires a String, #to_path or #to_str");
+        }
+        return context.nil;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -374,6 +376,11 @@ public class RubyPathname extends RubyObject {
         return fileTest.callMethod(context, "directory?", getPath()).isTrue() ?
                 dirClass(context).callMethod(context, "empty?", getPath()) :
                 fileTest.callMethod(context, "empty?", getPath());
+    }
+
+    @JRubyMethod(name = "lutime")
+    public IRubyObject lutime(ThreadContext context, IRubyObject atime, IRubyObject mtime) {
+        return RubyFile.lutime(context, context.runtime.getFile(), atime, mtime, getPath());
     }
 
     /* Helpers */

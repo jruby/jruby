@@ -87,6 +87,7 @@ public class RubyMatchData extends RubyObject {
     transient RubyRegexp regexp;
     private boolean charOffsetUpdated;
     private Region charOffsets;
+    private boolean busy;
 
     public static RubyClass createMatchDataClass(ThreadContext context, RubyClass Object) {
         return defineClass(context, "MatchData", Object, RubyMatchData::new).
@@ -277,15 +278,13 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    private static final int MATCH_BUSY = ObjectFlags.MATCH_BUSY;
-
     @CRuby(value = "rb_match_busy", file = "re.c")
     public final void use() {
-        flags |= MATCH_BUSY;
+        busy = true;
     }
 
     public final boolean used() {
-        return (flags & MATCH_BUSY) != 0;
+        return busy;
     }
 
     final void check(ThreadContext context) {
@@ -1010,22 +1009,6 @@ public class RubyMatchData extends RubyObject {
      */
     public int numRegs() {
         return regs == null ? 1 : regs.getNumRegs();
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    @Override
-    public RubyArray to_a() {
-        return match_array(getCurrentContext(), 0);
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public IRubyObject op_aref(IRubyObject idx) {
-        return op_aref(getCurrentContext(), idx);
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
-        return op_aref(getCurrentContext(), idx, rest);
     }
 
 }

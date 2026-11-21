@@ -34,6 +34,11 @@ describe "Method#to_proc" do
     end
   end
 
+  it "returns a Proc with arity -2 for a method defined with a Symbol proc" do
+    klass = Class.new { define_method(:m, &:upcase) }
+    klass.new.method(:m).to_proc.arity.should == -2
+  end
+
   it "returns a proc that can be used by define_method" do
     x = +'test'
     to_s = class << x

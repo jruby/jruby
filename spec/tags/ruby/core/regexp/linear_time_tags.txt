@@ -1,1 +1,6 @@
 fails:Regexp.linear_time? returns true for positive lookarounds
+fails:Regexp.linear_time? returns true for positive lookahead
+fails:Regexp.linear_time? returns true for positive lookbehind
+fails:Regexp.linear_time? returns true for negative lookbehind
+fails:Regexp.linear_time? returns true for non-recursive subexpression call
+fails:Regexp.linear_time? returns true for positive lookahead with capture group

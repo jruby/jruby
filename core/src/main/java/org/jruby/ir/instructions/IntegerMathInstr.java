@@ -47,6 +47,8 @@ public class IntegerMathInstr extends TwoOperandResultBaseInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
+        e.encode(getOperand1());
+        e.encode(getOperand2());
         e.encode(op.ordinal());
     }
 

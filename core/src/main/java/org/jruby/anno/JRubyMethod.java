@@ -118,10 +118,4 @@ public @interface JRubyMethod {
      * A list of classes that implement an abstract JRubyMethod, for backtrace purposes.
      */
     Class[] implementers() default {};
-
-    @Deprecated(since = "9.2.0.0")
-    boolean scope() default false;
-
-    @Deprecated(since = "9.2.0.0")
-    boolean backtrace() default false;
 }

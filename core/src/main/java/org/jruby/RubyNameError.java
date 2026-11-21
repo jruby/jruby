@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.api.Convert;
@@ -110,7 +111,7 @@ public class RubyNameError extends RubyStandardError {
             return to_str(context);
         }
 
-        // MRI: name_err_mesg_to_str
+        @CRuby(value = "name_err_mesg_to_str", file = "error.c")
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
             String message = this.message;
@@ -186,7 +187,7 @@ public class RubyNameError extends RubyStandardError {
         // MRI: coercion dance for name error object inspection in name_err_mesg_to_str
         private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
             IRubyObject tmp = tryModuleName(context, object);
-            if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
+            if (tmp == null || tmp.isNil()) tmp = tryInspect(context, object);
             if (tmp == UNDEF) context.clearErrorInfo();
             tmp = TypeConverter.checkStringType(context.runtime, tmp);
             if (tmp.isNil()) tmp = Convert.anyToString(context, object);
@@ -212,7 +213,7 @@ public class RubyNameError extends RubyStandardError {
                     // ignore
                 }
             }
-            return UNDEF;
+            return null;
         }
     }
 

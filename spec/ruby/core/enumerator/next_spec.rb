@@ -13,16 +13,37 @@ describe "Enumerator#next" do
 
   it "raises a StopIteration exception at the end of the stream" do
     3.times { @enum.next }
-    -> { @enum.next }.should raise_error(StopIteration)
+    -> { @enum.next }.should.raise(StopIteration)
   end
 
   it "cannot be called again until the enumerator is rewound" do
     3.times { @enum.next }
-    -> { @enum.next }.should raise_error(StopIteration)
-    -> { @enum.next }.should raise_error(StopIteration)
-    -> { @enum.next }.should raise_error(StopIteration)
+    -> { @enum.next }.should.raise(StopIteration)
+    -> { @enum.next }.should.raise(StopIteration)
+    -> { @enum.next }.should.raise(StopIteration)
     @enum.rewind
     @enum.next.should == 1
+  end
+
+  it "passes keyword arguments on to the method" do
+    obj = Object.new
+    def obj.each_word(word, upcase: false)
+      yield(upcase ? word.upcase : word)
+      yield "#{word}!"
+    end
+
+    enum = obj.enum_for(:each_word, "hi", upcase: true)
+    enum.next.should == "HI"
+    enum.peek.should == "hi!"
+  end
+
+  it "passes a Hash given as a positional argument on as a Hash" do
+    obj = Object.new
+    def obj.each_value(hash, **kw)
+      yield hash, kw
+    end
+
+    obj.enum_for(:each_value, { a: 1 }).next.should == [{ a: 1 }, {}]
   end
 
   it "restarts the enumerator if an exception terminated a previous iteration" do

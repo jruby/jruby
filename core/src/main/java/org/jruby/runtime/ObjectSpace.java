@@ -116,11 +116,6 @@ public class ObjectSpace {
         }
     }
 
-    @Deprecated(since = "1.6.0")
-    public long idOf(IRubyObject rubyObject) {
-        return createAndRegisterObjectId(rubyObject);
-    }
-
     @Deprecated(since = "9.4.10.0")
     public void addFinalizer(IRubyObject object, IRubyObject proc) {
         addFinalizer(((RubyBasicObject) object).getCurrentContext(), object, proc);

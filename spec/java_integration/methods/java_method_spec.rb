@@ -62,7 +62,7 @@ describe "A Java object's java_method method" do
 
   it "calls static methods" do
     expect {
-      import 'java_integration.fixtures.PackageStaticMethod'
+      java_import 'java_integration.fixtures.PackageStaticMethod'
 
       method = PackageStaticMethod.java_class.declared_method_smart :thePackageScopeMethod
       method.accessible = true

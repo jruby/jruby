@@ -1,0 +1,1 @@
+fails:Regexp.compile given a non-String/Regexp raises TypeError if #to_str returns non-String value

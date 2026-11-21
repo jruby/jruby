@@ -63,8 +63,9 @@ public class Config implements ConfigMBean {
         ruby.get().getInstanceConfig().setJitMaxSize(maxSize);
     }
 
+    @Deprecated(since = "10.1.0.0")
     public boolean isRunRubyInProcess() {
-        return ruby.get().getInstanceConfig().isRunRubyInProcess();
+        return false;
     }
 
     public String getCurrentDirectory() {

@@ -157,8 +157,9 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal "twoone", result
     assert_equal 111, $?.exitstatus
 
-    # exit! in one block prevents execution of others
+    # exit! in one block prevents execution of others; exit! doesn't flush, so write through
     result = with_temp_script(%Q{
+      $stdout.sync = true
       at_exit { exit! 1 }
       at_exit { print "one" }
       at_exit { exit! 2 }

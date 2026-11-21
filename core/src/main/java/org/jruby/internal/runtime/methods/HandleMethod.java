@@ -117,11 +117,6 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         this.maker4 = maker4;
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return signature.arity();
-    }
-
     @Override
     public Signature getSignature() {
         return signature;

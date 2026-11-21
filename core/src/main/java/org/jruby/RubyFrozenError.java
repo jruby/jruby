@@ -106,4 +106,11 @@ public class RubyFrozenError extends RubyRuntimeError {
 
         return receiver;
     }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyFrozenError exception = (RubyFrozenError)clone;
+        exception.receiver = receiver;
+    }
 }

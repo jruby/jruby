@@ -1,0 +1,1 @@
+fails:NilClass#^ is an alias of NilClass#|

@@ -13,3 +13,5 @@ windows:Process.kill acceps an Integer as a signal value
 windows:Process.kill calls #to_int to coerce the pid to an Integer
 windows:Process.kill signals multiple processes
 windows:Process.kill returns the number of processes signaled
+fails:Process.kill runs a registered signal handler immediately if called with the current process PID on the main Thread
+fails:Process.kill runs a registered signal handler later on the main Thread if called with the current process PID on a non-main Thread

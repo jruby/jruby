@@ -26,6 +26,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -68,7 +69,7 @@ import static org.jruby.api.Error.rangeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.murmurCombine;
-import static org.jruby.runtime.Helpers.safeHash;
+import static org.jruby.runtime.Helpers.safeHashLong;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
@@ -121,7 +122,7 @@ public class RubyArithmeticSequence extends RubyObject {
         return context.sites.Numeric;
     }
 
-    // arith_seq_each
+    @CRuby(value = "arith_seq_each", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
         IRubyObject c = begin;
@@ -172,13 +173,13 @@ public class RubyArithmeticSequence extends RubyObject {
         return this;
     }
 
-    // arith_seq_first
+    @CRuby(value = "arith_seq_first", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject first(ThreadContext context) {
         return first(context, null);
     }
 
-    // arith_seq_first
+    @CRuby(value = "arith_seq_first", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject first(ThreadContext context, IRubyObject num) {
         IRubyObject b = begin, e = end, s = step;
@@ -296,7 +297,7 @@ public class RubyArithmeticSequence extends RubyObject {
         return b;
     }
 
-    // arith_seq_eq
+    @CRuby(value = "arith_seq_eq", file = "enumerator.c")
     @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
@@ -312,11 +313,11 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        long hash = hashStart(context.runtime, safeHash(context, excludeEnd).getValue());
+        long hash = hashStart(context.runtime, safeHashLong(context, excludeEnd));
 
-        hash = murmurCombine(hash, safeHash(context, begin).getValue());
-        hash = murmurCombine(hash, safeHash(context, end).getValue());
-        hash = murmurCombine(hash, safeHash(context, step).getValue());
+        hash = murmurCombine(hash, safeHashLong(context, begin));
+        hash = murmurCombine(hash, safeHashLong(context, end));
+        hash = murmurCombine(hash, safeHashLong(context, step));
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);
@@ -406,13 +407,13 @@ public class RubyArithmeticSequence extends RubyObject {
         return excludeEnd;
     }
 
-    // arith_seq_last
+    @CRuby(value = "arith_seq_last", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject last(ThreadContext context) {
         return last(context, null);
     }
 
-    // arith_seq_last
+    @CRuby(value = "arith_seq_last", file = "enumerator.c")
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject num) {
         var b = (RubyNumeric) begin;

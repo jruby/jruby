@@ -62,6 +62,27 @@ class TestVariable < Test::Unit::TestCase
     assert_not_equal god.object_id, zeus.object_id
   end
 
+  def test_raw_object_smallest_slot
+    assert_separately([], <<-"end;")
+      require 'objspace'
+      base_size = ObjectSpace.memsize_of(Object.new)
+
+      assert_equal base_size, ObjectSpace.memsize_of(Object.new)
+
+      object = Object.new
+      10.times do |i|
+        object.instance_variable_set("@iv_\#{i}", i)
+      end
+
+      assert_equal base_size, ObjectSpace.memsize_of(Object.new)
+
+      class TestClass
+      end
+
+      assert_equal base_size, ObjectSpace.memsize_of(TestClass.new)
+    end;
+  end
+
   def test_singleton_class_included_class_variable
     c = Class.new
     c.extend(Olympians)
@@ -388,6 +409,61 @@ class TestVariable < Test::Unit::TestCase
     end
   end
 
+  class RemoveIvar
+    class << self
+      attr_reader :ivar
+
+      def add_ivar
+        @ivar = 1
+      end
+    end
+
+    attr_reader :ivar
+
+    def add_ivar
+      @ivar = 1
+    end
+  end
+
+  def add_and_remove_ivar(obj)
+    assert_nil obj.ivar
+    assert_equal 1, obj.add_ivar
+    assert_equal 1, obj.instance_variable_get(:@ivar)
+    assert_equal 1, obj.ivar
+
+    obj.remove_instance_variable(:@ivar)
+    assert_nil obj.ivar
+
+    assert_raise NameError do
+      obj.remove_instance_variable(:@ivar)
+    end
+  end
+
+  def test_remove_instance_variables_object
+    obj = RemoveIvar.new
+    add_and_remove_ivar(obj)
+    add_and_remove_ivar(obj)
+  end
+
+  def test_remove_instance_variables_class
+    add_and_remove_ivar(RemoveIvar)
+    add_and_remove_ivar(RemoveIvar)
+  end
+
+  class RemoveIvarGeneric < Array
+    attr_reader :ivar
+
+    def add_ivar
+      @ivar = 1
+    end
+  end
+
+  def test_remove_instance_variables_generic
+    obj = RemoveIvarGeneric.new
+    add_and_remove_ivar(obj)
+    add_and_remove_ivar(obj)
+  end
+
   class ExIvar < Hash
     def initialize
       @a = 1
@@ -405,6 +481,21 @@ class TestVariable < Test::Unit::TestCase
       # check inline cache for external ivar access
       assert_equal [1, 2, 3], ExIvar.new.ivars
     }
+  end
+
+  def test_exivar_resize_with_compaction_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    objs = 10_000.times.map do
+      ExIvar.new
+    end
+    EnvUtil.under_gc_compact_stress do
+      10.times do
+        x = ExIvar.new
+        x.instance_variable_set(:@resize, 1)
+        x
+      end
+    end
+    objs or flunk
   end
 
   def test_local_variables_with_kwarg
@@ -426,10 +517,53 @@ class TestVariable < Test::Unit::TestCase
   end
 
   def test_local_variables_encoding
-    α = 1
+    α = 1 or flunk
     b = binding
     b.eval("".encode("us-ascii"))
     assert_equal(%i[α b], b.local_variables)
+  end
+
+  def test_genivar_cache
+    bug21547 = '[Bug #21547]'
+    klass = Class.new(Array)
+    instance = klass.new
+    instance.instance_variable_set(:@a1, 1)
+    instance.instance_variable_set(:@a2, 2)
+    Fiber.new do
+      instance.instance_variable_set(:@a3, 3)
+      instance.instance_variable_set(:@a4, 4)
+    end.resume
+    assert_equal 4, instance.instance_variable_get(:@a4), bug21547
+  end
+
+  def test_genivar_cache_free
+    str = +"hello"
+    str.instance_variable_set(:@x, :old_value)
+
+    str.instance_variable_get(:@x) # populate cache
+
+    Fiber.new {
+      str.remove_instance_variable(:@x)
+      str.instance_variable_set(:@x, :new_value)
+    }.resume
+
+    assert_equal :new_value, str.instance_variable_get(:@x)
+  end
+
+  def test_genivar_cache_invalidated_by_gc
+    str = +"hello"
+    str.instance_variable_set(:@x, :old_value)
+
+    str.instance_variable_get(:@x) # populate cache
+
+    Fiber.new {
+      str.remove_instance_variable(:@x)
+      str.instance_variable_set(:@x, :new_value)
+    }.resume
+
+    GC.start
+
+    assert_equal :new_value, str.instance_variable_get(:@x)
   end
 
   private

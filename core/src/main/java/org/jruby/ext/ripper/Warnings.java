@@ -110,17 +110,4 @@ public interface Warnings {
     public abstract void warning(ID id, String message);
     public abstract void warning(ID id, Position position, String message);
     public abstract void warning(ID id, String fileName, int lineNumber, String message);
-    
-    @Deprecated(since = "1.7.4")
-    public abstract void warn(ID id, String message, Object... data);
-    @Deprecated(since = "1.7.4")
-    public abstract void warning(ID id, String message, Object... data);
-    @Deprecated(since = "1.7.4")
-    public abstract void warn(ID id, Position position, String message, Object... data);
-    @Deprecated(since = "1.7.4")
-    public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
-    @Deprecated(since = "1.7.4")
-    public abstract void warning(ID id, Position position, String message, Object... data);
-    @Deprecated(since = "1.7.4")
-    public abstract void warning(ID id, String fileName, int lineNumber, String message, Object...data);
 }

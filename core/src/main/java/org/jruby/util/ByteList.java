@@ -34,10 +34,14 @@ package org.jruby.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,25 +60,23 @@ import org.jruby.runtime.Helpers;
 public class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
+    private static final VarHandle BYTES_AS_LONGS =
+            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
 
     private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
-    // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
-    // until there's new releases we shall keep them public and maybe review other exts using BL's API
-    @Deprecated(since = "9.2.1.0")
-    public byte[] bytes;
-    @Deprecated(since = "9.2.1.0")
-    public int begin;
-    @Deprecated(since = "9.2.1.0")
-    public int realSize;
+    private byte[] bytes;
+    private int begin;
+    private int realSize;
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    transient int hash;
+    private transient int hash;
 
-    transient String stringValue;
+    private transient String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 
@@ -929,10 +931,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         int to = begin + toffset;
         byte[]pa = other.bytes;
         int po = other.begin;
-        int pc = other.realSize;
+        int len = other.realSize;
 
-        while (--pc >= 0) if (ta[to++] != pa[po++]) return false;
-        return true;
+        return Arrays.mismatch(ta, to, to + len, pa, po, po + len) == -1;
     }
 
     /**
@@ -982,20 +983,35 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         int realSize = this.realSize;
         if (realSize != other.realSize) return false;
 
-        int first;
-        int last = realSize;
-        byte buf[] = bytes;
-        byte otherBuf[] = other.bytes;
-
-        // scanning from front and back simultaneously, meeting in
-        // the middle. the object is to get a mismatch as quickly as
-        // possible. alternatives might be: scan from the middle outward
-        // (not great because it won't pick up common variations at the
-        // ends until late) or sample odd bytes forward and even bytes
-        // backward (I like this one, but it's more expensive for
-        // strings that are equal; see sample_equals below).
         int begin = this.begin;
         int otherBegin = other.begin;
+        byte[] buf = bytes;
+        byte[] otherBuf = other.bytes;
+
+        if (realSize < Long.BYTES) return equalShort(buf, begin, otherBuf, otherBegin, realSize);
+
+        // Compare a long (8 bytes) at a time. The last and first longs are checked first, so
+        // strings that differ near either end are rejected quickly, as in equalShort below.
+        // The loop then checks the longs in between. The last long may overlap the one before it.
+        int tail = realSize - Long.BYTES;
+        if ((long) BYTES_AS_LONGS.get(buf, begin + tail) != (long) BYTES_AS_LONGS.get(otherBuf, otherBegin + tail)) return false;
+        if ((long) BYTES_AS_LONGS.get(buf, begin) != (long) BYTES_AS_LONGS.get(otherBuf, otherBegin)) return false;
+        for (int i = Long.BYTES; i < tail; i += Long.BYTES) {
+            if ((long) BYTES_AS_LONGS.get(buf, begin + i) != (long) BYTES_AS_LONGS.get(otherBuf, otherBegin + i)) return false;
+        }
+        return true;
+    }
+
+    // scanning from front and back simultaneously, meeting in
+    // the middle. the object is to get a mismatch as quickly as
+    // possible. alternatives might be: scan from the middle outward
+    // (not great because it won't pick up common variations at the
+    // ends until late) or sample odd bytes forward and even bytes
+    // backward (I like this one, but it's more expensive for
+    // strings that are equal; see sample_equals below).
+    private static boolean equalShort(byte[] buf, int begin, byte[] otherBuf, int otherBegin, int size) {
+        int first;
+        int last = size;
         for (first = -1;
              --last > first && buf[begin + last] == otherBuf[otherBegin + last] &&
                      ++first < last && buf[begin + first] == otherBuf[otherBegin + first] ; ) ;
@@ -1333,9 +1349,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public static int memcmp(final byte[] first, final int firstStart, final int firstLen, final byte[] second, final int secondStart, final int secondLen) {
         if (first == second) return 0;
         final int len =  Math.min(firstLen,secondLen);
-        int offset = -1;
-        for (  ; ++offset < len && first[firstStart + offset] == second[secondStart + offset]; ) ;
-        if (offset < len) {
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset != -1) {
             return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
         }
         return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
@@ -1348,16 +1363,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return -1, 0, 1
      */
     public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int len) {
-        int a = firstStart;
-        int b = secondStart;
-        int tmp;
-
-        for (; len != 0; --len) {
-            if ((tmp = first[a++] - second[b++]) != 0) {
-                return tmp;
-            }
-        }
-        return 0;
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset == -1) return 0;
+        return first[firstStart + offset] - second[secondStart + offset];
     }
 
 

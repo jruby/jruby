@@ -29,9 +29,6 @@
 package org.jruby.ext.monitor;
 
 import org.jruby.Ruby;
-import org.jruby.ext.set.EnumerableExt;
-import org.jruby.ext.set.RubySet;
-import org.jruby.ext.set.RubySortedSet;
 import org.jruby.runtime.load.Library;
 
 public final class MonitorLibrary implements Library {

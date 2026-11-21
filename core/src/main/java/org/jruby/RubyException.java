@@ -37,6 +37,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -132,6 +133,10 @@ public class RubyException extends RubyObject {
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
     }
 
+    public static void raise(ThreadContext context, IRubyObject exception) {
+        RubyKernel.raiseInternal(context, exception, RubyKernel.lastErrorCause(context));
+    }
+
     @JRubyMethod(name = "exception", rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
@@ -188,10 +193,16 @@ public class RubyException extends RubyObject {
         @Override
         public void marshalTo(ThreadContext context, RubyOutputStream out, RubyException exc, RubyClass type,
                               MarshalDumper marshalStream) {
-            marshalStream.registerLinkTarget(exc);
-            marshalStream.dumpVariables(context, out, exc, 2, (marshal, c, o, v, receiver) -> {
+            marshalStream.registerObject(exc);
+            Object _cause = exc.getCause();
+            IRubyObject cause = exc.getCause() instanceof RubyException ? (RubyException) _cause : null;
+            int count = cause == null ? 2 : 3;
+            marshalStream.dumpVariables(context, out, exc, count, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "mesg", v.getMessage());
                 receiver.receive(marshal, c, o, "bt", v.getBacktrace());
+                if (cause != null) {
+                    receiver.receive(marshal, c, o, "cause", cause);
+                }
             });
         }
 
@@ -218,6 +229,10 @@ public class RubyException extends RubyObject {
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
+            if (exc.removeInternalVariable("cause") instanceof RubyException cause) {
+                checkCircularCause(context, exc, cause);
+                exc.setCause(context, cause);
+            }
 
             return exc;
         }
@@ -340,7 +355,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_check_backtrace
+    @CRuby(value = "rb_check_backtrace", file = "error.c")
     private static IRubyObject checkBacktrace(ThreadContext context, IRubyObject obj) {
         if (obj.isNil() || isArrayOfStrings(obj)) {
             return obj;
@@ -351,7 +366,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_location_ary_to_backtrace
+    @CRuby(value = "rb_location_ary_to_backtrace", file = "vm_backtrace.c")
     private BacktraceData locationArrayToBacktrace(IRubyObject ary) {
         if (!(ary instanceof RubyArray array) || array.size() == 0 || asBacktraceLocation(array.eltOk(0)) == null) {
             return null;
@@ -373,7 +388,7 @@ public class RubyException extends RubyObject {
         return new BacktraceData(backtrace);
     }
 
-    // MRI: rb_frame_info_p
+    @CRuby(value = "rb_frame_info_p", file = "vm_backtrace.c")
     private static RubyThread.Location asBacktraceLocation(IRubyObject object) {
         if (object instanceof RubyThread.Location) {
             return (RubyThread.Location) object;
@@ -397,7 +412,7 @@ public class RubyException extends RubyObject {
             case 1 :
                 if (args[0] == this) return this;
                 RubyException ret = (RubyException) rbClone();
-                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
+                ret.initialize(getRuntime().getCurrentContext(), args[0]);
                 return ret;
             default :
                 throw argumentError(getRuntime().getCurrentContext(), "Wrong argument count");
@@ -495,6 +510,18 @@ public class RubyException extends RubyObject {
     }
 
     public void setCause(IRubyObject cause) {
+        setCause(getRuntime().getCurrentContext(), cause);
+    }
+
+    public void setCause(ThreadContext context, IRubyObject cause) {
+        if (cause == this) {
+            this.cause = context.nil;
+            return;
+        }
+
+        if (cause != null && !cause.isNil()) checkCauseType(context, cause);
+        checkCircularCause(context, this, cause);
+
         this.cause = cause;
 
         // don't do anything to throwable for null/nil cause to avoid forcing backtrace
@@ -503,17 +530,27 @@ public class RubyException extends RubyObject {
         if (cause == null || cause.isNil()) return;
 
         Throwable t = toThrowable();
-        Object javaCause;
 
         if (t.getCause() == null) {
-            if (cause instanceof RubyException) {
-                t.initCause(((RubyException) cause).toThrowable());
-            } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
-                t.initCause((Throwable) javaCause);
-            } else {
-                Ruby runtime = getRuntime();
-                throw typeError(runtime.getCurrentContext(), "exception object expected");
+            t.initCause(cause instanceof RubyException causeException ?
+                    causeException.toThrowable() : (Throwable) ((ConcreteJavaProxy) cause).getObject());
+        }
+    }
+
+    static void checkCauseType(ThreadContext context, IRubyObject cause) {
+        if (!(cause instanceof RubyException) &&
+                !(cause instanceof ConcreteJavaProxy proxy && proxy.getObject() instanceof Throwable)) {
+            throw typeError(context, "exception object expected");
+        }
+    }
+
+    static void checkCircularCause(ThreadContext context, IRubyObject exception, IRubyObject cause) {
+        Object c = cause;
+        while (c instanceof RubyException causeException) {
+            if (c == exception) {
+                throw argumentError(context, "circular causes");
             }
+            c = causeException.getCause();
         }
     }
 
@@ -547,6 +584,7 @@ public class RubyException extends RubyObject {
         if (getBacktrace().isNil()) {
             clearBacktraceObject();
             captureBacktrace(context);
+            backtrace.generateBacktrace(context.runtime);
         }
     }
 
@@ -660,10 +698,5 @@ public class RubyException extends RubyObject {
         if (backtrace.backtraceData == null) {
             backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
     }
 }

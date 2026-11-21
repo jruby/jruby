@@ -234,8 +234,6 @@ class TestGemSafeMarshal < Gem::TestCase
   end
 
   def test_link_after_float
-    pend "Marshal.load of links and floats is broken on truffleruby, see https://github.com/oracle/truffleruby/issues/3747" if RUBY_ENGINE == "truffleruby"
-
     a = []
     a << a
     assert_safe_load_as [0.0, a, 1.0, a]
@@ -353,7 +351,19 @@ class TestGemSafeMarshal < Gem::TestCase
 
     unmarshalled_spec = Gem::SafeMarshal.safe_load(Marshal.dump(spec))
 
-    assert_equal ["MIT"], unmarshalled_spec.license
+    assert_equal ["MIT"], unmarshalled_spec.licenses
+    assert_equal "MIT", unmarshalled_spec.license
+
+    spec = Gem::Specification.new do |s|
+      s.name = "hi"
+      s.version = "1.2.3"
+      s.licenses = ["MIT", "GPL2"]
+    end
+
+    unmarshalled_spec = Gem::SafeMarshal.safe_load(Marshal.dump(spec))
+
+    assert_equal ["MIT", "GPL2"], unmarshalled_spec.licenses
+    assert_equal "MIT", unmarshalled_spec.license
   end
 
   def test_gem_spec_unmarshall_required_ruby_rubygems_version
@@ -411,10 +421,10 @@ class TestGemSafeMarshal < Gem::TestCase
     end
     assert_equal e.message, "Unexpected EOF"
 
-    e = assert_raise(Gem::SafeMarshal::Reader::EOFError) do
+    e = assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
       Gem::SafeMarshal.safe_load("\x04\x08[\x06")
     end
-    assert_equal e.message, "Unexpected EOF"
+    assert_equal e.message, "expected 1 elements, but only 0 bytes remain"
 
     e = assert_raise(Gem::SafeMarshal::Reader::EOFError) do
       Gem::SafeMarshal.safe_load("\004\010:\012")
@@ -447,6 +457,43 @@ class TestGemSafeMarshal < Gem::TestCase
     assert_raise(Gem::SafeMarshal::Reader::EOFError) do
       Gem::SafeMarshal.safe_load("\004\010@\377")
     end
+    assert_raise(Gem::SafeMarshal::Reader::NegativeLengthError) do
+      Gem::SafeMarshal.safe_load("\004\010{\325")
+    end
+  end
+
+  def test_length_too_long
+    huge_length = "\x04#{[2_000_000_000].pack("V")}".b
+
+    assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
+      Gem::SafeMarshal.safe_load("\x04\x08[#{huge_length}")
+    end
+    assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
+      Gem::SafeMarshal.safe_load("\x04\x08{#{huge_length}")
+    end
+    assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
+      Gem::SafeMarshal.safe_load("\x04\x08}#{huge_length}")
+    end
+    assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
+      Gem::SafeMarshal.safe_load("\x04\x08I\"\x00#{huge_length}")
+    end
+    assert_raise(Gem::SafeMarshal::Reader::LengthTooLongError) do
+      Gem::SafeMarshal.safe_load("\x04\x08o:\x06C#{huge_length}")
+    end
+
+    # lengths that fit within the remaining input still parse
+    assert_equal [1, 2, 3], Gem::SafeMarshal.safe_load("\x04\x08[\x08i\x06i\ai\x08")
+    assert_equal({ 1 => 2 }, Gem::SafeMarshal.safe_load("\x04\x08{\x06i\x06i\a"))
+  end
+
+  def test_date_user_defined_rejected
+    # Provide string as the inner payload, Date._load passes it raw to rb_marshal_load.
+    inner = Marshal.dump("exploit")
+    payload = "\x04\bu:\tDate" + (inner.bytesize + 5).chr + inner
+    e = assert_raise(Gem::SafeMarshal::Visitors::ToRuby::UnsupportedError) do
+      Gem::SafeMarshal.safe_load(payload)
+    end
+    assert_equal "Unsupported user-defined class Date in marshal stream @ root", e.message
   end
 
   def assert_safe_load_marshal(dumped, additional_methods: [], permitted_ivars: nil, equality: true, marshal_dump_equality: true,

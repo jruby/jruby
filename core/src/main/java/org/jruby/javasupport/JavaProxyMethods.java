@@ -130,7 +130,7 @@ public class JavaProxyMethods {
 
     @JRubyMethod
     public static IRubyObject inspect(ThreadContext context, IRubyObject recv) {
-        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect(context);
+        return recv instanceof RubyBasicObject basic ? basic.hashyInspect(context) : recv.inspect(context);
     }
     
     @JRubyMethod

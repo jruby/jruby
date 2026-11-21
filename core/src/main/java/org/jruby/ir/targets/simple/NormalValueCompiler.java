@@ -5,11 +5,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
+import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -78,7 +80,7 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushSymbolClass() {
         compiler.loadContext();
-        compiler.invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
+        compiler.invokeIRHelper("getSymbol", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushUndefined() {
@@ -199,9 +201,9 @@ public class NormalValueCompiler implements ValueCompiler {
             begin.run();
             end.run();
             if (exclusive) {
-                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
-                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                compiler.adapter.invokestatic(p(RubyRange.class), "newInclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             }
         });
     }
@@ -237,11 +239,11 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
-    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive) {
         cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
             compiler.loadContext();
-            pushFrozenStringUncached(begin, beginCR);
-            pushFrozenStringUncached(end, endCR);
+            pushFrozenStringUncached(begin, beginCR, file, beginLine);
+            pushFrozenStringUncached(end, endCR, file, endLine);
             if (exclusive) {
                 compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
@@ -307,6 +309,55 @@ public class NormalValueCompiler implements ValueCompiler {
         pushRuntime();
         compiler.adapter.ldc(bigintStr);
         compiler.adapter.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, Ruby.class, String.class));
+    }
+
+    @Override
+    public void pushComplex(long value) {
+        cacheValuePermanentlyLoadContext("complex", RubyComplex.class, keyFor("complexFixnum", value), () -> {
+            compiler.loadContext();
+            pushFixnum(value);
+            compiler.invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
+        });
+    }
+
+    @Override
+    public void pushComplex(double value) {
+        cacheValuePermanentlyLoadContext("complex", RubyComplex.class, keyFor("complexFloat", Double.doubleToLongBits(value)), () -> {
+            compiler.loadContext();
+            pushFloat(value);
+            compiler.invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
+        });
+    }
+
+    @Override
+    public void pushComplex(BigInteger value) {
+        cacheValuePermanentlyLoadContext("complex", RubyComplex.class, keyFor("complexBignum", value), () -> {
+            compiler.loadContext();
+            pushBignum(value);
+            compiler.invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
+        });
+    }
+
+    @Override
+    public void pushComplex(BigInteger numerator, BigInteger denominator) {
+        cacheRational(true, numerator, denominator);
+    }
+
+    @Override
+    public void pushRational(BigInteger numerator, BigInteger denominator) {
+        cacheRational(false, numerator, denominator);
+    }
+
+    private void cacheRational(boolean complex, BigInteger numerator, BigInteger denominator) {
+        String name = complex ? "complexRational" : "rational";
+        cacheValuePermanentlyLoadContext(name, complex ? RubyComplex.class : RubyRational.class, keyFor(name, numerator, denominator), () -> {
+            if (complex) compiler.loadContext();
+            compiler.loadContext();
+            compiler.adapter.ldc(numerator.toString());
+            compiler.adapter.ldc(denominator.toString());
+            compiler.invokeIRHelper("newRationalRaw", sig(RubyRational.class, ThreadContext.class, String.class, String.class));
+            if (complex) compiler.invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
+        });
     }
 
     @Override

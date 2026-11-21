@@ -1,13 +1,18 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyFixnum;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
 
 public class XorCallSite extends MonomorphicCallSite {
     public XorCallSite() {
-        super("^");
+        this(CallType.NORMAL);
+    }
+
+    public XorCallSite(CallType callType) {
+        super("^", callType);
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,6 +46,11 @@ public class Create {
         return RubyArray.newArray(context, length);
     }
 
+    public static RubyArrayNative<?> allocNativeArray(ThreadContext context, int length) {
+        // note: this cannot be newBlankArray because packed arrays only exist fully populated.
+        return RubyArrayNative.newArray(context, length);
+    }
+
     /**
      * Create an empty array with a specific allocated size.  This should be used to
      * make an array where you think you know how big the array will be and you plan on
@@ -67,6 +73,10 @@ public class Create {
         return allocArray(context, checkLength(context, length));
     }
 
+    public static RubyArrayNative<?> allocNativeArray(ThreadContext context, long length) {
+        // note: this cannot be newBlankArray because packed arrays only exist fully populated.
+        return allocNativeArray(context, checkLength(context, length));
+    }
 
     /**
      * Create a new array with a single element.
@@ -194,9 +204,9 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newHash(ThreadContext context) {
-        return RubyHash.newHash(context.runtime);
+        return RubyHashLinkedBuckets.newLBHash(context.runtime);
     }
 
     /**
@@ -209,7 +219,7 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newEmptyHash(ThreadContext context) {
         return newSmallHash(context);
     }
@@ -222,9 +232,9 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newSmallHash(ThreadContext context) {
-        return RubyHash.newHash(context.runtime, 1);
+        return RubyHashLinkedBuckets.newLBHash(context.runtime, 1);
     }
 
     /**
@@ -235,9 +245,9 @@ public class Create {
      * @param value the value
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newSmallHash(ThreadContext context, IRubyObject key, IRubyObject value) {
-        RubyHash hash = RubyHash.newHash(context.runtime, 1);
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime, 1);
         hash.fastASetSmall(context.runtime, key, value, true);
         return hash;
     }

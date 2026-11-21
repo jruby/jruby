@@ -10,6 +10,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
@@ -54,7 +55,6 @@ public abstract class LexingCommon {
     public boolean commandStart;
     protected StackState conditionState = new StackState();
     protected StackState cmdArgumentState = new StackState();
-    private ByteList current_arg;
     private Encoding current_enc;
     protected boolean __end__seen = false;
     public boolean eofp = false;
@@ -173,7 +173,7 @@ public abstract class LexingCommon {
     }
 
     protected void updateStartPosition(int column) {
-        this.start = ProductionState.shift_line(ruby_sourceline) | column;
+        this.start = ProductionState.pack(ruby_sourceline, column);
     }
 
     // similar to compile_error where yyloc passes in NULL.
@@ -205,8 +205,13 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), true);
     }
 
+    /**
+     * @param start how many bytes of the current token to leave off its front, such as the ? of a
+     * character literal
+     * @return the rest of the current token
+     */
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding(), false);
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp + start, lex_p - tokp - start, getEncoding(), false);
     }
 
     public String createTokenString(int start) {
@@ -282,10 +287,6 @@ public abstract class LexingCommon {
 
     public StackState getConditionState() {
         return conditionState;
-    }
-
-    public ByteList getCurrentArg() {
-        return current_arg;
     }
 
     public String getCurrentLine() {
@@ -465,6 +466,14 @@ public abstract class LexingCommon {
         return ruby_sourceline + src.getLineOffset();
     }
 
+    /**
+     * The last line read so far. Unlike lineno(), this is past a heredoc that ends the source: lineno() is still on
+     * the line the heredoc started on, until the lexer reads the next line.
+     */
+    public int lastLineno() {
+        return Math.max(ruby_sourceline, heredoc_end) + src.getLineOffset();
+    }
+
     protected void magicCommentEncoding(ByteList encoding) {
         if (!comment_at_top()) return;
 
@@ -556,6 +565,10 @@ public abstract class LexingCommon {
         return peek(c, 0);
     }
 
+    public int peekAt(int n) {
+        return lex_p+n < lex_pend ?  p(lex_p+n) : EOF;
+    }
+
     protected boolean peek(int c, int n) {
         return lex_p+n < lex_pend && p(lex_p+n) == c;
     }
@@ -624,10 +637,6 @@ public abstract class LexingCommon {
         }
 
         return value;
-    }
-
-    public void setCurrentArg(ByteList current_arg) {
-        this.current_arg = current_arg;
     }
 
     // FIXME: This is icky.  Ripper is setting encoding immediately but in Parsers lexer we are not.
@@ -852,36 +861,6 @@ public abstract class LexingCommon {
         }
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public void validateFormalIdentifier(String identifier) {
-        char first = identifier.charAt(0);
-
-        if (Character.isUpperCase(first)) {
-            compile_error("formal argument cannot be a constant");
-        }
-
-        switch(first) {
-            case '@':
-                if (identifier.charAt(1) == '@') {
-                    compile_error("formal argument cannot be a class variable");
-                } else {
-                    compile_error("formal argument cannot be an instance variable");
-                }
-                break;
-            case '$':
-                compile_error("formal argument cannot be a global variable");
-                break;
-            default:
-                // This mechanism feels a tad dicey but at this point we are dealing with a valid
-                // method name at least so we should not need to check the entire string...
-                char last = identifier.charAt(identifier.length() - 1);
-
-                if (last == '=' || last == '?' || last == '!') {
-                    compile_error("formal argument must be local variable");
-                }
-        }
-    }
-
     /**
      * Value of last token (if it is a token which has a value).
      *
@@ -1040,10 +1019,10 @@ public abstract class LexingCommon {
         return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
-    /* MRI: magic_comment_marker */
     /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
      * and once in parseMagicComment.
      */
+    @CRuby(value = "magic_comment_marker", file = "parse.y")
     public static int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
         int len = str.length();

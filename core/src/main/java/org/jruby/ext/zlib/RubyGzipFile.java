@@ -37,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
@@ -146,7 +147,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         enc2 = null;
     }
     
-    // rb_gzfile_ecopts
+    @CRuby(value = "rb_gzfile_ecopts", file = "ext/zlib/zlib.c")
     protected void ecopts(ThreadContext context, IRubyObject opts) {
         if (!opts.isNil()) {
             EncodingUtils.ioExtractEncodingOption(context, this, opts, null);

@@ -368,7 +368,7 @@ class Enumerator
         if ary = JRuby::Type.is_array?(res)
           ary.each { |x| yielder << x }
         elsif res.respond_to?(:each) && res.respond_to?(:force)
-          res.each { |x| yielder << x }
+          res.each { |x| yielder << x; x }
         else
           yielder << res
         end
@@ -381,7 +381,7 @@ class Enumerator
         if ary = JRuby::Type.is_array?(res)
           ary.each { |x| yielder << x }
         elsif res.respond_to?(:each) && res.respond_to?(:force)
-          res.each { |x| yielder << x }
+          res.each { |x| yielder << x; x }
         else
           yielder << res
         end

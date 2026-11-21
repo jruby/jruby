@@ -3,3 +3,5 @@ fails:The `it` parameter raises SyntaxError when block parameters are specified 
 fails:The `it` parameter affects block parameters
 fails:The `it` parameter does not affect binding local variables
 fails:The `it` parameter cannot be mixed with numbered parameters
+fails:The `it` parameter does not affect binding local variables getting
+fails:The `it` parameter does not affect binding local variables setting

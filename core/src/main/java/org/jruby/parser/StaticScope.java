@@ -66,6 +66,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import static org.jruby.util.BitPacker.pack;
 
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.allocArray;
@@ -430,7 +431,7 @@ public class StaticScope implements Serializable, Cloneable {
      * @param name of the variable to find
      * @return index of variable; -1 if it does not exist; -2 if is implicit.
      */
-    public int existsAndNotImplicit(String name) {
+    public int existsOrImplicit(String name) {
         int slot = findVariableName(name);
         if (slot >= 0 && isImplicitVariable(slot)) return IMPLICIT;
         return slot;
@@ -455,14 +456,25 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
-     * Is this name visible to the current scope and not an implicit variable ("it", "_1", etc).
+     * Is this name visible to the current scope as either a variable or an implicit variable
+     *
+     * @param name to be looked for
+     * @return a location where the left-most 16 bits of number of scopes down it is and the
+     * right-most 16 bits represents its index in that scope
+     */
+    public int isDefinedOrImplicit(String name) {
+        return isDefinedOrImplicit(name, 0);
+    }
+
+    /**
+     * Is this name visible to the current scope and not an implicit parameter ("it", "_1", etc).
      *
      * @param name to be looked for
      * @return -1 if it is not defined; -2 if it is implicit; or a location where the left-most 16 bits of number of scopes down it is and the
      * right-most 16 bits represents its index in that scope.
      */
-    public int isDefinedNotImplicit(String name) {
-        return isDefinedNotImplicit(name, 0);
+    public int isDefinedImplicitParameter(String name) {
+        return isDefinedImplicitParameter(name, 0);
     }
 
     /**
@@ -547,11 +559,12 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated collection
      */
     public <T> T collectAllVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
-        return collectVariables(context, collectionFactory, collectionPopulator, null);
+        T collection = collectVariables(context, collectionFactory, collectionPopulator, false, true);
+        return collectVariables(context, (t, i) -> collection, collectionPopulator, true, true);
     }
 
     /**
-     * Populate a deduplicated collection of variable names in scope using the given functions.
+     * Populate a deduplicated collection of non-implicit variable names in scope using the given functions.
      *
      * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
      * names as appropriate.
@@ -562,7 +575,7 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated collection
      */
     public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
-        return collectVariables(context, collectionFactory, collectionPopulator, false);
+        return collectVariables(context, collectionFactory, collectionPopulator, false, true);
     }
 
     /**
@@ -576,42 +589,43 @@ public class StaticScope implements Serializable, Cloneable {
      * @param <T> resulting collection type
      * @return populated collection
      */
-    public <T> T collectImplicitVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
-        return collectVariables(context, collectionFactory, collectionPopulator, true);
+    public <T> T collectImplicitParameters(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, true, false);
     }
 
-    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, Boolean implicit) {
+    private <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, boolean implicit, boolean parents) {
         StaticScope current = this;
 
         T collection = collectionFactory.apply(context, current.variableNamesLength);
 
         HashMap<String, Object> dedup = new HashMap<>();
 
-        while (current.isBlockOrEval) {
-            addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
-            current = current.enclosingScope;
-        }
-
-        // once more for method scope
         addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
+
+        if (parents) {
+            // blocks and evals see the variables of each scope around them, up to and including the first that isn't one
+            while (current.isBlockOrEval) {
+                current = current.enclosingScope;
+                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
+            }
+        }
 
         return collection;
     }
 
-    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, Boolean implicit) {
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, boolean implicit) {
         BitSet implicitVariables = current.implicitVariables;
 
         boolean hasImplicits = implicitVariables != null;
-        boolean filterImplicits = implicit != null;
-        if (filterImplicits && implicit && !hasImplicits) return;
+        if (implicit && !hasImplicits) return;
 
         int variableNamesLength = current.variableNamesLength;
         String[] variableNames = current.variableNames;
 
         for (int i = 0; i < variableNamesLength; i++) {
             if (hasImplicits && implicitVariables.get(i)) {
-                if (filterImplicits && !implicit) continue;
-            } else if (filterImplicits && implicit) continue;
+                if (!implicit) continue;
+            } else if (implicit) continue;
 
             String name = variableNames[i];
             dedup.computeIfAbsent(name, key -> {
@@ -632,7 +646,20 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated RubyArray
      */
     public RubyArray getLocalVariables(ThreadContext context) {
-        return collectAllVariables(
+        return collectVariables(
+                context,
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    /**
+     * Get a Ruby Array of all implicit local variables.
+     *
+     * @param context the current context
+     * @return populated RubyArray
+     */
+    public RubyArray getImplicitParameters(ThreadContext context) {
+        return collectImplicitParameters(
                 context,
                 Create::allocArray,
                 (array, id) -> appendVariableIfValid(context, array, id));
@@ -646,25 +673,32 @@ public class StaticScope implements Serializable, Cloneable {
     public int isDefined(String name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
-            if (slot >= 0) return (depth << 16) | slot;
+            if (slot >= 0) return packLocation(depth, slot);
 
             return enclosingScope.isDefined(name, depth + 1);
         } else {
-            return (depth << 16) | exists(name);
+            return packLocation(depth, exists(name));
         }
     }
 
-    public int isDefinedNotImplicit(String name, int depth) {
-        int slot = existsAndNotImplicit(name);
+    public int isDefinedOrImplicit(String name, int depth) {
+        if (isBlockOrEval) {
+            int slot = existsOrImplicit(name);
+            if (slot == IMPLICIT) return slot;
+
+            if (slot >= 0) return packLocation(depth, slot);
+
+            return enclosingScope.isDefinedOrImplicit(name, depth + 1);
+        } else {
+            return packLocation(depth, existsOrImplicit(name));
+        }
+    }
+
+    public int isDefinedImplicitParameter(String name, int depth) {
+        int slot = existsOrImplicit(name);
         if (slot == IMPLICIT) return slot;
 
-        if (isBlockOrEval) {
-            if (slot >= 0) return (depth << 16) | slot;
-
-            return enclosingScope.isDefinedNotImplicit(name, depth + 1);
-        } else {
-            return (depth << 16) | slot;
-        }
+        return -1;
     }
 
     public AssignableNode addAssign(int line, RubySymbol symbolID, Node value) {
@@ -680,8 +714,8 @@ public class StaticScope implements Serializable, Cloneable {
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(line, symbolID, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(line, symbolID, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnNode(line, symbolID, packLocation(depth, slot), value)
+                    : new LocalAsgnNode(line, symbolID, packLocation(depth, slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
             slot = addVariable(id);
 
@@ -702,11 +736,16 @@ public class StaticScope implements Serializable, Cloneable {
 
         if (slot >= 0) {
             return isBlockOrEval ?
-                    new DVarNode(line, ((depth << 16) | slot), symbolID) :
-                    new LocalVarNode(line, ((depth << 16) | slot), symbolID);
+                    new DVarNode(line, packLocation(depth, slot), symbolID) :
+                    new LocalVarNode(line, packLocation(depth, slot), symbolID);
         }
 
         return isBlockOrEval ? enclosingScope.declare(line, symbolID, depth + 1) : new VCallNode(line, symbolID);
+    }
+
+    private static int packLocation(int depth, int slot) {
+        if (slot < 0) return slot;
+        return pack((char) depth, (char) slot);
     }
 
     /**

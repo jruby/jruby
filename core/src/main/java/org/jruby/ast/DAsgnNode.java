@@ -37,6 +37,8 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 /**
  * An assignment to a dynamic variable (e.g. block scope local variable).
@@ -81,7 +83,7 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
      * @return 0 for current scope, 1 for one down, ...
      */
     public int getDepth() {
-        return location >> 16;
+        return unpackHighChar(location);
     }
     
     /**
@@ -91,7 +93,7 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
      * @return Returns an int offset into storage structure
      */
     public int getIndex() {
-        return location & 0xffff;
+        return unpackLowChar(location);
     }
     
     public List<Node> childNodes() {

@@ -59,6 +59,7 @@ import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -130,6 +131,8 @@ public class RubySocket extends RubyBasicSocket {
                 defineConstant(context, "AI_NUMERICSERV", asFixnum(context, AddressInfo.AI_NUMERICSERV.longValue())).
                 defineConstant(context, "AI_DEFAULT", asFixnum(context, AddressInfo.AI_DEFAULT.longValue())).
                 defineConstant(context, "AI_MASK", asFixnum(context, AddressInfo.AI_MASK.longValue()));
+
+        ResolutionError.createResolutionError(context, Socket, SocketConstants);
 
         Socket.include(context, SocketConstants);
 
@@ -328,7 +331,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol, Block block) {
         ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(context, protocol);
         if (pf == null ) pf = ProtocolFamily.PF_UNIX;
 
@@ -336,11 +339,11 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
         }
 
-        return socketpair(context, recv, domain, type);
+        return socketpair(context, recv, domain, type, block);
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type) {
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, Block block) {
         AddressFamily af = SocketUtils.addressFamilyFromArg(context, domain);
         if (af == null) af = AddressFamily.AF_UNIX;
         Sock s = SocketUtils.sockFromArg(context, type);
@@ -354,43 +357,43 @@ public class RubySocket extends RubyBasicSocket {
 
         // TODO: type and protocol
 
-        UnixSocketChannel[] sp;
+        SocketChannel[] sp;
+        final RubyClass socketClass = Access.getClass(context, "Socket");
+        RubySocket sock0 = new RubySocket(runtime, socketClass);
+        RubySocket sock1 = new RubySocket(runtime, socketClass);
 
         try {
-            sp = UnixSocketChannel.pair();
-            final RubyClass socketClass = Access.getClass(context, "Socket");
+            sp = UnixDomain.pair();
 
-            RubySocket sock0 = new RubySocket(runtime, socketClass);
             ChannelFD fd0 = newChannelFD(runtime, sp[0]);
             sock0.initFieldsFromDescriptor(runtime, fd0);
             sock0.initSocket(fd0);
 
-            RubySocket sock1 = new RubySocket(runtime, socketClass);
             ChannelFD fd1 = newChannelFD(runtime, sp[1]);
             sock1.initFieldsFromDescriptor(runtime, fd1);
             sock1.initSocket(fd1);
-
-            return newArray(context, sock0, sock1);
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
+
+        return yieldPair(context, sock0, sock1, block);
     }
 
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
         Channel mainChannel = fd.ch;
 
-        if (mainChannel instanceof SocketChannel) {
+        if (mainChannel instanceof UnixSocketChannel || UnixDomain.isUnixChannel(mainChannel)) {
+            soDomain = AddressFamily.AF_UNIX;
+            soType = Sock.SOCK_STREAM;
+            soProtocolFamily = ProtocolFamily.PF_UNIX;
+
+        } else if (mainChannel instanceof SocketChannel) {
             // ok, it's a socket...set values accordingly
             // just using AF_INET since we can't tell from SocketChannel...
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_STREAM;
             soProtocolFamily = ProtocolFamily.PF_INET;
             soProtocol = Protocol.getProtocolByName("tcp");
-
-        } else if (mainChannel instanceof UnixSocketChannel) {
-            soDomain = AddressFamily.AF_UNIX;
-            soType = Sock.SOCK_STREAM;
-            soProtocolFamily = ProtocolFamily.PF_UNIX;
 
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
@@ -586,7 +589,11 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         try {
-            if (channel instanceof SocketChannel) {
+            if (UnixDomain.isUnixChannel(channel)) {
+                // a JDK unix pair end has no java.net.Socket to bind
+                throw runtime.newErrnoEINVALError("bind(2)");
+            }
+            else if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel) channel).socket();
                 socket.bind(iaddr);
             }
@@ -717,11 +724,6 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return SocketUtils.sockerr(runtime, msg);
     }
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");

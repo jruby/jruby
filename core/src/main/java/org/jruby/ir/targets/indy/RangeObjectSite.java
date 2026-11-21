@@ -92,11 +92,11 @@ public class RangeObjectSite extends LazyObjectSite {
             Opcodes.H_INVOKESTATIC,
             p(RangeObjectSite.class),
             "bootstrapStrings",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, String.class, int.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, String.class, int.class, String.class, int.class, int.class, int.class),
             false);
 
-    public static CallSite bootstrapStrings(MethodHandles.Lookup lookup, String name, MethodType type, String begin, String beginEnc, int beginCR, String end, String endEnc, int endCR, int exclusive) {
-        return new StringRangeObjectSite(type, StringBootstrap.bytelist(begin, beginEnc), beginCR, StringBootstrap.bytelist(end, endEnc), endCR, exclusive != 0).bootstrap(lookup);
+    public static CallSite bootstrapStrings(MethodHandles.Lookup lookup, String name, MethodType type, String begin, String beginEnc, int beginCR, String end, String endEnc, int endCR, String file, int beginLine, int endLine, int exclusive) {
+        return new StringRangeObjectSite(type, StringBootstrap.bytelist(begin, beginEnc), beginCR, StringBootstrap.bytelist(end, endEnc), endCR, file, beginLine, endLine, exclusive != 0).bootstrap(lookup);
     }
 
     public static class StringRangeObjectSite extends RangeObjectSite {
@@ -104,21 +104,27 @@ public class RangeObjectSite extends LazyObjectSite {
         protected final int beginCR;
         protected final ByteList end;
         protected final int endCR;
+        protected final String file;
+        protected final int beginLine;
+        protected final int endLine;
 
-        public StringRangeObjectSite(MethodType type, ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+        public StringRangeObjectSite(MethodType type, ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive) {
             super(type, exclusive);
 
             this.begin = begin;
             this.beginCR = beginCR;
             this.end = end;
             this.endCR = endCR;
+            this.file = file;
+            this.beginLine = beginLine;
+            this.endLine = endLine;
         }
 
         public IRubyObject construct(ThreadContext context) throws Throwable {
             return RubyRange.newRange(
                     context,
-                    IRRuntimeHelpers.newFrozenString(context, begin, beginCR),
-                    IRRuntimeHelpers.newFrozenString(context, end, endCR),
+                    IRRuntimeHelpers.newFrozenString(context, begin, beginCR, file, beginLine),
+                    IRRuntimeHelpers.newFrozenString(context, end, endCR, file, endLine),
                     exclusive);
         }
     }

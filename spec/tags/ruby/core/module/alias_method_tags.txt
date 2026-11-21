@@ -1,0 +1,1 @@
+fails:Module#alias_method raises an EncodingError for a String name containing invalid bytes

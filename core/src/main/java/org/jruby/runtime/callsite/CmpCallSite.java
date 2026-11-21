@@ -2,6 +2,7 @@ package org.jruby.runtime.callsite;
 
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
@@ -9,7 +10,11 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 public class CmpCallSite extends BimorphicCallSite {
 
     public CmpCallSite() {
-        super("<=>");
+        this(CallType.NORMAL);
+    }
+
+    public CmpCallSite(CallType callType) {
+        super("<=>", callType);
     }
 
     @Override

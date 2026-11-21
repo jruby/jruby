@@ -136,7 +136,7 @@ describe "Ruby character strings" do
   it "raise NoMethodError when #to_s is not defined for the object" do
     obj = BasicObject.new
 
-    -> { "#{obj}" }.should raise_error(NoMethodError)
+    -> { "#{obj}" }.should.raise(NoMethodError)
   end
 
   it "uses an internal representation when #to_s doesn't return a String" do
@@ -149,7 +149,7 @@ describe "Ruby character strings" do
     # is that if you interpolate an object that fails to return
     # a String, you will still get a String and not raise an
     # exception.
-    "#{obj}".should be_an_instance_of(String)
+    "#{obj}".should.instance_of?(String)
   end
 
   it "allows a dynamic string to parse a nested do...end block as an argument to a call without parens, interpolated" do
@@ -170,6 +170,16 @@ describe "Ruby character strings" do
 
     # Meta-Control-Z
     ?\M-\C-z.should == "\x9A"
+  end
+
+  it "are produced from multibyte character shortcuts anywhere on a line" do
+    eval("[1, ?\u3053, ?a, ?\u00e9]").should == [1, "\u3053", "a", "\u00e9"]
+  end
+
+  it "are not frozen unless String literals are" do
+    eval("?z").should_not.frozen?
+    eval("[1, ?\u3053]").last.should_not.frozen?
+    eval("# frozen_string_literal: true\n?z").should.frozen?
   end
 
   describe "Unicode escaping" do
@@ -287,7 +297,7 @@ describe "Ruby String interpolation" do
     a = "\u3042"
     b = "\xff".dup.force_encoding "binary"
 
-    -> { "#{a} #{b}" }.should raise_error(Encoding::CompatibilityError)
+    -> { "#{a} #{b}" }.should.raise(Encoding::CompatibilityError)
   end
 
   it "creates a non-frozen String" do

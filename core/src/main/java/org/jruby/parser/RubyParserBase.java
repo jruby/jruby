@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,10 +51,14 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.ast.*;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
@@ -68,6 +73,7 @@ import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -119,6 +125,11 @@ public abstract class RubyParserBase {
 
     private int[] coverage = EMPTY_COVERAGE;
 
+    // How many line events mark each line coverable, and the line each one marked, so that one found not to be a
+    // line event after all can give its line back (see uncover).
+    private int[] lineMarks = EMPTY_COVERAGE;
+    private Map<Node, Integer> coveredNodes;
+
     private static final int[] EMPTY_COVERAGE = new int[0];
 
     private StringStyle stringStyle = Chilled;
@@ -133,6 +144,9 @@ public abstract class RubyParserBase {
         this.existingScope = scope;
         this.type = type;
         this.result = new RubyParserResult();
+        CoverageData coverageData = runtime.isCoverageEnabled() ? runtime.getCoverageData() : null;
+        this.recordPositions = coverageData != null && coverageData.isBranchesEnabled();
+        this.recordDefinitionSpans = recordPositions || coverageData != null && coverageData.isMethodsEnabled();
         setStringStyle(runtime.getInstanceConfig().isFrozenStringLiteral());
     }
 
@@ -154,20 +168,23 @@ public abstract class RubyParserBase {
             scopedParserState.warnUnusedVariables(this, currentScope.getFile());
         }
 
+        warnOnUnusedVariables = scopedParserState.getEnclosingWarnOnUnusedVariables();
         currentScope = currentScope.getEnclosingScope();
         scopedParserState = scopedParserState.getEnclosingScope();
     }
     
     public void pushBlockScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState);
+        // blocks inherit unused variable tracking from their enclosing scope (MRI dyna_push).
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
     }
     
     public void pushLocalScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
+        warnOnUnusedVariables = getWarnings().isVerbose();
         lexer.getCmdArgumentState().push0();
         lexer.getConditionState().push0();
     }
@@ -205,7 +222,7 @@ public abstract class RubyParserBase {
             args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
         } else if (itNode != null) {
             DVarNode dvar = (DVarNode) itNode;
-            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth(), true);
             args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
@@ -345,13 +362,24 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    // MRI: it_used_p
     private boolean isItUsed() {
-        if (it_id() != null) {
-            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
-                    (numParamOuter != null ? "outer" : "inner") + " block here");
-            // FIXME: Show error line
-        }
-        return false;
+        if (it_id() == null) return false;
+
+        compile_error("numbered parameters are not allowed when 'it' is already used\n" + lexer.getFile() + ":" +
+                it_id().getLine() + ": 'it' is already used here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    // MRI: numparam_used_p
+    private boolean isNumParamUsed() {
+        if (numParamCurrent == null) return false;
+
+        compile_error("'it' is not allowed when a numbered parameter is already used\n" + lexer.getFile() + ":" +
+                numParamCurrent.getLine() + ": numbered parameter is already used here");
+        // FIXME: Show error line
+        return true;
     }
 
     private boolean isNumParamId(String id) {
@@ -380,7 +408,7 @@ public abstract class RubyParserBase {
         Node node;
         int slot;
         if (isNumParam && numberedParam(id)) {
-            if (isNumParamNested()) return null;
+            if (isNumParamNested() || isItUsed()) return null;
 
             // We go over the top here and make sure the order is always ascending even if the other
             // numbered params are not used. This is so local_variables will properly display in
@@ -397,7 +425,13 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                int existing = currentScope.isDefinedNotImplicit(id);
+                if (isNumParamUsed()) return null;
+                if (maxNumParam == ORDINAL_PARAM) { // {|| it} and {|;a| it} declare parameters, if none
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
+
+                int existing = currentScope.isDefinedOrImplicit(id);
                 boolean newIt = false;
 
                 if (existing == -1) {
@@ -416,12 +450,21 @@ public abstract class RubyParserBase {
                 node = new DVarNode(lexer.tokline, slot, name);
                 if (newIt) set_it_id(node);
             } else {
-                slot = currentScope.isDefinedNotImplicit(id);
+                slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
                 if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                // without a local variable named it, it would be the block's implicit parameter
+                if (slot < 0 && maxNumParam == ORDINAL_PARAM) {
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
 
                 node = currentScope.declare(lexer.tokline, name);
             }
+        } else if (id.equals("it") && currentScope.isDefinedOrImplicit(id) == StaticScope.IMPLICIT) {
+            // a block's implicit it is not a variable to code evaluated within the block, as in { it; eval("it") }
+            node = new VCallNode(lexer.tokline, name);
+            slot = -1;
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -434,6 +477,327 @@ public abstract class RubyParserBase {
 
     public boolean isArgsInfoEmpty(ArgsNode argsNode) {
         return argsNode.isEmpty();
+    }
+
+    // Packed (line, column) start of the parameter list of the lambda being parsed. The f_larglist production
+    // stores it and the lambda production takes it right after, before any nested lambda is parsed. It gives the
+    // lambda's source span the same start as in MRI: the parameter list, or just after '->' when there is none.
+    private long lambdaArgsStart;
+
+    public void setLambdaArgsStart(long position) {
+        lambdaArgsStart = position;
+    }
+
+    public long takeLambdaArgsStart() {
+        long position = lambdaArgsStart;
+        lambdaArgsStart = 0;
+        return position;
+    }
+
+    // ---- source spans and branch information for Coverage (positions are ProductionState-packed) ----
+
+    // Whether this parse records where nodes and their parts are in the source. Only branch coverage has a use
+    // for that, so any other parse leaves the nodes without it: an AST is large, and often long-lived.
+    private final boolean recordPositions;
+
+    // Whether this parse records where method definitions and blocks start and end, which is all that method
+    // coverage needs of the source (branch coverage needs it too: a definition or a block can be a branch arm).
+    private final boolean recordDefinitionSpans;
+
+    public boolean recordsPositions() {
+        return recordPositions;
+    }
+
+    /**
+     * The column of a packed position where a definition starts or ends, or -1 when this parse does not record
+     * the spans of definitions.
+     */
+    public int column(long position) {
+        return recordDefinitionSpans ? ProductionState.column(position) : -1;
+    }
+
+    public Node span(Node node, long start, long end) {
+        if (recordPositions && node != null) node.setSourceSpan(start, end);
+        return node;
+    }
+
+    /** { ... } / do ... end */
+    public IterNode block_span(IterNode node, long start, long end) {
+        node.setBlockSpan(start, end, recordDefinitionSpans);
+        return node;
+    }
+
+    /** -> { ... }: MRI's lambda node starts at the arrow, where a branch arm that is a lambda is reported */
+    public void lambda_operator(LambdaNode node, long position) {
+        if (recordPositions) node.setOperatorColumn(ProductionState.column(position));
+    }
+
+    /**
+     * Where MRI ends the branch of a safe-navigation call (o&amp;.m): after the message when there are no arguments
+     * but a block argument (o&amp;.m, o&amp;.m(), o&amp;.m(&amp;b)), else after the arguments (o&amp;.m(1, &amp;b), or
+     * o&amp;.m 1 without the block argument of o&amp;.m 1, &amp;b). A block is never part of it.
+     *
+     * @param argsEnd the end of the arguments as written: after the closing parenthesis when parenthesized
+     */
+    public void safe_navigation_end(Node node, long messageEnd, long argsEnd, boolean parenthesized) {
+        if (!recordPositions || !(node instanceof CallNode call) || !call.isLazy()) return;
+
+        Node args = call.getArgsNode();
+        if (args == null) {
+            call.setSafeNavigationEnd(messageEnd);
+        } else if (!parenthesized && call.getIterNode() instanceof BlockPassNode && args.hasSourceSpan()) {
+            call.setSafeNavigationEnd(ProductionState.pack(args.getEndLine(), args.getEndColumn()));
+        } else {
+            call.setSafeNavigationEnd(argsEnd);
+        }
+    }
+
+    public Node lock_span(Node node) {
+        if (recordPositions && node != null) node.lockSourceSpan();
+        return node;
+    }
+
+    public Node paren_span(Node node, long start, long end) {
+        if (node == null) return null;
+
+        // every parse needs to know of the parentheses (see jumpTargets); only Coverage needs to know where they are
+        if (recordPositions) {
+            node.setParenSpan(start, end);
+        } else {
+            node.setParenthesized();
+        }
+        return node;
+    }
+
+    // The labels MRI's compiler (pm_compile_branch_condition) can jump to from a predicate
+    private static final int TO_THEN = 1, TO_ELSE = 2;
+
+    /**
+     * 0 unless MRI's compiler folds the predicate away, compiling only one arm and reporting no branch: 1 when
+     * only the then arm is compiled, -1 when only the else arm is.
+     */
+    private static int constantPredicate(Node node) {
+        int targets = jumpTargets(node);
+        return targets == TO_THEN ? 1 : targets == TO_ELSE ? -1 : 0;
+    }
+
+    /**
+     * Which of the then and else labels MRI's compiler jumps to for a predicate: a literal jumps straight to one
+     * of them, anything else tests its value and may go to either.
+     */
+    private static int jumpTargets(Node node) {
+        if (node == null) return TO_THEN | TO_ELSE;
+
+        // MRI keeps a node for parentheses, and folds them only when what they hold compiles to a single constant
+        if (node.isParenthesized()) {
+            int constant = compiledConstant(node);
+            return constant > 0 ? TO_THEN : constant < 0 ? TO_ELSE : TO_THEN | TO_ELSE;
+        }
+
+        switch (node.getNodeType()) {
+            case NILNODE: case FALSENODE: return TO_ELSE;
+            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE:
+            case SYMBOLNODE: case ENCODINGNODE: case LAMBDANODE:
+                return TO_THEN;
+            case STRNODE: return node instanceof FileNode ? TO_THEN | TO_ELSE : TO_THEN;
+            // The left side goes on to the right side or out of the conditional; the right side is compiled
+            // either way, even after a left side that never goes on.
+            case ANDNODE: {
+                AndNode and = (AndNode) node;
+                return (jumpTargets(and.getFirstNode()) & TO_ELSE) | jumpTargets(and.getSecondNode());
+            }
+            case ORNODE: {
+                OrNode or = (OrNode) node;
+                return (jumpTargets(or.getFirstNode()) & TO_THEN) | jumpTargets(or.getSecondNode());
+            }
+            default: return TO_THEN | TO_ELSE;
+        }
+    }
+
+    /**
+     * 1 or -1 when MRI compiles the expression, with its value used, to a single truthy or falsy constant (a
+     * putobject); 0 otherwise. Statements before the last one count only if they compile to nothing at all.
+     */
+    private static int compiledConstant(Node node) {
+        if (node == null) return 0;
+
+        switch (node.getNodeType()) {
+            case FALSENODE: return -1;
+            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE:
+            case SYMBOLNODE: case ENCODINGNODE:
+                return 1;
+            case DEFINEDNODE: return staticallyDefined(((DefinedNode) node).getExpressionNode()) ? 1 : 0;
+            case BLOCKNODE: {
+                Node[] statements = ((BlockNode) node).children();
+                if (statements.length == 0) return 0;
+                for (int i = 0; i < statements.length - 1; i++) {
+                    if (!eliminatedWhenUnused(statements[i])) return 0;
+                }
+                return compiledConstant(statements[statements.length - 1]);
+            }
+            default: return 0;
+        }
+    }
+
+    /**
+     * Whether MRI answers defined?(node) when compiling.
+     */
+    private static boolean staticallyDefined(Node node) {
+        if (node == null) return false;
+
+        switch (node.getNodeType()) {
+            case LOCALVARNODE: case DVARNODE: case SELFNODE: case NILNODE: case TRUENODE: case FALSENODE:
+            case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE:
+            case STRNODE: case LAMBDANODE: case LOCALASGNNODE: case DASGNNODE:
+                return true;
+            default: return false;
+        }
+    }
+
+    /**
+     * Whether MRI's compiler emits nothing for this statement when its value is not used: a literal, a read that
+     * can run no code (self, a variable other than a global, defined?), a hash or range made only of those, or an
+     * array of literals (see {@link #staticArrayElement}).
+     */
+    private static boolean eliminatedWhenUnused(Node node) {
+        if (node == null) return false;
+
+        switch (node.getNodeType()) {
+            case NILNODE: case TRUENODE: case FALSENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE:
+            case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE: case STRNODE: case REGEXPNODE: case ENCODINGNODE:
+            case SELFNODE: case LOCALVARNODE: case DVARNODE: case INSTVARNODE: case CLASSVARNODE: case DEFINEDNODE:
+            case ZARRAYNODE:
+                return true;
+            case ARRAYNODE:
+                for (Node element : ((ArrayNode) node).children()) {
+                    if (!staticArrayElement(element)) return false;
+                }
+                return true;
+            case HASHNODE:
+                for (KeyValuePair<Node, Node> pair : ((HashNode) node).getPairs()) {
+                    if (pair.getKey() != null && !eliminatedWhenUnused(pair.getKey())) return false; // no key: **value
+                    if (!eliminatedWhenUnused(pair.getValue())) return false;
+                }
+                return true;
+            case DOTNODE: {
+                DotNode range = (DotNode) node;
+                return eliminatedBound(range.getBeginNode()) && eliminatedBound(range.getEndNode());
+            }
+            case BLOCKNODE:
+                for (Node statement : ((BlockNode) node).children()) {
+                    if (!eliminatedWhenUnused(statement)) return false;
+                }
+                return true;
+            default: return false;
+        }
+    }
+
+    private static boolean eliminatedBound(Node node) {
+        return node == null || node instanceof NilImplicitNode || eliminatedWhenUnused(node);
+    }
+
+    /**
+     * An element that keeps an array literal static (prism's static literal flag): a literal other than a
+     * string, written without parentheses.
+     */
+    private static boolean staticArrayElement(Node node) {
+        if (node == null || node.isParenthesized()) return false;
+
+        switch (node.getNodeType()) {
+            case NILNODE: case TRUENODE: case FALSENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE:
+            case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE: case REGEXPNODE: case ENCODINGNODE:
+                return true;
+            default: return false;
+        }
+    }
+
+    /**
+     * Whether MRI compiles a constant predicate to jumps alone: it is made only of literals, joined by and/or.
+     */
+    private static boolean compilesToJumpOnly(Node node) {
+        if (node instanceof AndNode and && !and.isParenthesized()) {
+            return compilesToJumpOnly(and.getFirstNode()) && compilesToJumpOnly(and.getSecondNode());
+        } else if (node instanceof OrNode or && !or.isParenthesized()) {
+            return compilesToJumpOnly(or.getFirstNode()) && compilesToJumpOnly(or.getSecondNode());
+        }
+
+        return jumpTargets(node) != (TO_THEN | TO_ELSE);
+    }
+
+    private void markBranch(Node node, boolean unless, boolean elsif, long predicateEnd, long elseStart, Node sourceBody) {
+        if (recordPositions && node instanceof IfNode ifNode) {
+            ifNode.markBranch(unless, elsif, predicateEnd, elseStart, sourceBody);
+        }
+    }
+
+    /** if ... [elsif ...] [else ...] end */
+    public Node branch_if(Node node, long predicateEnd, long elseStart, long end) {
+        markBranch(node, false, false, predicateEnd, elseStart, null);
+        if (recordPositions && node instanceof IfNode ifNode) {
+            // MRI reports every elsif clause as reaching the shared 'end'
+            for (Node tail = ifNode.getElseBody(); tail instanceof IfNode elsif && elsif.isElsif(); tail = elsif.getElseBody()) {
+                elsif.setSourceSpanEnd(end);
+            }
+        }
+        return node;
+    }
+
+    /** unless ... [else ...] end (then/else are swapped in the IfNode) */
+    public Node branch_unless(Node node, long predicateEnd) {
+        markBranch(node, true, false, predicateEnd, -1, null);
+        return node;
+    }
+
+    /** elsif ... (nested as the else body of the enclosing if) */
+    public Node branch_elsif(Node node, long predicateEnd, long elseStart) {
+        markBranch(node, false, true, predicateEnd, elseStart, null);
+        return node;
+    }
+
+    /** cond ? a : b */
+    public Node branch_ternary(Node node, long predicateEnd) {
+        markBranch(node, false, false, predicateEnd, -1, null);
+        return node;
+    }
+
+    /** stmt if cond / stmt unless cond */
+    public Node branch_modifier(Node node, Node statement, boolean unless, long predicateEnd) {
+        markBranch(node, unless, false, predicateEnd, -1, statement);
+        if (node instanceof IfNode ifNode) ifNode.setModifier(); // every parse needs this (see nd_unset_fl_newline)
+        return node;
+    }
+
+    /** when a, b [then] body: the clause spans from 'when' through 'then' (or the last value) */
+    public Node branch_when(Node node, long start, Long thenEnd, long argsEnd, long elseStart) {
+        if (recordPositions && node instanceof WhenNode when) {
+            when.setSourceSpan(start, thenEnd != null ? thenEnd : argsEnd);
+            when.setElseStart(elseStart);
+        }
+        return node;
+    }
+
+    /** expr => pattern / expr in pattern */
+    public Node one_line_pattern(PatternCaseNode node) {
+        node.setOneLine();
+        return node;
+    }
+
+    /** in pattern [then] body */
+    public Node branch_in(Node node, long start, Long thenEnd, long patternEnd, long elseStart) {
+        if (recordPositions && node instanceof InNode in) {
+            in.setSourceSpan(start, thenEnd != null ? thenEnd : patternEnd);
+            in.setElseStart(elseStart);
+        }
+        return node;
+    }
+
+    /** stmt while cond / stmt until cond: the body is the statement as written (begin/end included) */
+    public Node loop_body(Node node, long start, long end) {
+        if (!recordPositions) return node;
+
+        if (node instanceof WhileNode loop) loop.setBodySpan(start, end);
+        if (node instanceof UntilNode loop) loop.setBodySpan(start, end);
+        return node;
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
@@ -449,7 +813,7 @@ public abstract class RubyParserBase {
         // logic since it likely will be done differently in Prism (This will play out more once 10.1 updates
         // to latest Prism).  If it is the same then we can reconsider whether this should be in staticscope or not.
         // 'it' can not be "normal (isDefinedNotImplicit)" either
-        if (id.equals("it") && currentScope.exists(id) == -1 && currentScope.isDefinedNotImplicit(id) < 0) { // case: foo { it.bar { <<it = something>> } it }
+        if (id.equals("it") && currentScope.exists(id) == -1 && currentScope.isDefinedOrImplicit(id) < 0) { // case: foo { it.bar { <<it = something>> } it }
             // we are assigning and there is no 'it' here so make it as a normal local
             int slot = currentScope.addVariableName(id);
             return new DAsgnNode(lexer.getRubySourceline(), name, slot, value);
@@ -462,7 +826,7 @@ public abstract class RubyParserBase {
         if (slot == -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
         } else {
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
     }
 
@@ -482,19 +846,72 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        Node newNode = remove_begin(node);
-        // Conservative fix...try and use line unless we see remove has been removed then use the newNode.
-        if (newNode != node) line = newNode.getLine();
-        coverLine(line);
+        cover(node);
         node.setNewline();
 
         return node;
     }
 
+    /**
+     * CRuby's nd_set_first_loc: the node starts at line. Our nodes only have a line, so that is what moves. An
+     * undef_list is a BlockNode of UndefNodes here (one NODE_UNDEF in CRuby), so its first statement starts there
+     * too.
+     */
+    public Node nd_set_first_loc(Node node, int line) {
+        if (node instanceof BlockNode block) block.get(0).setLine(line);
+        node.setLine(line);
+
+        return node;
+    }
+
+    /**
+     * CRuby's nd_set_loc, for the line: the node starts at line.
+     */
+    public Node nd_set_loc(Node node, int line) {
+        node.setLine(line);
+
+        return node;
+    }
+
+    /**
+     * CRuby's make_list, for the line: a list literal starts at line, not at its first element.
+     */
+    public Node make_list(Node list, int line) {
+        if (list == null) return new ZArrayNode(line);
+
+        list.setLine(line);
+
+        return list;
+    }
+
+    /**
+     * CRuby's nd_unset_fl_newline, for the statements of a string interpolation: a lone statement there is not a
+     * line event of its own; the string it is part of is. Several statements each remain one. A lone conditional
+     * is no line event either, but the statements of its branches still are.
+     *
+     * CRuby's compiler finds coverable lines from the newline flag, but JRuby marks them as it parses, and
+     * newline_node marked this statement's line already, so that is undone too.
+     */
+    public void nd_unset_fl_newline(Node node) {
+        uncover(node);
+        node.unsetNewline();
+
+        // In MRI the statement of a modifier conditional is a line event too, which the conditional's own (on the
+        // same line, where both start) hides. With the conditional no line event, the statement's shows.
+        if (node instanceof IfNode ifNode && ifNode.isModifier()) {
+            for (Node body : new Node[] { ifNode.getThenBody(), ifNode.getElseBody() }) {
+                if (body == null || body instanceof NilImplicitNode) continue;
+
+                body.setNewline();
+                cover(body);
+            }
+        }
+    }
+
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
     public Node addRootNode(Node topOfAST) {
         int line;
-        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lineno());
+        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lastLineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitNode.NIL;
@@ -514,14 +931,10 @@ public abstract class RubyParserBase {
             topOfAST = newTopOfAST;
         }
 
-        int coverageMode = coverageData == null ?
-                CoverageData.NONE :
-                coverageData.getMode();
-
-        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode);
+        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode(coverageData));
     }
     
-    /* MRI: block_append */
+    @CRuby(value = "block_append", file = "parse.y")
     public Node appendToBlock(Node head, Node tail) {
         if (tail == null) return head;
         if (head == null) return tail;
@@ -543,7 +956,10 @@ public abstract class RubyParserBase {
     public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
         RubySymbol name = symbolID(nameBytes);
         currentScope.addVariableThisScope(name.idString());
-        if (warnOnUnusedVariables) scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+        if (warnOnUnusedVariables) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, 0);
+        }
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
@@ -609,21 +1025,17 @@ public abstract class RubyParserBase {
             args = ac.getSecondNode();
         }
 
-        if (args != null && args instanceof ArgsPushNode ap) {
-            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
-        } else {
-            if (args instanceof ListNode list) {
-                for (int i = 0; i < list.size(); i++) {
-                    Node next = list.get(i);
-                    if (next instanceof HashNode hash && !hash.isLiteral()) {
-                        keywords = true;
-                    }
-                }
-            }
+        // keywords can only be the last argument, and are a hash written without braces
+        Node last = null;
+        if (args instanceof ArgsPushNode ap) {
+            last = ap.getSecondNode();
+        } else if (args instanceof ListNode list && list.size() > 0) {
+            last = list.getLast();
         }
+        keywords = last instanceof HashNode hash && !hash.isLiteral();
 
         if (keywords) {
-            yyerror("keyword arg given in index");
+            yyerror("keyword arg given in index assignment");
         }
         if (block != null) {
             yyerror("block arg given in index assignment");
@@ -890,9 +1302,6 @@ public abstract class RubyParserBase {
 
                 if (currentScope.isBlockScope() && slot != -1) {
                     if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new DVarNode(loc, slot, name);
 
@@ -904,9 +1313,6 @@ public abstract class RubyParserBase {
 
                 StaticScope.Type type = currentScope.getType();
                 if (type == StaticScope.Type.LOCAL && slot != -1) {
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new LocalVarNode(loc, slot, name);
 
@@ -955,29 +1361,59 @@ public abstract class RubyParserBase {
      * @param node to be checked.
      */
     public Node void_stmts(Node node) {
-        if (!getWarnings().isVerbose() || !(node instanceof BlockNode)) return node;
+        if (!(node instanceof BlockNode blockNode)) return node;
 
-        BlockNode blockNode = (BlockNode) node;
         int size = blockNode.size();
+        boolean verbose = getWarnings().isVerbose();
 
         for (int i = 0; i <= size - 2; i++) {
-            void_expr(blockNode.get(i));
+            Node statement = blockNode.get(i);
+
+            if (verbose) void_expr(statement);
+            // MRI compiles nothing for it, so it has no line event
+            if (compilesToNothingWhenUnused(statement)) uncoverAll(statement);
         }
 
         return node;
     }
 
-	/**
-     * assign_in_cond
-	 **/
+    /**
+     * Whether MRI compiles nothing for this statement when its value is not used: a statement
+     * {@link #eliminatedWhenUnused} finds, a local variable assigned to itself (which MRI's peephole optimizer
+     * removes), a conditional on a literal whose arm that can run is one, or a list of them.
+     */
+    private static boolean compilesToNothingWhenUnused(Node node) {
+        return switch (node) {
+            case null -> true;
+            case NilImplicitNode ignored -> true;
+            case BlockNode block -> {
+                for (Node statement : block.children()) {
+                    if (!compilesToNothingWhenUnused(statement)) yield false;
+                }
+                yield true;
+            }
+            case IfNode ifNode -> ifNode.hasFoldedPredicate() &&
+                    compilesToNothingWhenUnused(ifNode.isConstantlyTrue() ? ifNode.getThenBody() : ifNode.getElseBody());
+            case LocalAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            case DAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            default -> eliminatedWhenUnused(node);
+        };
+    }
+
+    private static boolean isSameVariable(IScopedNode variable, Node value) {
+        return (value instanceof LocalVarNode || value instanceof DVarNode) && value instanceof IScopedNode read &&
+                read.getDepth() == variable.getDepth() && read.getIndex() == variable.getIndex();
+    }
+
+    @CRuby(value = "assign_in_cond", file = "parse.y")
     private boolean checkAssignmentInCondition(Node node) {
-        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
+        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode || node instanceof ClassVarAsgnNode || node instanceof ConstDeclNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
                 warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
-        } 
+        }
 
         return false;
     }
@@ -1103,16 +1539,35 @@ public abstract class RubyParserBase {
     public Node new_if(int line, Node condition, Node thenNode, Node elseNode) {
         if (condition == null) return elseNode;
 
+        Node rawCondition = condition;
+        int constantPredicate = constantPredicate(condition);
         condition = cond0(condition, ConditionType.IN_COND);
 
-        return new IfNode(line, condition, thenNode, elseNode);
+        IfNode ifNode = new IfNode(line, condition, thenNode, elseNode);
+        ifNode.setConstantPredicate(constantPredicate);
+        ifNode.setFoldedPredicate(constantPredicate != 0 && compilesToJumpOnly(rawCondition));
+
+        // MRI folds a conditional on a literal away: the arm that cannot run is not compiled, so it has no line
+        // events.
+        if (constantPredicate != 0) uncoverAll(constantPredicate > 0 ? elseNode : thenNode);
+
+        if (ifNode.hasFoldedPredicate()) {
+            // Nor is a predicate of literals, so there is no line event for it either
+            ifNode.unsetNewline();
+        } else {
+            // As in MRI, a conditional's predicate is a line event wherever the conditional is (an IfNode is a
+            // newline node), so its line is coverable.
+            cover(ifNode);
+        }
+
+        return ifNode;
     }
 
     enum ConditionType {
         IN_OP, IN_COND, IN_FF;
     }
 
-    /* MRI: range_op */
+    @CRuby(value = "range_op", file = "parse.y")
     private Node range_op(Node node) {
         if (node == null) return null;
 
@@ -1227,11 +1682,11 @@ public abstract class RubyParserBase {
             for (int i = 0; i < list.size(); i++) {
                 Node expression = list.get(i);
 
-                if (expression instanceof SplatNode || expression instanceof ArgsCatNode) {
-                    cases.add(new WhenNode(line, expression, bodyNode, null));
-                } else {
-                    cases.add(new WhenOneArgNode(line, expression, bodyNode, null));
-                }
+                WhenNode when = expression instanceof SplatNode || expression instanceof ArgsCatNode ?
+                        new WhenNode(line, expression, bodyNode, null) :
+                        new WhenOneArgNode(line, expression, bodyNode, null);
+                when.copyBranchInfo(sourceWhen);
+                cases.add(when);
             }
         } else {
             cases.add(sourceWhen);
@@ -1406,9 +1861,10 @@ public abstract class RubyParserBase {
         // Detect IfNode and propagate newline to the bodies.
         // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
         // defied an initial porting attempt. See jruby/jruby#9293.
-        if (node.isNewline() && node instanceof IfNode ifNode) {
-            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
-            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        // MRI gives the bodies no line events of their own, so they only keep backtraces on their lines.
+        if (node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setBacktraceNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setBacktraceNewline();
         }
     }
 
@@ -1437,6 +1893,9 @@ public abstract class RubyParserBase {
     }
 
     public void finalizeDynamicScope() {
+        // the top-level scope is never popped so report its unused variables here.
+        if (warnOnUnusedVariables) scopedParserState.warnUnusedVariables(this, lexer.getFile());
+
         getResult().setScope(finalizeDynamicScope(currentScope));
     }
     /**
@@ -1492,6 +1951,7 @@ public abstract class RubyParserBase {
                 if (front.getValue().getRealSize() > 0) {
                     return new StrNode(head.getLine(), front, (StrNode) tail);
                 } else {
+                    tail.setLine(head.getLine());
                     return tail;
                 }
             } 
@@ -1628,8 +2088,8 @@ public abstract class RubyParserBase {
         RubySymbol restKwargsName = symbolID(keywordRestArgName);
         String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(id);
-        if (slot == -1) slot = currentScope.addVariable(id);
+        // a block's own **, named or not, is a new variable even when an enclosing scope has one
+        int slot = currentScope.addVariableThisScope(id);
 
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(line, restKwargsName, slot);
 
@@ -1649,19 +2109,20 @@ public abstract class RubyParserBase {
     }
 
     public Node remove_duplicate_keys(final HashNode hash) {
-        final Map<Node, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
+        final Map<Object, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             final Node key = pair.getKey();
-            if (!(key instanceof LiteralValue)) continue;
-            if (encounteredKeys.containsKey(key)) {
+            Object literalKey = duplicateKeyFor(key);
+            if (literalKey == null) continue;
+            if (encounteredKeys.containsKey(literalKey)) {
                 Ruby runtime = getRuntime();
-                IRubyObject value = ((LiteralValue) key).literalValue(runtime);
+                IRubyObject value = literalKeyValue(runtime, key);
                 warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
-            encounteredKeys.put(key, pair);
+            encounteredKeys.put(literalKey, pair);
         }
 
         // NOTE: we do not really remove the value part (RHS) as in that case we should evaluate the code - despite
@@ -1669,6 +2130,43 @@ public abstract class RubyParserBase {
         // with JRuby the modification of the hash should be done in the IR and not here (during the parsing phase)...
 
         return hash;
+    }
+
+    /**
+     * What a literal hash key is compared by to find duplicates, or null for a key that is not a
+     * literal. Like CRuby, this covers numbers of every kind, Strings, Symbols, Regexps and
+     * __ENCODING__ as well as __FILE__ and __LINE__.
+     */
+    private static Object duplicateKeyFor(Node key) {
+        if (key == null) return null; // a **splat
+
+        return switch (key) {
+            case BignumNode bignum -> List.of("bignum", bignum.getValue());
+            case RationalNode rational -> {
+                Object numerator = duplicateKeyFor(rational.getNumerator());
+                Object denominator = duplicateKeyFor(rational.getDenominator());
+                yield numerator == null || denominator == null ? null : List.of("rational", numerator, denominator);
+            }
+            case ComplexNode complex -> {
+                Object imaginary = duplicateKeyFor(complex.getNumber());
+                yield imaginary == null ? null : List.of("complex", imaginary);
+            }
+            case RegexpNode regexp -> List.of("regexp", regexp.getValue(), regexp.getOptions().toEmbeddedOptions());
+            case EncodingNode encoding -> List.of("encoding", encoding.getEncoding());
+            case LiteralValue literal -> key;
+            default -> null;
+        };
+    }
+
+    // the value of a key duplicateKeyFor accepted, for the warning
+    private static IRubyObject literalKeyValue(Ruby runtime, Node key) {
+        return switch (key) {
+            case BignumNode bignum -> RubyBignum.newBignum(runtime, bignum.getValue());
+            case ComplexNode complex -> RubyComplex.newComplexRaw(runtime, RubyFixnum.zero(runtime), literalKeyValue(runtime, complex.getNumber()));
+            case RegexpNode regexp -> RubyRegexp.newRegexp(runtime, regexp.getValue(), regexp.getOptions());
+            case EncodingNode encoding -> runtime.getEncodingService().getEncoding(encoding.getEncoding());
+            default -> ((LiteralValue) key).literalValue(runtime);
+        };
     }
 
     public static Node newAlias(int line, Node newNode, Node oldNode) {
@@ -1725,11 +2223,6 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public boolean is_local_id(String name) {
-        return RubyLexer.isIdentifierChar(name.charAt(0));
-    }
-
     // 1.9
     public ListNode list_append(Node list, Node item) {
         if (list == null) return new ArrayNode(item.getLine(), item);
@@ -1769,6 +2262,14 @@ public abstract class RubyParserBase {
 
     public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
+
+        // a keyword parameter's label still ends with ':' here (see arg_var), so drop it before checking for a
+        // parameter with the same name
+        int length = identifier.length();
+        if (length > 0 && identifier.get(length - 1) == ':') {
+            shadowing_lvar(identifier.makeShared(0, length - 1));
+            return identifier;
+        }
 
         return shadowing_lvar(identifier);
     }
@@ -1830,7 +2331,7 @@ public abstract class RubyParserBase {
             int slot = current.isDefined(id);
             if (slot != -1) {
                 scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-                scopedParserState.markUsedVariable(name, slot >> 16);
+                scopedParserState.markUsedVariable(name, unpackHighChar(slot));
             }
         }
 
@@ -1941,7 +2442,7 @@ public abstract class RubyParserBase {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
             lexer.checkRegexpFragment(runtime, meat, options);
             lexer.checkRegexpSyntax(runtime, meat, options.withoutOnce());
-            return new RegexpNode(contents.getLine(), meat, options.withoutOnce());
+            return new RegexpNode(line, meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
             
@@ -2016,11 +2517,6 @@ public abstract class RubyParserBase {
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
 
-    @Deprecated(since = "9.2.0.0")
-    public String internalId() {
-        return INTERNAL_ID.toString();
-    }
-
     protected void begin_definition(String name) {
         LexContext ctxt = getLexContext();
         ctxt.in_class = name != null;
@@ -2079,9 +2575,10 @@ public abstract class RubyParserBase {
         return body;
     }
 
+    // MRI: restore_defun
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
+        restoreMaxNumParam(holder.maxNumParam);
     }
 
     public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
@@ -2152,11 +2649,18 @@ public abstract class RubyParserBase {
         keyTable.add(key);
     }
 
+    // MRI: error_duplicate_pattern_variable
     public void error_duplicate_pattern_variable(ByteList variable) {
         if (is_private_local_id(variable)) return;
-        if (variableTable.contains(variable)) yyerror("duplicated variable name");
 
-        variableTable.add(variable);
+        if (variableTable.contains(variable)) {
+            yyerror("duplicated variable name");
+        } else if (getLexContext().in_alt_pattern) {
+            yyerror("variable capture in alternative pattern");
+        } else {
+            getLexContext().capture_in_pattern = true;
+            variableTable.add(variable);
+        }
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
@@ -2235,10 +2739,6 @@ public abstract class RubyParserBase {
         return node;
     }
 
-    public void nd_set_first_loc(Node node, int line) {
-        // FIXME: IMPL
-    }
-
     public RubyParserResult parse() throws IOException {
         yyparse(lexer, runtime.getInstanceConfig().isDebug() ? new YYDebug() : null);
 
@@ -2289,14 +2789,6 @@ public abstract class RubyParserBase {
 
     protected void setCommandStart(boolean value) {
         lexer.commandStart = value;
-    }
-
-    protected ByteList getCurrentArg() {
-        return lexer.getCurrentArg();
-    }
-
-    protected void setCurrentArg(RubySymbol value) {
-        lexer.setCurrentArg(value == null ?  null : value.getBytes());
     }
 
     protected StrNode createStr(ByteList buffer, int flags) {
@@ -2415,30 +2907,85 @@ public abstract class RubyParserBase {
     }
 
     /**
-     * Zero out coverable lines as they're encountered
+     * The modes this parse emits coverage instructions for. Usually every enabled mode, but an eval whose lines
+     * are not covered still counts its method calls: MRI counts a method defined by an eval like any other,
+     * only its lines are left out.
+     *
+     * @param coverageData the data this parse registered its file with, or null when it registered none
      */
-    public void coverLine(int i) {
-        // We had an overflow so we cannot mark whatever line this is as covered.
-        if (i < 0) return;
-        if (isCoverageEnabled()) {
-            growCoverageLines(i);
-            coverage[i] = 0;
-        }
+    private int coverageMode(CoverageData coverageData) {
+        if (coverageData != null) return coverageData.getMode();
+
+        return runtime.isCoverageEnabled() && runtime.getCoverageData().isMethodsEnabled() ?
+                CoverageData.METHODS :
+                CoverageData.NONE;
     }
 
     /**
-     *  Called by coverLine to grow it large enough to add new covered line.
+     * True when this parse needs the per-line array of starting counts. Only lines mode needs it: methods mode
+     * has no use for it, and oneshot_lines starts from an empty list (see CoverageData#prepareCoverage).
+     */
+    private boolean isLineCountingEnabled() {
+        if (!isCoverageEnabled()) return false;
+
+        CoverageData data = runtime.getCoverageData();
+        return data.isLinesEnabled() && !data.isOneshot();
+    }
+
+    /**
+     * Mark the line of node's line event coverable (once per node).
+     */
+    private void cover(Node node) {
+        if (!isLineCountingEnabled()) return;
+
+        int line = LineEvents.lineOf(node);
+        // We had an overflow so we cannot mark whatever line this is as covered.
+        if (line < 0) return;
+
+        if (coveredNodes == null) coveredNodes = new IdentityHashMap<>();
+        if (coveredNodes.putIfAbsent(node, line) != null) return;
+
+        growCoverageLines(line);
+        lineMarks[line]++;
+        coverage[line] = 0;
+    }
+
+    /**
+     * Undo cover(node) for a node that turned out not to be a line event (such as a lone statement inside a
+     * string interpolation): its line reads as nil in the results unless another line event marks it too.
+     */
+    private void uncover(Node node) {
+        Integer line = coveredNodes == null ? null : coveredNodes.remove(node);
+
+        if (line != null && --lineMarks[line] == 0) coverage[line] = -1;
+    }
+
+    /**
+     * Undo cover for node and everything in it, which MRI compiles to nothing, and make none of it a line event.
+     */
+    private void uncoverAll(Node node) {
+        if (node == null) return;
+
+        uncover(node);
+        node.unsetNewline();
+        for (Node child : node.childNodes()) uncoverAll(child);
+    }
+
+    /**
+     *  Called by cover to grow it large enough to add new covered line.
      *  Also called at end up parse to pick up any extra non-code lines which
      *  should be marked -1 for not valid code lines.
      */
     public void growCoverageLines(int i) {
         if (coverage == null) {
             coverage = new int[i + 1];
+            lineMarks = new int[i + 1];
         } else if (coverage.length <= i) {
             int[] newCoverage = new int[i + 1];
             Arrays.fill(newCoverage, -1);
             System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
             coverage = newCoverage;
+            lineMarks = Arrays.copyOf(lineMarks, i + 1);
         }
     }
 
@@ -2450,9 +2997,10 @@ public abstract class RubyParserBase {
     public CoverageData finishCoverage(String file, int lines) {
         if (!isCoverageEnabled()) return null;
 
-        growCoverageLines(lines);
+        // the file is registered in every mode; the line array is filled only in lines mode
+        if (isLineCountingEnabled()) growCoverageLines(lines);
         CoverageData data = runtime.getCoverageData();
-        data.prepareCoverage(file, coverage);
+        data.prepareCoverage(file, coverage, isEval());
         return data;
     }
 
@@ -2521,8 +3069,32 @@ public abstract class RubyParserBase {
         return new ErrorNode(loc);
     }
 
-    protected void forwarding_arg_check(ByteList rest, ByteList all, String var) {
-        // FIXME: Impl
+    // MRI: forwarding_arg_check
+    protected void forwarding_arg_check(ByteList arg, ByteList all, String var) {
+        String argId = symbolID(arg).idString();
+        String allId = symbolID(all).idString();
+
+        // A block between here and the method that declares the same kind of anonymous parameter would take it
+        boolean conflict = false;
+        StaticScope scope = getCurrentScope();
+        while (scope != null && scope.isBlockScope() && scope.getType() != StaticScope.Type.EVAL) {
+            conflict |= scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+            scope = scope.getEnclosingScope();
+        }
+
+        // The method must declare it itself, and not only through ... (eval code sees the scopes around it)
+        boolean found;
+        if (scope != null && scope.getType() == StaticScope.Type.EVAL) {
+            found = scope.isDefined(argId) >= 0 && scope.isDefined(allId) < 0;
+        } else {
+            found = scope != null && scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+        }
+
+        if (!found) {
+            compile_error("no anonymous " + var + " parameter");
+        } else if (conflict) {
+            compile_error("anonymous " + var + " parameter is also used within block");
+        }
     }
 
     protected void WARN_EOL(String name) {
@@ -2534,6 +3106,8 @@ public abstract class RubyParserBase {
     }
 
     private boolean hasArguments() {
-        return !currentScope.getSignature().isNoArguments();
+        // no signature yet means its parameters are still being parsed, as in ->x=it{}
+        Signature signature = currentScope.getSignature();
+        return signature == null || !signature.isNoArguments();
     }
 }

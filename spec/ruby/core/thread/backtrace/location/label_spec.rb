@@ -3,7 +3,7 @@ require_relative 'fixtures/classes'
 
 describe 'Thread::Backtrace::Location#label' do
   it 'returns the base label of the call frame' do
-    ThreadBacktraceLocationSpecs.locations[0].label.should include('<top (required)>')
+    ThreadBacktraceLocationSpecs.locations[0].label.should.include?('<top (required)>')
   end
 
   it 'returns the method name for a method location' do
@@ -122,6 +122,24 @@ describe 'Thread::Backtrace::Location#label' do
 
     it "shows the original method name for an aliased method" do
       ThreadBacktraceLocationSpecs::INSTANCE.aliased_method.should == "ThreadBacktraceLocationSpecs#original_method"
+    end
+
+    ruby_version_is "4.1" do # [Bug #22197]
+      it "shows the defining class for a method aliased in a subclass" do
+        ThreadBacktraceLocationSpecs::AliasChild.new.alias_in_subclass.should == "ThreadBacktraceLocationSpecs::AliasParent#alias_original"
+      end
+
+      it "shows the source module for a method defined via define_method with an UnboundMethod from another module" do
+        ThreadBacktraceLocationSpecs::DefineMethodTarget.new.defined_from_other_module.should == "ThreadBacktraceLocationSpecs::DefineMethodSource#define_method_original"
+      end
+
+      it "shows the source module for define_method with an UnboundMethod installed on a singleton class" do
+        ThreadBacktraceLocationSpecs::DefineMethodSingletonTarget.defined_on_singleton.should == "ThreadBacktraceLocationSpecs::DefineMethodSource#define_method_original"
+      end
+
+      it "shows the source module for define_method with an UnboundMethod installed under its original name" do
+        ThreadBacktraceLocationSpecs::DefineMethodSameNameTarget.new.define_method_original.should == "ThreadBacktraceLocationSpecs::DefineMethodSource#define_method_original"
+      end
     end
 
     # A wide variety of cases.

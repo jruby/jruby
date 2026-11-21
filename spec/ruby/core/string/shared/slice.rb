@@ -10,6 +10,19 @@ describe :string_slice, shared: true do
 
     "".send(@method, 0).should == nil
     "".send(@method, -1).should == nil
+
+    "hello".send(@method, fixnum_max).should == nil
+    "hello".send(@method, fixnum_min).should == nil
+  end
+
+  platform_is c_long_size: 64 do
+    it "returns nil if an index converted with to_int is outside of self" do
+      "hello".send(@method, 2.0 ** 40).should == nil
+
+      obj = mock('2**40')
+      obj.should_receive(:to_int).and_return(1 << 40)
+      "hello".send(@method, obj).should == nil
+    end
   end
 
   it "calls to_int on the given index" do
@@ -21,17 +34,17 @@ describe :string_slice, shared: true do
   end
 
   it "raises a TypeError if the given index is nil" do
-    -> { "hello".send(@method, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, nil) }.should.raise(TypeError)
   end
 
   it "raises a TypeError if the given index can't be converted to an Integer" do
-    -> { "hello".send(@method, mock('x')) }.should raise_error(TypeError)
-    -> { "hello".send(@method, {})        }.should raise_error(TypeError)
-    -> { "hello".send(@method, [])        }.should raise_error(TypeError)
+    -> { "hello".send(@method, mock('x')) }.should.raise(TypeError)
+    -> { "hello".send(@method, {})        }.should.raise(TypeError)
+    -> { "hello".send(@method, [])        }.should.raise(TypeError)
   end
 
   it "raises a RangeError if the index is too big" do
-    -> { "hello".send(@method, bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, bignum_value) }.should.raise(RangeError)
   end
 end
 
@@ -65,6 +78,9 @@ describe :string_slice_index_length, shared: true do
     "foo".send(@method, 2,1).should == "o"
     "foo".send(@method, 3,0).should == ""
     "foo".send(@method, 3,1).should == ""
+
+    "hello".send(@method, 1, (1 << 31) - 1).should == "ello"
+    "hello".send(@method, 1, fixnum_max).should == "ello"
 
     "".send(@method, 0,0).should == ""
     "".send(@method, 0,1).should == ""
@@ -145,35 +161,35 @@ describe :string_slice_index_length, shared: true do
   end
 
   it "raises a TypeError when idx or length can't be converted to an integer" do
-    -> { "hello".send(@method, mock('x'), 0) }.should raise_error(TypeError)
-    -> { "hello".send(@method, 0, mock('x')) }.should raise_error(TypeError)
+    -> { "hello".send(@method, mock('x'), 0) }.should.raise(TypeError)
+    -> { "hello".send(@method, 0, mock('x')) }.should.raise(TypeError)
 
     # I'm deliberately including this here.
     # It means that str.send(@method, other, idx) isn't supported.
-    -> { "hello".send(@method, "", 0) }.should raise_error(TypeError)
+    -> { "hello".send(@method, "", 0) }.should.raise(TypeError)
   end
 
   it "raises a TypeError when the given index or the given length is nil" do
-    -> { "hello".send(@method, 1, nil)   }.should raise_error(TypeError)
-    -> { "hello".send(@method, nil, 1)   }.should raise_error(TypeError)
-    -> { "hello".send(@method, nil, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, 1, nil)   }.should.raise(TypeError)
+    -> { "hello".send(@method, nil, 1)   }.should.raise(TypeError)
+    -> { "hello".send(@method, nil, nil) }.should.raise(TypeError)
   end
 
   it "raises a RangeError if the index or length is too big" do
-    -> { "hello".send(@method, bignum_value, 1) }.should raise_error(RangeError)
-    -> { "hello".send(@method, 0, bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, bignum_value, 1) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0, bignum_value) }.should.raise(RangeError)
   end
 
   it "raises a RangeError if the index or length is too small" do
-    -> { "hello".send(@method, -bignum_value, 1) }.should raise_error(RangeError)
-    -> { "hello".send(@method, 0, -bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, -bignum_value, 1) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0, -bignum_value) }.should.raise(RangeError)
   end
 
   it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0,0).should be_an_instance_of(String)
-    s.send(@method, 0,4).should be_an_instance_of(String)
-    s.send(@method, 1,4).should be_an_instance_of(String)
+    s.send(@method, 0,0).should.instance_of?(String)
+    s.send(@method, 0,4).should.instance_of?(String)
+    s.send(@method, 1,4).should.instance_of?(String)
   end
 
   it "handles repeated application" do
@@ -210,6 +226,9 @@ describe :string_slice_range, shared: true do
 
     "x".send(@method, 1..1).should == ""
     "x".send(@method, 1..-1).should == ""
+
+    "hello".send(@method, 0..fixnum_max).should == "hello"
+    "hello".send(@method, 1...fixnum_max).should == "ello"
   end
 
   it "returns a String in the same encoding as self" do
@@ -222,6 +241,8 @@ describe :string_slice_range, shared: true do
     "hello there".send(@method, 20..1).should == nil
     "hello there".send(@method, -20..1).should == nil
     "hello there".send(@method, -20..-1).should == nil
+    "hello there".send(@method, fixnum_max..).should == nil
+    "hello there".send(@method, fixnum_min..-1).should == nil
 
     "".send(@method, -1..-1).should == nil
     "".send(@method, -1...-1).should == nil
@@ -250,9 +271,9 @@ describe :string_slice_range, shared: true do
 
   it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0...0).should be_an_instance_of(String)
-    s.send(@method, 0..4).should be_an_instance_of(String)
-    s.send(@method, 1..4).should be_an_instance_of(String)
+    s.send(@method, 0...0).should.instance_of?(String)
+    s.send(@method, 0..4).should.instance_of?(String)
+    s.send(@method, 1..4).should.instance_of?(String)
   end
 
   it "calls to_int on range arguments" do
@@ -293,12 +314,12 @@ describe :string_slice_range, shared: true do
   end
 
   it "raises a type error if a range is passed with a length" do
-    ->{ "hello".send(@method, 1..2, 1) }.should raise_error(TypeError)
+    ->{ "hello".send(@method, 1..2, 1) }.should.raise(TypeError)
   end
 
   it "raises a RangeError if one of the bound is too big" do
-    -> { "hello".send(@method, bignum_value..(bignum_value + 1)) }.should raise_error(RangeError)
-    -> { "hello".send(@method, 0..bignum_value) }.should raise_error(RangeError)
+    -> { "hello".send(@method, bignum_value..(bignum_value + 1)) }.should.raise(RangeError)
+    -> { "hello".send(@method, 0..bignum_value) }.should.raise(RangeError)
   end
 
   it "works with endless ranges" do
@@ -333,8 +354,8 @@ describe :string_slice_regexp, shared: true do
 
   it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, //).should be_an_instance_of(String)
-    s.send(@method, /../).should be_an_instance_of(String)
+    s.send(@method, //).should.instance_of?(String)
+    s.send(@method, /../).should.instance_of?(String)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -394,19 +415,19 @@ describe :string_slice_regexp_index, shared: true do
   end
 
   it "raises a TypeError when the given index can't be converted to Integer" do
-    -> { "hello".send(@method, /(.)(.)(.)/, mock('x')) }.should raise_error(TypeError)
-    -> { "hello".send(@method, /(.)(.)(.)/, {})        }.should raise_error(TypeError)
-    -> { "hello".send(@method, /(.)(.)(.)/, [])        }.should raise_error(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, mock('x')) }.should.raise(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, {})        }.should.raise(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, [])        }.should.raise(TypeError)
   end
 
   it "raises a TypeError when the given index is nil" do
-    -> { "hello".send(@method, /(.)(.)(.)/, nil) }.should raise_error(TypeError)
+    -> { "hello".send(@method, /(.)(.)(.)/, nil) }.should.raise(TypeError)
   end
 
   it "returns String instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, /(.)(.)/, 0).should be_an_instance_of(String)
-    s.send(@method, /(.)(.)/, 1).should be_an_instance_of(String)
+    s.send(@method, /(.)(.)/, 0).should.instance_of?(String)
+    s.send(@method, /(.)(.)/, 1).should.instance_of?(String)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -442,14 +463,14 @@ describe :string_slice_string, shared: true do
     o = mock('x')
     o.should_not_receive(:to_str)
 
-    -> { "hello".send(@method, o) }.should raise_error(TypeError)
+    -> { "hello".send(@method, o) }.should.raise(TypeError)
   end
 
   it "returns a String instance when given a subclass instance" do
     s = StringSpecs::MyString.new("el")
     r = "hello".send(@method, s)
     r.should == "el"
-    r.should be_an_instance_of(String)
+    r.should.instance_of?(String)
   end
 end
 
@@ -476,28 +497,28 @@ describe :string_slice_regexp_group, shared: true do
     end
 
     it "returns nil if there is no match" do
-      "hello there".send(@method, /(?<whut>what?)/, 'whut').should be_nil
+      "hello there".send(@method, /(?<whut>what?)/, 'whut').should == nil
     end
 
     it "raises an IndexError if there is no capture for the given name" do
       -> do
         "hello there".send(@method, /[aeiou](.)\1/, 'non')
-      end.should raise_error(IndexError)
+      end.should.raise(IndexError)
     end
 
     it "raises a TypeError when the given name is not a String" do
-      -> { "hello".send(@method, /(?<q>.)/, mock('x')) }.should raise_error(TypeError)
-      -> { "hello".send(@method, /(?<q>.)/, {})        }.should raise_error(TypeError)
-      -> { "hello".send(@method, /(?<q>.)/, [])        }.should raise_error(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, mock('x')) }.should.raise(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, {})        }.should.raise(TypeError)
+      -> { "hello".send(@method, /(?<q>.)/, [])        }.should.raise(TypeError)
     end
 
     it "raises an IndexError when given the empty String as a group name" do
-      -> { "hello".send(@method, /(?<q>)/, '') }.should raise_error(IndexError)
+      -> { "hello".send(@method, /(?<q>)/, '') }.should.raise(IndexError)
     end
 
     it "returns String instances" do
       s = StringSpecs::MyString.new("hello")
-      s.send(@method, /(?<q>.)/, 'q').should be_an_instance_of(String)
+      s.send(@method, /(?<q>.)/, 'q').should.instance_of?(String)
     end
 
     it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -505,13 +526,13 @@ describe :string_slice_regexp_group, shared: true do
       $~[0].should == 'he'
 
       'hello'.send(@method, /(?<non>not)/, 'non')
-      $~.should be_nil
+      $~.should == nil
     end
   end
 end
 
 describe :string_slice_symbol, shared: true do
   it "raises TypeError" do
-    -> { 'hello'.send(@method, :hello) }.should raise_error(TypeError)
+    -> { 'hello'.send(@method, :hello) }.should.raise(TypeError)
   end
 end

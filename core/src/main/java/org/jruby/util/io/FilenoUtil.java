@@ -135,6 +135,13 @@ public class FilenoUtil {
         return internalFilenoIndex.getAndIncrement();
     }
 
+    /** Whether Java channel descriptors can be used for native process redirection. */
+    public static boolean nativeFilenoAvailable() {
+        return ReflectiveAccess.SEL_CH_IMPL_GET_FD_HANDLE != null &&
+                ReflectiveAccess.FILE_CHANNEL_IMPL_GET_FD_HANDLE != null &&
+                ReflectiveAccess.FILE_DESCRIPTOR_GET_FILENO_HANDLE != null;
+    }
+
     public static boolean isFake(int fileno) {
         return fileno < 0 || fileno >= FIRST_FAKE_FD;
     }

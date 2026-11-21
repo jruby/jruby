@@ -35,6 +35,8 @@
 
 package org.jruby.exceptions;
 
+import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -49,9 +51,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.Member;
-import java.util.Arrays;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.nameError;
@@ -212,8 +211,6 @@ public class RaiseException extends JumpException {
         context.runtime.incrementExceptionCount();
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        doSetLastError(context);
-
         if (backtrace == null) {
             if (capture) { // only false to support legacy RaiseException construction (not setting trace)
                 if (requiresBacktrace(context)) exception.captureBacktrace(context);
@@ -226,8 +223,6 @@ public class RaiseException extends JumpException {
             }
             setStackTraceFromException();
         }
-
-        IRRuntimeHelpers.traceRaise(context);
     }
 
     private void setStackTraceFromException() {
@@ -265,17 +260,6 @@ public class RaiseException extends JumpException {
         return trace;
     }
 
-    private void fillInStackTraceSkipPreRaise() {
-        originalFillInStackTrace(); // (fillInStackTraceSkipPreRaise) originalFillInStackTrace, preRaise
-        StackTraceElement[] curTrace = getStackTrace();
-        StackTraceElement[] newTrace = skipFillInStackTracePart(curTrace);
-        if (newTrace != curTrace) setStackTrace(newTrace);
-    }
-
-    private void doSetLastError(final ThreadContext context) {
-        context.setErrorInfo(exception); // $!
-    }
-
     /**
      * Sets the exception
      * @param newException The exception to set
@@ -292,88 +276,32 @@ public class RaiseException extends JumpException {
         return newTrace;
     }
 
-    @Deprecated(since = "9.2.10.0") // used by JRuby-Rack
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
-        return createNativeRaiseException(runtime, cause, null);
-    }
-    @Deprecated(since = "9.2.7.0")
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
-        org.jruby.NativeException nativeException = new org.jruby.NativeException(runtime, runtime.getNativeException(), cause);
-        return new RaiseException(cause, nativeException);
-    }
-    @Deprecated(since = "9.2.7.0")
-    public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
-        super(nativeException.getMessageAsJavaString(), cause);
-        providedMessage = super.getMessage(); // cause.getClass().getId() + ": " + message
-        setException(nativeException);
-        preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
-        setStackTraceFromException();
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public RaiseException(RubyException exception) {
-        this(exception.getMessageAsJavaString(), exception);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public RaiseException(RubyException exception, boolean unused) {
-        this(exception.getMessageAsJavaString(), exception);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public RaiseException(RubyException exception, IRubyObject backtrace) {
-        // this(exception.getMessageAsJavaString(), exception) would preRaise twice!
-        super(exception.getMessageAsJavaString());
-        setException(exception);
-        preRaise(exception.getRuntime().getCurrentContext(), backtrace, true);
-    }
-
+    // Deprecated but still used by the overload below
     @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg) {
         this(runtime, exceptionClass, msg, null);
     }
 
+    // Deprecated but still used by jruby-openssl in org.jruby.ext.openssl.Utils.newError
     @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, boolean unused) {
         this(runtime, exceptionClass, msg, null);
     }
 
+    // Deprecated but still used by the overload below
     @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         super(msg == null ? msg = "No message available" : msg);
         final ThreadContext context = runtime.getCurrentContext();
-
         providedMessage = '(' + exceptionClass.getName(context) + ") " + msg;
-
         setException(RubyException.newException(context, exceptionClass, RubyString.newUnicodeString(runtime, msg)));
         preRaise(context, backtrace, true);
     }
 
+    // Deprecated but still used by jruby-openssl in org.jruby.ext.openssl.Utils.newErrorWithoutTrace
     @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace, boolean unused) {
         this(runtime, exceptionClass, msg, backtrace);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    protected final void setException(RubyException newException, boolean unused) {
-        this.exception = newException;
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
-        preRaise(context, null, false);
-
-        if (requiresBacktrace(context)) {
-            exception.prepareIntegratedBacktrace(context, javaTrace);
-            setStackTraceFromException();
-        } else {
-            setStackTrace(skipFillInStackTracePart(javaTrace));
-        }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static RaiseException from(RubyException exception, IRubyObject backtrace) {
-        return new RaiseException(exception, backtrace);
     }
 
     private boolean requiresBacktrace(ThreadContext context) {

@@ -1,3 +1,6 @@
 fails:DateTime.minute raises an error for Rational
 fails:DateTime.minute raises an error for Float
 fails:DateTime.minute raises an error for minute fractions smaller than -60
+fails:DateTime#minute raises an error for Rational
+fails:DateTime#minute raises an error for Float
+fails:DateTime#minute raises an error for minute fractions smaller than -60

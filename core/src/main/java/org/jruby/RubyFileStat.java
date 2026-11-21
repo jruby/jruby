@@ -155,7 +155,7 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject fname, Block unusedBlock) {
-        setup(RubyFile.get_path(context, fname).toString(), false);
+        setup(RubyFile.decodePath(context, fname), false);
         return this;
     }
     
@@ -176,13 +176,6 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject blockSize(ThreadContext context) {
         checkInitialized(context);
         if (Platform.IS_WINDOWS) return context.nil;
-        return asFixnum(context, stat.blockSize());
-    }
-
-    @Deprecated(since = "9.0.4.0")
-    public RubyFixnum blksize() {
-        ThreadContext context = getCurrentContext();
-        checkInitialized(context);
         return asFixnum(context, stat.blockSize());
     }
 

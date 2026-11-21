@@ -243,6 +243,10 @@ class TestThread < Test::Unit::TestCase
 
   def test_join_argument_conversion
     t = Thread.new {}
+
+    # Make sure that the thread terminates
+    Thread.pass while t.status
+
     assert_raise(TypeError) {t.join(:foo)}
 
     limit = Struct.new(:to_f, :count).new(0.05)
@@ -323,7 +327,6 @@ class TestThread < Test::Unit::TestCase
       s += 1
     end
     Thread.pass until t.stop?
-    sleep 1 if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled? # t.stop? behaves unexpectedly with --jit-wait
     assert_equal(1, s)
     t.wakeup
     Thread.pass while t.alive?
@@ -821,6 +824,59 @@ class TestThread < Test::Unit::TestCase
     end
   end
 
+  # Thread.handle_interrupt checks for interrupts after the block returns,
+  # before re-raising the jump (break/return/raise) that left the block.
+  # Running a signal handler there must not clobber ec->errinfo, which still
+  # holds the payload of that jump.
+  def test_handle_interrupt_with_return_and_trap_handler
+    omit "needs fork" unless Process.respond_to?(:fork)
+    omit "SIGUSR1 is not supported" unless Signal.list.key?("USR1")
+
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 120)
+    begin;
+      trap(:USR1) do
+        begin
+          raise "entering a rescue clause clears errinfo"
+        rescue
+        end
+      end
+
+      def return_from_handle_interrupt(array)
+        array.each do |i|
+          Thread.handle_interrupt(Exception => :immediate) { return i }
+        end
+        nil
+      end
+
+      # Signal from another process: a thread of this process would only get
+      # scheduled a few times a second while the main thread spins.
+      pid = Process.pid
+      killer = fork do
+        begin
+          # Process.ppid changes if the parent crashes.
+          while Process.ppid == pid
+            Process.kill(:USR1, pid)
+            sleep 0.001
+          end
+        rescue Errno::ESRCH
+        end
+        exit!(0)
+      end
+
+      returned = nil
+      begin
+        500_000.times do
+          returned = return_from_handle_interrupt([1, 2, 3])
+          break unless returned == 1
+        end
+      ensure
+        Process.kill(:KILL, killer) rescue Errno::ESRCH
+        Process.waitpid(killer)
+      end
+      assert_equal(1, returned)
+    end;
+  end
+
   def test_handle_interrupt_blocking
     r = nil
     q = Thread::Queue.new
@@ -842,6 +898,40 @@ class TestThread < Test::Unit::TestCase
     }
     assert_raise(e) {q << true; th.join}
     assert_equal(:ok, r)
+  end
+
+  def test_handle_interrupt_masks_sigint
+    if /mswin|mingw/ =~ RUBY_PLATFORM
+      omit "SIGINT handling differs on Windows"
+    end
+
+    assert_in_out_err([], <<-INPUT, %w(outer false), [])
+      waiting = Thread::Queue.new
+      release = Thread::Queue.new
+      inner = false
+
+      Thread.new do
+        waiting.pop
+        Process.kill(:INT, Process.pid)
+        release.push(true)
+      end
+
+      begin
+        Thread.handle_interrupt(SignalException => :never) do
+          begin
+            waiting.push(true)
+            release.pop
+          rescue Interrupt
+            inner = true
+            raise
+          end
+        end
+      rescue Interrupt
+        puts "outer"
+      end
+
+      puts inner
+    INPUT
   end
 
   def test_handle_interrupt_and_io
@@ -1479,9 +1569,6 @@ q.pop
   def test_thread_interrupt_for_killed_thread
     opts = { timeout: 5, timeout_error: nil }
 
-    # prevent SIGABRT from slow shutdown with RJIT
-    opts[:reprieve] = 3 if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
-
     assert_normal_exit(<<-_end, '[Bug #8996]', **opts)
       Thread.report_on_exception = false
       trap(:TERM){exit}
@@ -1556,5 +1643,128 @@ q.pop
     assert_equal(true, t.pending_interrupt?)
     assert_equal(true, t.pending_interrupt?(Exception))
     assert_equal(false, t.pending_interrupt?(ArgumentError))
+  end
+
+  def test_deadlock_backtrace
+    bug21127 = '[ruby-core:120930] [Bug #21127]'
+
+    expected_stderr = [
+      /-:12:in 'Thread#join': No live threads left. Deadlock\? \(fatal\)\n/,
+      /2 threads, 2 sleeps current:\w+ main thread:\w+\n/,
+      /\* #<Thread:\w+ sleep_forever>\n/,
+      :*,
+      /^\s*-:6:in 'Object#frame_for_deadlock_test_2'/,
+      :*,
+      /\* #<Thread:\w+ -:10 sleep_forever>\n/,
+      :*,
+      /^\s*-:2:in 'Object#frame_for_deadlock_test_1'/,
+      :*,
+    ]
+
+    assert_in_out_err([], <<-INPUT, [], expected_stderr, bug21127)
+      def frame_for_deadlock_test_1
+        yield
+      end
+
+      def frame_for_deadlock_test_2
+        yield
+      end
+
+      q = Thread::Queue.new
+      t = Thread.new { frame_for_deadlock_test_1 { q.pop } }
+
+      frame_for_deadlock_test_2 { t.join }
+    INPUT
+  end
+
+  # [Bug #21342]
+  def test_unlock_locked_mutex_with_collected_fiber
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      5.times do
+        m = Mutex.new
+        Thread.new do
+          m.synchronize do
+          end
+        end.join
+        Fiber.new do
+          GC.start
+          m.lock
+        end.resume
+      end
+    end;
+  end
+
+  def test_unlock_locked_mutex_with_collected_fiber2
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      MUTEXES = []
+      5.times do
+        m = Mutex.new
+        Fiber.new do
+          GC.start
+          m.lock
+        end.resume
+        MUTEXES << m
+      end
+      10.times do
+        MUTEXES.clear
+        GC.start
+      end
+    end;
+  end
+
+  def test_mutexes_locked_in_fiber_dont_have_aba_issue_with_new_fibers
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      mutexes = 1000.times.map do
+        Mutex.new
+      end
+
+      mutexes.map do |m|
+        Fiber.new do
+          m.lock
+        end.resume
+      end
+
+      GC.start
+
+      1000.times.map do
+        Fiber.new do
+          raise "FAILED!" if mutexes.any?(&:owned?)
+        end.resume
+      end
+    end;
+  end
+
+  # [Bug #21926]
+  def test_thread_join_during_finalizers
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 60)
+    begin;
+      require 'open3'
+
+      class ProcessWrapper
+        def initialize
+          @stdin, @stdout, @stderr, @wait_thread = Open3.popen3("cat") # hangs until we close our stdin side
+          ObjectSpace.define_finalizer(self, self.class.make_finalizer(@stdin, @stdout, @stderr, @wait_thread))
+        end
+
+        def self.make_finalizer(stdin, stdout, stderr, wait_thread)
+          proc do
+            stdin.close rescue nil
+            stdout.close rescue nil
+            stderr.close rescue nil
+            # On some GC implementations (e.g. mmtk), finalizers run as postponed
+            # jobs which can execute on any thread, including the wait_thread itself.
+            # Guard against joining the current thread.
+            wait_thread.value unless Thread.current == wait_thread
+          end
+        end
+      end
+
+      20.times { ProcessWrapper.new }
+      GC.stress = true
+      1000.times { Object.new }
+    end;
   end
 end

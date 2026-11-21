@@ -1,3 +1,4 @@
 fails:TCPServer#accept is automatically retried when interrupted by SIGVTALRM
 fails:TCPServer#accept using IPv4 with a connected client returns a TCPSocket which is set to nonblocking
 fails:TCPServer#accept using IPv6 with a connected client returns a TCPSocket which is set to nonblocking
+fails:TCPServer#accept with Fiber scheduler calls the scheduler's #fiber_interrupt with an IOError when the server is closed while it waits

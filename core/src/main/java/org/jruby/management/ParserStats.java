@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 import org.jruby.parser.ParserManager;
+import org.jruby.parser.ParserProvider;
 import org.jruby.util.cli.Options;
 
 public class ParserStats implements ParserStatsMBean {
@@ -87,12 +88,11 @@ public class ParserStats implements ParserStatsMBean {
         totalPrismCParseSerializingTime.addAndGet(time);
     }
 
-    public void printParserStatistics() {
+    public void printParserStatistics(Ruby runtime) {
         System.err.println("--------------------------------------------------------------------------------");
         System.err.println("Parser Statistics:");
         System.err.println("  Generic:");
-        System.err.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
-                (Options.PARSER_PRISM.load() ? "Prism(C)" : "Legacy")));
+        System.err.println("    parser type: " + runtime.getParserManager().getParser().getClass());
         System.err.println("    bytes processed: " + getTotalParsedBytes());
         System.err.println("    files parsed: " + getNumberOfLoadParses());
         System.err.println("    evals parsed: " + getNumberOfEvalParses());

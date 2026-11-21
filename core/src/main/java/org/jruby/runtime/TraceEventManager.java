@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Warn.warn;
 
 public class TraceEventManager {
@@ -41,6 +41,21 @@ public class TraceEventManager {
             .drop(1, 5)
             .identity();
 
+    public static final MethodHandle VALUE_TRACE_ON = Binder
+            .from(void.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
+            .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "callTrace");
+    public static final MethodHandle VALUE_TRACE_OFF = Binder
+            .from(void.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
+            .drop(1, 6)
+            .identity();
+    public static final MethodHandle B_VALUE_TRACE_ON = Binder
+            .from(void.class, ThreadContext.class, Block.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
+            .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "callTrace");
+    public static final MethodHandle B_VALUE_TRACE_OFF = Binder
+            .from(void.class, ThreadContext.class, Block.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
+            .drop(1, 6)
+            .identity();
+
     private static final EventHook[] EMPTY_HOOKS = new EventHook[0];
 
     private final Ruby runtime;
@@ -50,6 +65,8 @@ public class TraceEventManager {
 
     private final MutableCallSite callTrace = new MutableCallSite(TRACE_OFF);
     private final MutableCallSite bcallTrace = new MutableCallSite(B_TRACE_OFF);
+    private final MutableCallSite returnValueTrace = new MutableCallSite(VALUE_TRACE_OFF);
+    private final MutableCallSite bReturnValueTrace = new MutableCallSite(B_VALUE_TRACE_OFF);
 
     public TraceEventManager(Ruby runtime) {
         this.runtime = runtime;
@@ -120,27 +137,33 @@ public class TraceEventManager {
     private void enableTraceSites(EventHook hook) {
         if (hook.isInterestedInEvent(RubyEvent.CALL) || hook.isInterestedInEvent(RubyEvent.RETURN)) {
             callTrace.setTarget(TRACE_ON);
+            returnValueTrace.setTarget(VALUE_TRACE_ON);
         }
 
         if (hook.isInterestedInEvent(RubyEvent.B_CALL) || hook.isInterestedInEvent(RubyEvent.B_RETURN)) {
             bcallTrace.setTarget(B_TRACE_ON);
+            bReturnValueTrace.setTarget(B_VALUE_TRACE_ON);
         }
     }
 
     private void disableTraceSites(EventHook hook) {
         if (hook.isInterestedInEvent(RubyEvent.CALL) || hook.isInterestedInEvent(RubyEvent.RETURN)) {
             callTrace.setTarget(TRACE_OFF);
+            returnValueTrace.setTarget(VALUE_TRACE_OFF);
         }
 
         if (hook.isInterestedInEvent(RubyEvent.B_CALL) || hook.isInterestedInEvent(RubyEvent.B_RETURN)) {
             bcallTrace.setTarget(B_TRACE_OFF);
+            bReturnValueTrace.setTarget(B_VALUE_TRACE_OFF);
         }
     }
 
     private void disableTraceSites() {
         callTrace.setTarget(TRACE_OFF);
+        returnValueTrace.setTarget(VALUE_TRACE_OFF);
 
         bcallTrace.setTarget(B_TRACE_OFF);
+        bReturnValueTrace.setTarget(B_VALUE_TRACE_OFF);
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
@@ -164,10 +187,11 @@ public class TraceEventManager {
     public void removeAllCallEventHooksFor(ThreadContext context) {
         if (eventHooks.length == 0) return;
 
+        int size = eventHooks.length;
         List<EventHook> hooks = new ArrayList<>(Arrays.asList(eventHooks));
 
         hooks = hooks.stream().filter(hook ->
-                !(hook instanceof CallTraceFuncHook) || !((CallTraceFuncHook) hook).getThread().equals(context)
+                !(hook instanceof CallTraceFuncHook ctfHook && ctfHook.getThread().equals(context))
         ).collect(Collectors.toList());
 
         EventHook[] newHooks = new EventHook[hooks.size()];
@@ -180,6 +204,14 @@ public class TraceEventManager {
     }
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
+        callEventHooks(context, event, file, line, name, type, context.nil);
+    }
+
+    /**
+     * Call all interested event hooks, passing along a value associated with the event (for example the
+     * return value for :return and :b_return events).
+     */
+    public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type, IRubyObject value) {
         if (context.isEventHooksEnabled()) {
             EventHook hooks[] = eventHooks;
 
@@ -193,7 +225,7 @@ public class TraceEventManager {
                             klass = ((MetaClass) type).getAttached();
                         }
                     }
-                    eventHook.event(context, event, file, line, name, klass);
+                    eventHook.event(context, event, file, line, name, klass, value);
                 }
             }
         }
@@ -207,8 +239,20 @@ public class TraceEventManager {
         return bcallTrace;
     }
 
+    public MutableCallSite getReturnValueSite() {
+        return returnValueTrace;
+    }
+
+    public MutableCallSite getBReturnValueSite() {
+        return bReturnValueTrace;
+    }
+
     public boolean hasEventHooks() {
         return hasEventHooks;
+    }
+
+    public int[] eventHookStats() {
+        return new int[] {eventHooks.length, 0};
     }
 
     public static class CallTraceFuncHook extends EventHook {

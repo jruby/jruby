@@ -13,17 +13,6 @@ class TestGemUtil < Gem::TestCase
     end
   end
 
-  def test_silent_system
-    pend if Gem.java_platform?
-    Gem::Deprecate.skip_during do
-      out, err = capture_output do
-        Gem::Util.silent_system(*ruby_with_rubygems_in_load_path, "-e", 'puts "hello"; warn "hello"')
-      end
-      assert_empty out
-      assert_empty err
-    end
-  end
-
   def test_traverse_parents
     FileUtils.mkdir_p "a/b/c"
 
@@ -73,11 +62,63 @@ class TestGemUtil < Gem::TestCase
     assert_equal expected_paths.sort, files_with_relative_base.sort
   end
 
+  def test_glob_files_in_dir_with_leading_tilde_entries
+    FileUtils.mkdir_p "j"
+    FileUtils.touch File.join("j", "~")
+    FileUtils.touch File.join("j", "~k.rb")
+
+    expected_paths = [
+      File.join(@tempdir, "j", "~"),
+      File.join(@tempdir, "j", "~k.rb"),
+    ]
+
+    files = Gem::Util.glob_files_in_dir("*", File.join(@tempdir, "j"))
+    assert_equal expected_paths.sort, files.sort
+  end
+
   def test_correct_for_windows_path
     path = "/C:/WINDOWS/Temp/gems"
     assert_equal "C:/WINDOWS/Temp/gems", Gem::Util.correct_for_windows_path(path)
 
     path = "/home/skillet"
     assert_equal "/home/skillet", Gem::Util.correct_for_windows_path(path)
+  end
+
+  def test_deep_dup
+    defaults = {
+      args: ["--local", +"extra"],
+      document: %w[ri],
+      nested: { list: [+"a", { key: +"b" }] },
+      version: Gem::Requirement.default,
+      wrappers: true,
+      count: 1,
+      sym: :install,
+    }
+
+    copy = Gem::Util.deep_dup defaults
+
+    assert_equal defaults, copy
+    refute_same defaults, copy
+    refute_same defaults[:args], copy[:args]
+    refute_same defaults[:args][1], copy[:args][1]
+    refute_same defaults[:nested], copy[:nested]
+    refute_same defaults[:nested][:list], copy[:nested][:list]
+    refute_same defaults[:nested][:list][1], copy[:nested][:list][1]
+    refute_same defaults[:version], copy[:version]
+
+    copy[:args] << "added"
+    copy[:nested][:list][1][:key] << "!"
+
+    assert_equal ["--local", "extra"], defaults[:args]
+    assert_equal "b", defaults[:nested][:list][1][:key]
+  end
+
+  def test_deep_dup_shares_the_internals_of_other_objects
+    struct = Struct.new(:list).new([+"a"])
+
+    copy = Gem::Util.deep_dup(struct: struct)[:struct]
+
+    refute_same struct, copy
+    assert_same struct.list, copy.list
   end
 end

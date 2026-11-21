@@ -2228,6 +2228,18 @@ class TestTranscode < Test::Unit::TestCase
     assert_equal("U+3042", "\u{3042}".encode("US-ASCII", fallback: fallback))
   end
 
+  def test_fallback_modify_source_string
+    # [Bug #22330]
+    s = "\u3042" * 1000
+    assert_raise_with_message(RuntimeError, /string modified/) do
+      s.encode("US-ASCII",
+        fallback: proc {|x|
+          s.clear
+          "?"
+        })
+    end
+  end
+
   def test_fallback_method
     def (fallback = "U+%.4X").escape(x)
       self % x.unpack("U")
@@ -2318,6 +2330,93 @@ class TestTranscode < Test::Unit::TestCase
     assert_equal("A\r\nB\r\r\nC", s.encode(usascii, newline: :crlf))
     assert_equal("A\nB\nC", s.encode(usascii, lf_newline: true))
     assert_equal("A\nB\nC", s.encode(usascii, newline: :lf))
+  end
+
+  def test_ractor_lazy_load_encoding
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}", timeout: 60)
+    begin;
+      rs = []
+      autoload_encodings = Encoding.list.select { |e| e.inspect.include?("(autoload)") }.freeze
+      7.times do
+        rs << Ractor.new(autoload_encodings) do |encodings|
+          str = "\u0300"
+          encodings.each do |enc|
+            str.encode(enc) rescue Encoding::UndefinedConversionError
+          end
+        end
+      end
+
+      while rs.any?
+        r, _obj = Ractor.select(*rs)
+        rs.delete(r)
+      end
+      assert rs.empty?
+    end;
+  end
+
+  def test_ractor_lazy_load_encoding_random
+    omit 'unstable on s390x and windows' if RUBY_PLATFORM =~ /s390x|mswin/
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      rs = []
+      100.times do
+        rs << Ractor.new do
+          "\u0300".encode(Encoding.list.sample) rescue Encoding::UndefinedConversionError
+        end
+      end
+
+      while rs.any?
+        r, _obj = Ractor.select(*rs)
+        rs.delete(r)
+      end
+      assert rs.empty?
+    end;
+  end
+
+  def test_ractor_asciicompat_encoding_exists
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      rs = []
+      7.times do
+        rs << Ractor.new do
+          string = "ISO-2022-JP"
+          encoding = Encoding.find(string)
+          20_000.times do
+            Encoding::Converter.asciicompat_encoding(string)
+            Encoding::Converter.asciicompat_encoding(encoding)
+          end
+        end
+      end
+
+      while rs.any?
+        r, _obj = Ractor.select(*rs)
+        rs.delete(r)
+      end
+      assert rs.empty?
+    end;
+  end
+
+  def test_ractor_asciicompat_encoding_doesnt_exist
+    assert_ractor("#{<<~"begin;"}\n#{<<~'end;'}", timeout: 60)
+    begin;
+      rs = []
+      NO_EXIST = "I".freeze
+      7.times do
+        rs << Ractor.new do
+          50.times do
+            if (val = Encoding::Converter.asciicompat_encoding(NO_EXIST))
+              raise "Got #{val}, expected nil"
+            end
+          end
+        end
+      end
+
+      while rs.any?
+        r, _obj = Ractor.select(*rs)
+        rs.delete(r)
+      end
+      assert rs.empty?
+    end;
   end
 
   private

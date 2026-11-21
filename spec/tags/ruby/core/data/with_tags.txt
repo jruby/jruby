@@ -1,1 +1,0 @@
-fails:Data#with does not depend on the Data.new method

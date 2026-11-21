@@ -365,7 +365,9 @@ public class ShellLauncher {
         return false;
     }
 
-    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec) {
+    // With raiseOnNotExecutable false a non-executable match is treated as no match, as MRI's dln_find_1
+    // does while walking PATH, rather than raising EACCES.
+    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec, boolean raiseOnNotExecutable) {
         File validFile = null;
         if (isExec && Platform.IS_WINDOWS) {
             if (withExeSuffix(fname)) {
@@ -386,6 +388,7 @@ public class ShellLauncher {
                     return null;
                 }
                 if (isExec && !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable()) {
+                    if (!raiseOnNotExecutable) return null;
                     throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
                 }
             }
@@ -395,11 +398,14 @@ public class ShellLauncher {
 
     private static File isValidFile(Ruby runtime, String fname, boolean isExec) {
         String fdir = null;
-        return isValidFile(runtime, fdir, fname, isExec);
+        return isValidFile(runtime, fdir, fname, isExec, true);
     }
 
     private static File findPathFile(Ruby runtime, String fname, String[] path, boolean isExec) {
         File pathFile = null;
+        // MRI: dln_find_1 skips non-regular files, so an empty name never resolves (each candidate is a PATH
+        // dir); here the search would instead hit the dir entries themselves and can raise EACCES
+        if (fname.isEmpty()) return null;
         if (Platform.IS_WINDOWS && fname.startsWith("\"") && fname.endsWith("\"")) {
             fname = fname.substring(1, fname.length() - 1); // remove double quotes if present
         }
@@ -410,7 +416,8 @@ public class ShellLauncher {
                 //       MRI's, which can't handle user names after the tilde
                 //       when searching the executable path
                 try {
-                    pathFile = isValidFile(runtime, fdir, fname, isExec);
+                    // MRI: dln_find_1 skips candidates it cannot execute and keeps walking PATH
+                    pathFile = isValidFile(runtime, fdir, fname, isExec, false);
                     if (pathFile != null) {
                         break;
                     }
@@ -842,26 +849,6 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, true), runtime, modes);
     }
 
-    @Deprecated(since = "1.7.4")
-    public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
-    }
-
-    @Deprecated(since = "1.7.4")
-    public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, IOOptions modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings));
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, boolean addShell) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings, null, addShell));
-    }
-
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
         return popenShared(runtime, strings, null);
     }
@@ -923,11 +910,6 @@ public class ShellLauncher {
         private FileChannel inerrChannel;
         private Pumper inputPumper;
         private Pumper inerrPumper;
-
-        @Deprecated(since = "1.7.4")
-        public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
-            this(child, runtime, modes.getModeFlags());
-        }
 
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
@@ -1127,57 +1109,9 @@ public class ShellLauncher {
          * Only run an in-process script if the script name has "ruby", ".rb",
          * or "irb" in the name.
          */
+        @Deprecated(since = "10.1.0.0")
         public boolean shouldRunInProcess() {
-            if (!runtime.getInstanceConfig().isRunRubyInProcess()
-                    || RubyInstanceConfig.hasLoadedNativeExtensions()) {
-                return false;
-            }
-
-            // Check for special shell characters [<>|] at the beginning
-            // and end of each command word and don't run in process if we find them.
-            for (int i = 0; i < args.length; i++) {
-                String c = args[i];
-                if (c.trim().length() == 0) continue;
-
-                char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
-                for (int j = 0; j < firstLast.length; j++) {
-                    switch (firstLast[j]) {
-                    case '<': case '>': case '|': case ';': case '(': case ')':
-                    case '~': case '&': case '$': case '"': case '`': case '\n':
-                    case '\\': case '\'':
-                        return false;
-                    case '2':
-                        if(c.length() > 1 && c.charAt(1) == '>') return false;
-                    }
-                }
-            }
-
-            String command = args[0];
-
-            if (Platform.IS_WINDOWS) command = command.toLowerCase();
-
-            // handle both slash types, \ and /.
-            String[] slashDelimitedTokens = command.split("[/\\\\]");
-            String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
-            boolean inProc = (finalToken.endsWith("ruby")
-                    || (Platform.IS_WINDOWS && finalToken.endsWith("ruby.exe"))
-                    || finalToken.endsWith(".rb")
-                    || finalToken.endsWith("irb"));
-
-            if (!inProc) return false;
-
-            // snip off ruby or jruby command from list of arguments
-            // leave alone if the command is the name of a script
-            int startIndex = command.endsWith(".rb") ? 0 : 1;
-            if (command.trim().endsWith("irb")) {
-                startIndex = 0;
-                args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
-            }
-
-            execArgs = new String[args.length - startIndex];
-            System.arraycopy(args, startIndex, execArgs, 0, execArgs.length);
-
-            return true;
+            return false;
         }
 
         /**
@@ -1733,25 +1667,5 @@ public class ShellLauncher {
         if (RubyInstanceConfig.DEBUG_LAUNCHING) {
             runtime.getErr().println("ShellLauncher: " + msg);
         }
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
-        return ChannelHelper.unwrapBufferedStream(filteredStream);
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static InputStream unwrapBufferedStream(InputStream filteredStream) {
-        return ChannelHelper.unwrapBufferedStream(filteredStream);
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
-        return ChannelHelper.unwrapFilterOutputStream(filteredStream);
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
-        return ChannelHelper.unwrapFilterInputStream(filteredStream);
     }
 }

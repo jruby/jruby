@@ -18,10 +18,16 @@ describe 'Addrinfo#getnameinfo' do
         service.should == '21'
       end
     end
+
+    it 'returns the service of the port for a SOCK_RAW Addrinfo' do
+      addr = Addrinfo.new(Socket.sockaddr_in(21, '127.0.0.1'), :INET, :RAW)
+
+      addr.getnameinfo[1].should == 'ftp'
+    end
   end
 
   platform_is :linux do
-    platform_is_not :android do
+    platform_is_not :android, :musl do
       describe 'using a UNIX Addrinfo' do
         before do
           @addr = Addrinfo.unix('cats')

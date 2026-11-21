@@ -6,10 +6,6 @@ Prerequisites:
 * A [Java 21-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
 
-For running tests, you will need Ant:
-
-* [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
-
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
 
@@ -103,12 +99,16 @@ one of the gems to a newer version or clean out all installed gems.
 
 ### Incremental compiling
 
-After changing Java code, you can recompile quickly by running one of the
-jar files by
+After changing Java code, you can recompile quickly and update
+`lib/jruby.jar` (the jar `bin/jruby` runs) by building the `core` and
+`shaded` modules together:
 
 ```
-./mvnw -pl core
+./mvnw -DskipTests -pl core,shaded package
 ```
+
+Building `core` on its own does not update `lib/jruby.jar`, so `bin/jruby`
+would keep running the old code.
 
 ### Day to Day Testing
 
@@ -150,6 +150,16 @@ To run a given test with these excludes enabled, you can use the --excludes flag
 ```
 ./bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
+
+#### Audit the excludes
+
+Excludes go stale as JRuby improves, and tests get renamed or removed when the MRI tests are updated. To find the ones that can go, run:
+
+```
+./bin/jruby tool/audit_mri_excludes
+```
+
+This loads each test file to check that every excluded class and method still exists, then runs each excluded test by itself, in its own process with a time limit, so a test that hangs or leaves threads behind can't affect the others. It reports the excludes for tests that pass or no longer exist, along with ones that time out, crash or skip themselves. Name exclude classes to audit only those, as in `TestString OpenSSL::TestSSL`. Use `--mode jit` to run the tests in the JIT, `--repeat 3` to rule out tests that pass only some of the time, and `--prune` to remove the excludes for tests that pass or no longer exist. A test can pass by itself and still fail in a full run because of what ran before it, so run the suite before committing what `--prune` removed.
 
 #### Run a single spec using RSpec
 

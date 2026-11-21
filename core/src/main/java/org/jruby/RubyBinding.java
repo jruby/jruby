@@ -34,9 +34,12 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.ripper.RubyLexer;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -46,6 +49,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -87,16 +92,6 @@ public class RubyBinding extends RubyObject implements DataType {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
-    @Deprecated(since = "1.2")
-    public static RubyBinding newBinding(Ruby runtime) {
-        return newBinding(runtime, runtime.getCurrentContext().currentBinding());
-    }
-
-    @Deprecated(since = "1.2")
-    public static RubyBinding newBinding(Ruby runtime, IRubyObject self) {
-       return newBinding(runtime, runtime.getCurrentContext().currentBinding(self));
-    }
-    
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context) {
@@ -142,37 +137,100 @@ public class RubyBinding extends RubyObject implements DataType {
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefinedOrImplicit(id) >= 0);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(id);
+        DynamicScope scope = findLocalScope(binding.getEvalScope(context.runtime), id);
+        int slot = scope == null ? -1 : scope.getStaticScope().existsOrImplicit(id);
 
-        if (slot == -1) throw nameError(context, str(context.runtime, "local variable '", symbol, "' not defined for " + inspect(context)), symbol);
+        if (slot < 0) throw undefinedVariableError(context, symbol);
 
-        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+        return scope.getValueOrNil(slot, 0, context.nil);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_set(ThreadContext context, IRubyObject symbol, IRubyObject value) {
         String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(id);
+        DynamicScope scope = findLocalScope(evalScope, id);
 
-        if (slot == -1) { // Yay! New variable associated with this binding
-            slot = evalScope.getStaticScope().addVariable(id.intern());
+        if (scope == null) { // Yay! New variable associated with this binding
+            int slot = evalScope.getStaticScope().addVariable(id.intern());
             evalScope.growIfNeeded();
+
+            return evalScope.setValue(unpackLowChar(slot), value, unpackHighChar(slot));
         }
 
-        return evalScope.setValue(slot & 0xffff, value, slot >> 16);
+        int slot = scope.getStaticScope().existsOrImplicit(id);
+
+        // for the implicit "it" variable
+        if (slot == StaticScope.IMPLICIT) throw undefinedVariableError(context, symbol);
+
+        return scope.setValue(slot, value, 0);
     }
 
-    // MRI: check_local_id
+    /**
+     * Find the dynamic scope that holds a local variable, or null if none does.
+     *
+     * This walks the dynamic scopes rather than taking a depth from the static ones, because the two
+     * chains don't always line up: in the interpreter, a for loop body gets a dynamic scope of its own,
+     * but a block inside it has the enclosing method's static scope as its parent.
+     */
+    private static DynamicScope findLocalScope(DynamicScope scope, String id) {
+        for (DynamicScope current = scope; current != null; current = current.getParentScope()) {
+            StaticScope staticScope = current.getStaticScope();
+
+            if (staticScope.existsOrImplicit(id) != -1) return current;
+            if (staticScope.getType() == StaticScope.Type.LOCAL) break;
+        }
+
+        return null;
+    }
+
+    @JRubyMethod(name = "implicit_parameter_defined?")
+    public IRubyObject implicit_parameter_defined_p(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        return asBoolean(context, binding.getDynamicScope().getStaticScope().isDefinedImplicitParameter(id) != -1);
+    }
+
+    @JRubyMethod
+    public IRubyObject implicit_parameter_get(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        DynamicScope dynamicScope = binding.getDynamicScope();
+        StaticScope staticScope = dynamicScope.getStaticScope();
+        int slot = staticScope.isDefinedImplicitParameter(id);
+
+        if (slot != StaticScope.IMPLICIT) throw undefinedImplicitVariableError(context, symbol);
+
+        slot = staticScope.isDefined(id);
+
+        return dynamicScope.getValueOrNil(unpackLowChar(slot), unpackHighChar(slot), context.nil);
+    }
+
+    private static boolean isNumberedVariable(String id) {
+        return id.length() == 2 && id.charAt(0) == '_' && Character.isDigit(id.charAt(1));
+    }
+
+    private RaiseException numberedParameterError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "numbered parameter '", symbol, "' is not a local variable"), symbol);
+    }
+
+    private RaiseException undefinedVariableError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "local variable '", symbol, "' not defined for " + inspect(context)), symbol);
+    }
+
+    private RaiseException undefinedImplicitVariableError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "'", symbol, "' is not an implicit parameter"), symbol);
+    }
+
+    @CRuby(value = "check_local_id", file = "proc.c")
     private String checkLocalId(ThreadContext context, IRubyObject obj) {
         String id = RubySymbol.idStringFromObject(context, obj);
+
+        if (isNumberedVariable(id)) throw numberedParameterError(context, obj);
 
         if (!RubyLexer.isIdentifierChar(id.charAt(0))) {
             throw nameError(context, str(context.runtime, "wrong local variable name '", obj, "' for ", this), id);
@@ -180,9 +238,23 @@ public class RubyBinding extends RubyObject implements DataType {
 
         return id;
     }
+
+    private String checkImplicitId(ThreadContext context, IRubyObject obj) {
+        String id = RubySymbol.idStringFromObject(context, obj);
+
+        if (!isNumberedVariable(id) && !id.equals("it")) throw undefinedImplicitVariableError(context, obj);
+
+        return id;
+    }
+
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
         return binding.getEvalScope(context.runtime).getStaticScope().getLocalVariables(context);
+    }
+
+    @JRubyMethod
+    public IRubyObject implicit_parameters(ThreadContext context) {
+        return binding.getEvalScope(context.runtime).getStaticScope().getEnclosingScope().getImplicitParameters(context);
     }
 
     @JRubyMethod(name = "receiver")

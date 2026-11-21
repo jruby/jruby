@@ -27,6 +27,39 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  def assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    # Force pending input without depending on packet arrival or read-ahead timing.
+    socket.ungetbyte('body')
+    assert_equal 5, socket.public_send(write_method, 'reply')
+    assert_equal 'body', socket.read_nonblock(4, exception: false)
+    assert_equal 'reply', peer.read(5)
+  end
+
+  def test_tcp_socket_write_preserves_buffered_input
+    [:write, :write_nonblock].each do |write_method|
+      listener = TCPServer.new('127.0.0.1', 0)
+      peer = TCPSocket.new('127.0.0.1', listener.addr[1])
+      socket = listener.accept
+      assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    ensure
+      socket&.close
+      peer&.close
+      listener&.close
+    end
+  end
+
+  if !WINDOWS
+    def test_unix_socket_write_preserves_buffered_input
+      [:write, :write_nonblock].each do |write_method|
+        socket, peer = UNIXSocket.pair
+        assert_buffered_input_survives_socket_write(socket, peer, write_method)
+      ensure
+        socket&.close
+        peer&.close
+      end
+    end
+  end
+
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)
@@ -337,6 +370,29 @@ class SocketTest < Test::Unit::TestCase
     c.close if c
   end
 
+  # IO.select in another thread leaves the channel nonblocking, where ServerSocket#accept used to raise EAGAIN
+  def test_server_socket_accept_waits_while_another_thread_selects_on_it
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    selector = Thread.new { IO.select([server]) }
+    Thread.pass until selector.status == "sleep"
+    acceptor = Thread.new { server.accept }
+    Thread.pass until acceptor.status == "sleep" || !acceptor.alive?
+
+    client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+
+    assert acceptor.join(10), "accept did not return"
+    socket, addrinfo = acceptor.value
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    # IO.select returns only if it saw the connection before the acceptor took it
+    selector&.kill
+    socket&.close
+    client&.close
+    server&.close
+  end
+
 end
 
 
@@ -632,6 +688,53 @@ class UNIXSocketTests < Test::Unit::TestCase
         end
       end
 
+      # nio4r registers the channel with a default java.nio Selector (socketry/nio4r#67)
+      def test_socketpair_registers_with_java_selector
+        [Socket.pair(:UNIX, :STREAM), UNIXSocket.pair].each do |sock1, sock2|
+          selector = java.nio.channels.Selector.open
+          channel = sock2.to_channel
+          channel.configureBlocking(false)
+          channel.register(selector, java.nio.channels.SelectionKey::OP_READ)
+
+          sock1.write("hello")
+          assert_equal 1, selector.select(1000)
+        ensure
+          selector&.close
+          sock1&.close
+          sock2&.close
+        end
+      end
+
+      def test_socketpair_linger
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_equal [false, 0], sock1.getsockopt(:SOCKET, :LINGER).linger
+
+        sock1.setsockopt(Socket::Option.linger(true, 5))
+        assert_equal [true, 5], sock1.getsockopt(:SOCKET, :LINGER).linger
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      # pair ends are JDK channels, which have no java.net.Socket behind them
+      def test_socketpair_close_read_via_plain_io
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        io = IO.for_fd(sock1.fileno, autoclose: false)
+        assert_nil io.close_read
+        assert_raise(IOError) { io.read(1) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      def test_socketpair_bind_raises_einval
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_raise(Errno::EINVAL) { sock1.bind(Addrinfo.unix("/tmp/jruby-pair-bind-#{$$}.sock")) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
       def test_recv_nonblock
         pending_hangs_on_macos_aarch64
         s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
@@ -763,6 +866,65 @@ class ServerTest < Test::Unit::TestCase
     server.close rescue nil
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
+end
+
+# ServerSocket is JRuby-only, so spec/ruby does not cover its accept waiting through Fiber::Scheduler#io_wait
+class AcceptFiberSchedulerTest < Test::Unit::TestCase
+  # Records each io_wait and parks the fiber until the test resumes it with what io_wait returns
+  class WaitScheduler
+    attr_reader :io_waits
+
+    def initialize
+      @io_waits = []
+    end
+
+    def io_wait(io, events, timeout)
+      @io_waits << [io, events, timeout]
+      Fiber.yield
+    end
+
+    # required by Fiber.set_scheduler, unused by this test
+    def block(blocker, timeout = nil)
+      Fiber.yield
+    end
+
+    def unblock(blocker, fiber)
+    end
+
+    def kernel_sleep(duration = nil)
+      Fiber.yield
+    end
+  end
+
+  # The fibers run in a thread joined with a timeout, so the test fails instead of hanging when accept blocks that
+  # thread, or holds the server's blocking lock while it waits and the sibling fiber's accept_nonblock waits on it
+  def test_server_socket_accept_waits_through_the_scheduler
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    scheduler = WaitScheduler.new
+    accepted = client = nil
+
+    thread = Thread.new do
+      Thread.current.report_on_exception = false
+      Fiber.set_scheduler(scheduler)
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      assert_equal :wait_readable, Fiber.new(blocking: false) { server.accept_nonblock(exception: false) }.resume
+      client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+      IO.select([server])
+      accepted = acceptor.resume(IO::READABLE)
+    end
+
+    assert thread.join(10), "the scheduler's thread did not finish within 10s"
+    socket, addrinfo = accepted
+    assert_equal [[server, IO::READABLE, nil]], scheduler.io_waits
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    socket&.close
+    client&.close
+    server&.close
+  end
 end
 
 # Selectors are pooled, and killing a thread wakes its selector. A wakeup that lands after the selector has gone

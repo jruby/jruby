@@ -40,6 +40,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -57,6 +58,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
@@ -99,10 +101,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
-public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable {
-    @Deprecated(since = "9.2.1.0")
-    public static final long symbolHashSeedK0 = 5238926673095087190l;
-
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable, SimpleHash {
     private final int id;
     private final int hashCode;
     private final String symbol;
@@ -164,10 +163,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return ClassIndex.SYMBOL;
     }
 
-    /** rb_to_id
-     *
+    /**
      * @return a String representation of the symbol
      */
+    @CRuby(value = "rb_to_id", file = "string.c")
     @Override
     public final String asJavaString() {
         return symbol;
@@ -325,20 +324,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return runtime.getSymbolTable().lookup(id);
     }
 
-    /* Symbol class methods.
-     *
-     */
-    @Deprecated(since = "9.1.0.0")
-    public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol) {
-            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
-        } else if (name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), false);
-        } else {
-            return newSymbol(runtime, name.asString().getByteList());
-        }
-    }
-
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
@@ -456,7 +441,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newSymbol;
     }
 
-    // MRI: rb_to_symbol
+    @CRuby(value = "rb_to_symbol", file = "string.c")
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject name) {
         name = prepareID(context, name);
         if (name instanceof RubySymbol symbol) {
@@ -496,7 +481,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newString(context, result);
     }
 
-    // MRI: rb_str_symname_p
+    @CRuby(value = "rb_str_symname_p", file = "string.c")
     public boolean isSimpleName(ThreadContext context) {
         int len;
         Ruby runtime = context.runtime;
@@ -507,8 +492,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         ByteList bytes = fstring.getByteList();
         Encoding enc = bytes.getEncoding();
 
+        boolean nameInvalid;
+        if (str.isAsciiOnly()) {
+            nameInvalid = !isSymbolName(symbol);
+        } else {
+            nameInvalid = this.type == SymbolNameType.OTHER;
+        }
+
         if ((resenc != enc && !str.isAsciiOnly()) /*|| len != (long)strlen(ptr)*/ ||
-                !isSymbolName(symbol) || !isPrintable(context)) {
+                nameInvalid || !isPrintable(context)) {
             return false;
         }
         return true;
@@ -569,6 +561,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public int hashCode() {
+        return hashCode;
+    }
+
+    @Override
+    public long longHashCode() {
         return hashCode;
     }
 
@@ -933,11 +930,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(meta = true)
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
         return context.runtime.getSymbolTable().all_symbols(context);
-    }
-    @Deprecated(since = "1.2")
-    public static IRubyObject all_symbols(IRubyObject recv) {
-        var runtime = recv.getRuntime();
-        return runtime.getSymbolTable().all_symbols(runtime.getCurrentContext());
     }
 
     @Deprecated(since = "10.0.0.0", forRemoval = true)
@@ -1478,32 +1470,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             symbolTable = newTable;
             return newTable;
         }
-
-        // backwards-compatibility, but threadsafe now
-        @Deprecated(since = "9.0.0.0")
-        public RubySymbol lookup(String name) {
-            int hash = name.hashCode();
-            SymbolEntry[] table = symbolTable;
-            RubySymbol symbol = null;
-
-            SymbolEntry e = table[getIndex(hash, table)];
-            while (e != null) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    symbol = e.symbol.get();
-                    if (symbol != null) break;
-                }
-                e = e.next;
-            }
-
-            return symbol;
-        }
-
-        // not so backwards-compatible here, but no one should have been
-        // calling this anyway.
-        @Deprecated(since = "9.0.0.0")
-        public void store(RubySymbol symbol) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     private static int javaStringHashCode(String str) {
@@ -1574,7 +1540,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 sym.idString() : ((RubyString) symOrStr).getByteList().toString();
     }
 
-    // MRI: rb_check_id
+    @CRuby(value = "rb_check_id", file = "symbol.c")
     public static RubySymbol idSymbolFromObject(ThreadContext context, IRubyObject object) {
         IRubyObject symOrStr = prepareID(context, object);
 
@@ -1584,12 +1550,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     /**
      * Return the given object if it is a Symbol or String, or convert it to a String.
      *
-     * MRI: string_for_symbol
      *
      * @param context the current context
      * @param object the object
      * @return the object, if it is a Symbol or String, or a String produced by calling #to_str on the object.
      */
+    @CRuby(value = "string_for_symbol", file = "string.c")
     public static IRubyObject prepareID(ThreadContext context, IRubyObject object) {
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 
@@ -1621,6 +1587,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             this.site = new RefinedCachingCallSite(id, scope, CallType.NORMAL);
             this.id = id;
             this.symbol = symbol;
+        }
+
+        // Same-symbol procs are == and hash-equal even as distinct objects; a proc made under
+        // refinements (toRefinedProc) owns a non-dummy scope, which keeps it apart.
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof SymbolProcBody that && id.equals(that.id) && getStaticScope() == that.getStaticScope();
+        }
+
+        @Override
+        public int hashCode() {
+            return id.hashCode();
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
@@ -1679,6 +1657,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public String getId() {
             return id;
+        }
+
+        // A symbol block takes a receiver plus any arguments (min 1, max unlimited). getSignature() stays OPTIONAL
+        // so a yielded array is never spread into the receiver and its arguments.
+        @Override
+        @CRuby(value = "rb_vm_block_min_max_arity", file = "proc.c", note = "block_type_symbol case")
+        public Signature getAritySignature() {
+            return Signature.ONE_REQUIRED;
         }
 
         @Override

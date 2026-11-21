@@ -1,0 +1,1 @@
+fails:ARGF.eof is an alias of ARGF.eof?

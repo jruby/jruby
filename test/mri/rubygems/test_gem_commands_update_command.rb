@@ -506,7 +506,7 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     a2 = @specs["a-2"]
 
     assert_path_exist File.join(a2.doc_dir, "rdoc")
-  end unless Gem.rdoc_hooks_defined_via_plugin?
+  end if defined?(Gem::RDoc) && !Gem.rdoc_hooks_defined_via_plugin?
 
   def test_execute_named
     spec_fetcher do |fetcher|
@@ -696,6 +696,38 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     assert_equal expected, @cmd.fetch_remote_gems(specs["a-1"])
   end
 
+  def test_pass_down_the_job_option_to_make
+    gemspec = nil
+
+    spec_fetcher do |fetcher|
+      fetcher.download "a", 3 do |spec|
+        gemspec = spec
+
+        extconf_path = "#{spec.gem_dir}/extconf.rb"
+
+        write_file(extconf_path) do |io|
+          io.puts "require 'mkmf'"
+          io.puts "create_makefile '#{spec.name}'"
+        end
+
+        spec.extensions = "extconf.rb"
+      end
+
+      fetcher.gem "a", 2
+    end
+
+    use_ui @ui do
+      @cmd.invoke("a", "-j2")
+    end
+
+    gem_make_out = File.read(File.join(gemspec.extension_dir, "gem_make.out"))
+    if vc_windows? && nmake_found?
+      refute_includes(gem_make_out, " -j2")
+    else
+      assert_includes(gem_make_out, "make -j2")
+    end
+  end
+
   def test_handle_options_system
     @cmd.handle_options %w[--system]
 
@@ -754,6 +786,36 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     @cmd.update_gem "a"
 
     assert_empty @cmd.updated
+  end
+
+  # When the running Ruby lives under a path containing whitespace, Gem.ruby
+  # returns a quoted string. That quoting must not leak into the argv passed to
+  # the non-shell `system` call that runs setup.rb, or the interpreter can't be
+  # found and `gem update --system` fails to spawn.
+  def test_install_rubygems_unquotes_ruby
+    version = Gem::Version.new("99.0.0")
+    update_dir = File.join @tempdir, "gems", "rubygems-update-#{version}"
+    FileUtils.mkdir_p update_dir
+
+    spec = Struct.new(:version, :base_dir).new(version, @tempdir)
+
+    captured = nil
+    @cmd.define_singleton_method(:system) do |*args|
+      captured = args
+      true
+    end
+
+    @cmd.options[:silent] = true
+
+    Gem.stub(:ruby, '"/path with space/bin/ruby"') do
+      @cmd.install_rubygems(spec)
+    end
+
+    refute_nil captured, "setup.rb should have been spawned"
+    assert_equal "/path with space/bin/ruby", captured.first
+    refute_includes captured.first, '"'
+    assert_includes captured, "--disable-gems"
+    assert_includes captured, "setup.rb"
   end
 
   def test_update_rubygems_arguments

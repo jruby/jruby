@@ -36,6 +36,7 @@ import org.jcodings.IntHolder;
 import org.jcodings.unicode.UnicodeCodeRange;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class IdUtil {
@@ -71,14 +72,6 @@ public final class IdUtil {
         return id.endsWith("?");
     }
     
-    /**
-     * rb_is_local_id and is_local_id
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static boolean isLocal(String id) {
-        return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id) && !isSpecial(id);
-    }
-
     /**
      * We store IR special variables (e.g. %block) in scope and we want reflective Ruby methods to
      * not see these since they are not real variables...they're special.
@@ -155,7 +148,7 @@ public final class IdUtil {
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
 
-    // MRI: rb_sym_constant_char_p
+    @CRuby(value = "rb_sym_constant_char_p", file = "symbol.c")
     public static boolean isConstantInitial(ByteList byteList) {
         int c, len;
         int nlen = byteList.realSize();

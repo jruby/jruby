@@ -106,12 +106,4 @@ public class JavaUtilities {
         return true;
     }
     
-    @Deprecated(since = "9.2.1.0") // no longer used
-    @JRubyMethod(meta = true,
-            reads = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE },
-            writes = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE })
-    public static IRubyObject extend_proxy(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
-        return Java.get_proxy_class(context, recv, name).module_eval(context, block);
-    }
-
 }

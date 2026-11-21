@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyFixnum;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
@@ -8,7 +9,11 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 public class BitAndCallSite extends MonomorphicCallSite {
 
     public BitAndCallSite() {
-        super("&");
+        this(CallType.NORMAL);
+    }
+
+    public BitAndCallSite(CallType callType) {
+        super("&", callType);
     }
 
     @Override

@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.9.0-SNAPSHOT</version>
+    <version>10.1.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-base</artifactId>
   <name>JRuby Base</name>
@@ -43,6 +43,7 @@ DO NOT MODIFY - GENERATED CODE
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <prism.parser.version>0.0.6</prism.parser.version>
     <rails.dir>${test.dir}/rails</rails.dir>
     <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
     <rake.args></rake.args>
@@ -55,9 +56,9 @@ DO NOT MODIFY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>3.4.12</version.ruby>
-    <version.ruby.major>3.4</version.ruby.major>
-    <version.ruby.minor>12</version.ruby.minor>
+    <version.ruby>4.0.9</version.ruby>
+    <version.ruby.major>4.0</version.ruby.major>
+    <version.ruby.minor>9</version.ruby.minor>
   </properties>
   <dependencies>
     <dependency>
@@ -100,7 +101,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.39.8</version>
+      <version>0.39.9</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.jnr</groupId>
@@ -111,7 +112,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.2.7</version>
+      <version>3.2.8</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.jnr</groupId>
@@ -164,7 +165,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.14</version>
+      <version>1.16</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
@@ -185,12 +186,6 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant</artifactId>
-      <version>${ant.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -237,6 +232,21 @@ DO NOT MODIFY - GENERATED CODE
       <artifactId>crac</artifactId>
       <version>1.5.0</version>
     </dependency>
+    <dependency>
+      <groupId>ch.randelshofer</groupId>
+      <artifactId>fastdoubleparser</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ruby-lang</groupId>
+      <artifactId>prism-parser-api</artifactId>
+      <version>${prism.parser.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ruby-lang</groupId>
+      <artifactId>prism-parser-wasm</artifactId>
+      <version>${prism.parser.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>
@@ -254,86 +264,6 @@ DO NOT MODIFY - GENERATED CODE
         </includes>
       </resource>
     </resources>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>properties-maven-plugin</artifactId>
-                    <versionRange>[1.0-alpha-2,)</versionRange>
-                    <goals>
-                      <goal>read-project-properties</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <versionRange>[1.8,)</versionRange>
-                    <goals>
-                      <goal>add-source</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <versionRange>[1.2.1,)</versionRange>
-                    <goals>
-                      <goal>exec</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <versionRange>[2.8,)</versionRange>
-                    <goals>
-                      <goal>copy</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <versionRange>[2.5,)</versionRange>
-                    <goals>
-                      <goal>clean</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -640,7 +570,7 @@ DO NOT MODIFY - GENERATED CODE
       <activation>
         <jdk>21</jdk>
         <property>
-          <name>env.CI</name>
+          <name>env.ERROR_PRONE</name>
         </property>
       </activation>
       <build>
@@ -701,7 +631,7 @@ DO NOT MODIFY - GENERATED CODE
                     <path>
                       <groupId>org.jruby</groupId>
                       <artifactId>jruby-base</artifactId>
-                      <version>10.0.9.0-SNAPSHOT</version>
+                      <version>10.1.4.0-SNAPSHOT</version>
                     </path>
                   </annotationProcessorPaths>
                 </configuration>

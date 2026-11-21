@@ -54,7 +54,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
- * This class encapculates all logic relating to the management of instance
+ * This class encapsulates all logic relating to the management of instance
  * variable tables in RubyBasicObject instances.
  *
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly
@@ -115,7 +115,7 @@ public class VariableTableManager {
     VariableTableManager(VariableTableManager original, RubyClass realClass) {
         synchronized (original) {
             this.realClass = realClass;
-            this.variableAccessors = copyVariableAccessors(original.variableAccessors);
+            this.variableAccessors = copyVariableAccessors(realClass, original.variableAccessors);
             this.variableNames = original.variableNames.clone();
             this.hasObjectID = original.hasObjectID;
             this.hasFFI = original.hasFFI;
@@ -283,8 +283,10 @@ public class VariableTableManager {
         return ivarAccessor;
     }
 
-    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors) {
-        return new LinkedHashMap<>(myVariableAccessors);
+    private static Map<String, VariableAccessor> copyVariableAccessors(RubyClass realClass, Map<String, VariableAccessor> otherVariableAccessors) {
+        var myVariableAccessors = new LinkedHashMap<String, VariableAccessor>(otherVariableAccessors.size());
+        otherVariableAccessors.forEach((name, accessor) -> myVariableAccessors.put(name, accessor.cloneFor(realClass)));
+        return myVariableAccessors;
     }
 
     private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors, String name, VariableAccessor ivarAccessor) {
@@ -447,7 +449,7 @@ public class VariableTableManager {
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
             for(;;) {
-                int oldStamp = self.varTableStamp;
+                byte oldStamp = self.varTableStamp;
                 // wait for read mode
                 if((oldStamp & 0x01) == 1)
                     continue;
@@ -461,7 +463,7 @@ public class VariableTableManager {
                 VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
                 // release write mode
-                self.varTableStamp = oldStamp+1;
+                self.varTableStamp = (byte) (oldStamp+1);
                 break;
             }
 

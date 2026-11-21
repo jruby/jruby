@@ -28,6 +28,16 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
     }
 
     @Override
+    public int getStartColumn() {
+        return node.getStartColumn();
+    }
+
+    @Override
+    public int getEndColumn() {
+        return node.getEndColumn();
+    }
+
+    @Override
     public List<String> getMethodData() {
         List<String> ivarNames = new ArrayList<>(1);
 

@@ -92,4 +92,34 @@ public class WhenNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(expressionNodes, bodyNode, nextCase);
     }
+
+    // ---- branch coverage: where the 'else' keyword following this clause starts (when nextCase is an else body) ----
+
+    // null when there is none, or positions are not recorded
+    private SourcePosition elseStart() {
+        return (SourcePosition) getSourceDetail();
+    }
+
+    public void setElseStart(long elseStart) {
+        setSourceDetail(SourcePosition.of(elseStart));
+    }
+
+    public boolean hasElseStart() {
+        return elseStart() != null;
+    }
+
+    public void copyBranchInfo(WhenNode other) {
+        copySourceSpan(other);
+        setSourceDetail(other.elseStart());
+    }
+
+    public int getElseStartLine() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.line();
+    }
+
+    public int getElseStartColumn() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.column();
+    }
 }

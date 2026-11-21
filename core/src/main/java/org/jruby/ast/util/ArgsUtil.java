@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,7 +85,7 @@ public final class ArgsUtil {
         return node instanceof RubyArray ? ((RubyArray) node).getLength() : 0;
     }
 
-    // MRI: rb_opts_exception_p
+    @CRuby(value = "rb_opts_exception_p", file = "object.c")
     public static boolean hasExceptionOption(ThreadContext context, IRubyObject options, boolean defaultValue) {
         IRubyObject opts = getOptionsArg(context.runtime, options, false);
 

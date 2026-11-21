@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#pread" do
   before :each do
@@ -99,40 +100,51 @@ describe "IO#pread" do
 
   it "raises TypeError if maxlen is not an Integer and cannot be coerced into Integer" do
     maxlen = Object.new
-    -> { @file.pread(maxlen, 0) }.should raise_error(TypeError, 'no implicit conversion of Object into Integer')
+    -> { @file.pread(maxlen, 0) }.should.raise(TypeError, 'no implicit conversion of Object into Integer')
   end
 
   it "raises TypeError if offset is not an Integer and cannot be coerced into Integer" do
     offset = Object.new
-    -> { @file.pread(4, offset) }.should raise_error(TypeError, 'no implicit conversion of Object into Integer')
+    -> { @file.pread(4, offset) }.should.raise(TypeError, 'no implicit conversion of Object into Integer')
   end
 
   it "raises ArgumentError for negative values of maxlen" do
-    -> { @file.pread(-4, 0) }.should raise_error(ArgumentError, 'negative string size (or size too big)')
+    -> { @file.pread(-4, 0) }.should.raise(ArgumentError, 'negative string size (or size too big)')
   end
 
   it "raised Errno::EINVAL for negative values of offset" do
-    -> { @file.pread(4, -1) }.should raise_error(Errno::EINVAL, /Invalid argument/)
+    -> { @file.pread(4, -1) }.should.raise(Errno::EINVAL, /Invalid argument/)
   end
 
   it "raises TypeError if the buffer is not a String and cannot be coerced into String" do
     buffer = Object.new
-    -> { @file.pread(4, 0, buffer) }.should raise_error(TypeError, 'no implicit conversion of Object into String')
+    -> { @file.pread(4, 0, buffer) }.should.raise(TypeError, 'no implicit conversion of Object into String')
   end
 
   it "raises EOFError if end-of-file is reached" do
-    -> { @file.pread(1, 10) }.should raise_error(EOFError)
+    -> { @file.pread(1, 10) }.should.raise(EOFError)
   end
 
   it "raises IOError when file is not open in read mode" do
     File.open(@fname, "w") do |file|
-      -> { file.pread(1, 1) }.should raise_error(IOError)
+      -> { file.pread(1, 1) }.should.raise(IOError)
     end
   end
 
   it "raises IOError when file is closed" do
-    file = File.open(@fname, "r+")
-    file.close
-    -> { file.pread(1, 1) }.should raise_error(IOError)
+    @file.close
+    -> { @file.pread(1, 1) }.should.raise(IOError)
+  end
+
+  it "clears the buffer if end-of-file is reached" do
+    buffer = +"existing content"
+    -> { @file.pread(1, 10, buffer) }.should.raise(EOFError)
+    buffer.should.empty?
+  end
+
+  it "does not modify the buffer if a read error (other than EOF) occurs" do
+    buffer = +"existing content"
+    -> { IOSpecs.closed_io.pread(1, 0, buffer) }.should.raise(IOError)
+    buffer.should == "existing content"
   end
 end

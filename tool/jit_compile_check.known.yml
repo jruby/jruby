@@ -1,0 +1,23 @@
+# Known causes of JIT compile failures, as printed by
+# tool/jit_compile_check.rb. A failure whose cause starts with a listed
+# cause doesn't fail the check.
+
+# Causes the JIT deliberately doesn't compile.
+expected:
+  - 'org.jruby.compiler.NotCompilableException: splat in non-initial argument for normal call is unsupported in JIT'
+  - 'org.jruby.compiler.NotCompilableException: literal array has more than 250 elements'
+  - 'org.jruby.compiler.NotCompilableException: literal hash has more than 125 pairs'
+
+# Bugs: code that should compile but doesn't, each with the issues known to
+# cause it, for example:
+#
+#   bugs:
+#     'java.lang.VerifyError: Bad type on operand stack':
+#       - https://github.com/jruby/jruby/issues/9820
+#
+# One exception can come from several bugs: any bytecode that leaves the
+# stack unbalanced makes ASM fail with an ArrayIndexOutOfBoundsException or
+# NegativeArraySizeException, whose message depends on the surrounding
+# code. Remove a cause once all of its issues are fixed, so that it can't
+# come back unnoticed.
+bugs: {}

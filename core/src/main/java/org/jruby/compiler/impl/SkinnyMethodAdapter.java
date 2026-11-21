@@ -969,18 +969,6 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
 
     @Override
-    @Deprecated(since = "9.1.6.0")
-    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
-    }
-
-    @Override
-    @Deprecated(since = "9.1.6.0")
-    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3, boolean arg4) {
-        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3, arg4);
-    }
-    
-    @Override
     public void visitInvokeDynamicInsn(String arg0, String arg1, Handle arg2, Object... arg3) {
         getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
     }

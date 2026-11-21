@@ -11,6 +11,11 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
+  distribution_management do
+    relocation(groupId: 'org.jruby', artifactId: 'jruby',
+               message: 'The jruby-complete artifact is deprecated in favor of the jruby artifact.')
+  end
+
   extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   plugin_repository id: :mavengems, url: 'mavengem:https://rubygems.org'

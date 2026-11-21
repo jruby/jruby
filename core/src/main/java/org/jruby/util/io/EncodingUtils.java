@@ -34,6 +34,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.API;
 import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
@@ -76,7 +77,7 @@ public class EncodingUtils {
 
     private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
-    // rb_to_encoding
+    @CRuby(value = "rb_to_encoding", file = "encoding.c")
     public static Encoding rbToEncoding(ThreadContext context, IRubyObject enc) {
         if (enc instanceof RubyEncoding) return ((RubyEncoding) enc).getEncoding();
 
@@ -158,7 +159,7 @@ public class EncodingUtils {
         return value == null ? context.nil : value;
     }
 
-    // MRI: rb_ascii8bit_encoding
+    @CRuby("rb_ascii8bit_encoding")
     public static Encoding ascii8bitEncoding(Ruby runtime) {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
@@ -420,7 +421,7 @@ public class EncodingUtils {
         return extracted;
     }
 
-    // MRI: rb_external_str_new_with_enc
+    @CRuby(value = "rb_external_str_new_with_enc", file = "string.c")
     public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
         if (string == null) return newEmptyString(runtime, encoding);
 
@@ -456,7 +457,7 @@ public class EncodingUtils {
         return convertedString;
     }
 
-    // MRI: rb_external_str_new_with_enc
+    @CRuby(value = "rb_external_str_new_with_enc", file = "string.c")
     public static RubyString newExternalStringWithEncoding(Ruby runtime, ByteList bytelist, Encoding encoding) {
         if (bytelist == null) return newEmptyString(runtime, encoding);
 
@@ -566,7 +567,7 @@ public class EncodingUtils {
         ioExtIntToEncs(context, ioEncodable, extEnc, intEnc, fmode_p[0]);
     }
 
-    // rb_econv_str_convert
+    @CRuby(value = "rb_econv_str_convert", file = "transcode.c")
     public static ByteList econvStrConvert(ThreadContext context, EConv ec, ByteList src, int flags) {
         return econvSubstrAppend(context, ec, src, null, flags);
     }
@@ -576,12 +577,12 @@ public class EncodingUtils {
         return econvAppend(context, ec, bytes, start, length, new ByteList(length, ec.destinationEncoding), flags);
     }
 
-    // rb_econv_substr_append
+    @CRuby(value = "rb_econv_substr_append", file = "transcode.c")
     public static ByteList econvSubstrAppend(ThreadContext context, EConv ec, ByteList src, ByteList dst, int flags) {
         return econvAppend(context, ec, src, dst, flags);
     }
 
-    // rb_econv_append
+    @CRuby(value = "rb_econv_append", file = "transcode.c")
     public static ByteList econvAppend(ThreadContext context, EConv ec, ByteList sByteList, ByteList dst, int flags) {
         int len = sByteList.getRealSize();
 
@@ -636,18 +637,18 @@ public class EncodingUtils {
         return dst;
     }
 
-    // rb_econv_check_error
+    @CRuby(value = "rb_econv_check_error", file = "transcode.c")
     public static void econvCheckError(ThreadContext context, EConv ec) {
         RaiseException re = makeEconvException(context, ec);
         if (re != null) throw re;
     }
 
-    // rb_econv_prepare_opts
+    @CRuby(value = "rb_econv_prepare_opts", file = "transcode.c")
     public static int econvPrepareOpts(ThreadContext context, IRubyObject opthash, IRubyObject[] opts) {
         return econvPrepareOptions(context, opthash, opts, 0);
     }
 
-    // rb_econv_prepare_options
+    @CRuby(value = "rb_econv_prepare_options", file = "transcode.c")
     public static int econvPrepareOptions(ThreadContext context, IRubyObject opthash, IRubyObject[] opts, int ecflags) {
         IRubyObject newhash = context.nil;
         IRubyObject v;
@@ -698,7 +699,7 @@ public class EncodingUtils {
         return ecflags;
     }
 
-    // econv_opts
+    @CRuby(value = "econv_opts", file = "transcode.c")
     public static int econvOpts(ThreadContext context, IRubyObject opt, int ecflags) {
         IRubyObject v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "invalid"));
         if (!v.isNil()) {
@@ -781,7 +782,7 @@ public class EncodingUtils {
         return ecflags;
     }
 
-    // rb_econv_open_opts
+    @CRuby(value = "rb_econv_open_opts", file = "transcode.c")
     public static EConv econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
         IRubyObject replacement;
 
@@ -814,7 +815,7 @@ public class EncodingUtils {
         return ec;
     }
 
-    // rb_econv_open_exc
+    @CRuby(value = "rb_econv_open_exc", file = "transcode.c")
     public static RaiseException econvOpenExc(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags) {
         String message = econvDescription(context, sourceEncoding, destinationEncoding, ecflags, "code converter not found (") + ")";
         return context.runtime.newConverterNotFoundError(message);
@@ -826,18 +827,18 @@ public class EncodingUtils {
         return message + new String(sourceEncoding) + " to " + new String(destinationEncoding);
     }
 
-    // rb_econv_asciicompat_encoding
     // Missing proper logic from transcoding subsystem
+    @CRuby(value = "rb_econv_asciicompat_encoding", file = "transcode.c")
     public static Encoding econvAsciicompatEncoding(Encoding enc) {
         return RubyConverter.NONASCII_TO_ASCII.get(enc);
     }
 
-    // rb_enc_asciicompat
+    @CRuby("rb_enc_asciicompat")
     public static boolean encAsciicompat(Encoding enc) {
         return encMbminlen(enc) == 1 && !encDummy(enc);
     }
 
-    // rb_enc_ascget
+    @CRuby(value = "rb_enc_ascget", file = "encoding.c")
     public static int encAscget(byte[] pBytes, int p, int e, int[] len, Encoding enc) {
         int c;
         int l;
@@ -866,17 +867,17 @@ public class EncodingUtils {
         return c;
     }
 
-    // rb_enc_mbminlen
+    @CRuby("rb_enc_mbminlen")
     public static int encMbminlen(Encoding encoding) {
         return encoding.minLength();
     }
 
-    // rb_enc_dummy_p
+    @CRuby(value = "rb_enc_dummy_p", file = "encoding.c")
     public static boolean encDummy(Encoding enc) {
         return enc.isDummy();
     }
 
-    // rb_enc_get
+    @CRuby("rb_enc_get")
     public static Encoding encGet(ThreadContext context, IRubyObject obj) {
         if (obj instanceof EncodingCapable) {
             return ((EncodingCapable)obj).getEncoding();
@@ -885,12 +886,12 @@ public class EncodingUtils {
         return context.runtime.getDefaultInternalEncoding();
     }
 
-    // encoding_equal
+    @CRuby(value = "encoding_equal", file = "transcode.c")
     public static boolean encodingEqual(byte[] enc1, byte[] enc2) {
         return ByteList.memcmp(enc1, 0, enc1.length, enc2, 0, enc2.length) == 0;
     }
 
-    // enc_arg
+    @CRuby(value = "enc_arg", file = "transcode.c")
     public static Encoding encArg(ThreadContext context, IRubyObject encval, byte[][] name_p, Encoding[] enc_p) {
         Encoding enc;
         if ((enc = toEncodingIndex(context, encval)) == null) {
@@ -902,7 +903,7 @@ public class EncodingUtils {
         return enc_p[0] = enc;
     }
 
-    // rb_to_encoding_index
+    @CRuby(value = "rb_to_encoding_index", file = "encoding.c")
     public static Encoding toEncodingIndex(ThreadContext context, IRubyObject enc) {
         if (enc instanceof RubyEncoding encoding) return encoding.getEncoding();
         enc = enc.checkStringType();
@@ -912,7 +913,7 @@ public class EncodingUtils {
         return encodingService(context).getEncodingFromObjectNoError(enc);
     }
 
-    // encoded_dup
+    @CRuby(value = "encoded_dup", file = "transcode.c")
     public static RubyString encodedDup(ThreadContext context, RubyString str, Encoding encindex, RubyString newstr) {
         if (encindex == null) return (RubyString) str.dup();
         if (newstr == str) {
@@ -925,7 +926,7 @@ public class EncodingUtils {
         return strEncodeAssociate(newstr, encindex);
     }
 
-    // str_encode_associate
+    @CRuby(value = "str_encode_associate", file = "transcode.c")
     public static RubyString strEncodeAssociate(RubyString str, Encoding encidx) {
         encAssociateIndex(str, encidx);
 
@@ -938,7 +939,7 @@ public class EncodingUtils {
         return str;
     }
 
-    // rb_enc_associate_index
+    @CRuby(value = "rb_enc_associate_index", file = "encoding.c")
     public static IRubyObject encAssociateIndex(IRubyObject obj, Encoding encidx) {
         ((RubyBasicObject)obj).checkFrozen();
         if (encidx == null) encidx = ASCIIEncoding.INSTANCE;
@@ -953,7 +954,7 @@ public class EncodingUtils {
         return obj;
     }
 
-    // str_encode
+    @CRuby(value = "str_encode", file = "transcode.c")
     public static IRubyObject strEncode(ThreadContext context, RubyString str) {
         return strTranscode(context, str, EncodingUtils::encodedDup);
     }
@@ -970,7 +971,7 @@ public class EncodingUtils {
         return strTranscode(context, toEncoding, forcedEncoding, opts, str, EncodingUtils::encodedDup);
     }
 
-    // rb_str_encode
+    @CRuby(value = "rb_str_encode", file = "transcode.c")
     public static IRubyObject rbStrEncode(ThreadContext context, IRubyObject str, IRubyObject to, int ecflags, IRubyObject ecopt) {
         return strTranscode1(context, to, (RubyString) str, ecflags, ecopt, EncodingUtils::encodedDup);
     }
@@ -1032,8 +1033,8 @@ public class EncodingUtils {
                 | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0;
     }
 
-    // str_transcode
 
+    @CRuby(value = "str_transcode", file = "transcode.c")
     public interface TranscodeResult {
         RubyString apply(ThreadContext context, RubyString str, Encoding enc, RubyString newStr);
     }
@@ -1133,7 +1134,7 @@ public class EncodingUtils {
         byte[] destpBytes = destp.unsafeBytes();
         Ptr frompPos = new Ptr(fromp.getBegin());
         Ptr destpPos = new Ptr(destp.getBegin());
-        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts);
+        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts, str);
 
         if (frompPos.p != sp.begin() + slen) {
             throw argumentError(context, "not fully converted, " + (slen - frompPos.p) + " bytes left");
@@ -1175,7 +1176,7 @@ public class EncodingUtils {
         return result.apply(context, str, denc, dest);
     }
 
-    // rb_obj_encoding
+    @CRuby(value = "rb_obj_encoding", file = "encoding.c")
     public static IRubyObject objEncoding(ThreadContext context, IRubyObject obj) {
         Encoding enc = encGet(context, obj);
         if (enc == null) throw typeError(context, "unknown encoding");
@@ -1215,7 +1216,7 @@ public class EncodingUtils {
         return EncodingDB.getEncodings().get(name).getEncoding();
     }
 
-    // rb_define_dummy_encoding
+    @CRuby(value = "rb_define_dummy_encoding", file = "encoding.c")
     public static Encoding defineDummyEncoding(ThreadContext context, byte[] name) {
         Encoding dummy = encReplicate(context, name, ascii8bitEncoding(context.runtime));
         // TODO: set dummy on encoding; this probably should live in jcodings
@@ -1316,7 +1317,7 @@ public class EncodingUtils {
         }
     }
 
-    // rb_str_conv_enc
+    @CRuby(value = "rb_str_conv_enc", file = "string.c")
     public static RubyString strConvEnc(ThreadContext context, RubyString value, Encoding fromEncoding, Encoding toEncoding) {
         return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, context.nil);
     }
@@ -1505,6 +1506,17 @@ public class EncodingUtils {
      * MRI: transcode_loop Ruby-related bits
      */
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
+        transcodeLoop(context, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction, sname, dname, ecflags, ecopts, null);
+    }
+
+    /**
+     * Perform the inner transcoding loop.
+     *
+     * If source is not null, it is the string whose bytes are being transcoded, and an error is raised if
+     * a fallback modifies it.
+     */
+    @CRuby(value = "transcode_loop", file = "transcode.c", note = "Ruby-related bits")
+    public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts, RubyString source) {
         EConv ec;
         IRubyObject fallback = context.nil;
         TranscodeFallback fallbackFunc = null;
@@ -1528,6 +1540,24 @@ public class EncodingUtils {
                     fallbackFunc = AREF_FALLBACK;
                 }
             }
+        }
+
+        if (fallbackFunc != null && source != null) {
+            // the fallback runs Ruby code, which may modify the source string
+            final TranscodeFallback checkedFunc = fallbackFunc;
+            final ByteList original = source.getByteList();
+            final byte[] sourceBytes = original.unsafeBytes();
+            final int sourceBegin = original.begin();
+            final int sourceLength = original.realSize();
+            fallbackFunc = (ctx, data, conv) -> {
+                boolean replaced = checkedFunc.call(ctx, data, conv);
+                ByteList current = source.getByteList();
+                if (current.unsafeBytes() != sourceBytes || current.begin() != sourceBegin || current.realSize() != sourceLength) {
+                    conv.close();
+                    throw runtimeError(ctx, "string modified");
+                }
+                return replaced;
+            };
         }
 
         boolean success = transcodeLoop(ec, fallbackFunc, context, fallback, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction);
@@ -1657,7 +1687,7 @@ public class EncodingUtils {
         return makeEconvException(runtime.getCurrentContext(), ec);
     }
 
-    // make_econv_exception
+    @CRuby(value = "make_econv_exception", file = "transcode.c")
     public static RaiseException makeEconvException(ThreadContext context, EConv ec) {
         final StringBuilder mesg; RaiseException exc;
 
@@ -1749,7 +1779,7 @@ public class EncodingUtils {
         return exc;
     }
 
-    // more_output_buffer
+    @CRuby(value = "more_output_buffer", file = "transcode.c")
     static void moreOutputBuffer(ByteList destination, ResizeFunction resizeDestination, int maxOutput, Ptr outStart, Ptr outPos, Ptr outStop) {
         int len = outPos.p - outStart.p;
         int newLen = (len + maxOutput) * 2;
@@ -1758,7 +1788,7 @@ public class EncodingUtils {
         outStop.p = outStart.p + newLen;
     }
 
-    // MRI: io_set_encoding_by_bom
+    @CRuby(value = "io_set_encoding_by_bom", file = "io.c")
     public static Encoding ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Encoding bomEncoding = ioStripBOM(context, io);
 
@@ -1774,7 +1804,7 @@ public class EncodingUtils {
         return bomEncoding;
     }
 
-    // MRI: io_strip_bom
+    @CRuby(value = "io_strip_bom", file = "io.c")
     public static Encoding ioStripBOM(ThreadContext context, RubyIO io) {
         IRubyObject b2, b3, b4;
 
@@ -1837,7 +1867,7 @@ public class EncodingUtils {
         return null;
     }
 
-    // validate_enc_binmode
+    @CRuby(value = "validate_enc_binmode", file = "io.c")
     public static void validateEncodingBinmode(ThreadContext context, int[] fmode_p, int ecflags, IOEncodable ioEncodable) {
         int fmode = fmode_p[0];
 
@@ -1861,19 +1891,19 @@ public class EncodingUtils {
         }
     }
 
-    // rb_enc_set_default_external
+    @CRuby(value = "rb_enc_set_default_external", file = "encoding.c")
     public static void rbEncSetDefaultExternal(ThreadContext context, IRubyObject encoding) {
         if (encoding.isNil()) throw argumentError(context, "default external can not be nil");
 
         encSetDefaultEncoding(context, context.runtime.getDefaultExternalEncoding(), encoding, "external", (ctx, enc) -> ctx.runtime.setDefaultExternalEncoding(enc));
     }
 
-    // rb_enc_set_default_internal
+    @CRuby(value = "rb_enc_set_default_internal", file = "encoding.c")
     public static void rbEncSetDefaultInternal(ThreadContext context, IRubyObject encoding) {
         encSetDefaultEncoding(context, context.runtime.getDefaultInternalEncoding(), encoding, "internal", (ctx, enc) -> ctx.runtime.setDefaultInternalEncoding(enc));
     }
 
-    // enc_set_default_encoding
+    @CRuby(value = "enc_set_default_encoding", file = "encoding.c")
     static boolean encSetDefaultEncoding(ThreadContext context, Encoding defaultEncoding, IRubyObject encoding, String name, BiConsumer<ThreadContext, Encoding> setter) {
         boolean overridden = false;
 
@@ -1896,14 +1926,14 @@ public class EncodingUtils {
         return overridden;
     }
 
-    // rb_default_external_encoding
+    @CRuby(value = "rb_default_external_encoding", file = "encoding.c")
     public static Encoding defaultExternalEncoding(Ruby runtime) {
         if (runtime.getDefaultExternalEncoding() != null) return runtime.getDefaultExternalEncoding();
 
         return runtime.getEncodingService().getLocaleEncoding();
     }
 
-    // rb_str_buf_cat
+    @CRuby(value = "rb_str_buf_cat", file = "include/ruby/internal/intern/string.h")
     public static void  rbStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         if (ptr.length() == 0) return;
         // negative length check here, we shouldn't need
@@ -1920,7 +1950,7 @@ public class EncodingUtils {
         strBufCat(str, ptrBytes, ptr, len);
     }
 
-    // str_buf_cat
+    @CRuby(value = "str_buf_cat", file = "string.c")
     public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         strBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize());
     }
@@ -1929,23 +1959,14 @@ public class EncodingUtils {
         strBufCat(str.getByteList(), ptrBytes, ptr, len);
     }
     public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
-        int total, off = -1;
-
-        // termlen is not relevant since we have no termination sequence
-
-        // missing: if ptr string is inside str, off = ptr start minus str start
-
-//        str.modify();
+        // No MRI termlen or offset fixup: ByteList has no terminator and the old array survives a realloc.
         if (len == 0) return;
 
-        // much logic is missing here, since we don't manually manage the ByteList buffer
-
-        total = str.getRealSize() + len;
-        str.ensure(total);
+        str.ensure(str.getRealSize() + len);
         str.append(ptrBytes, ptr, len);
     }
 
-    // rb_enc_str_buf_cat
+    @CRuby(value = "rb_enc_str_buf_cat", file = "string.c")
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
                 enc, StringSupport.CR_UNKNOWN);
@@ -1974,7 +1995,7 @@ public class EncodingUtils {
         encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN);
     }
 
-    // rb_enc_cr_str_buf_cat
+    @CRuby(value = "rb_enc_cr_str_buf_cat", file = "string.c")
     public static int encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr) {
         return encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr);
     }
@@ -2020,7 +2041,8 @@ public class EncodingUtils {
                 (strEnc != ptrEnc &&
                 str_cr != StringSupport.CR_7BIT &&
                 ptr_cr != StringSupport.CR_7BIT)) {
-            throw runtime.newEncodingCompatibilityError("incompatible encodings: " + strEnc + " and " + ptrEnc);
+            throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                    RubyEncoding.inspectName(strEnc) + " and " + RubyEncoding.inspectName(ptrEnc));
         }
 
         if (str_cr == StringSupport.CR_UNKNOWN) {
@@ -2056,7 +2078,7 @@ public class EncodingUtils {
         return ptr_cr;
     }
 
-    // econv_args
+    @CRuby(value = "econv_args", file = "transcode.c")
     public static void econvArgs(ThreadContext context, IRubyObject[] args, byte[][] encNames, Encoding[] encs, int[] ecflags_p, IRubyObject[] ecopts_p) {
         IRubyObject snamev = context.nil;
         IRubyObject dnamev = context.nil;
@@ -2104,7 +2126,7 @@ public class EncodingUtils {
         encNames[1] = encs[1] != null ? encs[1].getName() : ((RubyString)dnamev).getBytes();
     }
 
-    // rb_econv_init_by_convpath
+    @CRuby(value = "rb_econv_init_by_convpath", file = "transcode.c")
     public static EConv econvInitByConvpath(ThreadContext context, IRubyObject convpathArg, byte[][] encNames, Encoding[] encs) {
         final EConv ec = TranscoderDB.alloc(convpathArg.convertToArray().size());
 
@@ -2176,7 +2198,7 @@ public class EncodingUtils {
         return ec;
     }
 
-    // decorate_convpath
+    @CRuby(value = "decorate_convpath", file = "transcode.c")
     public static int decorateConvpath(ThreadContext context, IRubyObject convpath, int ecflags) {
         int num_decorators;
         byte[][] decorators = new byte[EConvFlags.MAX_ECFLAGS_DECORATORS][];
@@ -2212,7 +2234,7 @@ public class EncodingUtils {
         return 0;
     }
 
-    // io_enc_str
+    @CRuby(value = "io_enc_str", file = "io.c")
     public static RubyString ioEncStr(Ruby runtime, RubyString str, OpenFile fptr) {
         str.setEncoding(fptr.readEncoding(runtime));
         return str;
@@ -2222,7 +2244,7 @@ public class EncodingUtils {
         return ioEncStr(runtime, (RubyString) str, fptr);
     }
 
-    // rb_enc_uint_chr
+    @CRuby(value = "rb_enc_uint_chr", file = "numeric.c")
     public static RubyString encUintChr(ThreadContext context, int code, Encoding enc) {
         long i = code & 0xFFFFFFFFL;
         int n = EncodingUtils.encCodelen(context, code, enc);
@@ -2282,7 +2304,7 @@ public class EncodingUtils {
         return len;
     }
 
-    // rb_enc_codepoint_len
+    @CRuby(value = "rb_enc_codepoint_len", file = "encoding.c")
     public static int encCodepointLength(byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
         int r;
         if (e <= p)
@@ -2308,7 +2330,7 @@ public class EncodingUtils {
         }
     }
 
-    // MRI: str_compat_and_valid
+    @CRuby(value = "str_compat_and_valid", file = "string.c")
     public static IRubyObject strCompatAndValid(ThreadContext context, IRubyObject _str, Encoding enc) {
         int cr;
         RubyString str = _str.convertToString();
@@ -2319,13 +2341,14 @@ public class EncodingUtils {
         else {
             Encoding e = STR_ENC_GET(str);
             if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                        RubyEncoding.inspectName(enc) + " and " + RubyEncoding.inspectName(e));
             }
         }
         return str;
     }
 
-    // MRI: get_encoding
+    @CRuby(value = "get_encoding", file = "string.c")
     public static Encoding getEncoding(ByteList str) {
         return getActualEncoding(str.getEncoding(), str);
     }
@@ -2377,7 +2400,7 @@ public class EncodingUtils {
         return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
 
-    // MRI: ISPRINT
+    @CRuby(value = "ISPRINT", file = "include/ruby/internal/ctype.h")
     public static boolean isPrint(int c) {
         return ' ' <= c && c <= 0x7e;
     }
@@ -2441,7 +2464,7 @@ public class EncodingUtils {
         return n;
     }
 
-    // MRI: rb_ascii8bit_appendable_encoding_index
+    @CRuby(value = "rb_ascii8bit_appendable_encoding_index", file = "string.c")
     public static Encoding rbAscii8bitAppendableEncodingIndex(ThreadContext context, Encoding enc, int code) {
         if (enc == ASCIIEncoding.INSTANCE || enc == USASCIIEncoding.INSTANCE) {
             /* US-ASCII automatically extended to ASCII-8BIT */
@@ -2455,11 +2478,6 @@ public class EncodingUtils {
         } else {
             return null;
         }
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static Encoding ioStripBOM(RubyIO io) {
-        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
     }
 
     @Deprecated(since = "9.4.6.0")

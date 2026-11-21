@@ -224,10 +224,21 @@ p Foo::Bar
     Kernel.module_eval do
       alias old_require require
     end
+    if defined?(Ruby::Box)
+      Ruby::Box.module_eval do
+        alias old_require require
+      end
+    end
     called_with = []
     Kernel.send :define_method, :require do |path|
       called_with << path
       old_require path
+    end
+    if defined?(Ruby::Box)
+      Ruby::Box.send :define_method, :require do |path|
+        called_with << path
+        old_require path
+      end
     end
     yield called_with
   ensure
@@ -235,6 +246,13 @@ p Foo::Bar
       undef require
       alias require old_require
       undef old_require
+    end
+    if defined?(Ruby::Box)
+      Ruby::Box.module_eval do
+        undef require
+        alias require old_require
+        undef old_require
+      end
     end
   end
 
@@ -249,7 +267,8 @@ p Foo::Bar
         ensure
           remove_autoload_constant
         end
-        assert_equal [file.path], called_with
+        # .dup to prevent breaking called_with by autoloading pp, etc
+        assert_equal [file.path], called_with.dup
       }
     end
   end
@@ -267,7 +286,8 @@ p Foo::Bar
           ensure
             remove_autoload_constant
           end
-          assert_equal [a.path, b.path], called_with
+          # .dup to prevent breaking called_with by autoloading pp, etc
+          assert_equal [a.path, b.path], called_with.dup
         end
       end
     end
@@ -598,5 +618,11 @@ p Foo::Bar
         end
       RUBY
     end
+  end
+
+  private
+
+  def assert_separately(*args, **kwargs)
+    super(*args, **{ timeout: 60 }.merge(kwargs))
   end
 end

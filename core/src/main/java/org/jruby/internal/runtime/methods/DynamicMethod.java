@@ -40,15 +40,16 @@ import java.util.Collections;
 
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.RubySymbol;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
@@ -79,8 +80,10 @@ public abstract class DynamicMethod {
     protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
-    /** How many times has this method been aliased. */
-    protected int aliasCount;
+    /** Has this method been aliased. */
+    protected boolean aliased;
+    /** Coverage call counter for this entry (methods mode). Null unless Coverage registered the entry. */
+    protected MethodCoverage methodCoverage;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -245,8 +248,36 @@ public abstract class DynamicMethod {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
+    /**
+     * Get the source name for {@code Method#original_name}.
+     * Overridden by {@link AliasMethod} and {@link RenamedDynamicMethod}.
+     *
+     * @return the source name
+     */
+    public String getOldName() {
+        return name;
+    }
+
+    /**
+     * The file this method was defined in, or null if it has no position (native methods). Follows aliases.
+     */
+    public String getSourceFile() {
+        return getRealMethod() instanceof PositionAware poser ? TraceType.maskInternalFiles(poser.getFile()) : null;
+    }
+
+    /**
+     * The line this method was defined on, 1-based, or non-positive if it has no usable position.
+     * Follows aliases.
+     */
+    public int getSourceLine() {
+        return getRealMethod() instanceof PositionAware poser ? poser.getLine() + 1 : -1;
+    }
+
     /*
-     * Will call respond_to?/respond_to_missing? on object and name
+     * Will call respond_to?/respond_to_missing? on object and name.
+     *
+     * Reached with priv false, where MRI passes one argument without looking at arity at all. Do not fold
+     * this into RubyClass's argument count rule, which is the priv-true side.
      */
     public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
         Signature signature = getSignature();
@@ -423,24 +454,20 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Retrieve the arity of this method, used for reporting arity to Ruby
-     * code. This arity may or may not reflect the actual specific or variable
-     * arities of the referenced method.
-     *
-     * @return The arity of the method, as reported to Ruby consumers.
-     */
-    @Deprecated(since = "9.3.0.0")
-    public Arity getArity() {
-        return Arity.optional();
-    }
-
-    /**
      * Retrieve the signature of this method.
      *
      * @return the signature
      */
     public Signature getSignature() {
         return Signature.OPTIONAL;
+    }
+
+    /**
+     * The signature arity reports. Usually {@link #getSignature()}; a method defined from a block reports the
+     * block's arity signature (see {@link org.jruby.runtime.BlockBody#getAritySignature()}).
+     */
+    public Signature getAritySignature() {
+        return getSignature();
     }
 
     /**
@@ -590,7 +617,7 @@ public abstract class DynamicMethod {
 
     /**
      * Get the "handle" associated with this DynamicMethod.
-     * 
+     *
      * @return the handle
      */
     public Object getHandle() {
@@ -644,46 +671,51 @@ public abstract class DynamicMethod {
         return false;
     }
 
-    @Deprecated(since = "9.0.1.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        this(implementationClass, visibility);
+    @Deprecated
+    public void adjustAliasCount(int delta) {
+        aliased = delta > 0;
     }
 
-    @Deprecated(since = "9.0.1.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
-        this(implementationClass, visibility, name);
+    @Deprecated
+    public int getAliasCount() {
+        return this.aliased ? 1 : 0;
     }
 
-    @Deprecated(since = "9.0.1.0")
-    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        init(implementationClass, visibility);
+    public void setAliased() {
+        this.aliased = true;
     }
 
-    @Deprecated(since = "9.0.1.0")
-    public CallConfiguration getCallConfig() {
-        return CallConfiguration.FrameNoneScopeNone;
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    public void setCallConfig(CallConfiguration callConfig) {
+    public boolean isAliased() {
+        return this.aliased;
     }
 
     /**
-     * @param implementationClass of the method
-     * @param visibility of the method
-     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
+     * The Coverage call counter attached to this entry, or null when its calls are not counted.
      */
-    @Deprecated(since = "9.1.16.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        this(implementationClass, visibility, "(anonymous)");
+    public MethodCoverage getMethodCoverage() {
+        return methodCoverage;
     }
 
-    public void adjustAliasCount(int delta) {
-        this.aliasCount += delta;
+    public void setMethodCoverage(MethodCoverage methodCoverage) {
+        this.methodCoverage = methodCoverage;
     }
 
-    public int getAliasCount() {
-        return this.aliasCount;
+    /**
+     * Pass this entry's Coverage counter, if any, to the body about to run on this thread. Every Ruby-level call
+     * path calls this. ReceiveMethodCoverageInstr is the other end. No-op when the entry has no counter.
+     */
+    protected final void prepareMethodCoverage(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null) context.setPendingMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * Count a call whose body is skipped. ConcreteJavaProxy skips the initialize of a Java subclass when it is a
+     * plain super that forwards its arguments. MRI still fires CALL for it. Callers have checked the arity already.
+     */
+    public final void coverElidedCall(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null && context.runtime.getCoverageData().isRunning()) methodCoverage.cover();
     }
 
     /**

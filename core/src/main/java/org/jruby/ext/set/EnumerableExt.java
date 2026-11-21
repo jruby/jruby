@@ -45,7 +45,7 @@ public abstract class EnumerableExt {
 
     //@JRubyMethod
     public static IRubyObject to_set(final ThreadContext context, final IRubyObject self, final Block block) {
-        RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
+        RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"), false);
         set.initialize(context, self, block);
         return set; // return runtime.getClass("Set").newInstance(context, self, block);
     }

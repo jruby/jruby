@@ -151,14 +151,14 @@ module DotGraph
   end
 end
 
-root = JRuby.parse(options[:expression])
+root = JRuby.parse_result(options[:expression])
 
 if options[:print_ast]
   if options[:dot_format]
     DotGraph.print_graph(root)
   else
     print "AST:"
-    puts indent(root.to_string) 
+    puts indent(root.get_ast.to_string) 
     puts
   end
 end
@@ -191,7 +191,7 @@ def ir_setup(root)
   JRuby::IR.compiler_debug = true
 
 
-  builder = org.jruby.ir.builder.IRBuilderAST
+  builder = org.jruby.ir.builder.IRBuilder
 
   scope = builder.build_root(manager, root).scope
   scope.prepare_for_compilation

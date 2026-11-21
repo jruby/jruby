@@ -47,28 +47,25 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
-
-import jnr.constants.platform.Errno;
-import jnr.posix.POSIX;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
@@ -90,19 +87,14 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyFile.fileResource;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.RubyIO.checkUnsupportedOptions;
-import static org.jruby.RubyIO.checkValidSpawnOptions;
-import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.CLASS;
 import static org.jruby.anno.FrameField.FILENAME;
@@ -116,7 +108,6 @@ import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.integerClass;
-import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -137,7 +128,6 @@ import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.receiveKeywords;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -173,7 +163,8 @@ public class RubyKernel {
 
     public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
         Kernel.defineMethods(context, RubyKernel.class);
-        Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
+        // Kernel is the only normal Module that doesn't need an implementor
+        Kernel.set(RubyModule.NEEDSIMPL, false);
 
         var runtime = context.runtime;
         runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
@@ -304,17 +295,6 @@ public class RubyKernel {
                 tmp = RubyFile.get_path(context, tmp);
                 if (tmp == context.nil) {
                     redirect = true;
-                } else {
-                    IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
-                    if (cmd != context.nil) {
-                        warnDeprecatedForRemovalAlternate(context, "Calling Kernel#open with a leading '|'", "4.0", "IO.popen");
-                        if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                            args[0] = cmd;
-                            return PopenExecutor.popen(context, args, ioClass(context), block);
-                        }
-
-                        throw argumentError(context, "pipe open is not supported without native subprocess logic");
-                    }
                 }
             }
         }
@@ -346,7 +326,7 @@ public class RubyKernel {
         return sites(context).getc.call(context, defin, defin);
     }
 
-    // MRI: rb_f_gets
+    @CRuby(value = "rb_f_gets", file = "io.c")
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         var ArgsFile = argsFile(context);
@@ -367,10 +347,10 @@ public class RubyKernel {
             sites(context).puts.call(context, stderr, stderr, message);
         }
 
-        throw exit(context, new IRubyObject[] { context.fals, message }, false);
+        throw Helpers.exit(context, new IRubyObject[] { context.fals, message }, false);
     }
 
-    // MRI: rb_f_array
+    @CRuby(value = "rb_f_array", file = "object.c")
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject object) {
         return TypeConverter.rb_Array(context, object);
@@ -579,12 +559,10 @@ public class RubyKernel {
             }
 
             if (isHexValue(bytes)) {
-                if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
-                    return asFloat(context, parseHexidecimalExponentString2(context, bytes));
-                }
-                IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
-                if (!exception && inum.isNil()) return inum;
-                return ((RubyInteger) inum).toFloat();
+                double value = parseHexFloat(bytes);
+                if (!Double.isNaN(value)) return asFloat(context, value);
+                if (!exception) return context.nil;
+                throw floatError(context, bytes);
             }
             return RubyNumeric.str2fnum(runtime, str, true, exception);
         }
@@ -619,8 +597,94 @@ public class RubyKernel {
 
     static boolean isHexValue(ByteList bytes) {
         int length = bytes.getRealSize();
-        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        int index = 0;
+        while (index < length && isSpace(bytes.get(index))) index++;
+        if (index < length && (bytes.get(index) == '-' || bytes.get(index) == '+')) index++;
         return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
+    }
+
+    /**
+     * Parse a hexadecimal Float such as 0x1.8p3, as strtod does: hex digits with an optional point
+     * and fraction, then an optional binary exponent of decimal digits after a p. An underscore
+     * may only come between two digits, and only spaces may come after the number.
+     *
+     * @param str the text, which starts with 0x after any spaces and sign
+     * @return the value, or NaN if the text is not a valid hexadecimal Float
+     */
+    @CRuby(value = "rb_cstr_to_dbl_raise", file = "object.c")
+    private static double parseHexFloat(ByteList str) {
+        byte[] b = str.unsafeBytes();
+        int p = str.begin();
+        int end = p + str.realSize();
+
+        while (p < end && isSpace(b[p])) p++;
+        boolean negative = false;
+        if (p < end && (b[p] == '-' || b[p] == '+')) negative = b[p++] == '-';
+        p += 2; // 0x
+
+        BigInteger mantissa = BigInteger.ZERO;
+        int digits = 0;
+        int fractionDigits = 0;
+        boolean point = false;
+        int prev = 'x';
+        for (; p < end; p++) {
+            int c = b[p];
+            int digit = Character.digit(c, 16);
+            if (digit >= 0 && c < 0x80) {
+                mantissa = mantissa.shiftLeft(4).add(BigInteger.valueOf(digit));
+                digits++;
+                if (point) fractionDigits++;
+            } else if (c == '_') {
+                if (!isHexDigit(prev) || p + 1 == end || !isHexDigit(b[p + 1])) return Double.NaN;
+            } else if (c == '.' && !point) {
+                point = true;
+            } else {
+                break;
+            }
+            prev = c;
+        }
+        if (digits == 0) return Double.NaN;
+
+        long exponent = 0;
+        if (p < end && (b[p] == 'p' || b[p] == 'P')) {
+            p++;
+            boolean negativeExponent = false;
+            if (p < end && (b[p] == '-' || b[p] == '+')) negativeExponent = b[p++] == '-';
+            int exponentDigits = 0;
+            for (prev = 0; p < end; p++) {
+                int c = b[p];
+                if (c >= '0' && c <= '9') {
+                    if (exponent < 1_000_000_000L) exponent = exponent * 10 + (c - '0');
+                    exponentDigits++;
+                } else if (c == '_') {
+                    if (!(prev >= '0' && prev <= '9') || p + 1 == end || !(b[p + 1] >= '0' && b[p + 1] <= '9')) return Double.NaN;
+                } else {
+                    break;
+                }
+                prev = c;
+            }
+            if (exponentDigits == 0) return Double.NaN;
+            if (negativeExponent) exponent = -exponent;
+        }
+
+        while (p < end && isSpace(b[p])) p++;
+        if (p < end) return Double.NaN;
+
+        // keep the mantissa within a double's range, moving the extra bits into the exponent
+        int extraBits = Math.max(0, mantissa.bitLength() - 1000);
+        long scale = exponent - 4L * fractionDigits + extraBits;
+        double value = mantissa.shiftRight(extraBits).doubleValue();
+        value = Math.scalb(value, (int) Math.max(Integer.MIN_VALUE / 2, Math.min(Integer.MAX_VALUE / 2, scale)));
+
+        return negative ? -value : value;
+    }
+
+    private static boolean isHexDigit(int c) {
+        return c < 0x80 && Character.digit(c, 16) >= 0;
+    }
+
+    private static boolean isSpace(int c) {
+        return c == ' ' || (c >= '\t' && c <= '\r');
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -674,7 +738,7 @@ public class RubyKernel {
         return tmp;
     }
 
-    // MRI: rb_f_p
+    @CRuby(value = "rb_f_p", file = "io.c")
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyThread.uninterruptible(context, args, RubyKernel::pBody);
@@ -722,8 +786,7 @@ public class RubyKernel {
         return recv.getMetaClass().newMethod(context, recv, symbol.asJavaString(), null, true, PUBLIC, true, false);
     }
 
-    /** rb_f_putc
-     */
+    @CRuby(value = "rb_f_putc", file = "io.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = globalVariables(context).get("$>");
@@ -788,7 +851,7 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout, args);
     }
 
-    // rb_f_print
+    @CRuby(value = "rb_f_print", file = "io.c")
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv) {
         return RubyIO.print0(context, globalVariables(context).get("$>"));
@@ -814,7 +877,7 @@ public class RubyKernel {
         return RubyIO.print(context, globalVariables(context).get("$>"), args);
     }
 
-    // rb_f_printf
+    @CRuby(value = "rb_f_printf", file = "io.c")
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) return context.nil;
@@ -876,15 +939,23 @@ public class RubyKernel {
         return RubyIO.select(context, recv, args);
     }
 
+    @CRuby(value = "rb_f_sleep", file = "process.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler);
+
         // Zero sleeps forever
         return sleepCommon(context, 0);
     }
 
+    @CRuby(value = "rb_f_sleep", file = "process.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
-        if (timeout.isNil()) return sleep(context, recv);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler, timeout);
+
+        if (timeout.isNil()) return sleepCommon(context, 0);
 
         long nanoseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1_000_000_000);
 
@@ -892,6 +963,22 @@ public class RubyKernel {
         if (nanoseconds == 0) return RubyFixnum.zero(context.runtime);
 
         return sleepCommon(context, nanoseconds);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, IRubyObject.NULL_ARRAY);
+
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler, IRubyObject timeout) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, timeout);
+
+        return sleptSeconds(context, startTime);
     }
 
     private static RubyFixnum sleepCommon(ThreadContext context, long nanoseconds) {
@@ -905,6 +992,10 @@ public class RubyKernel {
             Thread.currentThread().interrupt();
         }
 
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum sleptSeconds(ThreadContext context, long startTime) {
         return asFixnum(context, Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
@@ -918,7 +1009,7 @@ public class RubyKernel {
     public static IRubyObject exit(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        throw exit(context, args, false);
+        throw Helpers.exit(context, args, false);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -930,38 +1021,7 @@ public class RubyKernel {
     public static IRubyObject exit_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        throw exit(context, args, true);
-    }
-
-    private static RuntimeException exit(ThreadContext context, IRubyObject[] args, boolean hard) {
-        int status = hard ? 1 : 0;
-        String message = null;
-
-        if (args.length > 0) {
-            RubyObject argument = (RubyObject) args[0];
-            if (argument instanceof RubyBoolean) {
-                status = argument.isFalse() ? 1 : 0;
-            } else {
-                status = toInt(context, argument);
-            }
-        }
-
-        if (args.length == 2 && args[1] instanceof RubyString string) {
-            message = string.toString();
-        }
-
-        if (hard) {
-            if (context.runtime.getInstanceConfig().isMain()) {
-                // JRuby was started through Main, use a hard exit
-                System.exit(status);
-            } else {
-                return new MainExitException(status, true);
-            }
-        }
-
-        return message == null ?
-                context.runtime.newSystemExit(status) :
-                context.runtime.newSystemExit(status, message);
+        throw Helpers.exit(context, args, true);
     }
 
 
@@ -1024,114 +1084,261 @@ public class RubyKernel {
         return str.op_format(context, arg);
     }
 
-    @Deprecated(since = "9.2.5.0")
-    public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
-        return sprintf(((RubyBasicObject) recv).getCurrentContext(), recv, args);
+    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return switch (args.length) {
+            case 0 -> raise(context, recv);
+            case 1 -> raise(context, recv, args[0]);
+            case 2 -> raise(context, recv, args[0], args[1]);
+            case 3 -> raise(context, recv, args[0], args[1], args[2]);
+            case 4 -> raise(context, recv, args[0], args[1], args[2], args[3]);
+            default -> {
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                yield null;
+            }
+        };
     }
-    public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
-        // semi extract_raise_opts :
-        if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
-                opt.has_key_p(context, asSymbol(context, "cause")) == context.tru) {
-                throw argumentError(context, "only cause is given with no arguments");
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv) {
+        ThreadContext.resetCallInfo(context);
+
+        IRubyObject lastException = context.getErrorInfo();
+
+        maybeThrowJavaException(context, lastException);
+
+        RubyException exception =
+                lastException instanceof RubyException ex ? ex : newBlankRuntimeException(context);
+
+        return raiseException(context, exception);
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg0, 1, callInfo);
+
+        if (cause.remainingArgs == 0) throw argumentError(context, "only cause is given with no arguments");
+
+        return raiseInternal(context, arg0, cause);
+    }
+
+    static IRubyObject raiseInternal(ThreadContext context, IRubyObject exception, Cause cause) {
+        maybeThrowJavaException(context, exception);
+        return raiseWithNewExceptionCause(context, prepareNewException(context, exception), cause);
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg1, 2, callInfo);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = switch (cause.remainingArgs) {
+            case 1 -> prepareNewException(context, arg0);
+            default -> prepareNewException(context, arg0, arg1);
+        };
+
+        return raiseWithNewExceptionCause(context, exception, cause);
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        Cause cause = prepareCause(context, arg2, 3, callInfo);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = switch (cause.remainingArgs) {
+            case 2 -> prepareNewException(context, arg0, arg1);
+            default -> prepareNewException(context, arg0, arg1, arg2);
+        };
+
+        return raiseWithNewExceptionCause(context, exception, cause);
+    }
+
+    private static IRubyObject raiseWithNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
+        // MRI setup_exception: raise a frozen exception as a copy, or untouched if it has no backtrace and keeps no cause.
+        // The cause is checked against the original first, as MRI exc_setup_message does.
+        if (exception.isFrozen()) {
+            boolean assigns = assignsCause(exception, cause);
+            if (cause.provided && !cause.value.isNil()) RubyException.checkCauseType(context, cause.value);
+            if (assigns && !cause.value.isNil() && cause.value != exception) {
+                RubyException.checkCircularCause(context, exception, cause.value);
+            }
+            if (assigns && exception.getBacktrace().isNil()) return raiseException(context, exception);
+            exception = (RubyException) exception.dup();
         }
-
-        IRubyObject cause = context.getErrorInfo(); // returns nil for no error-info
-
-        maybeRaiseJavaException(context, arg0);
-
-        RaiseException raise = arg0 instanceof RubyString ?
-                ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
-                convertToException(context, arg0, null).toThrowable();
-
-        var exception = raise.getException();
-
-        exception.prepareBacktrace(context);
-        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-        if (exception.getCause() == null && cause != exception) exception.setCause(cause);
-
-        throw raise;
+        setNewExceptionCause(context, exception, cause);
+        return raiseException(context, exception);
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 3);
-        boolean forceCause = false;
+    // MRI's rb_longjmp -> setup_exception
+    private static IRubyObject raiseException(ThreadContext context, RubyException exception) {
+        context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
-        // semi extract_raise_opts :
+        RaiseException throwable = exception.toThrowable();
+        if (!exception.isFrozen()) exception.prepareBacktrace(context); // MRI leaves a frozen one without backtrace
+        printDebugException(context, exception); // debug output ($DEBUG) after $! is set
+        // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
+        IRRuntimeHelpers.traceRaise(context);
+
+        return Helpers.throwExceptionT(throwable);
+    }
+
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg3, 4, callInfo);
+
+        // ensure no more than three args remain
+        Arity.checkArgumentCount(context, cause.remainingArgs, 0, 3);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = prepareNewException(context, arg0, arg1, arg2);
+
+        return raiseWithNewExceptionCause(context, exception, cause);
+    }
+
+    /**
+     * Construct a new RuntimeException with an empty message.
+     *
+     * @param context the current thread context
+     * @return the new blank RuntimeException object
+     */
+    private static RubyException newBlankRuntimeException(ThreadContext context) {
+        return RubyException.newException(context.runtime, runtimeErrorClass(context), "");
+    }
+
+    /**
+     * Prepare a {@link Cause} record given the provided last argument, total argument count, and keyword callInfo.
+     *
+     * @param context the current thread context
+     * @param lastArg the last argument provided to Kernel#raise
+     * @param argc the total count of arguments provided to Kernel#raise
+     * @param callInfo the keyword callInfo bits
+     * @return a Cause record
+     */
+    private static Cause prepareCause(ThreadContext context, IRubyObject lastArg, int argc, int callInfo) {
+        boolean causeGiven = false;
         IRubyObject cause = null;
-        if (argc > 0) {
-            IRubyObject last = args[argc - 1];
-            if (last instanceof RubyHash opt) {
+        if (ThreadContext.hasNonemptyKeywords(callInfo)) {
+            if (lastArg instanceof RubyHash opt) {
                 RubySymbol key;
                 if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
-                    forceCause = true;
-                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
-                        throw argumentError(context, "only cause is given with no arguments");
+                    causeGiven = true;
+                    if (opt.isEmpty()) {
+                        --argc;
                     }
                 }
             }
         }
 
-        if ( argc > 0 ) { // for argc == 0 we will be raising $!
-            // NOTE: getErrorInfo needs to happen before new RaiseException(...)
-            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
-        }
-
-        maybeRaiseJavaException(context, args, argc);
-
-        RaiseException raise;
-        switch (argc) {
-            case 0:
-                IRubyObject lastException = globalVariables(context).get("$!");
-                if (lastException.isNil()) {
-                    raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
-                } else {
-                    // non RubyException value is allowed to be assigned as $!.
-                    raise = ((RubyException) lastException).toThrowable();
-                }
-                break;
-            case 1:
-                if (args[0] instanceof RubyString) {
-                    raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args, block)).toThrowable();
-                } else {
-                    raise = convertToException(context, args[0], null).toThrowable();
-                }
-                break;
-            case 2:
-                raise = convertToException(context, args[0], args[1]).toThrowable();
-                break;
-            default:
-                RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(context, args[2]);
-                raise = exception.toThrowable();
-                break;
-        }
-
-        var exception = raise.getException();
-        exception.prepareBacktrace(context);
-        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-        if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
-
-        throw raise;
+        if ( cause == null ) cause = context.getErrorInfo();
+        return new Cause(argc, causeGiven, cause);
     }
 
-    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
+    static Cause lastErrorCause(ThreadContext context) {
+        return new Cause(0, false, context.getErrorInfo());
+    }
+
+    /**
+     * Represents an exception cause extracted from a Kernel#raise argument list.
+     *
+     * @param remainingArgs the remaining argument count, excluding any cause: keyword
+     * @param provided whether the cause was provided with a cause: keyword
+     * @param value the extracted cause
+     */
+    record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
+
+    /**
+     * Set the cause for an exception that was already constructed elsewhere. This is intended to be used to
+     * appropriately set the cause for previously-raised exceptions. Such exceptions will only hve their cause altered
+     * if:
+     * </p>
+     * <ul>
+     *     <li>the cause is not nil, and either</li>
+     *     <ul>
+     *         <li>it is being forced (provided with cause: keyword), OR</li>
+     *         <li>it has never been set previously and the given cause is not the same as the target exception.</li>
+     *     </ul>
+     * </ul>
+     *
+     * @param context the current thread context
+     * @param cause the desired cause
+     * @param exception the exception
+     */
+    private static void setGivenExceptionCause(ThreadContext context, Cause cause, RubyException exception) {
+        if (!cause.value.isNil() && cause.value != exception) {
+            RubyException.checkCircularCause(context, exception, cause.value);
+
+            if (assignsCause(exception, cause)) exception.setCause(context, cause.value);
+        }
+    }
+
+    /**
+     * Set the cause for a newly-constructed exception.
+     *
+     * @param context the current thread context
+     * @param exception the exception
+     * @param cause the cause
+     */
+    private static void setNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
+        if (cause.value.isNil()) {
+            if (!cause.provided && exception.getCause() == null) {
+                exception.setCause(context, cause.value);
+            }
+        } else if (assignsCause(exception, cause) && cause.value != exception) {
+            exception.setCause(context, cause.value);
+        }
+    }
+
+    /**
+     * Whether raise takes the given cause: always with cause:, otherwise ($!) only for an exception without a cause
+     * yet. MRI exc_setup_message leaves the cause undefined in the other case.
+     */
+    private static boolean assignsCause(RubyException exception, Cause cause) {
+        return cause.provided || exception.getCause() == null;
+    }
+
+    /**
+     * Locate and unwrap (if possible) a Java exception to be raised. This path will check for a Java exception in $!
+     * (if no arguments are passed) or as the first argument (if one argument is passed).
+     *
+     * @param context the current context
+     * @param args the arguments passed to Kernel#raise
+     * @param argc the count of arguments passed to Kernel#raise
+     * @return a Java Throwable for the unwrapped exception, or null if no Java exception is available
+     */
+    public static Throwable unwrapJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
         // Check for a Java exception
         IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                maybeException = globalVariables(context).get("$!");
+                maybeException = context.getErrorInfo();
                 break;
             case 1:
                 if (args.length == 1) maybeException = args[0];
                 break;
         }
 
-        maybeRaiseJavaException(context, maybeException);
+        return unwrapJavaException(context, maybeException);
     }
 
-    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject arg) {
+    /**
+     * Unwrap (if possible) a Java exception to be raised from the given argument. If the argument does not wrap a Java
+     * exception, this will return null.
+     *
+     * @param context the current context
+     * @param arg the argument to unwrap, if it is a Java exception
+     * @return a Java Throwable for the unwrapped exception, or null if no Java exception is available
+     */
+    private static Throwable unwrapJavaException(ThreadContext context, final IRubyObject arg) {
         // Check for a Java exception
         if (arg instanceof ConcreteJavaProxy) {
             // looks like someone's trying to raise a Java exception. Let them.
@@ -1140,33 +1347,103 @@ public class RubyKernel {
             if (!(maybeThrowable instanceof Throwable)) throw typeError(context, "can't raise a non-Throwable Java object");
 
             final Throwable ex = (Throwable) maybeThrowable;
-            Helpers.throwException(ex);
-            return; // not reached
+            return ex;
         }
+        return null;
     }
 
-    private static RubyException convertToException(ThreadContext context, IRubyObject obj, IRubyObject optionalMessage) {
-        if (!obj.respondsTo("exception")) throw typeError(context, "exception class/object expected");
+    /**
+     * If the given exception is a Java exception, throw it without any further manipulation.
+     *
+     * @param context the current thread context
+     * @param exception the exception to check and possibly throw
+     */
+    private static void maybeThrowJavaException(ThreadContext context, IRubyObject exception) {
+        Throwable throwable = unwrapJavaException(context, exception);
+        if (throwable != null) Helpers.throwException(throwable);
+    }
+
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param stringOrFactory the factory object or string message for RuntimeError
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject stringOrFactory) {
+        RubyException exception;
+
+        if (stringOrFactory instanceof RubyString) {
+            exception = ((RubyException) runtimeErrorClass(context).newInstance(context, stringOrFactory));
+        } else {
+            exception = prepareNewException(context, stringOrFactory, null);
+        }
+
+        return exception;
+    }
+
+
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param factory the factory object
+     * @param optionalMessage the exception message or null if none
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject factory, IRubyObject optionalMessage) {
+        if (!factory.respondsTo("exception")) throw typeError(context, "exception class/object expected");
 
         IRubyObject exception = optionalMessage == null ?
-                obj.callMethod(context, "exception") :
-                obj.callMethod(context, "exception", optionalMessage);
+                factory.callMethod(context, "exception") :
+                factory.callMethod(context, "exception", optionalMessage);
 
-        if (!RubyException.class.isInstance(exception)) throw typeError(context, "exception object expected");
+        if (!(exception instanceof RubyException)) throw typeError(context, "exception object expected");
 
         return (RubyException) exception;
     }
 
-    private static void printExceptionSummary(ThreadContext context, RubyException rEx) {
-        RubyStackTraceElement[] elements = rEx.getBacktraceElements();
-        RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
-                new RubyStackTraceElement("", "", "(empty)", 0, false);
-        String msg = String.format("Exception '%s' at %s:%s - %s\n",
-                rEx.getMetaClass(),
-                firstElement.getFileName(), firstElement.getLineNumber(),
-                TypeConverter.convertToType(rEx, stringClass(context), "to_s"));
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param factory the factory object
+     * @param message the exception message
+     * @param backtrace the exception backtrace
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject factory, IRubyObject message, IRubyObject backtrace) {
+        RubyException exception = prepareNewException(context, factory, message);
 
-        context.runtime.getErrorStream().print(msg);
+        exception.setBacktrace(context, backtrace);
+
+        return exception;
+    }
+
+    /**
+     * Print the given exception to stderr if debug is enabled.
+     *
+     * @param context the current thread context
+     * @param exception the exception to print
+     */
+    private static void printDebugException(ThreadContext context, RubyException exception) {
+        Ruby runtime = context.runtime;
+        if (runtime.isDebug()) {
+            // trigger exception backtrace construction
+            exception.toThrowable();
+            RubyStackTraceElement[] elements = exception.getBacktraceElements();
+            RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
+                    new RubyStackTraceElement("", "", "(empty)", 0, false);
+            String msg = String.format("Exception '%s' at %s:%s - %s\n",
+                    exception.getMetaClass(),
+                    firstElement.getFileName(), firstElement.getLineNumber(),
+                    TypeConverter.convertToType(exception, stringClass(context), "to_s"));
+
+            runtime.getErrorStream().print(msg);
+        }
     }
 
     /**
@@ -1193,16 +1470,22 @@ public class RubyKernel {
     public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
         RubyString relativePath = RubyFile.get_path(context, name);
         String file = context.getCurrentStaticScope().getFile();
+        IREvalScript evalScript = getEvalScript(context);
 
-        if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
+        if (file == null || (evalScript != null ? evalScript.hasNoRealPath() :
+                (file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")))) {
             throw context.runtime.newLoadError("cannot infer basepath");
         }
 
         file = loadService(context).getPathForLocation(file);
 
         RubyClass fileClass = fileClass(context);
-        IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
+        // Like CRuby, code evaluated with an explicit filename uses that
+        // filename as is. It need not exist on disk, so only resolve the
+        // real path of files that were actually loaded.
+        IRubyObject base = newString(context, file);
+        if (evalScript == null) base = RubyFile.realpath(context, fileClass, base);
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, base);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
@@ -1279,7 +1562,7 @@ public class RubyKernel {
                 binding.setLine(0);
             }
         } else {  // no explicit file/line argument given
-            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")");
+            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")", true);
             binding.setLine(0);
         }
 
@@ -1506,8 +1789,16 @@ public class RubyKernel {
                 i = 1;
             }
 
-            for (; i < argMessagesLen; i++) {
-                warnObj(context, recv, args[i], category);
+            if (argMessagesLen - i > 0) {
+                RubyString buffer = newEmptyString(context);
+                buffer.setMetaClass(context.runtime.getWarnings().getWarningBuffer());
+
+                IRubyObject[] newArgs = (argMessagesLen == args.length && i == 0) ? args : Arrays.copyOfRange(args, i, argMessagesLen);
+                RubyIO.puts(context, buffer, newArgs);
+
+                buffer.setMetaClass(context.runtime.getString());
+
+                warnObj(context, recv, buffer, category);
             }
         }
 
@@ -1640,11 +1931,6 @@ public class RubyKernel {
         if (block.type == Block.Type.PROC) throw argumentError(context, "the lambda method requires a literal block");
 
         return context.runtime.newProc(Block.Type.LAMBDA, block);
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static RubyProc proc_1_9(ThreadContext context, IRubyObject recv, Block block) {
-        return proc(context, recv, block);
     }
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
@@ -1939,121 +2225,19 @@ public class RubyKernel {
         return args;
     }
 
+    @JRubyMethod(name = "exec", module = true, required = 1, rest = true, visibility = PRIVATE)
+    public static IRubyObject execNew(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyProcess.exec(context, recv, args);
+    }
+
+    @Deprecated(since = "10.1.2.0")
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return execCommon(context, null, args[0], null, args);
+        return Helpers.execOldCommon(context, null, args[0], null, args);
     }
 
-    /* Actual exec definition which calls this internal version is specified
-     * in /core/src/main/ruby/jruby/kernel/kernel.rb.
-     */
-    @JRubyMethod(required = 4, visibility = PRIVATE)
+    @Deprecated(since = "10.1.2.0")
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject env = args[0];
-        IRubyObject prog = args[1];
-        IRubyObject options = args[2];
-        var cmdArgs = (RubyArray<?>) args[3];
-
-        if (options instanceof RubyHash) checkExecOptions(context, (RubyHash) options);
-
-        return execCommon(context, env, prog, options, cmdArgs.toJavaArray(context));
-    }
-
-    static void checkExecOptions(ThreadContext context, RubyHash opts) {
-        checkValidSpawnOptions(context, opts);
-        checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
-    }
-
-    private static IRubyObject execCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
-        // This is a fairly specific hack for empty string, but it does the job
-        if (args.length == 1) {
-            RubyString command = args[0].convertToString();
-            if (command.isEmpty()) throw context.runtime.newErrnoENOENTError(command.toString());
-
-            for (byte b : command.getBytes()) {
-                if (b == 0x00) throw argumentError(context, "string contains null byte");
-            }
-        }
-
-        final Ruby runtime = context.runtime;
-
-        if (env != null && env != context.nil) {
-            RubyHash envMap = env.convertToHash();
-            if (envMap != null) {
-                runtime.getENV().merge_bang(context, new IRubyObject[]{envMap}, Block.NULL_BLOCK);
-            }
-        }
-
-        boolean nativeFailed = false;
-        boolean nativeExec = Options.NATIVE_EXEC.load();
-        boolean jmxStopped = false;
-        System.setProperty("user.dir", runtime.getCurrentDirectory());
-
-        if (nativeExec) {
-            IRubyObject oldExc = context.getErrorInfo();
-            try {
-                ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
-
-                // Duplicated in part from ShellLauncher.runExternalAndWait
-                if (cfg.shouldRunInShell()) {
-                    // execute command with sh -c
-                    // this does shell expansion of wildcards
-                    cfg.verifyExecutableForShell();
-                } else {
-                    cfg.verifyExecutableForDirect();
-                }
-                String progStr = cfg.getExecArgs()[0];
-
-                String[] argv = cfg.getExecArgs();
-
-                // attempt to shut down the JMX server
-                jmxStopped = runtime.getBeanManager().tryShutdownAgent();
-
-                final POSIX posix = runtime.getPosix();
-
-                posix.chdir(System.getProperty("user.dir"));
-
-                if (Platform.IS_WINDOWS) {
-                    // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
-                    posix.exec(progStr, argv);
-                } else {
-                    // TODO: other logic surrounding this call? In jnr-posix?
-                    @SuppressWarnings("unchecked")
-                    final Map<String, String> ENV = (Map<String, String>) runtime.getENV();
-                    ArrayList<String> envStrings = new ArrayList<>(ENV.size() + 1);
-                    for ( Map.Entry<String, String> envEntry : ENV.entrySet() ) {
-                        envStrings.add( envEntry.getKey() + '=' + envEntry.getValue() );
-                    }
-                    envStrings.add(null);
-
-                    int status = posix.execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
-                    if (Platform.IS_WSL && status == -1) { // work-around a bug in Windows Subsystem for Linux
-                        if (posix.errno() == Errno.ENOMEM.intValue()) {
-                            posix.exec(progStr, argv);
-                        }
-                    }
-                }
-
-                // Only here because native exec could not exec (always -1)
-                nativeFailed = true;
-            } catch (RaiseException e) {
-                context.setErrorInfo(oldExc); // Restore $!
-            } catch (Exception e) {
-                throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
-            }
-        }
-
-        // if we get here, either native exec failed or we should try an in-process exec
-        if (nativeFailed) {
-            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) runtime.registerMBeans();
-
-            throw runtime.newErrnoFromLastPOSIXErrno();
-        }
-
-        // Fall back onto our existing code if native not available
-        // FIXME: Make jnr-posix Pure-Java backend do this as well
-        int resultCode = ShellLauncher.execAndWait(runtime, args);
-
-        throw exit(context, new IRubyObject[] {asFixnum(context, resultCode)}, true);
+        return JRubyUtilLibrary.exec_old(context, recv, args);
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
@@ -2098,15 +2282,35 @@ public class RubyKernel {
         return frameName == null || frameName == Ruby.ROOT_FRAME_NAME ? context.nil : asSymbol(context, frameName);
     }
 
-    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
+    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = {FILENAME, SCOPE})
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
+
+        IREvalScript evalScript = getEvalScript(context);
+
+        if (evalScript != null) {
+            if (evalScript.hasNoRealPath()) return context.nil;
+
+            return newString(context, RubyFile.dirname(context, __FILE__));
+        }
 
         __FILE__ = loadService(context).getPathForLocation(__FILE__);
 
         RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
         return newString(context, RubyFile.dirname(context, path.asJavaString()));
+    }
+
+    private static IREvalScript getEvalScript(ThreadContext context) {
+        if (context.getCurrentStaticScope() == null) return null;
+
+        IRScope scope = context.getCurrentStaticScope().getIRScope();
+
+        for (; scope != null; scope = scope.getLexicalParent()) {
+            if (scope instanceof IREvalScript evalScript) return evalScript;
+        }
+
+        return null;
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -2195,16 +2399,6 @@ public class RubyKernel {
     @JRubyMethod(name = "initialize_dup", required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize_dup(ThreadContext context, IRubyObject self, IRubyObject original) {
         return sites(context).initialize_copy.call(context, self, self, original);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
-        return ((RubyBasicObject) self).respond_to_p(mname);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
-        return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -2493,68 +2687,11 @@ public class RubyKernel {
         return context.sites.Kernel;
     }
 
-    @Deprecated(since = "9.1.0.0")
-    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
-        return methodMissing(context, recv, name, lastVis, lastCallType, args);
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0:
-                return caller(context, recv);
-            case 1:
-                return caller(context, recv, args[0]);
-            case 2:
-                return caller(context, recv, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return caller_locations(context, recv);
-            case 1:
-                return caller_locations(context, recv, args[0]);
-            case 2:
-                return caller_locations(context, recv, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        return require(((RubyBasicObject) recv).getCurrentContext(), recv, name, block);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         Warn.warn(context, "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
                 "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        return autoload(((RubyBasicObject) recv).getCurrentContext(), recv, symbol, file);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return RubyRandom.randFloat(context);
-            case 1:
-                return RubyRandom.randKernel(context, recv, args[0]);
-            default:
-                throw argumentError(context, args.length, 0, 1);
-        }
     }
 
     @Deprecated(since = "9.4.0.0")
@@ -2595,5 +2732,10 @@ public class RubyKernel {
             default:
                 throw argumentError(context, args.length, 2, 3);
         }
+    }
+
+    @Deprecated(since = "10.1.1.0")
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return raise(context, recv, args);
     }
 }

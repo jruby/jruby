@@ -3,13 +3,13 @@ describe :string_codepoints, shared: true do
   it "returns self" do
     s = "foo"
     result = s.send(@method) {}
-    result.should equal s
+    result.should.equal? s
   end
 
   it "raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator" do
     s = "\xDF".dup.force_encoding(Encoding::UTF_8)
-    s.valid_encoding?.should be_false
-    -> { s.send(@method).to_a }.should raise_error(ArgumentError)
+    s.valid_encoding?.should == false
+    -> { s.send(@method).to_a }.should.raise(ArgumentError)
   end
 
   it "yields each codepoint to the block if one is given" do
@@ -22,13 +22,13 @@ describe :string_codepoints, shared: true do
 
   it "raises an ArgumentError if self's encoding is invalid and a block is given" do
     s = "\xDF".dup.force_encoding(Encoding::UTF_8)
-    s.valid_encoding?.should be_false
-    -> { s.send(@method) { } }.should raise_error(ArgumentError)
+    s.valid_encoding?.should == false
+    -> { s.send(@method) { } }.should.raise(ArgumentError)
   end
 
   it "yields codepoints as Integers" do
     "glark\u{20}".send(@method).to_a.each do |codepoint|
-      codepoint.should be_an_instance_of(Integer)
+      codepoint.should.instance_of?(Integer)
     end
   end
 
@@ -41,6 +41,11 @@ describe :string_codepoints, shared: true do
     s = "\u{9819}"
     s.bytesize.should == 3
     s.send(@method).to_a.should == [38937]
+  end
+
+  it "works for multibyte characters in Emacs-Mule based encodings" do
+    "a\x86\xCDb".dup.force_encoding(Encoding::EMACS_MULE).send(@method).to_a.should == [0x61, 0x86CD, 0x62]
+    "\x94\xCB\xCE".dup.force_encoding(Encoding::STATELESS_ISO_2022_JP_KDDI).send(@method).to_a.should == [0x94CBCE]
   end
 
   it "yields the codepoints corresponding to the character's position in the String's encoding" do
@@ -56,7 +61,7 @@ describe :string_codepoints, shared: true do
 
   it "is synonymous with #bytes for Strings which are single-byte optimizable" do
     s = "(){}".encode('ascii')
-    s.ascii_only?.should be_true
+    s.ascii_only?.should == true
     s.send(@method).to_a.should == s.bytes.to_a
   end
 

@@ -32,4 +32,18 @@ public interface DefNode {
      * @return the line (zero-offset)
      */
     int getEndLine();
+
+    /**
+     * Zero-based byte column where the source of this definition starts: the def keyword, or the opening brace
+     * of a block. -1 if unknown.
+     * @return the column
+     */
+    int getStartColumn();
+
+    /**
+     * Zero-based byte column just after the source of this definition ends: after the end keyword, or after
+     * the closing brace of a block. -1 if unknown.
+     * @return the column
+     */
+    int getEndColumn();
 }

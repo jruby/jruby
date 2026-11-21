@@ -1,0 +1,5 @@
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process.setrlimit when passed a Symbol coerces :SBSIZE into RLIMIT_SBSIZE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process.setrlimit when passed a String coerces 'SBSIZE' into RLIMIT_SBSIZE
+fails(OpenBSD,https://github.com/jruby/jruby/issues/9431):Process.setrlimit when passed a Symbol coerces :AS into RLIMIT_AS
+fails(OpenBSD,https://github.com/jruby/jruby/issues/9431):Process.setrlimit when passed a String coerces 'AS' into RLIMIT_AS
+

@@ -119,6 +119,7 @@ public class AdoptedNativeThread implements ThreadLike {
         } catch (SecurityException ignore) { } // current thread can not modify
     }
 
+    // Deprecated in subclass but not in interface
     @Override
     @Deprecated(since = "9.2.0.0")
     public String getRubyName() {

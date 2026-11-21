@@ -633,6 +633,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--yydebug")) {
                         disallowedInRubyOpts(argument);
                         config.setParserDebug(true);
+                        break FOR;
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                         break FOR;
@@ -807,14 +808,6 @@ public class ArgumentProcessor {
         return null;
     }
 
-    @Deprecated(since = "9.1.3.0")
-    public String resolveScriptUsingClassLoader(String scriptName) {
-        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:/bin/" + scriptName;
-        }
-        return null;
-    }
-
     private String grabValue(String errorMessage) {
         return grabValue(errorMessage, true);
     }
@@ -915,6 +908,14 @@ public class ArgumentProcessor {
             processor.config.setDisableDidYouMean(!enable); return null;
         });
         features.put("did_you_mean", function); // alias
+        features.put("error-highlight", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableErrorHighlight(!enable); return null;
+        });
+        features.put("error_highlight", function); // alias
+        features.put("syntax-suggest", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableSyntaxSuggest(!enable); return null;
+        });
+        features.put("syntax_suggest", function); // alias
         features.put("rubyopt", (ArgumentProcessor processor, Boolean enable) -> {
             processor.config.setDisableRUBYOPT(!enable); return null;
         });

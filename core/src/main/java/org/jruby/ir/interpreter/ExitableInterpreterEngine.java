@@ -38,8 +38,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -62,7 +60,6 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
         Object[] temp = state.getTemporaryVariables();
         int n = instrs.length;
         int ipc = state.getIPC();
-        int exitIPC = interpreterContext.getExitIPC();
         Object exception = null;
 
         boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
@@ -79,18 +76,6 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
 
         // Enter the looooop!
         while (ipc < n) {
-            // We want to exit at this instr and return its call arguments to consumer of this interpreter.
-            if (ipc == exitIPC) {
-                // FIXME: I assume result of super in this case will be nil which means we should not have to explicitly
-                // set the temp to nil but we shall see...
-                state.setIPC(ipc + 1);  // Mark next instr to execute when we call execute again using this state.
-                // FIXME: We are forcing a boxing to a Ruby array we probably do not need but did it anyways so it matched the
-                // interface of interpreterengine (re-consider this).
-                return new ExitableReturn(
-                		newArray(context, interpreterContext.getArgs(context, self, currScope, currDynScope, temp)),
-        				((CallBase)instrs[ipc]).prepareBlock(context, self, currScope, currDynScope, temp));
-            }
-
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
@@ -109,12 +94,17 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                                 currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
+                        if (instr instanceof JavaCtorSuperInstr javaCtorSuper) {
+                            state.setIPC(ipc + 1);
+                            return javaCtorSuper.prepareSuper(context, self, currScope, currDynScope, temp);
+                        }
+
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;
                     case RET_OP:
                         processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
-                        return new ExitableReturn(newEmptyArray(context), Block.NULL_BLOCK);
+                        return new ExitableReturn(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP:

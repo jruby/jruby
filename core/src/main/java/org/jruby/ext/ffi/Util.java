@@ -159,11 +159,6 @@ public final class Util {
                     : RubyFixnum.newFixnum(runtime, value);
     }
 
-    @Deprecated(since = "1.4.0")
-    public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
-        return paramClass.cast(parameter.toJava(paramClass));
-    }
-
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {
         ByteBuffer tmp = buf.duplicate();
         positionBuffer(tmp, offset);

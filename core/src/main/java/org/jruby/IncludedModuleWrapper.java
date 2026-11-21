@@ -73,24 +73,6 @@ public class IncludedModuleWrapper extends IncludedModule {
         methods = methodsHolder.getMethodsForWrite();
     }
 
-    /**
-     * Overridden newIncludeClass implementation to allow attaching future includes to the correct module
-     * (i.e. the one to which this is attached)
-     *
-     * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
-     */
-    @Override
-    @Deprecated(since = "1.1.5")
-    public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        var context = getCurrentContext();
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(context.runtime, superClass, getOrigin());
-
-        // include its parent (and in turn that module's parents)
-        if (getSuperClass() != null) includedModule.includeModule(context, getSuperClass());
-
-        return includedModule;
-    }
-
     public RubyModule getDelegate() {
         return origin;
     }

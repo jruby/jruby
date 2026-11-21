@@ -1,0 +1,1 @@
+fails:Dir#to_path is an alias of Dir#path

@@ -359,16 +359,4 @@ public class JavaNameMangler {
         throw new IllegalStateException("unknown encoded method type '" + type);
 
     }
-
-    @Deprecated(since = "9.2.7.0")
-    public static boolean willMethodMangleOk(CharSequence name) {
-        if (false && Platform.IS_IBM) {
-            // IBM's JVM is much less forgiving, so we disallow anything with non-alphanumeric, _, and $
-            for ( int i = 0; i < name.length(); i++ ) {
-                if (!Character.isJavaIdentifierPart(name.charAt(i))) return false;
-            }
-        }
-        // other JVMs will accept our mangling algorithm
-        return true;
-    }
 }

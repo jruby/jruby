@@ -1,6 +1,5 @@
 # MRI stdlib tests
 
-benchmark
 cgi
 digest
 # only runs as root and we don't support most of this anyway
@@ -10,26 +9,20 @@ etc
 fiber
 fileutils
 io
-irb
 json
-logger
 monitor
 net
 open-uri
 openssl
 optparse
-ostruct
 pathname
 psych
-rdoc
-reline
 resolv
 ripper
 socket
 stringio
 strscan
 uri
-win32ole
 yaml
 zlib
 
@@ -42,7 +35,6 @@ test_ipaddr.rb
 test_open3.rb
 test_pp.rb
 test_prettyprint.rb
-test_pstore.rb
 test_pty.rb
 test_rbconfig.rb
 test_securerandom.rb
@@ -59,9 +51,6 @@ test_weakref.rb
 
 # Looks for did_you_mean in the wrong place (../lib)
 #did_you_mean
-
-# Various issues setting up test libraries to load
-#fiddle
 
 # Unsupported library, tries to use "fire_update!" defined by test harness
 #mkmf

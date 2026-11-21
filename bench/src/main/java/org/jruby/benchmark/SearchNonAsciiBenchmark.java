@@ -1,0 +1,76 @@
+package org.jruby.benchmark;
+
+import java.util.concurrent.TimeUnit;
+
+import org.jruby.util.StringSupport;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(1)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@State(Scope.Thread)
+public class SearchNonAsciiBenchmark {
+
+    // Where the first non-ASCII byte appears, as a fraction of the buffer length.
+    // "none" means the buffer is entirely ASCII (worst case: full scan, no match).
+    @Param({"none", "start", "middle", "end"})
+    public String hitPosition;
+
+    @Param({"7", "8", "16", "64", "1024", "65536"})
+    public int size;
+
+    private byte[] bytes;
+
+    @Setup
+    public void setup() {
+        bytes = new byte[size];
+        for (int i = 0; i < size; i++) {
+            bytes[i] = (byte) ('a' + (i % 26));
+        }
+        switch (hitPosition) {
+            case "none":
+                break;
+            case "start":
+                if (size > 0) bytes[0] = (byte) 0xFF;
+                break;
+            case "middle":
+                if (size > 0) bytes[size / 2] = (byte) 0xFF;
+                break;
+            case "end":
+                if (size > 0) bytes[size - 1] = (byte) 0xFF;
+                break;
+        }
+    }
+
+    @Benchmark
+    public int searchNonAscii() {
+        return StringSupport.searchNonAscii(bytes, 0, size);
+    }
+
+    @Benchmark
+    public int searchNonAsciiBaseline() {
+        return searchNonAsciiOriginal(bytes, 0, size);
+    }
+
+    private static int searchNonAsciiOriginal(byte[] bytes, int p, int end) {
+        while (p < end) {
+            if ((bytes[p] & 0x80) != 0) return p;
+            p++;
+        }
+        return -1;
+    }
+
+}

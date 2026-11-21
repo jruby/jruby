@@ -38,12 +38,12 @@
 
 package org.jruby;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Locale;
 
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
@@ -53,6 +53,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalDumper;
@@ -60,7 +61,6 @@ import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
-import org.jruby.util.Sprintf;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
@@ -87,7 +87,7 @@ import static org.jruby.util.Numeric.nurat_rationalize_internal;
   * A representation of a float object
  */
 @JRubyClass(name="Float", parent="Numeric")
-public class RubyFloat extends RubyNumeric implements Appendable {
+public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     public static final int ROUNDS = 1;
     public static final int RADIX = 2;
     public static final int MANT_DIG = 53;
@@ -141,13 +141,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public RubyFloat(Ruby runtime, double value) {
         super(runtime.getFloat());
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     private RubyFloat(RubyClass klass, double value) {
         super(klass);
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyClass singletonClass(ThreadContext context) {
@@ -251,22 +251,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      *  ================
      */
 
-    /** rb_flo_induced_from
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
-        if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
-            return number.callMethod(context, "to_f");
-        }
-
-        if (!(number instanceof RubyFloat)) throw typeError(context, "failed to convert ", number, " into Float");
-        return number;
-    }
-
-    /** flo_to_s
-     *
-     */
+    @CRuby(value = "flo_to_s", file = "numeric.c")
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s(ThreadContext context) {
@@ -279,7 +264,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
-    // MRI: flo_coerce
+    @CRuby(value = "flo_coerce", file = "numeric.c")
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, RubyKernel.new_float(context, other), this);
@@ -292,11 +277,6 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
         return asFloat(context, -value);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_uminus() {
-        return op_uminus(getCurrentContext());
     }
 
     /** flo_plus
@@ -366,17 +346,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, value / other);
     }
 
-    /** flo_quo
-    *
-    */
+    @CRuby(value = "flo_quo", file = "numeric.c")
     @JRubyMethod(name = {"quo", "fdiv"})
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return numFuncall(context, this, sites(context).op_quo, other);
     }
 
-    /** flo_mod
-     *
-     */
+    @CRuby(value = "flo_mod", file = "numeric.c")
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
@@ -398,9 +374,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, mod);
     }
 
-    /** flo_divmod
-     *
-     */
+    @CRuby(value = "flo_divmod", file = "numeric.c")
     @Override
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
@@ -446,18 +420,33 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, Math.pow(value, other));
     }
 
-    /** flo_eq
-     *
-     */
+    @CRuby(value = "flo_eq", file = "numeric.c")
     @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (Double.isNaN(value)) return context.fals;
 
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asBoolean(context, value == ((RubyNumeric) other).asDouble(context));
+            case INTEGER -> asBoolean(context, cmpInteger(context, (RubyInteger) other) == 0);
+            case FLOAT -> asBoolean(context, value == ((RubyFloat) other).value);
             default -> super.op_num_equal(context, other); // Numeric.equal
         };
+    }
+
+    /**
+     * Compare with an Integer exactly, rather than as doubles, which would round an Integer above
+     * 2**53 to the nearest double.
+     *
+     * @return -1, 0 or 1 as this is less than, equal to or greater than other, or 2 for NaN
+     */
+    private int cmpInteger(ThreadContext context, RubyInteger other) {
+        if (other instanceof RubyFixnum fixnum) {
+            int rel = RubyFixnum.floatCmp(fixnum.getValue(), value);
+            return rel == 2 ? 2 : -rel;
+        }
+
+        IRubyObject rel = ((RubyBignum) other).float_cmp(context, this);
+        return rel.isNil() ? 2 : -(int) ((RubyFixnum) rel).getValue();
     }
 
     public IRubyObject op_equal(ThreadContext context, double other) {
@@ -476,22 +465,22 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public final int compareTo(IRubyObject other) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> Double.compare(value, ((RubyNumeric) other).asDouble(context));
+            case INTEGER -> Double.isNaN(value) ?
+                    Double.compare(value, ((RubyNumeric) other).asDouble(context)) : cmpInteger(context, (RubyInteger) other);
+            case FLOAT -> Double.compare(value, ((RubyFloat) other).value);
             default -> (int) toLong(context, coerceCmp(context, sites(context).op_cmp, other));
         };
     }
 
-    /** flo_cmp
-     *
-     */
+    @CRuby(value = "flo_cmp", file = "numeric.c")
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
-            if (Double.isInfinite(value)) return asFixnum(context, value > 0.0 ? 1 : -1);
+            int rel = cmpInteger(context, (RubyInteger) other);
+            return rel == 2 ? context.nil : asFixnum(context, rel);
         case FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
-            return dbl_cmp(context.runtime, value, b);
+            return dbl_cmp(context.runtime, value, ((RubyFloat) other).value);
         default:
             FloatSites sites = sites(context);
             if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
@@ -520,8 +509,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) == 1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value > b);
         default:
             return coerceRelOp(context, sites(context).op_gt, other);
@@ -532,14 +523,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value > other);
     }
 
-    /** flo_ge
-     *
-     */
+    @CRuby(value = "flo_ge", file = "numeric.c")
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            int rel = cmpInteger(context, (RubyInteger) other);
+            return asBoolean(context, rel == 0 || rel == 1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value >= b);
         default:
             return coerceRelOp(context, sites(context).op_ge, other);
@@ -550,14 +542,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value >= other);
     }
 
-    /** flo_lt
-     *
-     */
+    @CRuby(value = "flo_lt", file = "numeric.c")
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) == -1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value < b);
         default:
             return coerceRelOp(context, sites(context).op_lt, other);
@@ -568,14 +560,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value < other);
     }
 
-    /** flo_le
-     *
-     */
+    @CRuby(value = "flo_le", file = "numeric.c")
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) <= 0);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value <= b);
         default:
             return coerceRelOp(context, sites(context).op_le, other);
@@ -586,7 +578,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value <= other);
 	}
 
-    // MRI: flo_eql
+    @CRuby(value = "flo_eql", file = "numeric.c")
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
@@ -613,22 +605,26 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
 
-    // MRI: flo_hash
+    @CRuby(value = "flo_hash", file = "numeric.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, floatHash(context.runtime, value));
+        return asFixnum(context, longHashCode());
     }
-
 
     @Override
     public final int hashCode() {
-        return (int) floatHash(getRuntime(), value);
+        return (int) longHashCode();
     }
 
-    private static long floatHash(Ruby runtime, double value) {
+    @Override
+    public long longHashCode() {
+        return floatHash(value);
+    }
+
+    private static long floatHash(double value) {
         final double val = value == 0.0 ? -0.0 : value;
         long hashLong = Double.doubleToLongBits(val);
-        return Helpers.multAndMix(runtime.getHashSeedK0(), hashLong);
+        return Helpers.multAndMix(Ruby.getHashSeed0(), hashLong);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -679,18 +675,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return isZero(context) ? context.nil : this;
     }
 
-    /**
-     * MRI: flo_truncate
-     */
+    @CRuby(value = "flo_truncate", file = "numeric.c")
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
         return toInteger(context);
     }
 
-    /**
-     * MRI: flo_truncate
-     */
+    @CRuby(value = "flo_truncate", file = "numeric.c")
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     public IRubyObject truncate(ThreadContext context, IRubyObject n) {
         if (value > 0.0) return floor(context, n);
@@ -730,12 +722,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         RubyInteger rf = asInteger(context, ldexp(frexp(value, exp), DBL_MANT_DIG));
         RubyFixnum rn = asFixnum(context, exp[0] - DBL_MANT_DIG);
 
+        if (toInt(context, rn) >= 0) {
+            return RubyRational.newRationalRaw(context.runtime, rf.op_lshift(context, rn));
+        }
+
         return f_mul(context, rf, f_expt(context, asFixnum(context, 2), rn));
     }
 
-    /** float_rationalize
-     *
-     */
+    @CRuby(value = "float_rationalize", file = "rational.c")
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
@@ -783,18 +777,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
     }
 
-    /**
-     * MRI: flo_floor
-     */
+    @CRuby(value = "flo_floor", file = "numeric.c")
     @Override
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
         return asInteger(context, Math.floor(value));
     }
 
-    /**
-     * MRI: flo_floor
-     */
+    @CRuby(value = "flo_floor", file = "numeric.c")
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
         int ndigits = toInt(context, digits);
@@ -809,6 +799,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             if (floatRoundOverflow(ndigits, binexp)) return num[0];
             if (number > 0.0 && floatRoundUnderflow(ndigits, binexp))
                 return asFloat(context, 0.0);
+            if (!accuratePow10(ndigits)) return floatRoundByRational(context, asFixnum(context, ndigits), RoundingMode.FLOOR);
             double f = Math.pow(10, ndigits);
             double mul = Math.floor(number * f);
             double res = (mul + 1) / f;
@@ -821,7 +812,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         }
     }
 
-     // MRI: float_round_overflow
+     @CRuby(value = "float_round_overflow", file = "numeric.c")
      private static boolean floatRoundOverflow(int ndigits, long[] binexp) {
 
         /* Let `exp` be such that `number` is written as:"0.#{digits}e#{exp}",
@@ -845,23 +836,19 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return ndigits >= FLOAT_DIG - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1);
     }
 
-    // MRI: float_round_underflow
+    @CRuby(value = "float_round_underflow", file = "numeric.c")
     private static boolean floatRoundUnderflow(int ndigits, long[] binexp) {
         return ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4);
     }
 
-    /**
-     * MRI: flo_ceil
-     */
+    @CRuby(value = "flo_ceil", file = "numeric.c")
     @JRubyMethod(name = "ceil")
     @Override
     public IRubyObject ceil(ThreadContext context) {
         return asInteger(context, Math.ceil(value));
     }
 
-    /**
-     * MRI: flo_ceil
-     */
+    @CRuby(value = "flo_ceil", file = "numeric.c")
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context, IRubyObject digits) {
         int ndigits = toInt(context, digits);
@@ -875,6 +862,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             if (floatRoundOverflow(ndigits, binexp)) return this;
             if (number < 0.0 && floatRoundUnderflow(ndigits, binexp))
                 return asFloat(context, 0.0);
+            if (!accuratePow10(ndigits)) return floatRoundByRational(context, asFixnum(context, ndigits), RoundingMode.CEILING);
             double f = Math.pow(10, ndigits);
             f = Math.ceil(number * f) / f;
             return asFloat(context, f);
@@ -885,18 +873,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         }
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @Override
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context) {
         return roundShared(context, 0, RoundingMode.HALF_UP);
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, arg0);  // options (only "half" supported right now)
@@ -905,9 +889,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);  // options (only "half" supported right now)
@@ -931,8 +913,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             frexp(number, binexp);
             if (floatRoundOverflow(ndigits, binexp)) return this;
             if (floatRoundUnderflow(ndigits, binexp)) return asFloat(context, 0);
-            if (ndigits > 14) {
-                /* In this case, pow(10, ndigits) may not be accurate. */
+            if (!accuratePow10(ndigits)) {
                 return floatRoundByRational(context, asFixnum(context, ndigits), mode);
             }
             f = Math.pow(10, ndigits);
@@ -1047,17 +1028,19 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return us + x;
     }
 
-    /** rb_flo_round_by_rational
-     *
-     */
+    // pow(10, ndigits) may not be exact beyond DBL_DIG
+    @CRuby(value = "ACCURATE_POW10", file = "numeric.c")
+    private static boolean accuratePow10(int ndigits) {
+        return ndigits < DIG;
+    }
+
+    @CRuby(value = "rb_flo_round_by_rational", file = "rational.c")
     private IRubyObject floatRoundByRational(ThreadContext context, IRubyObject ndigits, RoundingMode mode) {
         IRubyObject v = ((RubyRational)to_r(context)).roundCommon(context, ndigits, mode);
         return ((RubyRational)v).to_f(context);
     }
 
-    /** flo_is_nan_p
-     *
-     */
+    @CRuby(value = "flo_is_nan_p", file = "numeric.c")
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p(ThreadContext context) {
         return asBoolean(context, isNaN());
@@ -1100,55 +1083,282 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.isInfinite(value) || Double.isNaN(value) ? context.fals : context.tru;
     }
 
+    /**
+     * The bytes Marshal.dump writes for this Float. They use the same shortest digits as
+     * Float#to_s, so they read back as the same value, but a more compact layout: no ".0"
+     * on whole numbers ("1"), and exponent notation as soon as it is shorter than padding
+     * with zeros ("1e2" for 100.0). The exponent has no "+" and no padding ("1e20", "1e-5").
+     * Fixed notation is kept for up to three zeros after the point ("0.0001"). Infinities
+     * and NaN have their own names, and -0.0 is "-0".
+     */
+    @CRuby(value = "w_float", file = "marshal.c")
     private ByteList marshalDump(ThreadContext context) {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
-        ByteList byteList = new ByteList();
-        // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", newArray(context, this));
-        return byteList;
+        byte[] bytes = new byte[FORMAT_FLOAT_CAPACITY];
+        int pos = 0;
+
+        // test the sign bit so that -0.0 dumps as "-0"
+        if (Double.doubleToRawLongBits(value) < 0) bytes[pos++] = '-';
+
+        // see shortestDigits for what digs and decpt mean, and formatFloat for how the digits
+        // are moved in place
+        long digitsAndPoint = shortestDigits(value, bytes, pos);
+        int digs = (int) digitsAndPoint;
+        int decpt = (int) (digitsAndPoint >> 32);
+
+        if (decpt < -3 || decpt > digs) {
+            // d.ddden or d.ddde-n, used for more than three zeros after the point or any
+            // zeros before it. A single digit has no point ("1e20").
+            if (digs > 1) {
+                System.arraycopy(bytes, pos + 1, bytes, pos + 2, digs - 1);
+                bytes[pos + 1] = '.';
+                pos++;
+            }
+            pos += digs;
+            bytes[pos++] = 'e';
+            int exp = decpt - 1;
+            if (exp < 0) {
+                bytes[pos++] = '-';
+                exp = -exp;
+            }
+            if (exp >= 100) bytes[pos++] = (byte) ('0' + exp / 100);
+            if (exp >= 10) bytes[pos++] = (byte) ('0' + exp / 10 % 10);
+            bytes[pos++] = (byte) ('0' + exp % 10);
+        } else if (decpt > 0) {
+            // ddd or ddd.ddd, with no ".0" on whole numbers
+            if (decpt < digs) {
+                System.arraycopy(bytes, pos + decpt, bytes, pos + decpt + 1, digs - decpt);
+                bytes[pos + decpt] = '.';
+                pos++;
+            }
+            pos += digs;
+        } else {
+            // 0.000ddd
+            System.arraycopy(bytes, pos, bytes, pos + 2 - decpt, digs);
+            bytes[pos++] = '0';
+            bytes[pos++] = '.';
+            for (int i = decpt; i < 0; i++) bytes[pos++] = '0';
+            pos += digs;
+        }
+
+        return new ByteList(bytes, 0, pos, false);
     }
 
+    // Room for a sign, 17 digits and either "0.000" or ".e-324", with some slack.
+    private static final int FORMAT_FLOAT_CAPACITY = 32;
+
+    /**
+     * Write the Float#to_s form of self into buf, replacing its contents.
+     *
+     * The digits are the shortest ones that read back as the same double (see
+     * {@link #shortestDigits}). Where the decimal point goes depends on decpt, the number
+     * of digits before it: 1.5 has digits "15" and decpt 1, 0.015 has decpt -1 and 1500.0
+     * has decpt 4. Fixed notation is used when the point falls inside the digits, when it
+     * needs at most DIG (15) digits before the point ("100000000000000.0"), or when it needs
+     * at most three zeros after the point ("0.0001"). Anything else is exponent notation
+     * ("1.0e+15", "1.0e-05"). Fixed notation always has a digit after the point.
+     */
+    @CRuby(value = "flo_to_s", file = "numeric.c")
     public static ByteList formatFloat(RubyFloat self, ByteList buf) {
-      buf.setRealSize(0);
+        buf.setRealSize(0);
 
-      double value = self.value;
+        double value = self.value;
 
-      if (Double.isInfinite(value)) {
-          buf.append(value < 0
-              ? NEGATIVE_INFINITY_TO_S_BYTELIST
-              : POSITIVE_INFINITY_TO_S_BYTELIST);
-          buf.setEncoding(USASCIIEncoding.INSTANCE);
-          return buf;
-      }
+        if (Double.isInfinite(value)) {
+            buf.append(value < 0
+                ? NEGATIVE_INFINITY_TO_S_BYTELIST
+                : POSITIVE_INFINITY_TO_S_BYTELIST);
+            buf.setEncoding(USASCIIEncoding.INSTANCE);
+            return buf;
+        }
 
-      if (Double.isNaN(value)) {
-          buf.append(NAN_TO_S_BYTELIST);
-          buf.setEncoding(USASCIIEncoding.INSTANCE);
-          return buf;
-      }
+        if (Double.isNaN(value)) {
+            buf.append(NAN_TO_S_BYTELIST);
+            buf.setEncoding(USASCIIEncoding.INSTANCE);
+            return buf;
+        }
 
-      Sprintf.sprintf(buf, Locale.US, "%#.20g", self);
+        buf.ensure(FORMAT_FLOAT_CAPACITY);
+        byte[] bytes = buf.getUnsafeBytes();
+        int begin = buf.getBegin();
+        int pos = begin;
 
-      int e = buf.indexOf('e');
-      if (e == -1) e = buf.getRealSize();
-      ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+        // test the sign bit so that -0.0 keeps its sign
+        if (Double.doubleToRawLongBits(value) < 0) bytes[pos++] = '-';
 
-      if (!ascii.isDigit(buf.get(e - 1))) {
-          buf.setRealSize(0);
-          Sprintf.sprintf(buf, Locale.US, "%#.14e", self);
-          e = buf.indexOf('e');
-          if (e == -1) e = buf.getRealSize();
-      }
+        // The digits are written at pos, then moved in place to make room for "0.", a "."
+        // or padding zeros, which saves a second buffer.
+        long digitsAndPoint = shortestDigits(value, bytes, pos);
+        int digs = (int) digitsAndPoint;
+        int decpt = (int) (digitsAndPoint >> 32);
 
-      int p = e;
-      while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
-      System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
-      buf.setRealSize(p + buf.getRealSize() - e);
+        if (decpt > 0) {
+            if (decpt < digs) {
+                // ddd.ddd: shift the fraction digits right by one to insert the point
+                System.arraycopy(bytes, pos + decpt, bytes, pos + decpt + 1, digs - decpt);
+                bytes[pos + decpt] = '.';
+                pos += digs + 1;
+            } else if (decpt <= DIG) {
+                // ddd000.0: a whole number, padded with zeros up to the point
+                pos += digs;
+                for (int i = digs; i < decpt; i++) bytes[pos++] = '0';
+                bytes[pos++] = '.';
+                bytes[pos++] = '0';
+            } else {
+                pos = formatFloatExponent(bytes, pos, digs, decpt);
+            }
+        } else if (decpt > -4) {
+            // 0.000ddd: shift the digits right past "0." and the -decpt zeros before them
+            System.arraycopy(bytes, pos, bytes, pos + 2 - decpt, digs);
+            bytes[pos++] = '0';
+            bytes[pos++] = '.';
+            for (int i = decpt; i < 0; i++) bytes[pos++] = '0';
+            pos += digs;
+        } else {
+            pos = formatFloatExponent(bytes, pos, digs, decpt);
+        }
 
-      buf.setEncoding(USASCIIEncoding.INSTANCE);
-      return buf;
+        buf.setRealSize(pos - begin);
+        buf.setEncoding(USASCIIEncoding.INSTANCE);
+        return buf;
+    }
+
+    /**
+     * Turn the digits at pos into d.ddde+XX, the exponent form of Float#to_s. There is always
+     * a digit after the point ("1.0e+20"), and the exponent always has a sign and at least two
+     * digits ("1.0e-05"), like C's "e%+03d". A value with digits "15" and decpt 21 is
+     * 1.5 times ten to the 20th, so the exponent is decpt - 1.
+     *
+     * @return the position after the last byte written
+     */
+    private static int formatFloatExponent(byte[] bytes, int pos, int digs, int decpt) {
+        if (digs > 1) {
+            // shift everything after the first digit right by one to insert the point
+            System.arraycopy(bytes, pos + 1, bytes, pos + 2, digs - 1);
+        } else {
+            // a single digit gets a "0" after the point
+            bytes[pos + 2] = '0';
+            digs++;
+        }
+        bytes[pos + 1] = '.';
+        pos += digs + 1;
+
+        bytes[pos++] = 'e';
+        int exp = decpt - 1;
+        if (exp < 0) {
+            bytes[pos++] = '-';
+            exp = -exp;
+        } else {
+            bytes[pos++] = '+';
+        }
+        if (exp >= 100) {
+            bytes[pos++] = (byte) ('0' + exp / 100);
+            exp %= 100;
+        }
+        bytes[pos++] = (byte) ('0' + exp / 10);
+        bytes[pos++] = (byte) ('0' + exp % 10);
+        return pos;
+    }
+
+    /**
+     * Write the shortest decimal digits that round-trip to the given finite value, as dtoa's
+     * mode 0 does: no sign, no leading or trailing zeros, and "0" for zero. The value is
+     * 0.ddd times ten to the power decpt, so decpt is the number of digits before the
+     * decimal point, which is zero or negative for values below 1. For example 1500.0 gives
+     * "15" with decpt 4 and 0.015 gives "15" with decpt -1.
+     *
+     * Since JDK 19, Double.toString uses Raffaello Giulietti's Schubfach algorithm, which
+     * yields the shortest digits, so they are taken from its result rather than computed
+     * here. Only the layout differs: Double.toString writes "1500.0" or "1.5E-5", so the
+     * digits are copied out without the point or exponent, and decpt is worked out from
+     * where the point and exponent were.
+     *
+     * @return decpt in the high 32 bits and the number of digits in the low 32 bits
+     */
+    @CRuby(value = "ruby_dtoa", file = "missing/dtoa.c", note = "mode 0")
+    static long shortestDigits(double value, byte[] out, int off) {
+        String str = Double.toString(value);
+        int len = str.length();
+        int n = 0, intDigits = 0, leadingZeros = 0, exp = 0;
+        boolean fraction = false;
+
+        // str is "ddd.ddd" or "d.dddE[-]n", after a "-" for a negative value. Count the
+        // digits before the point, skip leading zeros such as those in "0.0015", and copy
+        // the rest of the digits out.
+        for (int i = str.charAt(0) == '-' ? 1 : 0; i < len; i++) {
+            char c = str.charAt(i);
+            if (c == '.') {
+                fraction = true;
+            } else if (c == 'E') {
+                exp = Integer.parseInt(str, i + 1, len, 10);
+                break;
+            } else {
+                if (!fraction) intDigits++;
+                if (n == 0 && c == '0') {
+                    leadingZeros++;
+                } else {
+                    out[off + n++] = (byte) c;
+                }
+            }
+        }
+
+        // drop trailing zeros, such as the one in "1500.0" or "1.0"
+        while (n > 0 && out[off + n - 1] == '0') n--;
+
+        // zero has no nonzero digits, and dtoa reports it as "0" with decpt 1
+        if (n == 0) {
+            out[off] = '0';
+            return (1L << 32) | 1;
+        }
+
+        // "1500.0" has 4 digits before the point, "0.0015" has 1 minus 3 leading zeros, and
+        // "1.5E-5" has 1 plus the exponent
+        int decpt = intDigits - leadingZeros + exp;
+
+        if (n == 2 && Math.abs(value) < Double.MIN_NORMAL) {
+            long oneDigit = oneSubnormalDigit(Math.abs(value), out, off, decpt);
+            if (oneDigit != 0) return oneDigit;
+        }
+
+        return ((long) decpt << 32) | n;
+    }
+
+    /**
+     * When a single digit would round-trip, Double.toString may still choose two digits if
+     * they are closer to the exact value, as with Double.MIN_VALUE ("4.9E-324"). That can only
+     * happen to subnormals, which have few significant bits. dtoa wants the shortest digits,
+     * so choose the closest single digit that round-trips, if any.
+     *
+     * @return the result for shortestDigits, or 0 to keep the two digits
+     */
+    private static long oneSubnormalDigit(double abs, byte[] out, int off, int decpt) {
+        int lower = out[off] - '0';
+        int exp = decpt - 1;
+        // the exact value lies strictly between lower and lower + 1 times 10 ** exp
+        boolean lowerFits = Double.parseDouble(lower + "e" + exp) == abs;
+        boolean upperFits = Double.parseDouble((lower + 1) + "e" + exp) == abs;
+
+        boolean upper;
+        if (lowerFits && upperFits) {
+            BigDecimal midpoint = new BigDecimal(BigInteger.valueOf(lower * 10 + 5), -(exp - 1));
+            upper = new BigDecimal(abs).compareTo(midpoint) > 0;
+        } else if (lowerFits || upperFits) {
+            upper = upperFits;
+        } else {
+            return 0;
+        }
+
+        if (!upper) {
+            out[off] = (byte) ('0' + lower);
+        } else if (lower == 9) {
+            out[off] = '1';
+            decpt++;
+        } else {
+            out[off] = (byte) ('0' + lower + 1);
+        }
+        return ((long) decpt << 32) | 1;
     }
 
     @Deprecated(since = "10.0.0.0", forRemoval = true)
@@ -1160,7 +1370,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, MarshalDumper output) {
-        output.registerLinkTarget(aFloat);
+        output.registerObject(aFloat);
         output.writeString(out, aFloat.marshalDump(context));
     }
 
@@ -1322,28 +1532,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> floor(context);
-            case 1 -> floor(context, args[0]);
-            default -> throw argumentError(context, args.length, 1);
-        };
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> round(context);
-            case 1 -> round(context, args[0]);
-            case 2 -> round(context, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 2);
-        };
+    @Override
+    public boolean isImmediate() {
+        return true;
     }
 
     private static FloatSites sites(ThreadContext context) {

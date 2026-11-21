@@ -23,15 +23,63 @@ describe "File.rename" do
 
   it "raises an Errno::ENOENT if the source does not exist" do
     rm_r @old
-    -> { File.rename(@old, @new) }.should raise_error(Errno::ENOENT)
+    -> { File.rename(@old, @new) }.should.raise(Errno::ENOENT)
+  end
+
+  platform_is_not :windows do
+    it "raises an Errno::EISDIR and leaves both paths alone if the destination is an empty directory" do
+      Dir.mkdir(@new)
+      -> { File.rename(@old, @new) }.should.raise(Errno::EISDIR)
+      File.should.file?(@old)
+      File.should.directory?(@new)
+    end
+
+    it "raises an Errno::EISDIR and leaves both paths alone if the destination is a non-empty directory" do
+      Dir.mkdir(@new)
+      touch(File.join(@new, "file"))
+      mode = File.stat(@new).mode
+      -> { File.rename(@old, @new) }.should.raise(Errno::EISDIR)
+      File.should.file?(@old)
+      File.should.file?(File.join(@new, "file"))
+      File.stat(@new).mode.should == mode
+    end
+
+    it "raises an Errno::ENOTDIR and leaves both paths alone if the source is a directory and the destination is a file" do
+      rm_r @old
+      Dir.mkdir(@old)
+      touch(@new)
+      -> { File.rename(@old, @new) }.should.raise(Errno::ENOTDIR)
+      File.should.directory?(@old)
+      File.should.file?(@new)
+    end
   end
 
   it "raises an ArgumentError if not passed two arguments" do
-    -> { File.rename        }.should raise_error(ArgumentError)
-    -> { File.rename(@file) }.should raise_error(ArgumentError)
+    -> { File.rename        }.should.raise(ArgumentError)
+    -> { File.rename(@file) }.should.raise(ArgumentError)
   end
 
   it "raises a TypeError if not passed String types" do
-    -> { File.rename(1, 2)  }.should raise_error(TypeError)
+    -> { File.rename(1, 2)  }.should.raise(TypeError)
+  end
+
+  platform_is :darwin do
+    it "accepts a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+      utf8_old = tmp("file_rename_old_utf8_path_\u{3042}.txt")
+      utf8_new = tmp("file_rename_new_utf8_path_\u{3042}.txt")
+      # Can fail with UndefinedConversionError if tmp path has non-Shift_JIS chars (e.g. Emojis, Hangul, Cyrillic, accented letters)
+      non_utf8_old = utf8_old.encode(Encoding::Windows_31J)
+      non_utf8_new = utf8_new.encode(Encoding::Windows_31J)
+
+      begin
+        touch(utf8_old)
+        File.rename(non_utf8_old, non_utf8_new).should == 0
+        File.should.exist?(utf8_new)
+        File.should_not.exist?(utf8_old)
+      ensure
+        rm_r utf8_old, utf8_new
+        rm_r non_utf8_old, non_utf8_new
+      end
+    end
   end
 end

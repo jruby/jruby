@@ -78,7 +78,7 @@ import static org.jruby.parser.ParserType.*;
 /**
  * Serves as a simple facade for all the parsing magic.
  */
-public class Parser {
+public class Parser implements AutoCloseable{
     protected final Ruby runtime;
 
     public Parser(Ruby runtime) {
@@ -243,7 +243,7 @@ public class Parser {
         LineStubVisitor lineVisitor = new LineStubVisitor(context.runtime, lines);
         lineVisitor.visitRootNode(((RootNode) result));
 
-        for (int i = 0; i <= lineCount - lines.size(); i++) {
+        while (lines.size() < lineCount) {
             lines.append(context, context.nil);
         }
         return lines;
@@ -275,6 +275,10 @@ public class Parser {
         if (printing) whileBody.add(new FCallNode(line, runtime.newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
 
         return new RootNode(line, oldRoot.getDynamicScope(), newBody, oldRoot.getFile());
+    }
+
+    public void close() {
+        // nothing to do for JVM-based parser
     }
 
 }

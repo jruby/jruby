@@ -28,6 +28,7 @@
 
 package org.jruby.ext.thread;
 
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
@@ -91,10 +92,13 @@ public class SizedQueue extends Queue {
             while (diff-- > 0) {
                 notFull.signal();
             }
-            return arg;
         } finally {
             fullyUnlock();
         }
+
+        unblockAllSchedulerWaiters(schedulerPutters);
+
+        return arg;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
@@ -114,7 +118,8 @@ public class SizedQueue extends Queue {
             try {
                 putLock.lockInterruptibly();
                 try {
-                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull));
+                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull)
+                            + schedulerWaiting(schedulerTakers) + schedulerWaiting(schedulerPutters));
                 } finally {
                     putLock.unlock();
                 }
@@ -129,6 +134,9 @@ public class SizedQueue extends Queue {
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, final IRubyObject arg0) {
         initializedCheck(context);
+
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerPush(context, scheduler, arg0, 0);
 
         try {
             return context.getThread().executeTaskBlocking(context, arg0, blockingPutTask);
@@ -191,6 +199,9 @@ public class SizedQueue extends Queue {
                 return this;
             }
 
+            IRubyObject scheduler = FiberScheduler.current(context);
+            if (scheduler != null) return schedulerPush(context, scheduler, arg0, timeoutNS);
+
             RubyThread.Task<IRubyObject, IRubyObject> task = timeoutNS != 0 ?
                     new BlockingOfferTask(timeoutNS) : blockingPutTask;
 
@@ -198,6 +209,23 @@ public class SizedQueue extends Queue {
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }
+    }
+
+    // MRI: rb_szqueue_push, blocking through the fiber scheduler while the queue is full
+    private IRubyObject schedulerPush(ThreadContext context, IRubyObject scheduler, IRubyObject value, long timeoutNS) {
+        long deadline = timeoutNS == 0 ? 0 : System.nanoTime() + timeoutNS;
+
+        while (!offerInternal(context, value)) {
+            // On a full queue, offerInternal returns false without checking closed.
+            // A closed queue never makes room for us, so raise here instead of looping forever.
+            if (closed) raiseClosedError(context);
+
+            if (!schedulerBlock(context, scheduler, true, deadline)) {
+                return context.nil;
+            }
+        }
+
+        return this;
     }
 
     protected boolean offerInternal(ThreadContext context, IRubyObject e) {
@@ -219,6 +247,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 
@@ -263,6 +292,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 

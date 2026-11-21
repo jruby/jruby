@@ -35,6 +35,7 @@ package org.jruby;
 
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
@@ -158,11 +159,6 @@ public class RubyArgsFile extends RubyObject {
             this.currentFile = runtime.getNil();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public void setCurrentLineNumber(Ruby runtime, int linenumber) {
-            runtime.setCurrentLine(linenumber);
-        }
-
         // ARGF.class.new
         void setArgs(RubyArray argv) {
             inited = false;
@@ -237,11 +233,6 @@ public class RubyArgsFile extends RubyObject {
             return (ArgsFileData) runtime.getArgsFile().dataGetStruct();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public static ArgsFileData getDataFrom(IRubyObject recv) {
-            return getArgsFileData(((RubyBasicObject) recv).getCurrentContext().runtime);
-        }
-
         private void createNewFile(File file) {
             try {
                 file.createNewFile();
@@ -298,11 +289,6 @@ public class RubyArgsFile extends RubyObject {
         public boolean isCurrentFile(RubyIO io) {
             return currentFile == io;
         }
-    }
-
-    @Deprecated(since = "9.1.8.0")
-    public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
-        ((RubyBasicObject) recv).getCurrentContext().runtime.setCurrentLine(newLineNumber);
     }
 
     @JRubyMethod
@@ -386,7 +372,7 @@ public class RubyArgsFile extends RubyObject {
         return getCurrentDataFile(context, "no stream to set encoding").external_encoding(context);
     }
 
-    // MRI: argf_getline
+    @CRuby(value = "argf_getline", file = "io.c")
     private static IRubyObject argf_getline(ThreadContext context, final int callInfo, IRubyObject[] args) {
         IRubyObject line;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
@@ -479,6 +465,8 @@ public class RubyArgsFile extends RubyObject {
             return sites(context).readlines.call(context, recv, data.currentFile, args);
         }
 
+        checkReadlinesLimit(context, callInfo, args);
+
         var ary = newArray(context);
         IRubyObject line;
         while(!(line = argf_getline(context, callInfo, args)).isNil()) {
@@ -491,6 +479,24 @@ public class RubyArgsFile extends RubyObject {
     @JRubyMethod(optional = 2, keywords = true, checkArity = false)
     public static IRubyObject to_a(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return readlines(context, recv, args);
+    }
+
+    // MRI: argf_readlines calls rb_io_readlines, which rejects a limit of 0 since every line would be empty
+    private static void checkReadlinesLimit(ThreadContext context, int callInfo, IRubyObject[] args) {
+        int argc = args.length - (hasKeywords(callInfo) ? 1 : 0);
+        IRubyObject limit = null;
+
+        if (argc == 1) {
+            // a single argument is the limit unless it is a separator
+            IRubyObject arg = args[0];
+            if (!arg.isNil() && TypeConverter.checkStringType(context.runtime, arg).isNil()) limit = arg;
+        } else if (argc == 2) {
+            limit = args[1];
+        }
+
+        if (limit != null && !limit.isNil() && toLong(context, limit) == 0) {
+            throw argumentError(context, "invalid limit: 0 for readlines");
+        }
     }
 
     // MRI: rb_io_getline takes up to two positional arguments (separator, limit) plus keywords

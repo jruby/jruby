@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -255,11 +256,11 @@ public final class BasicObjectStub {
     }
 
 
-    /** inspect_obj
-     *
+    /**
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
+    @CRuby(value = "inspect_obj", file = "object.c")
     private static StringBuilder inspectObj(IRubyObject self, StringBuilder part) {
         ThreadContext context = getRuntime(self).getCurrentContext();
         getInstanceVariables(self).forEachInstanceVariable(new BiConsumer<>() {
