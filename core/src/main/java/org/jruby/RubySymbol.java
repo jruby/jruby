@@ -481,6 +481,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newString(context, result);
     }
 
+    /** This symbol's name for a message, escaped if it can't be shown as is. */
+    @CRuby(value = "rb_id_quote_unprintable", file = "string.c")
+    public RubyString quoteUnprintable(ThreadContext context) {
+        return isSimpleName(context) ? fstring : (RubyString) RubyString.rbStrEscape(context, fstring);
+    }
+
     @CRuby(value = "rb_str_symname_p", file = "string.c")
     public boolean isSimpleName(ThreadContext context) {
         int len;

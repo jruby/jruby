@@ -95,6 +95,49 @@ describe "Module#const_set" do
       mod.const_get(:Foo).should == 1
     end
 
+    describe "with a non-ASCII constant name" do
+      before :each do
+        @external = Encoding.default_external
+        @internal = Encoding.default_internal
+        Encoding.default_internal = nil
+      end
+
+      after :each do
+        Encoding.default_external = @external
+        Encoding.default_internal = @internal
+      end
+
+      it "includes the name in the warning" do
+        Encoding.default_external = Encoding::UTF_8
+        mod = Module.new
+        mod.const_set "X\u{5b9a 6570}", 42
+        -> {
+          mod.const_set "X\u{5b9a 6570}", 1
+        }.should complain(/already initialized constant .+::X\u{5b9a 6570}$/)
+      end
+
+      it "escapes the name in the warning if the default external encoding cannot show it" do
+        Encoding.default_external = Encoding::US_ASCII
+        mod = Module.new
+        mod.const_set "X\u{5b9a 6570}", 42
+        -> {
+          mod.const_set "X\u{5b9a 6570}", 1
+        }.should complain(/already initialized constant .+::X\\u5B9A\\u6570$/)
+      end
+
+      it "still reassigns the constant if the module and constant names have incompatible encodings" do
+        Encoding.default_external = Encoding::UTF_8
+        mod = Module.new
+        Module.new.const_set "M\u{5b9a}".encode(Encoding::EUC_JP), mod
+        mod.const_set "X\u{6570}", 42
+        # The text of this warning differs between implementations
+        -> {
+          mod.const_set "X\u{6570}", 1
+        }.should complain
+        mod.const_get("X\u{6570}").should == 1
+      end
+    end
+
     it "does not warn if the previous value was an autoload" do
       mod = Module.new
       mod.autoload :Foo, "not-existing"
