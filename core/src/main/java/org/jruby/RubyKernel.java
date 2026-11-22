@@ -230,6 +230,16 @@ public class RubyKernel {
         return module.autoload(context, symbol, file);
     }
 
+    @CRuby(value = "rb_f_autoload_relative", file = "load.c")
+    @JRubyMethod(module = true, visibility = PRIVATE, reads = {SCOPE})
+    public static IRubyObject autoload_relative(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv).getRealModule();
+
+        if (module == null || module.isNil()) throw typeError(context, "Can not set autoload on singleton class");
+
+        return module.autoload_relative(context, symbol, file);
+    }
+
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
@@ -1468,13 +1478,23 @@ public class RubyKernel {
 
     @JRubyMethod(name = "require_relative", module = true, visibility = PRIVATE, reads = SCOPE)
     public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
-        RubyString relativePath = RubyFile.get_path(context, name);
+        IRubyObject absoluteFeature = expandRelativeToCurrentFile(context, RubyFile.get_path(context, name), "cannot infer basepath");
+
+        return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
+    }
+
+    /**
+     * The path relative to the directory of the file running the caller, as require_relative and autoload_relative
+     * resolve it. Raises LoadError with the given message when the caller has no file, such as code from -e or an
+     * eval without a filename.
+     */
+    static IRubyObject expandRelativeToCurrentFile(ThreadContext context, RubyString relativePath, String noFileMessage) {
         String file = context.getCurrentStaticScope().getFile();
         IREvalScript evalScript = getEvalScript(context);
 
         if (file == null || (evalScript != null ? evalScript.hasNoRealPath() :
                 (file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")))) {
-            throw context.runtime.newLoadError("cannot infer basepath");
+            throw context.runtime.newLoadError(noFileMessage);
         }
 
         file = loadService(context).getPathForLocation(file);
@@ -1488,7 +1508,7 @@ public class RubyKernel {
         IRubyObject dirname = RubyFile.dirname(context, fileClass, base);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
-        return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
+        return absoluteFeature;
     }
 
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)

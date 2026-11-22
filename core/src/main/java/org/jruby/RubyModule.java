@@ -298,6 +298,20 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
+    /**
+     * Like autoload, with the file resolved against the directory of the file the call is made from.
+     */
+    @CRuby(value = "rb_mod_autoload_relative", file = "load.c")
+    @JRubyMethod(reads = SCOPE)
+    public IRubyObject autoload_relative(ThreadContext context, IRubyObject symbol, IRubyObject file) {
+        checkID(context, symbol);
+        RubyString relativePath = RubyFile.get_path(context, file);
+        IRubyObject absolutePath = RubyKernel.expandRelativeToCurrentFile(context, relativePath,
+                "cannot infer basepath (autoload_relative called without file context)");
+
+        return autoload(context, symbol, absolutePath);
+    }
+
     @JRubyMethod(name = "autoload?")
     public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
         return hasAutoload(context, checkID(context, symbol).idString(), true);
