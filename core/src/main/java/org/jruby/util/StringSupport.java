@@ -2961,32 +2961,18 @@ public final class StringSupport {
         asciiOnlyCaseMap(context, value, flags, ASCIIEncoding.INSTANCE);
     }
 
-    // Walks characters in enc, so invalid bytes raise and capitalize titlecases the first character, not byte.
     // ASCII letters keep their length in every encoding, so the mapping is done in place.
     @CRuby(value = "rb_str_ascii_casemap", file = "string.c")
-    @CRuby(value = "onigenc_ascii_only_case_map", file = "regenc.c")
     public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flagsP, Encoding enc) {
         if (value.getRealSize() == 0) return;
         int p = value.getBegin();
         int end = p + value.getRealSize();
         byte[] bytes = value.getUnsafeBytes();
-        int flags = flagsP.value;
 
-        while (p < end) {
-            int n = preciseLength(enc, bytes, p, end);
-            if (!MBCLEN_CHARFOUND_P(n)) throw argumentError(context, "input string invalid");
-            int code = enc.mbcToCode(bytes, p, end);
-            if ('a' <= code && code <= 'z' && (flags & Config.CASE_UPCASE) != 0) {
-                flags |= Config.CASE_MODIFIED;
-                enc.codeToMbc(code - ('a' - 'A'), bytes, p);
-            } else if ('A' <= code && code <= 'Z' && (flags & (Config.CASE_DOWNCASE | Config.CASE_FOLD)) != 0) {
-                flags |= Config.CASE_MODIFIED;
-                enc.codeToMbc(code + ('a' - 'A'), bytes, p);
-            }
-            p += MBCLEN_CHARFOUND_LEN(n);
-            if ((flags & Config.CASE_TITLECASE) != 0) flags ^= Config.CASE_UPCASE | Config.CASE_DOWNCASE | Config.CASE_TITLECASE;
-        }
-        flagsP.value = flags;
+        IntHolder pp = new IntHolder();
+        pp.value = p;
+        int len = enc.asciiOnlyCaseMap(flagsP, bytes, pp, end, bytes, p, end);
+        if (len < 0) throw argumentError(context, "input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {
