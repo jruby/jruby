@@ -142,6 +142,22 @@ describe :kernel_integer, shared: true do
         Integer("abc", exception: false).should == nil
       end
     end
+
+    describe "and passed an object that responds to #to_str" do
+      it "parses the String returned by #to_str" do
+        obj = mock("object")
+        obj.should_receive(:to_str).and_return("42")
+        Integer(obj, exception: false).should == 42
+      end
+
+      it "swallows an error if the String can't be converted to an Integer" do
+        ["1---", "12abc", "0x", "0.0", ""].each do |str|
+          obj = mock("object")
+          obj.should_receive(:to_str).and_return(str)
+          Integer(obj, exception: false).should == nil
+        end
+      end
+    end
   end
 end
 
