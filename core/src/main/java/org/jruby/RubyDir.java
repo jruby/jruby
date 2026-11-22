@@ -37,8 +37,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Watchable;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +55,7 @@ import jnr.posix.util.Platform;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.api.Create;
@@ -75,6 +79,7 @@ import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
@@ -823,6 +828,104 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     public IRubyObject each_child(ThreadContext context, Block block) {
         return each_child(context, encoding, block);
+    }
+
+    /**
+     * Dir.scan(dirpath, encoding: enc): the children of the directory with their types, as {@link #scan}.
+     */
+    @CRuby(value = "dir_s_scan", file = "dir.c")
+    @JRubyMethod(name = "scan", meta = true)
+    public static IRubyObject scan(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        return scan(context, recv, arg, context.nil, block);
+    }
+
+    @JRubyMethod(name = "scan", meta = true)
+    public static IRubyObject scan(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts, Block block) {
+        RubyDir dir = (RubyDir) ((RubyClass) recv).newInstance(context, arg, opts, Block.NULL_BLOCK);
+
+        try {
+            return dir.scan(context, block);
+        } finally {
+            dir.close(context);
+        }
+    }
+
+    /**
+     * Each entry except "." and ".." with its type (:file, :directory, :link, :fifo, :socket, :characterSpecial,
+     * :blockSpecial or :unknown), yielded as two values, or as [name, type] pairs when no block is given. The type
+     * comes from lstat, so a symbolic link is :link.
+     */
+    @CRuby(value = "dir_scan_children", file = "dir.c")
+    @JRubyMethod(name = "scan")
+    public IRubyObject scan(ThreadContext context, Block block) {
+        checkDir(context);
+
+        var result = block.isGiven() ? null : Create.newArray(context);
+        File local = localDirectory(dir);
+        String base = local == null ? dir.absolutePath() : local.getAbsolutePath();
+        POSIX posix = context.runtime.getPosix();
+        FileStat stat = local == null ? null : posix.allocateStat(); // reused for every entry
+
+        for (String name : snapshot) {
+            if (StringSupport.contentEquals(name, '.') || StringSupport.contentEquals(name, '.', '.')) continue;
+
+            String path = base + "/" + name;
+            FileStat entryStat = stat == null ? JRubyFile.createResource(context, path).lstat() :
+                    posix.lstat(path, stat) < 0 ? null : stat;
+
+            IRubyObject entry = newExternalStringWithEncoding(context.runtime, name, encoding);
+            IRubyObject type = local != null && Platform.IS_WINDOWS && isWindowsSymlink(local, name) ?
+                    asSymbol(context, "link") : entryType(context, entryStat);
+
+            if (result == null) {
+                block.call(context, entry, type);
+            } else {
+                result.append(context, Create.newArray(context, entry, type));
+            }
+        }
+
+        return result == null ? context.nil : result;
+    }
+
+    /**
+     * The directory as a file on disk, or null for one in a jar or on the classpath, whose entries can only be
+     * examined through {@link FileResource}.
+     */
+    private static File localDirectory(FileResource dir) {
+        try {
+            return dir.unwrap(File.class);
+        } catch (UnsupportedOperationException e) {
+            return null;
+        }
+    }
+
+    @CRuby(value = "dir_yield_with_type", file = "dir.c", note = "the type of an entry, from lstat")
+    /**
+     * lstat follows symbolic links on Windows, so they are found through NIO, as File.symlink? does.
+     */
+    private static boolean isWindowsSymlink(File directory, String name) {
+        try {
+            return Files.readAttributes(new File(directory, name).toPath(), BasicFileAttributes.class,
+                    LinkOption.NOFOLLOW_LINKS).isSymbolicLink();
+        } catch (IOException | SecurityException | UnsupportedOperationException e) {
+            return false;
+        }
+    }
+
+    private static IRubyObject entryType(ThreadContext context, FileStat stat) {
+        String type;
+
+        if (stat == null) type = "unknown";
+        else if (stat.isSymlink()) type = "link";
+        else if (stat.isDirectory()) type = "directory";
+        else if (stat.isFile()) type = "file";
+        else if (stat.isFifo()) type = "fifo";
+        else if (stat.isSocket()) type = "socket";
+        else if (stat.isCharDev()) type = "characterSpecial";
+        else if (stat.isBlockDev()) type = "blockSpecial";
+        else type = "unknown";
+
+        return asSymbol(context, type);
     }
 
     @JRubyMethod(name = "each_child")
