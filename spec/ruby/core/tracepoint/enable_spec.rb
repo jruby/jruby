@@ -107,6 +107,66 @@ describe 'TracePoint#enable' do
       threads.should_not.include?(thread)
     end
 
+    it 'traces every thread with target_thread: nil' do
+      threads = []
+      trace = TracePoint.new(:line) do |tp|
+        # Runs on purpose on any Thread
+        threads << Thread.current
+      end
+
+      thread = nil
+      trace.enable(target_thread: nil) do
+        line_event = true
+        thread = Thread.new do
+          event_in_other_thread = true
+        end
+        thread.join
+      end
+
+      threads = threads.uniq
+      threads.should.include?(Thread.current)
+      threads.should.include?(thread)
+    end
+
+    it 'traces the Fibers of the current thread' do
+      lines = []
+      trace = TracePoint.new(:line) do |tp|
+        # Thread.current in a Fiber is not the same object on every implementation
+        lines << tp.lineno
+      end
+
+      fiber_line = nil
+      fiber = Fiber.new do
+        fiber_line = __LINE__
+      end
+      trace.enable do
+        fiber.resume
+      end
+
+      lines.should.include?(fiber_line)
+    end
+
+    it 'lets another thread disable the trace object while the block runs' do
+      trace = TracePoint.new(:line) {}
+      entered = Queue.new
+      leave = Queue.new
+      thread = Thread.new do
+        trace.enable do
+          entered << true
+          leave.pop
+        end
+      end
+
+      begin
+        entered.pop
+        trace.disable.should == true
+        trace.should_not.enabled?
+      ensure
+        leave << true
+        thread.join
+      end
+    end
+
     it 'can accept arguments within a block but it should not yield arguments' do
       event_name = nil
       trace = TracePoint.new(:line) do |tp|
