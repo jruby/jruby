@@ -287,7 +287,18 @@ public class RubyClass extends RubyModule {
         return allocate(getCurrentContext());
     }
 
+    /**
+     * Class has no allocator for Ruby code, since Class.new builds and initializes a class in one step. Dup and clone
+     * of a class still allocate one internally, through {@link #allocate(ThreadContext)}.
+     */
+    @CRuby(value = "rb_class_alloc", file = "object.c")
     @JRubyMethod(name = "allocate")
+    public IRubyObject allocate_m(ThreadContext context) {
+        if (this == classClass(context)) throw typeError(context, "allocator undefined for Class");
+
+        return allocate(context);
+    }
+
     public IRubyObject allocate(ThreadContext context) {
         if (superClass == null && this != basicObjectClass(context)) {
             throw typeError(context, "can't instantiate uninitialized class");
@@ -1115,19 +1126,35 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    @CRuby(value = "rb_class_initialize", file = "object.c")
-    @Override
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, Block block) {
-        checkNotInitialized(context);
-        return initializeCommon(context, objectClass(context), block);
+    /**
+     * Class.new(superclass = Object) { ... } builds and initializes the class in one step, so Ruby code never sees an
+     * uninitialized class. #&lt;Class:Class&gt; is an ancestor of every metaclass, so this also receives
+     * Foo.singleton_class.new.
+     */
+    @CRuby(value = "rb_class_s_new", file = "object.c")
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject s_new(ThreadContext context, IRubyObject self, Block block) {
+        checkNotSingletonNew(context, self);
+
+        return newClassInstance(context, objectClass(context), block);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        checkNotInitialized(context);
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject s_new(ThreadContext context, IRubyObject self, IRubyObject superObject, Block block) {
+        checkNotSingletonNew(context, self);
         checkInheritable(context, superObject);
-        return initializeCommon(context, (RubyClass) superObject, block);
+
+        return newClassInstance(context, (RubyClass) superObject, block);
+    }
+
+    private static void checkNotSingletonNew(ThreadContext context, IRubyObject self) {
+        if (self != classClass(context)) throw typeError(context, "can't create instance of singleton class");
+    }
+
+    private static RubyClass newClassInstance(ThreadContext context, RubyClass superClazz, Block block) {
+        RubyClass klass = (RubyClass) CLASS_ALLOCATOR.allocate(context.runtime, classClass(context));
+
+        return klass.initializeCommon(context, superClazz, block);
     }
 
     private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
@@ -1520,9 +1547,6 @@ public class RubyClass extends RubyModule {
         throw typeError(context, "'", this, "' is not a singleton class");
     }
 
-    private void checkNotInitialized(ThreadContext context) {
-        if (superClass != null || this == basicObjectClass(context)) throw typeError(context, "already initialized class");
-    }
     @CRuby(value = "rb_check_inheritable", file = "class.c")
     @Deprecated(since = "10.0.0.0")
     public static void checkInheritable(IRubyObject superClass) {
