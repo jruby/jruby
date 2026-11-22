@@ -2621,6 +2621,24 @@ public class RubyModule extends RubyObject {
         return deepMethodSearch(context, id, true);
     }
 
+    /**
+     * Bug #22273: an alias of a method found in a module prepended to this one (between this module and its origin)
+     * is deprecated, since from Ruby 4.3 the search for the original method will start at the origin.
+     */
+    @CRuby(value = "rb_add_alias", file = "vm_method.c", note = "prepended module deprecation warning")
+    private void warnAliasOfPrependedMethod(ThreadContext context, String oldName, CacheEntry entry) {
+        RubyModule origin = getMethodLocation();
+        if (origin == this) return;
+
+        for (RubyModule module = getSuperClass(); module != null && module != origin; module = module.getSuperClass()) {
+            if (module == entry.sourceModule) {
+                warnDeprecated(context, "aliasing " + rubyName(context) + "#" + oldName + " defined in a prepended module " +
+                        module.getOrigin().rubyName(context) + " is deprecated and will be removed in Ruby 4.3");
+                return;
+            }
+        }
+    }
+
     private void checkAliasFrameAccesses(ThreadContext context, String id, String newName, DynamicMethod method) {
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
@@ -5781,6 +5799,7 @@ public class RubyModule extends RubyObject {
         testFrozen("module");
 
         CacheEntry entry = searchForAliasMethod(context, oldName);
+        warnAliasOfPrependedMethod(context, oldName, entry);
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
