@@ -1165,8 +1165,9 @@ public class PopenExecutor {
         } else {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
+            // Copy it like MRI's rb_env_to_hash: another thread may change ENV while we build envp.
             envtbl = objectClass(context).getConstant(context, "ENV");
-            envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash");
+            envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash").dup();
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);
 //        RB_GC_GUARD(execarg_obj);
