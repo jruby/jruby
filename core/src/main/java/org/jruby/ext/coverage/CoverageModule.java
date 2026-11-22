@@ -31,7 +31,6 @@ import java.util.Map;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
@@ -244,7 +243,7 @@ public class CoverageModule {
                     fileHash.fastASetSmall(asSymbol(context, "branches"), branchesToRuby(context, file.getBranches()));
                 }
                 if ((mode & CoverageData.METHODS) != 0) {
-                    fileHash.fastASetSmall(asSymbol(context, "methods"), methodsToRuby(context, file.getMethods()));
+                    fileHash.fastASetSmall(asSymbol(context, "methods"), methodsToRuby(context, file));
                 }
 
                 value = fileHash;
@@ -301,25 +300,9 @@ public class CoverageModule {
         return hash;
     }
 
-    /**
-     * Build {[owner, name, start_line, start_column, end_line, end_column] => count}. Entries that share a key
-     * (a method defined twice at the same place) have their counts added, as in MRI.
-     */
-    private static RubyHash methodsToRuby(ThreadContext context, List<MethodCoverage> methods) {
-        RubyHash hash = newHash(context);
+    private static RubyHash methodsToRuby(ThreadContext context, FileCoverage file) {
+        MethodTemplate template = file.getMethodTemplate();
 
-        for (MethodCoverage method : methods) {
-            RubyArray key = newArray(context, method.getOwner(), asSymbol(context, method.getName()),
-                    asFixnum(context, method.getStartLine()), asFixnum(context, method.getStartColumn()),
-                    asFixnum(context, method.getEndLine()), asFixnum(context, method.getEndColumn()));
-            long count = method.getCount();
-
-            IRubyObject previous = hash.fastARef(key);
-            if (previous != null) count += ((RubyInteger) previous).getLongValue();
-
-            hash.fastASet(key, asFixnum(context, count));
-        }
-
-        return hash;
+        return template == null ? newHash(context) : template.result(context, file.getMethods());
     }
 }
