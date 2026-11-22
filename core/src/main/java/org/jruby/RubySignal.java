@@ -46,7 +46,6 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
-import static org.jruby.api.Error.argumentError;
 
 @JRubyModule(name="Signal")
 public class RubySignal {
@@ -209,7 +208,7 @@ public class RubySignal {
         if (signame == null) {
             if (sig == 0) return newString(context, "EXIT");
 
-            throw argumentError(context, "invalid signal number: " + rubySig);
+            return context.nil;
         }
 
         return newString(context, signame);
