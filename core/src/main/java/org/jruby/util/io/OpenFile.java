@@ -3068,8 +3068,7 @@ public class OpenFile implements Finalizable {
      * Fire an IOError in all fibers waiting on this IO through a fiber scheduler. Call without holding the IO lock,
      * since the scheduler may switch to a waiting fiber, which needs the lock to unwind.
      */
-    // MRI: rb_thread_io_close_interrupt, which hands fibers waiting through a scheduler to fiber_interrupt,
-    // falling back to a pending interrupt on the waiter's thread
+    // MRI: rb_thread_io_close_interrupt, which hands fibers waiting through a scheduler to fiber_interrupt
     public void interruptSchedulerWaiters(ThreadContext context) {
         Set<SchedulerWaiter> schedulerWaiters = this.schedulerWaiters;
 
@@ -3089,10 +3088,7 @@ public class OpenFile implements Finalizable {
             }
 
             RubyException error = streamClosedInParallelError(runtime);
-            IRubyObject result = FiberScheduler.fiberInterrupt(context, waiter.scheduler(), waiter.fiber(), error);
-
-            // no fiber_interrupt hook, so raise in the waiter's thread instead, as MRI does
-            if (result == null) waiter.thread().raise(error);
+            FiberScheduler.fiberInterrupt(context, waiter.scheduler(), waiter.fiber(), error);
         }
     }
 
