@@ -33,6 +33,7 @@ package org.jruby;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
@@ -189,8 +190,15 @@ public class RubyGC {
     }
 
     public static int getCollectionCount() {
+        return getCollectionCount(ManagementFactory.getGarbageCollectorMXBeans());
+    }
+
+    /**
+     * GC.count over the given collectors, for callers that read the collector list once and count many times.
+     */
+    public static int getCollectionCount(List<GarbageCollectorMXBean> collectors) {
         int count = 0;
-        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+        for (GarbageCollectorMXBean bean : collectors) {
             count += bean.getCollectionCount();
         }
         return count;
