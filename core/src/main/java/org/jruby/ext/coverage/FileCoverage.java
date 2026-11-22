@@ -62,6 +62,7 @@ public final class FileCoverage {
     private final List<BranchCoverage> branches = new CopyOnWriteArrayList<>();
     private final Map<BranchKey, BranchCoverage> branchesByKey = new HashMap<>();
     private final List<BranchTarget> branchTargets = new CopyOnWriteArrayList<>();
+    private MethodTemplate methodTemplate;
 
     public IntList getLines() {
         return lines;
@@ -73,6 +74,14 @@ public final class FileCoverage {
 
     public List<MethodCoverage> getMethods() {
         return methods;
+    }
+
+    /**
+     * The cached :methods hash of this file without its counts. Shared by the file and its snapshots, and null
+     * until a snapshot is taken of a file with methods.
+     */
+    MethodTemplate getMethodTemplate() {
+        return methodTemplate;
     }
 
     /**
@@ -157,6 +166,11 @@ public final class FileCoverage {
 
         for (MethodCoverage method : methods) {
             copy.methods.add(method.snapshot(clear));
+        }
+
+        if (!methods.isEmpty()) {
+            if (methodTemplate == null) methodTemplate = new MethodTemplate();
+            copy.methodTemplate = methodTemplate;
         }
 
         for (BranchCoverage branch : branches) {

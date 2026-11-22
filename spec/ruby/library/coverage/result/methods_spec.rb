@@ -62,6 +62,49 @@ describe "Coverage.result with methods: true" do
     Coverage.peek_result[@file][:methods].should == { @sign => 0 }
   end
 
+  it "counts the calls made since an earlier Coverage.peek_result" do
+    Coverage.start(methods: true)
+    load @file
+    Coverage.peek_result
+    2.times { CoverageSpecs.sign(1) }
+
+    Coverage.result[@file][:methods].should == { @sign => 2 }
+  end
+
+  it "adds the calls of a method defined again at the same place since an earlier Coverage.peek_result" do
+    Coverage.start(methods: true)
+    load @file
+    CoverageSpecs.sign(1)
+    Coverage.peek_result
+    suppress_warning { load @file }
+    2.times { CoverageSpecs.sign(1) }
+
+    Coverage.result[@file][:methods].should == { @sign => 3 }
+  end
+
+  it "reports a method defined since an earlier Coverage.peek_result" do
+    path = tmp("coverage_spec.rb")
+    touch(path) { |f| f.write(<<~'RUBY') }
+      class CoverageSpecs::Later
+        def self.define_later
+          def later; end
+        end
+      end
+    RUBY
+    Coverage.start(methods: true)
+    load path
+    Coverage.peek_result
+    CoverageSpecs::Later.define_later
+    CoverageSpecs::Later.new.later
+
+    Coverage.result.fetch(path)[:methods].should == {
+      [CoverageSpecs::Later.singleton_class, :define_later, 2, 2, 4, 5] => 1,
+      [CoverageSpecs::Later, :later, 3, 4, 3, 18] => 1
+    }
+  ensure
+    rm_r path
+  end
+
   it "reports each method by its owner, name and position with how many times it was called" do
     result = CoverageSpecs.method_coverage(<<~'RUBY')
       class CoverageSpecs::Plain
