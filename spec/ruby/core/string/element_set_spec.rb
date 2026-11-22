@@ -24,6 +24,12 @@ describe "String#[]= with Integer index" do
     -> { str[-20] = "bam" }.should.raise(IndexError)
     str.should == "hello"
 
+    -> { str[fixnum_max] = "bam" }.should.raise(IndexError)
+    str.should == "hello"
+
+    -> { str[fixnum_min] = "bam" }.should.raise(IndexError)
+    str.should == "hello"
+
     -> { ""[-1] = "bam" }.should.raise(IndexError)
   end
 
@@ -357,12 +363,19 @@ describe "String#[]= with a Range index" do
     str.should == "aBe"
   end
 
+  it "replaces up to the end of the String if the Range end is beyond it" do
+    str = "abcde"
+    str[1..fixnum_max] = "x"
+    str.should == "ax"
+  end
+
   it "raises a RangeError if negative Range begin is out of range" do
     -> { "abc"[-4..-2] = "x" }.should.raise(RangeError, "-4..-2 out of range")
   end
 
   it "raises a RangeError if positive Range begin is greater than String size" do
     -> { "abc"[4..2] = "x" }.should.raise(RangeError, "4..2 out of range")
+    -> { "abc"[fixnum_max..] = "x" }.should.raise(RangeError, "#{fixnum_max}.. out of range")
   end
 
   it "uses the Range end as an index rather than a count" do
@@ -474,6 +487,9 @@ describe "String#[]= with Integer index, count" do
     a = "hello"
     a[0, 100] = ""
     a.should == ""
+    a = "hello"
+    a[1, fixnum_max] = "x"
+    a.should == "hx"
   end
 
   it "appends other_str to the end of the string if idx == the length of the string" do
@@ -527,6 +543,8 @@ describe "String#[]= with Integer index, count" do
   it "raises an IndexError if |idx| is greater than the length of the string" do
     -> { "hello"[6, 0] = "bob"  }.should.raise(IndexError)
     -> { "hello"[-6, 0] = "bob" }.should.raise(IndexError)
+    -> { "hello"[fixnum_max, 0] = "bob" }.should.raise(IndexError)
+    -> { "hello"[fixnum_min, 0] = "bob" }.should.raise(IndexError)
   end
 
   it "raises an IndexError if count < 0" do

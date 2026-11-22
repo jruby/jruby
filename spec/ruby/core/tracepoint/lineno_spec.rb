@@ -31,4 +31,33 @@ describe 'TracePoint#lineno' do
     tp = TracePoint.new(:line) {}
     -> { tp.lineno }.should.raise(RuntimeError, 'access from outside')
   end
+
+  it 'returns the line of end for a :return event at the end of a method' do
+    obj = Object.new
+    def obj.m
+      :m
+    end
+
+    lineno = nil
+    TracePoint.new(:return) { |tp|
+      next unless TracePointSpec.target_thread? && tp.method_id == :m
+      lineno = tp.lineno
+    }.enable do
+      obj.m
+    end
+    lineno.should == __LINE__ - 9
+  end
+
+  it 'returns the line where the block ends for a :b_return event, which is also the line of the block in the backtrace' do
+    lines = nil
+    TracePoint.new(:b_return) { |tp|
+      next unless TracePointSpec.target_thread?
+      lines ||= [tp.lineno, caller_locations(1, 1)[0].lineno]
+    }.enable do
+      [1].each { |x|
+        x
+      }
+    end
+    lines.should == [__LINE__ - 2, __LINE__ - 2]
+  end
 end

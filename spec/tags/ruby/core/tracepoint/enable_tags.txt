@@ -30,3 +30,4 @@ debug:TracePoint#enable target_line: option traces :line events only on specifie
 debug:TracePoint#enable target_line: option raises ArgumentError if :target_line value is out of target code lines range
 debug:TracePoint#enable target_line: option raises ArgumentError if :target_line value is negative
 debug:TracePoint#enable target_line: option accepts value that could be coerced to Integer
+debug:TracePoint#enable without a block runs the hook on another thread while the hook is running on this thread

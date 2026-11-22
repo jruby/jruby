@@ -55,6 +55,7 @@ import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
+import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
@@ -122,6 +123,7 @@ public final class ThreadContext {
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
+    private TracePoint.Event traceEvent;
 
     public final TraceEventManager traceEvents;
 
@@ -1213,6 +1215,17 @@ public final class ThreadContext {
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;
+    }
+
+    /**
+     * The event of the TracePoint hook running on this thread, or null outside of a hook.
+     */
+    public TracePoint.Event getTraceEvent() {
+        return traceEvent;
+    }
+
+    public void setTraceEvent(TracePoint.Event traceEvent) {
+        this.traceEvent = traceEvent;
     }
 
     /**

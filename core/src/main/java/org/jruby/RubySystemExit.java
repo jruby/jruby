@@ -33,6 +33,7 @@ import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -40,6 +41,7 @@ import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 /**
  * The Java representation of a Ruby SystemExit.
@@ -90,15 +92,21 @@ public class RubySystemExit extends RubyException {
 
         if (argc > 0) {
             final IRubyObject arg = args[0];
-            if (arg instanceof RubyFixnum) {
-                this.status = arg;
-                if (argc > 1) this.message = args[1]; // (status, message)
-            } else if (arg instanceof RubyBoolean) {
+            if (arg instanceof RubyBoolean) {
                 this.status = asFixnum(context, arg == context.tru ? 0 : 1 );
                 if (argc > 1) this.message = args[1]; // (status, message)
             } else {
-                this.message = arg;
-                this.status = RubyFixnum.zero(context.runtime);
+                // like exit_initialize() in CRuby, the first argument is the status if #to_int converts it to an
+                // Integer (rb_check_to_int), and the message otherwise
+                final IRubyObject status = arg instanceof RubyInteger ? arg :
+                        TypeConverter.convertToType(context, arg, integerClass(context), context.sites.TypeConverter.to_int_checked, false);
+                if (!(status instanceof RubyInteger)) {
+                    this.message = arg;
+                    this.status = RubyFixnum.zero(context.runtime);
+                } else {
+                    this.status = status;
+                    if (argc > 1) this.message = args[1]; // (status, message)
+                }
             }
         } else {
             this.status = RubyFixnum.zero(context.runtime);
