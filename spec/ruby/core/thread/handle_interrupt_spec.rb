@@ -140,7 +140,7 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue << :popped
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in pop")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in pop")
     log.should == [:popped]
   end
 
@@ -161,7 +161,7 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue.pop
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in push")
     log.should == [queue]
     queue.pop.should == :second
   end
@@ -183,9 +183,48 @@ describe "Thread.handle_interrupt" do
     thread.join(0.1).should == nil
     queue.pop
 
-    -> { thread.join }.should raise_error(RuntimeError, "interrupt in push")
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in push")
     log.should == [queue]
     queue.pop.should == :second
+  end
+
+  it "defers an interrupt raised while the thread sleeps with a timeout" do
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        sleep 10
+        log << :slept
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    Thread.pass until thread.stop?
+    thread.raise "interrupt in sleep"
+    thread.join(0.1).should == nil
+    thread.wakeup
+
+    -> { thread.join }.should.raise(RuntimeError, "interrupt in sleep")
+    log.should == [:slept]
+  end
+
+  it "defers Thread#kill while the thread sleeps without a timeout" do
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(Object => :never) do
+        sleep
+        log << :slept
+      end
+      log << :not_reached
+    end
+
+    Thread.pass until thread.stop?
+    thread.kill
+    thread.join(0.1).should == nil
+    thread.wakeup
+
+    thread.join.should == thread
+    log.should == [:slept]
   end
 
   it "runs pending interrupts at the end of the block, even if there was an exception raised in the block" do

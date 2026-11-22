@@ -62,6 +62,33 @@ describe "Kernel#system" do
     -> { system("sad") }.should output_to_fd("", STDERR)
   end
 
+  describe "with redirect options" do
+    before :each do
+      @redirect = tmp("kernel_system_redirect")
+    end
+
+    after :each do
+      rm_r @redirect
+    end
+
+    it "redirects stdout to the file given with out:" do
+      @object.system(*ruby_exe, "-e", "puts 'out'", out: @redirect)
+      File.read(@redirect).should == "out\n"
+    end
+
+    it "discards stderr when err: is File::NULL" do
+      call = @object.equal?(Kernel) ? "Kernel.system" : "system"
+      code = "require 'rbconfig'; #{call}(RbConfig.ruby, '-e', 'STDERR.puts :err', err: File::NULL)"
+      ruby_exe(code, args: "2>&1").should == ""
+    end
+
+    it "redirects stderr to the child's stdout when err: is [:child, :out]" do
+      code = "STDOUT.sync = true; puts 'out'; STDERR.puts 'err'"
+      @object.system(*ruby_exe, "-e", code, out: @redirect, err: [:child, :out])
+      File.read(@redirect).should == "out\nerr\n"
+    end
+  end
+
   platform_is_not :windows do
     before :each do
       @shell = ENV['SHELL']

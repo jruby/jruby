@@ -67,6 +67,10 @@ describe "String#slice! with index, length" do
 
     a.slice!(-2, 4).should == "lo"
     a.should == "h"
+
+    a = "hello"
+    a.slice!(1, fixnum_max).should == "ello"
+    a.should == "h"
   end
 
   it "returns nil if the given position is out of self" do
@@ -138,6 +142,10 @@ describe "String#slice! Range" do
 
     # Edge Case?
     "hello".slice!(-3..-9).should == ""
+
+    a = "hello"
+    a.slice!(1..fixnum_max).should == "ello"
+    a.should == "h"
   end
 
   it "returns nil if the given range is out of self" do

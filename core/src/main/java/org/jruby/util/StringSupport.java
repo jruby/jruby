@@ -1954,20 +1954,24 @@ public final class StringSupport {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
 
-    // MRI: rb_str_update, first half
     public static void strUpdate(ThreadContext context, int beg, int len, RubyString source, RubyString repl) {
+        strUpdate(context, (long) beg, (long) len, source, repl);
+    }
+
+    @CRuby(value = "rb_str_update", file = "string.c", note = "bounds check")
+    public static void strUpdate(ThreadContext context, long beg, long len, RubyString source, RubyString repl) {
         if (len < 0) throw indexError(context, "negative length " + len);
 
         int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
 
-        if (slen < beg) throw indexError(context, "index " + beg + " out of string");
-        if (beg < 0) {
-            if (-beg > slen) throw indexError(context, "index " + beg + " out of string");
-            beg += slen;
+        if (slen < beg || (beg < 0 && beg + slen < 0)) {
+            throw indexError(context, "index " + beg + " out of string");
         }
-        if (slen < len || slen < beg + len) len = slen - beg;
+        if (beg < 0) beg += slen;
+        if (len > slen - beg) len = slen - beg;
 
-        strUpdate(beg, len, source, repl);
+        // both are within slen now
+        strUpdate((int) beg, (int) len, source, repl);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
@@ -2911,25 +2915,29 @@ public final class StringSupport {
         pp.value = src.getBegin();
         int end = src.getRealSize() + pp.value;
         byte[]bytes = src.getUnsafeBytes();
-        int tgtLen = 0;
+        long tgtLen = 0;
 
         int buffers = 0;
         MappingBuffer root = new MappingBuffer();
         MappingBuffer buffer = root;
         while (pp.value < end) {
-            buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
+            // grow the multiplier with the buffer count to converge quickly, but never past the largest Java array
+            long capa = (long) (end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH;
+            buffer.next = new MappingBuffer((int) Math.min(capa, Helpers.MAX_ARRAY_SIZE));
             buffer = buffer.next;
             int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
             if (len < 0) throw argumentError(context, "input string invalid");
             buffer.used = len;
             tgtLen += len;
+            if (tgtLen > Helpers.MAX_ARRAY_SIZE) throw argumentError(context, "string size too big");
         }
 
         final ByteList tgt;
         if (buffers == 1) {
             tgt = new ByteList(buffer.bytes, 0, buffer.used, enc, false);
         } else {
-            tgt = new ByteList(tgtLen);
+            tgt = new ByteList((int) tgtLen);
+            tgt.setRealSize((int) tgtLen);
             tgt.setEncoding(enc);
             buffer = root.next;
             int tgtPos = 0;

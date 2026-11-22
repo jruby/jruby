@@ -59,4 +59,16 @@ describe "Regexp#encoding" do
   it "allows otherwise invalid characters if NOENCODING is specified" do
     Regexp.new('([\x00-\xFF])', Regexp::IGNORECASE | Regexp::NOENCODING).encoding.should == Encoding::BINARY
   end
+
+  it "raises RegexpError for invalid code point escapes in UTF-16 and UTF-32 regexps" do
+    %w[UTF-16LE UTF-16BE UTF-32LE UTF-32BE].each do |encoding|
+      ["\\x{D801}", "a\\x{D801}", "a\\x{110000}", "[\\x{D801}]", "\\x{110000}"].each do |source|
+        -> { Regexp.new(source.encode(encoding)) }.should raise_error(RegexpError)
+      end
+
+      smile = "\u{1F600}".encode(encoding)
+      Regexp.new("\\x{1F600}".encode(encoding)).should =~ smile
+      Regexp.new("[\\x{1F600}]".encode(encoding)).should =~ smile
+    end
+  end
 end

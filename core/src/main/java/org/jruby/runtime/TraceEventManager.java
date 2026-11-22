@@ -130,31 +130,29 @@ public class TraceEventManager {
         if (newHooks.length == 0) {
             hasEventHooks = false;
 
-            disableTraceSites(hook);
+            disableTraceSites();
         }
     }
 
+    // Compiled trace sites bind to these call sites after their first run (CallTraceSite.traceBootstrap).
+    // The event to site mapping follows JVMVisitor#TraceInstr: CALL, CLASS, END and LINE share callTrace,
+    // RETURN uses returnValueTrace, B_CALL uses bcallTrace and B_RETURN uses bReturnValueTrace.
     private void enableTraceSites(EventHook hook) {
-        if (hook.isInterestedInEvent(RubyEvent.CALL) || hook.isInterestedInEvent(RubyEvent.RETURN)) {
+        if (hook.isInterestedInEvent(RubyEvent.CALL) || hook.isInterestedInEvent(RubyEvent.CLASS) ||
+                hook.isInterestedInEvent(RubyEvent.END) || hook.isInterestedInEvent(RubyEvent.LINE)) {
             callTrace.setTarget(TRACE_ON);
+        }
+
+        if (hook.isInterestedInEvent(RubyEvent.RETURN)) {
             returnValueTrace.setTarget(VALUE_TRACE_ON);
         }
 
-        if (hook.isInterestedInEvent(RubyEvent.B_CALL) || hook.isInterestedInEvent(RubyEvent.B_RETURN)) {
+        if (hook.isInterestedInEvent(RubyEvent.B_CALL)) {
             bcallTrace.setTarget(B_TRACE_ON);
+        }
+
+        if (hook.isInterestedInEvent(RubyEvent.B_RETURN)) {
             bReturnValueTrace.setTarget(B_VALUE_TRACE_ON);
-        }
-    }
-
-    private void disableTraceSites(EventHook hook) {
-        if (hook.isInterestedInEvent(RubyEvent.CALL) || hook.isInterestedInEvent(RubyEvent.RETURN)) {
-            callTrace.setTarget(TRACE_OFF);
-            returnValueTrace.setTarget(VALUE_TRACE_OFF);
-        }
-
-        if (hook.isInterestedInEvent(RubyEvent.B_CALL) || hook.isInterestedInEvent(RubyEvent.B_RETURN)) {
-            bcallTrace.setTarget(B_TRACE_OFF);
-            bReturnValueTrace.setTarget(B_VALUE_TRACE_OFF);
         }
     }
 

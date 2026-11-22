@@ -1835,6 +1835,24 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return (end_ns - start_ns) <= totalNanos;
     }
 
+    /**
+     * Sleep for Kernel#sleep. Only the deadline or Thread#wakeup ends the sleep. An interrupt masked by
+     * handle_interrupt wakes the thread, but it goes back to sleep.
+     *
+     * @param context the current context
+     * @param nanoseconds time to sleep. Zero sleeps until woken.
+     */
+    void sleepUntilWakeup(ThreadContext context, long nanoseconds) throws InterruptedException {
+        sleepTask.nanoseconds = nanoseconds;
+        sleepTask.untilWakeup = true;
+        try {
+            executeTaskBlocking(context, null, sleepTask);
+        } finally {
+            sleepTask.untilWakeup = false;
+            sleepTask.semaphore.drainPermits();
+        }
+    }
+
     public IRubyObject status() { // not used
         return status(getRuntime().getCurrentContext());
     }
@@ -1936,7 +1954,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup() {
             synchronized (object) {
-                object.notify();
+                // The interrupt belongs to this thread, but notify() may select
+                // another waiter sharing the monitor. Wake all so the target
+                // can poll its pending interrupt after leaving Object.wait.
+                object.notifyAll();
             }
         }
     }
@@ -1951,6 +1972,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
         long nanoseconds;
+        boolean untilWakeup;
         {semaphore.drainPermits();}
 
         @Override
@@ -1958,7 +1980,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             long start = System.nanoTime();
 
             try {
-                if (nanoseconds == 0) {
+                if (untilWakeup) {
+                    sleepUntilWakeup(context, start);
+                } else if (nanoseconds == 0) {
                     semaphore.tryAcquire(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                 } else {
                     semaphore.tryAcquire(nanoseconds, TimeUnit.NANOSECONDS);
@@ -1967,6 +1991,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 return System.nanoTime() - start;
             } finally {
                 semaphore.drainPermits();
+            }
+        }
+
+        @CRuby(value = "sleep_hrtime", file = "thread.c")
+        @CRuby(value = "sleep_forever", file = "thread.c")
+        private void sleepUntilWakeup(ThreadContext context, long start) throws InterruptedException {
+            RubyThread thread = context.getThread();
+            while (true) {
+                if (nanoseconds == 0) {
+                    semaphore.acquire();
+                } else {
+                    long remaining = nanoseconds - (System.nanoTime() - start);
+                    if (remaining <= 0) return;
+                    if (!semaphore.tryAcquire(remaining, TimeUnit.NANOSECONDS)) return;
+                }
+                semaphore.drainPermits();
+
+                // Raise interrupts that are not masked. Masked ones leave the thread asleep.
+                context.blockingThreadPoll();
+
+                // Thread#wakeup sets the status to RUN
+                if (thread.getStatus() != Status.SLEEP) return;
             }
         }
 
@@ -2037,6 +2083,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task, boolean blocking) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
+        boolean raised = true;
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
@@ -2046,12 +2093,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             STATUS.set(this, status);
 
-            return task.run(context, data);
+            Return result = task.run(context, data);
+            raised = false;
+            return result;
+        } catch (InterruptedException ie) {
+            // Java interrupted the wait. Still check for Ruby interrupts below.
+            raised = false;
+            throw ie;
         } finally {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents(context, blocking);
+            // Don't let the next pending interrupt replace an exception already on its way out
+            if (!raised) pollThreadEvents(context, blocking);
         }
     }
 
@@ -2499,43 +2553,36 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // Multiple Ruby threads can select the same channel. Keep it nonblocking
     // until the last selector is deregistered, without holding its monitor while waiting.
-    private static final Map<SelectableChannel, SelectMode> SELECT_MODES = new WeakHashMap<>();
+    // State is [original blocking mode, active selector count]. Use a primitive
+    // array so weak-map values do not retain a JRuby-specific value class.
+    private static final Map<SelectableChannel, int[]> SELECT_MODES = new WeakHashMap<>();
 
-    private static final class SelectMode {
-        final boolean blocking;
-        int waiters;
-
-        SelectMode(boolean blocking) {
-            this.blocking = blocking;
-        }
-    }
-
-    private static SelectMode enterSelectMode(SelectableChannel channel) throws IOException {
+    private static int[] enterSelectMode(SelectableChannel channel) throws IOException {
         synchronized (channel.blockingLock()) {
-            SelectMode mode;
+            int[] mode;
             synchronized (SELECT_MODES) {
                 mode = SELECT_MODES.get(channel);
             }
             if (mode == null) {
-                mode = new SelectMode(channel.isBlocking());
+                mode = new int[] {channel.isBlocking() ? 1 : 0, 0};
                 channel.configureBlocking(false);
                 synchronized (SELECT_MODES) {
                     SELECT_MODES.put(channel, mode);
                 }
             }
-            mode.waiters++;
+            mode[1]++;
             return mode;
         }
     }
 
-    private static void leaveSelectMode(SelectableChannel channel, SelectMode mode) {
+    private static void leaveSelectMode(SelectableChannel channel, int[] mode) {
         synchronized (channel.blockingLock()) {
-            if (--mode.waiters == 0) {
+            if (--mode[1] == 0) {
                 synchronized (SELECT_MODES) {
                     SELECT_MODES.remove(channel);
                 }
                 try {
-                    channel.configureBlocking(mode.blocking);
+                    channel.configureBlocking(mode[0] != 0);
                 } catch (Exception e) {
                     // Preserve cleanup when the channel has been closed concurrently.
                 }
@@ -2585,7 +2632,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             boolean locked = fptr.lock();
             fptr.unlock();
             Selector selector = null;
-            SelectMode mode = null;
+            int[] mode = null;
             try {
                 fptr.addBlockingThread(this);
                 selector = getRuntime().getSelectorPool().get(selectable.provider());
