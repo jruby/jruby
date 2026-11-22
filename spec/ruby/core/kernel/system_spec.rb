@@ -77,7 +77,8 @@ describe "Kernel#system" do
     end
 
     it "does not write to STDERR if err: File::NULL" do
-      -> { system(ruby_cmd("STDERR.print :glark"), err: File::NULL) }.should output_to_fd("", STDERR)
+      code = "require 'rbconfig'; system(RbConfig.ruby, '-e', 'STDERR.print :glark', err: File::NULL)"
+      ruby_exe(code, args: "2>&1").should == ""
     end
 
     it "redirects STDERR to child STDOUT if err: [:child, :out]" do
