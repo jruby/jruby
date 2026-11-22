@@ -22,6 +22,10 @@ class ClosingScheduler
     raise 'unexpected scheduler IO'
   end
 
+  def fiber_interrupt(*)
+    raise 'unexpected scheduler interrupt'
+  end
+
   def scheduler_close
     @closed = Fiber.new { :closed }.resume
   end

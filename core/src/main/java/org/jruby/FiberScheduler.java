@@ -62,9 +62,9 @@ public class FiberScheduler {
         }
     }
 
-    // MRI: rb_fiber_scheduler_fiber_interrupt, which returns undef (null here) if the scheduler has no fiber_interrupt
+    @CRuby(value = "rb_fiber_scheduler_fiber_interrupt", file = "scheduler.c")
     public static IRubyObject fiberInterrupt(ThreadContext context, IRubyObject scheduler, IRubyObject fiber, IRubyObject exception) {
-        return Helpers.invokeChecked(context, scheduler, "fiber_interrupt", fiber, exception);
+        return Helpers.invoke(context, scheduler, "fiber_interrupt", fiber, exception);
     }
 
     @CRuby(value = "rb_fiber_scheduler_io_wait_readable", file = "scheduler.c")
@@ -208,6 +208,10 @@ public class FiberScheduler {
 
         if (!scheduler.respondsTo("io_wait")) {
             throw argumentError(context, "Scheduler must implement #io_wait");
+        }
+
+        if (!scheduler.respondsTo("fiber_interrupt")) {
+            throw argumentError(context, "Scheduler must implement #fiber_interrupt");
         }
     }
 

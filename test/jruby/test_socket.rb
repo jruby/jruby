@@ -894,6 +894,10 @@ class AcceptFiberSchedulerTest < Test::Unit::TestCase
     def kernel_sleep(duration = nil)
       Fiber.yield
     end
+
+    def fiber_interrupt(fiber, exception)
+      fiber.raise(exception)
+    end
   end
 
   # The fibers run in a thread joined with a timeout, so the test fails instead of hanging when accept blocks that
