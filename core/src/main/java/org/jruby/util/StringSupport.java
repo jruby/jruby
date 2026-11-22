@@ -1954,20 +1954,24 @@ public final class StringSupport {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
 
-    // MRI: rb_str_update, first half
     public static void strUpdate(ThreadContext context, int beg, int len, RubyString source, RubyString repl) {
+        strUpdate(context, (long) beg, (long) len, source, repl);
+    }
+
+    @CRuby(value = "rb_str_update", file = "string.c", note = "bounds check")
+    public static void strUpdate(ThreadContext context, long beg, long len, RubyString source, RubyString repl) {
         if (len < 0) throw indexError(context, "negative length " + len);
 
         int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
 
-        if (slen < beg) throw indexError(context, "index " + beg + " out of string");
-        if (beg < 0) {
-            if (-beg > slen) throw indexError(context, "index " + beg + " out of string");
-            beg += slen;
+        if (slen < beg || (beg < 0 && beg + slen < 0)) {
+            throw indexError(context, "index " + beg + " out of string");
         }
-        if (slen < len || slen < beg + len) len = slen - beg;
+        if (beg < 0) beg += slen;
+        if (len > slen - beg) len = slen - beg;
 
-        strUpdate(beg, len, source, repl);
+        // both are within slen now
+        strUpdate((int) beg, (int) len, source, repl);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
