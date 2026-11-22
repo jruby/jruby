@@ -4759,12 +4759,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (isDash(pOpen.cmd)) throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
 
+        ShellLauncher.Redirects redirects = ShellLauncher.Redirects.NONE;
+        if (options != null) {
+            redirects = ShellLauncher.Redirects.from(context, options, false);
+            String[] unsupported = redirects.handlesErr() ?
+                    UNSUPPORTED_POPEN_OPTIONS_WITH_ERR : UNSUPPORTED_SPAWN_OPTIONS;
+            checkUnsupportedOptions(context, options, unsupported, "unsupported popen option");
+        }
+
         try {
             ShellLauncher.POpenProcess process;
             if (pOpen.cmdPlusArgs == null) {
-                process = ShellLauncher.popen(runtime, pOpen.cmd, modes);
+                process = ShellLauncher.popen(runtime, pOpen.cmd, modes, redirects);
             } else {
-                process = ShellLauncher.popen(runtime, pOpen.cmdPlusArgs, pOpen.env, modes);
+                process = ShellLauncher.popen(runtime, pOpen.cmdPlusArgs, pOpen.env, modes, redirects);
             }
 
             if (options != null) {
@@ -5418,6 +5426,63 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static boolean isTrue(IRubyObject val) { return val != null && val.isTrue(); }
+
+    static final Set<String> ALL_SPAWN_OPTIONS;
+    static final String[] UNSUPPORTED_SPAWN_OPTIONS;
+    private static final String[] UNSUPPORTED_POPEN_OPTIONS_WITH_ERR;
+
+    static {
+        String[] SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
+        UNSUPPORTED_SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
+
+        ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
+        UNSUPPORTED_POPEN_OPTIONS_WITH_ERR = Arrays.stream(UNSUPPORTED_SPAWN_OPTIONS)
+                .filter(option -> !option.equals("err"))
+                .toArray(String[]::new);
+    }
+
+    static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
+        for (String key : unsupported) {
+            if (opts.fastARef(asSymbol(context, key)) != null) warn(context, error + ": " + key);
+        }
+    }
+
+    static void checkValidSpawnOptions(ThreadContext context, RubyHash opts) {
+        for (Object opt : opts.directKeySet()) {
+            if (opt instanceof RubySymbol) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubySymbol) opt).idString())) {
+                    throw argumentError(context, "wrong exec option symbol: " + opt);
+                }
+            }
+            else if (opt instanceof RubyString) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubyString) opt).toString())) {
+                    throw argumentError(context, "wrong exec option: " + opt);
+                }
+            }
+        }
+    }
 
     /**
      * Try for around 1s to destroy the child process. This is to work around

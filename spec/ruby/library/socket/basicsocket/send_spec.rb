@@ -153,6 +153,13 @@ describe 'BasicSocket#send' do
         it 'returns the amount of bytes written' do
           @client.send('hello', 0).should == 5
         end
+
+        it 'sends the String returned by #to_str of an object' do
+          data = mock('message')
+          data.should_receive(:to_str).and_return('hello')
+          @client.send(data, 0).should == 5
+          @server.recv(10).should == 'hello'
+        end
       end
 
       describe 'with a destination address argument' do

@@ -29,6 +29,12 @@ describe "IO.popen" do
     @io.read.should == "foo\n"
   end
 
+  it "redirects the child's stderr to the file given with err:" do
+    code = "puts 'out'; STDERR.puts 'err'"
+    IO.popen([*ruby_exe, "-e", code], err: @fname, &:read).should == "out\n"
+    File.read(@fname).should == "err\n"
+  end
+
   platform_is_not :windows do
     it "redirects the child's STDIN from the parent's STDOUT" do
       skip "requires STDOUT to be a terminal device" unless STDOUT.tty?

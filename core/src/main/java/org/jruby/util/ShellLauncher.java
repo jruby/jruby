@@ -32,6 +32,7 @@ import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -68,12 +69,14 @@ import java.util.regex.Pattern;
 import org.jruby.main.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import jnr.posix.util.ProcessMaker;
 import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.javasupport.Java;
@@ -474,11 +477,19 @@ public class ShellLauncher {
     }
 
     public static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs) {
-        return runAndWaitPid(runtime, rawArgs, runtime.getOutputStream(), true);
+        return runAndWaitPid(runtime, rawArgs, Redirects.NONE);
+    }
+
+    public static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs, Redirects redirects) {
+        return runAndWaitPid(runtime, rawArgs, runtime.getOutputStream(), true, redirects);
     }
 
     public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
-        return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
+        return runWithoutWait(runtime, rawArgs, Redirects.NONE);
+    }
+
+    public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, Redirects redirects) {
+        return runWithoutWait(runtime, rawArgs, runtime.getOutputStream(), redirects);
     }
 
     public static int runExternalAndWait(Ruby runtime, IRubyObject[] rawArgs, Map mergeEnv) {
@@ -592,10 +603,17 @@ public class ShellLauncher {
     }
 
     public static Process buildProcess(Ruby runtime, String[] args, String[] env, File pwd) throws IOException {
-        return runtime.getPosix().newProcessMaker(args)
+        return buildProcess(runtime, args, env, pwd, Redirects.NONE);
+    }
+
+    public static Process buildProcess(Ruby runtime, String[] args, String[] env, File pwd,
+                                       Redirects redirects) throws IOException {
+        ProcessMaker maker = runtime.getPosix().newProcessMaker(args)
                 .environment(env)
-                .directory(pwd)
-                .start();
+                .directory(pwd);
+        redirects.applyTo(maker);
+
+        return maker.start();
     }
 
     public static long runExternalWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
@@ -640,10 +658,15 @@ public class ShellLauncher {
     }
 
     public static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, boolean doExecutableSearch) {
+        return runAndWaitPid(runtime, rawArgs, output, doExecutableSearch, Redirects.NONE);
+    }
+
+    private static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, boolean doExecutableSearch,
+                                        Redirects redirects) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
-            Process aProcess = run(runtime, rawArgs, doExecutableSearch);
+            Process aProcess = run(runtime, rawArgs, doExecutableSearch, redirects);
             handleStreams(runtime, aProcess, input, output, error);
             return new long[] {aProcess.waitFor(), getPidFromProcess(aProcess)};
         } catch (IOException e) {
@@ -654,9 +677,13 @@ public class ShellLauncher {
     }
 
     private static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        return runWithoutWait(runtime, rawArgs, output, Redirects.NONE);
+    }
+
+    private static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, Redirects redirects) {
         OutputStream error = runtime.getErrorStream();
         try {
-            Process aProcess = run(runtime, rawArgs, true);
+            Process aProcess = run(runtime, rawArgs, true, redirects);
             handleStreamsNonblocking(runtime, aProcess, output, error);
             return getPidFromProcess(aProcess);
         } catch (IOException e) {
@@ -838,11 +865,21 @@ public class ShellLauncher {
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
+        return popen(runtime, string, modes, Redirects.NONE);
+    }
+
+    public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes,
+                                     Redirects redirects) throws IOException {
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true, redirects), runtime, modes);
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
+        return popen(runtime, strings, env, modes, Redirects.NONE);
+    }
+
+    public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes,
+                                     Redirects redirects) throws IOException {
+        return new POpenProcess(popenShared(runtime, strings, env, false, redirects), runtime, modes);
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject string, Map env, ModeFlags modes) throws IOException {
@@ -858,6 +895,11 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
+        return popenShared(runtime, strings, env, addShell, Redirects.NONE);
+    }
+
+    private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell,
+                                       Redirects redirects) throws IOException {
         var context = runtime.getCurrentContext();
         String shell = getShell(runtime);
         File pwd = new File(runtime.getCurrentDirectory());
@@ -887,7 +929,7 @@ public class ShellLauncher {
                 cfg.verifyExecutableForDirect();
             }
 
-            return buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
+            return buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd, redirects);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
@@ -1093,6 +1135,59 @@ public class ShellLauncher {
             inerrPumper.start();
             inerr = null;
             inerrChannel = null;
+        }
+    }
+
+    /**
+     * The out: and err: spawn options that ProcessMaker can apply: a file path (including File::NULL)
+     * for either, and [:child, :out] for err:.
+     */
+    public record Redirects(ProcessMaker.Redirect out, ProcessMaker.Redirect err, boolean errToOut) {
+        public static final Redirects NONE = new Redirects(null, null, false);
+
+        public static Redirects from(ThreadContext context, RubyHash opts, boolean withOut) {
+            IRubyObject outValue = withOut ? opts.fastARef(asSymbol(context, "out")) : null;
+            ProcessMaker.Redirect out = fileRedirect(context, outValue);
+            IRubyObject errValue = opts.fastARef(asSymbol(context, "err"));
+            boolean errToOut = isChildOut(context, errValue);
+            ProcessMaker.Redirect err = errToOut ? null : fileRedirect(context, errValue);
+
+            return new Redirects(out, err, errToOut);
+        }
+
+        public boolean handlesOut() {
+            return out != null;
+        }
+
+        public boolean handlesErr() {
+            return err != null || errToOut;
+        }
+
+        public boolean isEmpty() {
+            return !handlesOut() && !handlesErr();
+        }
+
+        void applyTo(ProcessMaker maker) {
+            if (out != null) maker.redirectOutput(out);
+            if (err != null) maker.redirectError(err);
+            if (errToOut) maker.redirectErrorStream(true);
+        }
+
+        private static boolean isChildOut(ThreadContext context, IRubyObject value) {
+            return value instanceof RubyArray<?> ary && ary.size() == 2 &&
+                    ary.eltOk(0) == asSymbol(context, "child") && ary.eltOk(1) == asSymbol(context, "out");
+        }
+
+        // IO objects respond to to_path, but redirect their descriptor, which we can't do
+        private static ProcessMaker.Redirect fileRedirect(ThreadContext context, IRubyObject value) {
+            if (value == null || value instanceof RubyIO) return null;
+            if (!(value instanceof RubyString) && !value.respondsTo("to_path")) return null;
+
+            String path = RubyFile.get_path(context, value).toString();
+            File discard = ProcessBuilder.Redirect.DISCARD.file();
+            if (path.equals(discard.getPath())) return ProcessMaker.Redirect.to(discard);
+
+            return ProcessMaker.Redirect.to(JRubyFile.create(context.runtime.getCurrentDirectory(), path));
         }
     }
 
@@ -1306,6 +1401,11 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
+        return run(runtime, rawArgs, doExecutableSearch, Redirects.NONE);
+    }
+
+    private static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch,
+                               Redirects redirects) throws IOException {
         RubyHash env = null;
         RubyHash opts = null;
         String dir = runtime.getCurrentDirectory();
@@ -1325,7 +1425,7 @@ public class ShellLauncher {
             if (!chdir.isNil()) dir = chdir.asJavaString();
         }
 
-        return run(runtime, env, dir, rawArgs, doExecutableSearch, false);
+        return run(runtime, env, dir, rawArgs, doExecutableSearch, false, redirects);
     }
 
     private static boolean hasGlobCharacter(String word) {
@@ -1359,12 +1459,18 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
+        return run(runtime, env, dir, rawArgs, doExecutableSearch, forceExternalProcess, Redirects.NONE);
+    }
+
+    private static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch,
+                               boolean forceExternalProcess, Redirects redirects) throws IOException {
         Process aProcess;
         File pwd = new File(dir);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
-            if (!forceExternalProcess && cfg.shouldRunInProcess()) {
+            // an in-process script shares our streams, so it can't be redirected
+            if (!forceExternalProcess && redirects.isEmpty() && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
                         expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
@@ -1392,7 +1498,7 @@ public class ShellLauncher {
                                 "org.jruby.main.Main -C " + dir);
                     }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd, redirects);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
