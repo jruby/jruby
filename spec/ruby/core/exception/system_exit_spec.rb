@@ -30,6 +30,28 @@ describe "SystemExit" do
       exc.message.should == "SystemExit"
     end
 
+    it "accepts a status that converts with #to_int" do
+      status = mock('status')
+      status.should_receive(:to_int).twice.and_return(42)
+
+      exc = SystemExit.new(status, "message")
+      exc.status.should == 42
+      exc.message.should == "message"
+
+      exc = SystemExit.new(status)
+      exc.status.should == 42
+      exc.message.should == "SystemExit"
+    end
+
+    it "uses the argument as the message if #to_int does not return an Integer" do
+      status = mock('status')
+      status.should_receive(:to_int).and_return("42")
+
+      exc = SystemExit.new(status)
+      exc.status.should == 0
+      exc.message.should == status.to_s
+    end
+
     it "accepts a message only" do
       exc = SystemExit.new("message")
       exc.status.should == 0

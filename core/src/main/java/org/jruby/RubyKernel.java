@@ -938,9 +938,9 @@ public class RubyKernel {
         String message = null;
 
         if (args.length > 0) {
-            RubyObject argument = (RubyObject) args[0];
+            IRubyObject argument = args[0];
             if (argument instanceof RubyBoolean) {
-                status = argument.isFalse() ? 1 : 0;
+                status = argument.isTrue() ? 0 : 1;
             } else {
                 status = toInt(context, argument);
             }
