@@ -64,28 +64,26 @@ describe "Kernel#system" do
 
   describe "with redirect options" do
     before :each do
-      @redirect = tmp("kernel_system_redirect")
+      @name = tmp("kernel_system.txt")
     end
 
     after :each do
-      rm_r @redirect
+      rm_r @name
     end
 
-    it "redirects stdout to the file given with out:" do
-      @object.system(*ruby_exe, "-e", "puts 'out'", out: @redirect)
-      File.read(@redirect).should == "out\n"
+    it "redirects STDOUT to the given file if out: String" do
+      system(ruby_cmd("print :glark"), out: @name)
+      File.read(@name).should == "glark"
     end
 
-    it "discards stderr when err: is File::NULL" do
-      call = @object.equal?(Kernel) ? "Kernel.system" : "system"
-      code = "require 'rbconfig'; #{call}(RbConfig.ruby, '-e', 'STDERR.puts :err', err: File::NULL)"
+    it "does not write to STDERR if err: File::NULL" do
+      code = "require 'rbconfig'; system(RbConfig.ruby, '-e', 'STDERR.print :glark', err: File::NULL)"
       ruby_exe(code, args: "2>&1").should == ""
     end
 
-    it "redirects stderr to the child's stdout when err: is [:child, :out]" do
-      code = "STDOUT.sync = true; puts 'out'; STDERR.puts 'err'"
-      @object.system(*ruby_exe, "-e", code, out: @redirect, err: [:child, :out])
-      File.read(@redirect).should == "out\nerr\n"
+    it "redirects STDERR to child STDOUT if err: [:child, :out]" do
+      system(ruby_cmd("print :glark; STDOUT.flush; STDERR.print :bang"), out: @name, err: [:child, :out])
+      File.read(@name).should == "glarkbang"
     end
   end
 
