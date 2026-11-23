@@ -1020,11 +1020,8 @@ public class Pack {
 
         if (mode == UNPACK_BLOCK) block = checkModifiedAfterYield(context, encoded, block);
 
-        if (offset < 0) throw argumentError(context, "offset can't be negative");
-        if (offset > 0) {
-            if (offset > len) throw argumentError(context, "offset outside of string");
-            beg += offset;
-            len -= offset;
+        if (offset < 0 ? (offset += len) < 0 : offset > len) {
+            throw argumentError(context, "offset outside of string");
         }
         beg += (int) offset;
         len -= (int) offset;
