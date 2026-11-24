@@ -517,10 +517,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return fstring;
     }
 
-    final RubyString to_s(Ruby runtime) {
-        return (RubyString) to_s(runtime.getCurrentContext());
-    }
-
     public IRubyObject name(ThreadContext context) {
         return to_s(context);
     }
@@ -536,7 +532,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public RubyString asString() {
-        return (RubyString) to_s(metaClass.runtime.getCurrentContext());
+        return fstring;
     }
 
     public RubyString fstring() {
