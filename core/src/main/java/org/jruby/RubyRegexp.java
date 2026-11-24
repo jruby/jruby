@@ -348,12 +348,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RubyRegexp(runtime, pattern);
     }
 
+    // Used by MatchData#regexp. The result is always a Regexp, so it is frozen like one made by regexpInitialize.
     static RubyRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
         RubyRegexp regexp = new RubyRegexp(runtime);
         assert str != null;
         regexp.str = str;
         regexp.options = RegexpOptions.fromJoniOptions(pattern.getOptions());
         regexp.pattern = pattern;
+        regexp.setFrozen(true);
         return regexp;
     }
 
@@ -961,13 +963,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @CRuby(value = "rb_reg_initialize", file = "re.c")
     public final RubyRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options, IRubyObject timeout) {
         Ruby runtime = metaClass.runtime;
-        this.options = options;
-        this.timeout = processTimeoutArg(runtime.getCurrentContext(), timeout);
 
         checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         if (pattern != null) throw typeError(runtime.getCurrentContext(), "already initialized regexp");
+
+        this.options = options;
+        this.timeout = processTimeoutArg(runtime.getCurrentContext(), timeout);
         if (enc.isDummy()) RegexpSupport.raiseRegexpError(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
 
         Encoding[]fixedEnc = new Encoding[]{null};
@@ -991,6 +994,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         pattern = getRegexpFromCache(runtime, unescaped, enc, options);
         assert bytes != null;
         str = bytes;
+
+        // Instances of Regexp itself are always frozen. Subclass instances are not, for compatibility.
+        if (getMetaClass() == runtime.getRegexp()) setFrozen(true);
         return this;
     }
 

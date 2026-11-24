@@ -73,6 +73,7 @@ import java.util.Map;
 
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.moduleClass;
+import static org.jruby.api.Access.regexpClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.eofError;
@@ -245,11 +246,15 @@ public class MarshalLoader {
     }
 
     private IRubyObject object0(ThreadContext context, RubyInputStream in, MarshalState state, boolean partial, List<RubyModule> extendedModules) {
-        return objectFor(context, in, r_byte(context, in), state, partial,  extendedModules);
+        return objectFor(context, in, r_byte(context, in), state, partial, null, extendedModules);
     }
 
+    /**
+     * Reads one object of the given type. A non-null klass is the user class of a 'C' (TYPE_UCLASS) entry.
+     */
+    @CRuby(value = "r_object_for", file = "marshal.c", note = "dispatch on type")
     private IRubyObject objectFor(ThreadContext context, RubyInputStream in, int type, MarshalState state, boolean partial,
-                                  List<RubyModule> extendedModules) {
+                                  RubyClass klass, List<RubyModule> extendedModules) {
         return switch (type) {
             case TYPE_LINK -> objectForLink(context, in);
             case TYPE_IVAR -> objectForIVar(context, in, state, partial, extendedModules);
@@ -262,7 +267,7 @@ public class MarshalLoader {
             case TYPE_FLOAT -> objectForFloat(context, in);
             case TYPE_BIGNUM -> objectForBignum(context, in);
             case TYPE_STRING -> objectForString(context, in, partial);
-            case TYPE_REGEXP -> objectForRegexp(context, in, state, partial);
+            case TYPE_REGEXP -> objectForRegexp(context, in, state, partial, klass);
             case TYPE_ARRAY -> objectForArray(context, in, partial);
             case TYPE_HASH -> objectForHash(context, in, partial, false);
             case TYPE_HASH_DEF -> objectForHashDefault(context, in, partial, false);
@@ -363,8 +368,9 @@ public class MarshalLoader {
         return leave(context, RubyArray.unmarshalFrom(context, in, this), partial);
     }
 
-    private IRubyObject objectForRegexp(ThreadContext context, RubyInputStream in, MarshalState state, boolean partial) {
-        return leave(context, entry(unmarshalRegexp(context, in, state)), partial);
+    private IRubyObject objectForRegexp(ThreadContext context, RubyInputStream in, MarshalState state, boolean partial,
+                                        RubyClass klass) {
+        return leave(context, entry(unmarshalRegexp(context, in, state, klass)), partial);
     }
 
     private IRubyObject objectForString(ThreadContext context, RubyInputStream in, boolean partial) {
@@ -407,7 +413,7 @@ public class MarshalLoader {
                     objectForHashDefault(context, in, partial, true);
         }
 
-        IRubyObject obj = objectFor(context, in, type, null, partial, extendedModules);
+        IRubyObject obj = objectFor(context, in, type, null, partial, c, extendedModules);
         // if result is a module or type doesn't extend result's class...
         if (obj.getMetaClass() == moduleClass(context) || !c.isKindOfModule(obj.getMetaClass())) {
             // if allocators do not match, error
@@ -534,12 +540,18 @@ public class MarshalLoader {
         return symbol(context, in);
     }
 
-    private IRubyObject unmarshalRegexp(ThreadContext context, RubyInputStream in, MarshalState state) {
+    /**
+     * Loads a Regexp. It is allocated from its user class when it has one, so that an instance of a Regexp subclass
+     * is not frozen when it is initialized. Instance variables other than the encoding are copied after the Regexp
+     * is initialized, so they raise FrozenError for an instance of Regexp itself, as in CRuby.
+     */
+    @CRuby(value = "r_object_for", file = "marshal.c", note = "TYPE_REGEXP")
+    private IRubyObject unmarshalRegexp(ThreadContext context, RubyInputStream in, MarshalState state, RubyClass klass) {
         ByteList byteList = unmarshalString(context, in);
         byte opts = readSignedByte(context, in);
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
 
-        RubyRegexp regexp = (RubyRegexp) context.runtime.getRegexp().allocate(context);
+        RubyRegexp regexp = (RubyRegexp) regexpAllocationClass(context, klass).allocate(context);
 
         IRubyObject ivarHolder = null;
         boolean[] hasEncoding = new boolean[] { false };
@@ -611,6 +623,13 @@ public class MarshalLoader {
         }
 
         return regexp;
+    }
+
+    // CRuby allocates from any user class here. Only a Regexp subclass can hold a Regexp in JRuby, so any other
+    // class gets a plain Regexp, which objectForUClass then rejects as a dump format error.
+    private static RubyClass regexpAllocationClass(ThreadContext context, RubyClass klass) {
+        RubyClass regexpClass = regexpClass(context);
+        return klass != null && klass.isKindOfModule(regexpClass) ? klass : regexpClass;
     }
 
     public int readUnsignedByte(ThreadContext context, RubyInputStream in) {
