@@ -57,6 +57,7 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -5142,10 +5143,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return val;
     }
 
+    // Only a deduplicated String (an FString, CRuby's RSTRING_FSTR) can't have a singleton class.
+    // Any other frozen String gets a frozen one, as other frozen objects do.
+    @CRuby(value = "singleton_class_of", file = "class.c", note = "T_STRING branch")
     public RubyClass singletonClass(ThreadContext context) {
         if (isChilled()) {
             mutateChilledString();
-        } else if (isFrozen()) {
+        } else if (this instanceof FString) {
             throw typeError(context, "can't define singleton");
         }
 
