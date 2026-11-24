@@ -2166,11 +2166,10 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
     @JRubyMethod(name = {"to_i", "to_int"})
     public IRubyObject to_int(ThreadContext context) {
         checkFloatDomain();
-        try {
-            return asFixnum(context, value.longValueExact());
-        } catch (ArithmeticException ex) {
-            return RubyBignum.bignorm(context.runtime, value.toBigInteger());
-        }
+        BigDecimal integer = value.setScale(0, RoundingMode.DOWN);
+        // up to 18 digits always fits in a long
+        if (integer.precision() < 19) return asFixnum(context, integer.longValue());
+        return RubyBignum.bignorm(context.runtime, integer.toBigInteger());
     }
 
     @Deprecated(since = "10.0.0.0")
