@@ -922,7 +922,7 @@ public final class ThreadContext {
     }
 
     /**
-     * The nearest Ruby caller, as caller_locations(1, 1) sees it, or null if there is none.
+     * The nearest Ruby caller, as caller_locations(0, 1) sees it, or null if there is none.
      */
     public RubyStackTraceElement getCallerElement() {
         return WALKER.walk(stream -> {

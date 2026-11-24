@@ -5710,6 +5710,7 @@ public final class Ruby implements Constantizable {
     /**
      * Start recording where objects are allocated, for objspace's trace_object_allocations. Calls nest.
      */
+    @CRuby(value = "trace_object_allocations_start", file = "ext/objspace/object_tracing.c")
     public void startAllocationTracing() {
         synchronized (allocationTracingLock) {
             if (allocationTracingDepth++ > 0) return;
@@ -5728,6 +5729,7 @@ public final class Ruby implements Constantizable {
     /**
      * Stop one level of allocation tracing; the last call stops recording. Extra calls do nothing.
      */
+    @CRuby(value = "trace_object_allocations_stop", file = "ext/objspace/object_tracing.c")
     public void stopAllocationTracing() {
         synchronized (allocationTracingLock) {
             if (allocationTracingDepth == 0 || --allocationTracingDepth > 0) return;
@@ -5740,6 +5742,7 @@ public final class Ruby implements Constantizable {
     /**
      * What allocation tracing recorded; it is kept after tracing stops.
      */
+    @CRuby(value = "get_traceobj_arg", file = "ext/objspace/object_tracing.c")
     public AllocationTracer getAllocationTracer() {
         synchronized (allocationTracingLock) {
             if (allocationTracer == null) allocationTracer = new AllocationTracer();

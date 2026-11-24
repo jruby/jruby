@@ -62,7 +62,7 @@ public class ObjSpaceLibrary implements Library {
     }
 
     @CRuby(value = "trace_object_allocations_debug_start", file = "ext/objspace/object_tracing.c",
-            note = "does not print allocation info when the process exits")
+            note = "does not keep entries for collected objects or add them to [BUG] reports")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject trace_object_allocations_debug_start(ThreadContext context, IRubyObject self) {
         return trace_object_allocations_start(context, self);

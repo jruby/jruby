@@ -2,6 +2,7 @@ package org.jruby.ext.objspace;
 
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,6 +37,8 @@ public class AllocationTracer {
         }
     }
 
+    @CRuby(value = "newobj_i", file = "ext/objspace/object_tracing.c",
+            note = "records path, line and generation only; Integers in long range and Floats never get here")
     public void record(Ruby runtime, IRubyObject object) {
         // a Java thread that is not running Ruby code is not adopted just to record its allocations
         SoftReference<ThreadContext> ref = runtime.getThreadService().get();
@@ -46,10 +49,11 @@ public class AllocationTracer {
         if (recording.get()) return;
         recording.set(true);
         try {
+            // without a Ruby caller CRuby still records the object, with a nil path and line 0
             RubyStackTraceElement caller = context.getCallerElement();
-            if (caller == null) return;
-
-            Info info = new Info(caller.getFileName(), caller.getLineNumber(), collectionCount());
+            Info info = caller == null ?
+                    new Info(null, 0, collectionCount()) :
+                    new Info(caller.getFileName(), caller.getLineNumber(), collectionCount());
             synchronized (allocations) {
                 allocations.put(object, info);
             }
@@ -69,6 +73,7 @@ public class AllocationTracer {
         }
     }
 
+    @CRuby(value = "lookup_allocation_info", file = "ext/objspace/object_tracing.c")
     Info get(IRubyObject object) {
         synchronized (allocations) {
             return allocations.get(object);
