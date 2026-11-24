@@ -38,8 +38,6 @@ public interface ObjectFlags {
     int CR_VALID_F   = registry.newFlag(RubyString.class);
     @Deprecated(since = "10.0.3.0")
     int CHILLED_LITERAL_F = registry.newFlag(RubyString.class);
-    @Deprecated(since = "10.0.3.0")
-    int CHILLED_SYMBOL_TO_S_F = registry.newFlag(RubyString.class);
 
     @Deprecated(since = "10.0.3.0")
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);

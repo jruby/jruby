@@ -1052,20 +1052,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     protected void mutateChilledString() {
-        byte savedFlags = flags;
-        flags &= ~(CHILLED_LITERAL|CHILLED_SYMBOL_TO_S);
-        if ((savedFlags & CHILLED_LITERAL) != 0) {
-            getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future");
-        } else if ((savedFlags & CHILLED_SYMBOL_TO_S) != 0) {
-            getRuntime().getWarnings().warnDeprecated("string returned by :" + value + ".to_s will be frozen in the future");
-        }
+        flags &= ~CHILLED_LITERAL;
+        getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future");
     }
 
     protected boolean isChilled() {
-        return (flags & (CHILLED_LITERAL | CHILLED_SYMBOL_TO_S)) != 0;
-    }
-
-    protected boolean isChilledLiteral() {
         return (flags & CHILLED_LITERAL) != 0;
     }
 
@@ -1235,13 +1226,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         protected void mutateChilledString() {
-            byte savedFlags = flags;
-            flags &= ~(CHILLED_LITERAL|CHILLED_SYMBOL_TO_S);
-            if ((savedFlags & CHILLED_LITERAL) != 0) {
-                getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future, the string was created here: " + file + ":" + line);
-            } else {
-                super.mutateChilledString();
-            }
+            flags &= ~CHILLED_LITERAL;
+            getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future, the string was created here: " + file + ":" + line);
         }
     }
 
@@ -7262,7 +7248,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod @JRubyAPI
     public IRubyObject freeze(ThreadContext context) {
-        if (isChilled()) flags &= ~(CHILLED_LITERAL|CHILLED_SYMBOL_TO_S);
+        if (isChilled()) flags &= ~CHILLED_LITERAL;
         if (isFrozen()) return this;
         resize(size());
         return super.freeze(context);
@@ -7270,11 +7256,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public RubyString chill() {
         flags |= CHILLED_LITERAL;
-        return this;
-    }
-
-    public RubyString chill_symbol_string() {
-        flags |= CHILLED_SYMBOL_TO_S;
         return this;
     }
 

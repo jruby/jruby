@@ -506,19 +506,19 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
+    /**
+     * Returns the symbol's name as a frozen String. Every call returns the same String instance.
+     * {@code id2name} and {@code name} are aliases.
+     */
+    @CRuby(value = "rb_sym2str", file = "symbol.c")
     @Override
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = {"id2name", "name"})
     public IRubyObject to_s(ThreadContext context) {
-        return fstring.strDup(context.runtime).chill_symbol_string();
-    }
-
-    final RubyString to_s(Ruby runtime) {
-        return (RubyString) to_s(runtime.getCurrentContext());
-    }
-
-    @JRubyMethod(name = "name")
-    public IRubyObject name(ThreadContext context) {
         return fstring;
+    }
+
+    public IRubyObject name(ThreadContext context) {
+        return to_s(context);
     }
 
     @Deprecated(since = "9.4-")
@@ -526,14 +526,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(getCurrentContext());
     }
 
-    @JRubyMethod
     public IRubyObject id2name(ThreadContext context) {
-        return name(context);
+        return to_s(context);
     }
 
     @Override
     public RubyString asString() {
-        return (RubyString) to_s(metaClass.runtime.getCurrentContext());
+        return fstring;
     }
 
     public RubyString fstring() {
