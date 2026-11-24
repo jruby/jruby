@@ -1602,6 +1602,35 @@ modes.each do |mode|
       end
     end
 
+    it "compiles operator calls with a non-literal argument" do
+      # the sites first see Fixnums, then Bignums, Floats and an object with coerce
+      run(<<~'RUBY') do |x|
+        class VariableOperatorCoercer; def coerce(other) = [other, 10]; end
+        def __variable_operators(a, b) = [a + b, a - b, a * b, a / b, a % b, a < b, a == b, a <=> b]
+        def __variable_bit_operators(a, b) = [a << b, a >> b, a & b, a | b, a ^ b]
+        zero = 0
+        [
+          [[3, 4], [2**62, 2**62], [-7, 2], [7, 2.5], [2**64, 3], [3, VariableOperatorCoercer.new]].map { |a, b| __variable_operators(a, b) },
+          [[1, 3], [1, 64], [-8, 1], [2**64, 1]].map { |a, b| __variable_bit_operators(a, b) },
+          (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end)
+        ]
+      RUBY
+        expect(x).to eq [
+          [[7, -1, 12, 0, 3, true, false, -1],
+           [9223372036854775808, 0, 21267647932558653966460912964485513216, 1, 0, false, true, 0],
+           [-5, -9, -14, -4, 1, true, false, -1],
+           [9.5, 4.5, 17.5, 2.8, 2.0, false, false, 1],
+           [18446744073709551619, 18446744073709551613, 55340232221128654848, 6148914691236517205, 1, false, false, 1],
+           [13, -7, 30, 0, 3, true, false, -1]],
+          [[8, 0, 1, 3, 2],
+           [18446744073709551616, 0, 0, 65, 65],
+           [-16, -4, 0, -7, -7],
+           [36893488147419103232, 9223372036854775808, 0, 18446744073709551617, 18446744073709551617]],
+          ZeroDivisionError
+        ]
+      end
+    end
+
     it "binds variable-arity calls to attributes properly" do
       run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
         expect(x).to eq(1)

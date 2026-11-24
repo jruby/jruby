@@ -36,6 +36,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
@@ -77,6 +78,13 @@ public class MathLinker {
             Bootstrap.BOOTSTRAP_DOUBLE_STRING_INT_SIG,
             false);
 
+    public static final Handle FIXNUM_BINARY_OPERATOR_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(MathLinker.class),
+            "fixnumBinaryOperatorBootstrap",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, String.class, int.class),
+            false);
+
     static { // enable DEBUG output
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
     }
@@ -111,6 +119,69 @@ public class MathLinker {
 
         site.setTarget(target);
         return site;
+    }
+
+    public static final MethodHandle FIXNUM_BINARY_OPERATOR =
+            Binder
+                    .from(methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, int.class))
+                    .invokeStaticQuiet(lookup(), MathLinker.class, "fixnumBinaryOperator");
+    private static final MethodHandle FIXNUMS_TEST =
+            Binder
+                    .from(methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class))
+                    .invokeStaticQuiet(lookup(), MathLinker.class, "fixnumsTest");
+    private static final MethodHandle FIXNUM_VALUE =
+            Binder
+                    .from(methodType(long.class, IRubyObject.class))
+                    .invokeStaticQuiet(lookup(), MathLinker.class, "fixnumValue");
+
+    // An operator site like a + b, where the argument is not a literal. The first call binds the site: to the
+    // fixnum_op_* method for the operator if both operands are Fixnums and the operator is the builtin one, or to a
+    // normal call site otherwise.
+    public static CallSite fixnumBinaryOperatorBootstrap(Lookup lookup, String name, MethodType type, int flags, String file, int line) {
+        String operator = JavaNameMangler.demangleMethodName(StringSupport.split(name, ':').get(1));
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, operator);
+
+        site.setTarget(insertArguments(FIXNUM_BINARY_OPERATOR, 4, site, flags));
+        return site;
+    }
+
+    public static IRubyObject fixnumBinaryOperator(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg, JRubyCallSite site, int flags) throws Throwable {
+        String operator = site.name;
+
+        // get the SwitchPoint before the method lookup, so a later redefinition invalidates the bound target
+        SwitchPoint switchPoint = (SwitchPoint) context.runtime.getFixnum().getInvalidator().getData();
+
+        MethodHandle fallback = NormalInvokeSite.newSite(LOOKUP, operator, site.type(), false, flags, site.file(), site.line()).dynamicInvoker();
+        MethodHandle target;
+
+        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
+
+        if (!(self instanceof RubyFixnum) || !(arg instanceof RubyFixnum) || entry == null || !entry.method.isBuiltin()) {
+            target = fallback;
+
+            if (LOG_BINDING) LOG.debug(operator + "\tFixnum binary operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound to normal invocation");
+        } else {
+            String name = "fixnum_" + MethodIndex.getFastFixnumOpsMethod(operator);
+
+            target = lookup().findStatic(MathLinker.class, name, methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, long.class));
+            target = filterArguments(target, 3, FIXNUM_VALUE);
+            target = guardWithTest(FIXNUMS_TEST, target, fallback);
+            target = switchPoint.guardWithTest(target, fallback);
+
+            if (LOG_BINDING) LOG.debug(name + "\tFixnum binary operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
+        }
+
+        site.setTarget(target);
+
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, arg);
+    }
+
+    static boolean fixnumsTest(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
+        return self instanceof RubyFixnum && arg instanceof RubyFixnum;
+    }
+
+    static long fixnumValue(IRubyObject fixnum) {
+        return ((RubyFixnum) fixnum).getValue();
     }
 
     public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
