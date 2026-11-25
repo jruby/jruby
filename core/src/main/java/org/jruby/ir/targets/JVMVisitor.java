@@ -63,7 +63,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1339,25 +1338,11 @@ public class JVMVisitor extends IRVisitor {
                 m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, arity);
                 break;
             case NORMAL:
-                if (isFixnumOperatorCall(call, arity, blockPassType)) {
-                    m.getInvocationCompiler().invokeOtherFixnumOperator(file, call);
-                } else {
-                    m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
-                }
+                m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
                 break;
         }
 
         handleCallResult(m, call.getResult());
-    }
-
-    // An operator like a + b with one non-literal argument. Literal Fixnum arguments are compiled by
-    // oneFixnumArgNoBlockCallInstr instead.
-    private static boolean isFixnumOperatorCall(CallBase call, int arity, BlockPassType blockPassType) {
-        return arity == 1 &&
-                !blockPassType.given() &&
-                !call.isPotentiallyRefined() &&
-                !ThreadContext.hasKeywords(call.getFlags()) &&
-                MethodIndex.hasFastFixnumOps(call.getId());
     }
 
     private static boolean hasLiteralSymbolKeywords(Operand[] args) {

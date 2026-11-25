@@ -1603,38 +1603,24 @@ modes.each do |mode|
     end
 
     it "compiles operator calls with a non-literal argument" do
-      # the sites first see Fixnums, then Bignums, Floats and an object with coerce
+      # each site first sees Fixnums, then other operands; public_send gives the results of a normal call
       run(<<~'RUBY') do |x|
         class VariableOperatorCoercer; def coerce(other) = [other, 10]; end
-        def __variable_operators(a, b) = [a + b, a - b, a * b, a / b, a % b, a < b, a == b, a <=> b]
-        def __variable_bit_operators(a, b) = [a << b, a >> b, a & b, a | b, a ^ b]
-        def __variable_comparisons(a, b) = [a != b, a <= b, a > b, a >= b]
-        def __float_first_plus(a, b) = a + b
+        def __arithmetic(a, b) = [a + b, a - b, a * b, a / b, a % b, a == b, a != b, a < b, a <= b, a > b, a >= b, a <=> b]
+        def __bitwise(a, b) = [a & b, a | b, a ^ b, a << b, a >> b]
+        def __plus(a, b) = a + b
+        arithmetic = [[3, 4], [2**62, 2**62], [-7, 2], [7, 2.5], [2**64, 3], [3, VariableOperatorCoercer.new]]
+        bitwise = [[1, 3], [1, 64], [-8, 1], [2**64, 1]]
         zero = 0
         [
-          [[3, 4], [2**62, 2**62], [-7, 2], [7, 2.5], [2**64, 3], [3, VariableOperatorCoercer.new]].map { |a, b| __variable_operators(a, b) },
-          [[1, 3], [1, 64], [-8, 1], [2**64, 1]].map { |a, b| __variable_bit_operators(a, b) },
+          arithmetic.reject { |a, b| __arithmetic(a, b) == %i[+ - * / % == != < <= > >= <=>].map { a.public_send(_1, b) } },
+          bitwise.reject { |a, b| __bitwise(a, b) == %i[& | ^ << >>].map { a.public_send(_1, b) } },
           (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end),
-          [[3, 4], [4, 4], [2**64, 3], [3, 2.5]].map { |a, b| __variable_comparisons(a, b) },
-          # bound to a normal call site by the first call, which is not on Fixnums
-          [__float_first_plus(1.5, 2), __float_first_plus(1, 2), __float_first_plus(2**62, 2**62)]
+          # bound to a normal call site by its first call, which is not on Fixnums
+          [__plus(1.5, 2), __plus(1, 2), __plus(2**62, 2**62)]
         ]
       RUBY
-        expect(x).to eq [
-          [[7, -1, 12, 0, 3, true, false, -1],
-           [9223372036854775808, 0, 21267647932558653966460912964485513216, 1, 0, false, true, 0],
-           [-5, -9, -14, -4, 1, true, false, -1],
-           [9.5, 4.5, 17.5, 2.8, 2.0, false, false, 1],
-           [18446744073709551619, 18446744073709551613, 55340232221128654848, 6148914691236517205, 1, false, false, 1],
-           [13, -7, 30, 0, 3, true, false, -1]],
-          [[8, 0, 1, 3, 2],
-           [18446744073709551616, 0, 0, 65, 65],
-           [-16, -4, 0, -7, -7],
-           [36893488147419103232, 9223372036854775808, 0, 18446744073709551617, 18446744073709551617]],
-          ZeroDivisionError,
-          [[true, true, false, false], [false, true, false, true], [true, false, true, true], [true, false, true, true]],
-          [3.5, 3, 9223372036854775808]
-        ]
+        expect(x).to eq [[], [], ZeroDivisionError, [3.5, 3, 2**63]]
       end
     end
 

@@ -45,16 +45,6 @@ public interface InvocationCompiler {
     void invokeOtherOneFloat(String file, CallBase call, double flote);
 
     /**
-     * Invoke an operator with a Fixnum fast path (see MethodIndex.hasFastFixnumOps) and one non-literal argument on an
-     * object other than self. The call must not be potentially refined.
-     * <p>
-     * Stack required: context, caller, receiver, argument
-     */
-    default void invokeOtherFixnumOperator(String file, CallBase call) {
-        invokeOther(file, null, call, 1);
-    }
-
-    /**
      * Invoke a method on self.
      *
      * Stack required: context, caller, self, all arguments, optional block

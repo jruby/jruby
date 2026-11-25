@@ -56,6 +56,9 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         } else {
             if (arity == -1) {
                 compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
+            } else if (arity == 1 && MethodIndex.hasFastFixnumOps(id) && !ThreadContext.hasKeywords(flags)) {
+                // an operator like a + b; a literal Fixnum argument goes through invokeOtherOneFixnum instead
+                compiler.adapter.invokedynamic("fixnumBinaryOperator:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), MathLinker.FIXNUM_BINARY_OPERATOR_BOOTSTRAP, flags, file, compiler.getLastLine());
             } else {
                 compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
             }
@@ -86,17 +89,6 @@ public class IndyInvocationCompiler implements InvocationCompiler {
                 MathLinker.FIXNUM_OPERATOR_BOOTSTRAP,
                 fixnum,
                 call.getCallType().ordinal(),
-                file,
-                compiler.getLastLine());
-    }
-
-    @Override
-    public void invokeOtherFixnumOperator(String file, CallBase call) {
-        compiler.adapter.invokedynamic(
-                "fixnumBinaryOperator:" + JavaNameMangler.mangleMethodName(call.getId()),
-                sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)),
-                MathLinker.FIXNUM_BINARY_OPERATOR_BOOTSTRAP,
-                call.getFlags(),
                 file,
                 compiler.getLastLine());
     }
