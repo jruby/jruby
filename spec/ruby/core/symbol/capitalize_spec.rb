@@ -38,4 +38,8 @@ describe "Symbol#capitalize" do
   it "leaves non-alphabetic ASCII characters as they were" do
     "Glark?!?".to_sym.capitalize.should == :"Glark?!?"
   end
+
+  it "returns the whole result when it is much longer than self" do
+    ("\u0130" * 30).to_sym.capitalize.should == ("\u0130" + "i\u0307" * 29).to_sym
+  end
 end

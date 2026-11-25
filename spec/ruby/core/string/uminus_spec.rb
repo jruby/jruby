@@ -50,4 +50,26 @@ describe 'String#-@' do
     (-dynamic).should_not.equal?((-"this string is frozen").freeze)
     (-dynamic).should.equal?(-dynamic)
   end
+
+  it "returns a frozen copy and does not freeze self if the String is not frozen and has instance variables" do
+    input = %w(this string has an ivar).join(' ')
+    input.instance_variable_set(:@a, 1)
+    output = -input
+
+    output.should.frozen?
+    output.should_not.equal?(input)
+    output.should == 'this string has an ivar'
+    input.should_not.frozen?
+  end
+
+  it "returns a frozen copy and does not freeze self if the String is not frozen and is an instance of a subclass" do
+    subclass = Class.new(String)
+    input = subclass.new('foo')
+    output = -input
+
+    output.should.frozen?
+    output.should_not.equal?(input)
+    output.should == 'foo'
+    input.should_not.frozen?
+  end
 end

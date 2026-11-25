@@ -46,6 +46,35 @@ describe 'TracePoint#enable' do
         trace.should_not.enabled?
       end
     end
+
+    it 'runs the hook on another thread while the hook is running on this thread' do
+      main = Thread.current
+      go = Queue.new
+      thread = Thread.new { go.pop; TracePointSpec.test }
+      joined = other = main_event = nil
+      trace = TracePoint.new(:call) do |tp|
+        if Thread.current == main && tp.method_id == :foo
+          go << true
+          joined = thread.join(5)
+          main_event = [tp.event, tp.method_id]
+        elsif Thread.current == thread && tp.method_id == :test
+          other = [tp.event, tp.method_id]
+        end
+      end
+
+      trace.enable
+      begin
+        TracePointSpec::B.new.foo
+      ensure
+        trace.disable
+        go << true
+        thread.join
+      end
+
+      joined.should == thread
+      other.should == [:call, :test]
+      main_event.should == [:call, :foo]
+    end
   end
 
   describe 'with a block' do
@@ -244,6 +273,23 @@ describe 'TracePoint#enable' do
       ScratchPad.recorded.should == [:foo]
     end
 
+    it 'does not trace other methods defined on the same line' do
+      trace = TracePoint.new(:call) do |tp|
+        next unless TracePointSpec.target_thread?
+        ScratchPad << tp.method_id
+      end
+
+      obj = Object.new
+      def obj.foo; end; def obj.bar; end
+
+      trace.enable(target: obj.method(:foo)) do
+        obj.bar
+        obj.foo
+      end
+
+      ScratchPad.recorded.should == [:foo]
+    end
+
     it "traces some events in nested blocks" do
       klass = Class.new do
         def foo
@@ -350,6 +396,38 @@ describe 'TracePoint#enable' do
         trace.enable(target: Object.new) do
         end
       }.should.raise(ArgumentError, /specified target is not supported/)
+    end
+
+    it "accepts the target passed through a ruby2_keywords method" do
+      trace = TracePoint.new(:call) do |tp|
+        next unless TracePointSpec.target_thread?
+        ScratchPad << tp.method_id
+      end
+
+      obj = Object.new
+      def obj.foo; end
+      def obj.bar; end
+      delegate = Class.new { ruby2_keywords def enable(tp, *args, &block) = tp.enable(*args, &block) }.new
+
+      delegate.enable(trace, target: obj.method(:foo)) do
+        obj.bar
+        obj.foo
+      end
+
+      ScratchPad.recorded.should == [:foo]
+    end
+
+    it "does not accept a ruby2_keywords Hash that is not splatted" do
+      trace = TracePoint.new(:call) {}
+
+      obj = Object.new
+      def obj.foo; end
+      options = Class.new { ruby2_keywords def options(*args) = args.last }.new.options(target: obj.method(:foo))
+
+      -> {
+        trace.enable(options) do
+        end
+      }.should.raise(ArgumentError, /wrong number of arguments/)
     end
 
     context "nested enabling and disabling" do
@@ -533,6 +611,15 @@ describe 'TracePoint#enable' do
         trace.enable(target_line: Object.new, target: -> { }) do
         end
       }.should.raise(TypeError, /no implicit conversion of \w+? into Integer/)
+    end
+
+    it "raises RangeError if :target_line value does not fit in an unsigned int" do
+      trace = TracePoint.new(:line) {}
+
+      -> {
+        trace.enable(target_line: 2**32, target: -> { }) do
+        end
+      }.should.raise(RangeError)
     end
 
     it "raises ArgumentError if :target_line value is negative" do

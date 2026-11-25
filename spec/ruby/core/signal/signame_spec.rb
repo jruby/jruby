@@ -5,6 +5,12 @@ describe "Signal.signame" do
     Signal.signame(0).should == "EXIT"
   end
 
+  it "returns a name for each signal number in Signal.list" do
+    Signal.list.each_value do |signo|
+      Signal.list[Signal.signame(signo)].should == signo
+    end
+  end
+
   it "returns nil if the argument is an invalid signal number" do
     Signal.signame(-1).should == nil
   end
@@ -23,6 +29,11 @@ describe "Signal.signame" do
     obj = mock('signal')
     obj.should_receive(:to_int).and_return('not an int')
     -> { Signal.signame(obj) }.should.raise(TypeError)
+  end
+
+  it "raises a RangeError when the passed argument is out of range of int" do
+    -> { Signal.signame(2**31) }.should.raise(RangeError)
+    -> { Signal.signame(-2**31 - 1) }.should.raise(RangeError)
   end
 
   platform_is_not :windows do

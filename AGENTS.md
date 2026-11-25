@@ -29,6 +29,7 @@ Go through the [checklist before review](CONTRIBUTING.md#checklist-before-review
 * Write short comments that say what the code does now and why. Don't narrate how the code used to work, what you changed, or what you tried first. Don't add comment blocks that repeat what the code says.
 * Don't edit generated files. `RubyParser.java` and `RipperParser.java` come from `RubyParser.y` (see below).
 * Stay in scope. If you notice something else worth fixing, note it for the person you work for instead of fixing it in the same change.
+* Don't needlessly reformat code if that is not the primary purpose of the change. Keep diffs minimal and topical.
 
 ## Writing tests
 

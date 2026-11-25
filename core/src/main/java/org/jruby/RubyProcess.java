@@ -79,6 +79,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.ToIntFunction;
 
 import static org.jruby.api.Convert.asBoolean;
@@ -1105,7 +1107,93 @@ public class RubyProcess {
 
     }
 
+    private record NativeWaitResult(int result, int errno) {}
+
+    // Native waits pin virtual-thread carriers. Run just the syscall on a platform
+    // worker, keeping Ruby state and interrupt handling on the calling Ruby thread.
+    private static final class NativeWait {
+        private final ThreadContext context;
+        private final ToIntFunction<ThreadContext> blockingCall;
+        private final boolean signalable = !Platform.IS_WINDOWS && Options.NATIVE_PTHREAD_KILL.load()
+                && NATIVE_THREAD_SIGNAL != null && NATIVE_THREAD_CURRENT != null;
+        private long threadID;
+        private boolean interrupted;
+
+        private NativeWait(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+            this.context = context;
+            this.blockingCall = blockingCall;
+        }
+
+        private NativeWaitResult call() {
+            POSIX posix = context.runtime.getPosix();
+            try {
+                synchronized (this) {
+                    if (signalable) {
+                        if (interrupted) return new NativeWaitResult(-1, jnr.constants.platform.Errno.EINTR.intValue());
+                        threadID = (long) NATIVE_THREAD_CURRENT.invokeExact();
+                    }
+                }
+                try {
+                    posix.errno(0);
+                    int result = blockingCall.applyAsInt(context);
+                    // errno belongs to the native worker, not the virtual caller.
+                    return new NativeWaitResult(result, posix.errno());
+                } finally {
+                    synchronized (this) {
+                        threadID = 0;
+                    }
+                }
+            } catch (Throwable t) {
+                throwException(t);
+                return null; // unreachable
+            }
+        }
+
+        private int await() {
+            NativeWaitResult result;
+            try {
+                result = CompletableFuture.supplyAsync(this::call, context.runtime.getExecutor()).join();
+            } catch (CompletionException e) {
+                throwException(e.getCause());
+                return 0; // unreachable
+            }
+            context.runtime.getPosix().errno(result.errno());
+            return result.result();
+        }
+
+        private synchronized void wakeup() {
+            if (!signalable) return; // Match the existing uninterruptible fallback.
+            interrupted = true;
+            if (threadID == 0) return;
+            try {
+                NATIVE_THREAD_SIGNAL.invokeExact(threadID);
+            } catch (Throwable t) {
+                throwException(t);
+            }
+        }
+    }
+
+    private static final RubyThread.Task<NativeWait, Integer> NATIVE_WAIT_TASK = new RubyThread.Task<>() {
+        @Override
+        public Integer run(ThreadContext context, NativeWait wait) {
+            return wait.await();
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, NativeWait wait) {
+            wait.wakeup();
+        }
+    };
+
     private static int pthreadKillable(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+        if (Thread.currentThread().isVirtual()) {
+            try {
+                return context.getThread().executeTaskBlocking(context, new NativeWait(context, blockingCall), NATIVE_WAIT_TASK);
+            } catch (InterruptedException e) {
+                throwException(e);
+                return 0; // unreachable: NativeWait joins its future without Java interruption.
+            }
+        }
         if (Platform.IS_WINDOWS
                 || !Options.NATIVE_PTHREAD_KILL.load()
                 || NATIVE_THREAD_SIGNAL == null

@@ -1954,20 +1954,24 @@ public final class StringSupport {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
 
-    // MRI: rb_str_update, first half
     public static void strUpdate(ThreadContext context, int beg, int len, RubyString source, RubyString repl) {
+        strUpdate(context, (long) beg, (long) len, source, repl);
+    }
+
+    @CRuby(value = "rb_str_update", file = "string.c", note = "bounds check")
+    public static void strUpdate(ThreadContext context, long beg, long len, RubyString source, RubyString repl) {
         if (len < 0) throw indexError(context, "negative length " + len);
 
         int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
 
-        if (slen < beg) throw indexError(context, "index " + beg + " out of string");
-        if (beg < 0) {
-            if (-beg > slen) throw indexError(context, "index " + beg + " out of string");
-            beg += slen;
+        if (slen < beg || (beg < 0 && beg + slen < 0)) {
+            throw indexError(context, "index " + beg + " out of string");
         }
-        if (slen < len || slen < beg + len) len = slen - beg;
+        if (beg < 0) beg += slen;
+        if (len > slen - beg) len = slen - beg;
 
-        strUpdate(beg, len, source, repl);
+        // both are within slen now
+        strUpdate((int) beg, (int) len, source, repl);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
@@ -2911,25 +2915,29 @@ public final class StringSupport {
         pp.value = src.getBegin();
         int end = src.getRealSize() + pp.value;
         byte[]bytes = src.getUnsafeBytes();
-        int tgtLen = 0;
+        long tgtLen = 0;
 
         int buffers = 0;
         MappingBuffer root = new MappingBuffer();
         MappingBuffer buffer = root;
         while (pp.value < end) {
-            buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
+            // grow the multiplier with the buffer count to converge quickly, but never past the largest Java array
+            long capa = (long) (end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH;
+            buffer.next = new MappingBuffer((int) Math.min(capa, Helpers.MAX_ARRAY_SIZE));
             buffer = buffer.next;
             int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
             if (len < 0) throw argumentError(context, "input string invalid");
             buffer.used = len;
             tgtLen += len;
+            if (tgtLen > Helpers.MAX_ARRAY_SIZE) throw argumentError(context, "string size too big");
         }
 
         final ByteList tgt;
         if (buffers == 1) {
             tgt = new ByteList(buffer.bytes, 0, buffer.used, enc, false);
         } else {
-            tgt = new ByteList(tgtLen);
+            tgt = new ByteList((int) tgtLen);
+            tgt.setRealSize((int) tgtLen);
             tgt.setEncoding(enc);
             buffer = root.next;
             int tgtPos = 0;
@@ -2953,32 +2961,18 @@ public final class StringSupport {
         asciiOnlyCaseMap(context, value, flags, ASCIIEncoding.INSTANCE);
     }
 
-    // Walks characters in enc, so invalid bytes raise and capitalize titlecases the first character, not byte.
     // ASCII letters keep their length in every encoding, so the mapping is done in place.
     @CRuby(value = "rb_str_ascii_casemap", file = "string.c")
-    @CRuby(value = "onigenc_ascii_only_case_map", file = "regenc.c")
     public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flagsP, Encoding enc) {
         if (value.getRealSize() == 0) return;
         int p = value.getBegin();
         int end = p + value.getRealSize();
         byte[] bytes = value.getUnsafeBytes();
-        int flags = flagsP.value;
 
-        while (p < end) {
-            int n = preciseLength(enc, bytes, p, end);
-            if (!MBCLEN_CHARFOUND_P(n)) throw argumentError(context, "input string invalid");
-            int code = enc.mbcToCode(bytes, p, end);
-            if ('a' <= code && code <= 'z' && (flags & Config.CASE_UPCASE) != 0) {
-                flags |= Config.CASE_MODIFIED;
-                enc.codeToMbc(code - ('a' - 'A'), bytes, p);
-            } else if ('A' <= code && code <= 'Z' && (flags & (Config.CASE_DOWNCASE | Config.CASE_FOLD)) != 0) {
-                flags |= Config.CASE_MODIFIED;
-                enc.codeToMbc(code + ('a' - 'A'), bytes, p);
-            }
-            p += MBCLEN_CHARFOUND_LEN(n);
-            if ((flags & Config.CASE_TITLECASE) != 0) flags ^= Config.CASE_UPCASE | Config.CASE_DOWNCASE | Config.CASE_TITLECASE;
-        }
-        flagsP.value = flags;
+        IntHolder pp = new IntHolder();
+        pp.value = p;
+        int len = enc.asciiOnlyCaseMap(flagsP, bytes, pp, end, bytes, p, end);
+        if (len < 0) throw argumentError(context, "input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {

@@ -400,6 +400,24 @@ public class Convert {
         return (int) num;
     }
 
+    public static final long UNSIGNED_INT_MAX = 4_294_967_295L;
+
+    /**
+     * Check to make sure the long num given will fit into an unsigned int, as CRuby's NUM2UINT does. Like CRuby,
+     * this also accepts negative values that fit into an int.
+     *
+     * @param context the current thread context
+     * @param num the long to check
+     * @return the bits of the unsigned int value
+     */
+    @CRuby(value = "check_uint", file = "numeric.c")
+    public static int checkUnsignedInt(ThreadContext context, long num) {
+        if (num < Integer.MIN_VALUE) throw rangeError(context, "integer " + num + " too small to convert to 'unsigned int'");
+        if (num > UNSIGNED_INT_MAX) throw rangeError(context, "integer " + num + " too big to convert to 'unsigned int'");
+
+        return (int) num;
+    }
+
     /**
      * Create a Ruby Boolean from a java boolean.
      * @param context the current thread context

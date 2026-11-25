@@ -42,6 +42,15 @@ describe "Module#deprecate_constant" do
         Warning[:deprecated] = deprecated
       end
     end
+
+    it "names the module without calling #to_s" do
+      @module.deprecate_constant :PUBLIC1
+      def @module.to_s
+        raise "to_s called"
+      end
+
+      -> { @module::PUBLIC1 }.should complain(/warning: constant #<Module:0x\h+>::PUBLIC1 is deprecated/)
+    end
   end
 
   ruby_bug '#20900', ''...'3.4' do
@@ -50,6 +59,44 @@ describe "Module#deprecate_constant" do
         @module.deprecate_constant :PUBLIC1
         -> { @module.module_eval {remove_const :PUBLIC1} }.should complain(/warning: constant .+::PUBLIC1 is deprecated/)
       end
+    end
+  end
+
+  describe "when reassigning the deprecated constant" do
+    it "warns that it is already initialized but not that it is deprecated" do
+      @module.deprecate_constant :PUBLIC1
+
+      deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = true
+        -> {
+          @module.const_set :PUBLIC1, :new_value
+        }.should complain(/\A(?!.*is deprecated).*already initialized constant .+::PUBLIC1/m)
+      ensure
+        Warning[:deprecated] = deprecated
+      end
+    end
+
+    it "keeps the constant deprecated" do
+      @module.deprecate_constant :PUBLIC1
+      -> { @module.const_set :PUBLIC1, :new_value }.should complain(/already initialized constant/)
+
+      -> { @module::PUBLIC1 }.should complain(/warning: constant .+::PUBLIC1 is deprecated/)
+    end
+  end
+
+  describe "when changing the visibility of the deprecated constant" do
+    it "keeps the constant deprecated after private_constant" do
+      @module.deprecate_constant :PUBLIC1
+      @module.private_constant :PUBLIC1
+
+      -> { @module.const_get :PUBLIC1 }.should complain(/warning: constant .+::PUBLIC1 is deprecated/)
+    end
+
+    it "keeps the constant deprecated after public_constant" do
+      @module.public_constant :PRIVATE
+
+      -> { @module::PRIVATE }.should complain(/warning: constant .+::PRIVATE is deprecated/)
     end
   end
 
@@ -62,6 +109,31 @@ describe "Module#deprecate_constant" do
 
   it "returns self" do
     @module.deprecate_constant(:PUBLIC1).should.equal?(@module)
+  end
+
+  describe "with a non-ASCII constant name" do
+    before :each do
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
+      Encoding.default_internal = nil
+      @module.const_set "X\u{5b9a 6570}", @value
+      @module.deprecate_constant "X\u{5b9a 6570}"
+    end
+
+    after :each do
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+    end
+
+    it "includes the name in the warning" do
+      Encoding.default_external = Encoding::UTF_8
+      -> { @module.const_get "X\u{5b9a 6570}" }.should complain(/warning: constant .+::X\u{5b9a 6570} is deprecated/)
+    end
+
+    it "escapes the name in the warning if the default external encoding cannot show it" do
+      Encoding.default_external = Encoding::US_ASCII
+      -> { @module.const_get "X\u{5b9a 6570}" }.should complain(/warning: constant .+::X\\u5B9A\\u6570 is deprecated/)
+    end
   end
 
   it "raises a NameError when given an undefined name" do

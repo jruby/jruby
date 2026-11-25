@@ -62,6 +62,31 @@ describe "Kernel#system" do
     -> { system("sad") }.should output_to_fd("", STDERR)
   end
 
+  describe "with redirect options" do
+    before :each do
+      @name = tmp("kernel_system.txt")
+    end
+
+    after :each do
+      rm_r @name
+    end
+
+    it "redirects STDOUT to the given file if out: String" do
+      system(ruby_cmd("print :glark"), out: @name)
+      File.read(@name).should == "glark"
+    end
+
+    it "does not write to STDERR if err: File::NULL" do
+      code = "require 'rbconfig'; system(RbConfig.ruby, '-e', 'STDERR.print :glark', err: File::NULL)"
+      ruby_exe(code, args: "2>&1").should == ""
+    end
+
+    it "redirects STDERR to child STDOUT if err: [:child, :out]" do
+      system(ruby_cmd("print :glark; STDOUT.flush; STDERR.print :bang"), out: @name, err: [:child, :out])
+      File.read(@name).should == "glarkbang"
+    end
+  end
+
   platform_is_not :windows do
     before :each do
       @shell = ENV['SHELL']

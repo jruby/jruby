@@ -80,7 +80,7 @@ public class Mutex extends RubyObject implements DataType {
         }
     }
 
-    private static final class SchedulerWaiters extends ArrayDeque<FiberWaiter> {}
+    static final class SchedulerWaiters extends ArrayDeque<FiberWaiter> {}
 
     /** Fibers blocked in {@link #lock} through a fiber scheduler, created by the first one. MRI: mutex waitq */
     private volatile SchedulerWaiters schedulerWaiters;

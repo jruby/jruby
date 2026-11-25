@@ -120,6 +120,8 @@ public class TraceInstr extends TwoOperandInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
+        // TracePoint#binding exposes this scope's locals
+        flags.add(IRFlags.BINDING_HAS_ESCAPED);
         return true;
     }
 }

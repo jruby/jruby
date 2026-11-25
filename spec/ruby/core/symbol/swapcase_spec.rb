@@ -26,4 +26,8 @@ describe "Symbol#swapcase" do
   it "leaves non-alphabetic ASCII characters as they were" do
     "Glark?!?".to_sym.swapcase.should == :"gLARK?!?"
   end
+
+  it "returns the whole result when it is much longer than self" do
+    ("\u0390" * 30).to_sym.swapcase.should == ("\u0399\u0308\u0301" * 30).to_sym
+  end
 end

@@ -1714,6 +1714,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand closureRetVal = body == null ? nil() : build(body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // The block is at its end line while the hook runs, as a method is for :return
+            addInstr(new LineNumberInstr(endLine));
             addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(closureRetVal)));
         }
 
@@ -1730,10 +1732,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-    }
-
-    public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        return buildLambda(args, body, staticScope, signature, line, -1, -1, -1);
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
@@ -1757,11 +1755,21 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         Variable methodCoverage = receiveMethodCoverage();
 
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
         receiveBlockArgs(blockArgs);
 
         coverMethod(methodCoverage);
 
         Operand closureRetVal = build(body);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // The lambda is at its end line while the hook runs, as a method is for :return
+            addInstr(new LineNumberInstr(scope.getEndLine()));
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), scope.getEndLine() + 1, traceValue(closureRetVal)));
+        }
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
@@ -3195,7 +3203,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine, traceValue(rv)));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(rv)));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));

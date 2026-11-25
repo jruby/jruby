@@ -22,6 +22,10 @@ describe "String#downcase" do
       "ÄÖÜ".downcase.should == "äöü"
     end
 
+    it "returns the whole result when it is much longer than self" do
+      ("\u0130" * 30).downcase.should == "i\u0307" * 30
+    end
+
     it "updates string metadata" do
       downcased = "\u{212A}ING".downcase
 
@@ -91,6 +95,10 @@ describe "String#downcase" do
     it "case folds ASCII letters" do
       "ABC".downcase(:fold).should == "abc"
       "aB\xE4".b.downcase(:fold).should == "ab\xE4".b
+    end
+
+    it "returns the whole result when it is much longer than self" do
+      ("\u0390" * 30).downcase(:fold).should == "\u03B9\u0308\u0301" * 30
     end
   end
 

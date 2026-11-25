@@ -1,5 +1,3 @@
-exclude :test_AREF_underflow, "needs investigation"
-exclude :test_ASET, "expected behavior; JRuby can only do int range offsets into a string (integer -9223372036854775808 too small to convert to `int')"
 exclude :test_crypt, "no working assert_no_memory_leak method"
 exclude :test_delete_prefix_bang_broken_encoding, "needs investigation"
 exclude :test_delete_prefix_broken_encoding, "needs investigation"
@@ -24,5 +22,4 @@ exclude :test_strip_bang_with_chars, "selectors are not yet supported (https://g
 exclude :test_strip_with_selectors, "selectors are not yet supported (https://github.com/jruby/jruby/issues/9267)"
 exclude :test_sum_2, "needs investigation"
 exclude :test_uminus_dedup_in_place, "depends on MRI-specific interning behavior"
-exclude :test_uminus_no_freeze_not_bare, "work in progress"
 exclude :test_undump, "unfinished in initial 2.6 work, #6161"
