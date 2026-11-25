@@ -109,6 +109,22 @@ class TestBuiltins < Test::Unit::TestCase
     end
   end
 
+  def test_operator_with_variable_argument_honors_redefinition
+    [
+      'class Integer; def +(other) = :redefined; end',
+      'Integer.prepend(Module.new { def +(other) = :redefined })',
+      'class Integer; def method_missing(*) = :redefined; end; class Integer; undef_method :+; end'
+    ].each do |redefinition|
+      result = run_in_sub_runtime(<<~RUBY)
+        def plus(a, b) = a + b
+        before = 3.times.map { plus(1, 2) }
+        #{redefinition}
+        [before, plus(1, 2)].inspect
+      RUBY
+      assert_equal '[[3, 3, 3], :redefined]', result, redefinition
+    end
+  end
+
   def test_sort_honors_redefined_comparison
     [
       'Integer.prepend(Module.new { def <=>(other) = -super })',
