@@ -764,15 +764,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 break;
             case ZEROARGNODE:
                 throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
-            case MULTIPLEASGNNODE: { // only for 'for' nodes.
-                ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
-                int i = 0;
-                for (Node an: sourceArray.children()) {
-                    buildBlockArgsAssignment(an, null, i, false);
-                    i++;
-                }
-                break;
-            }
             default:
                 throw notCompilable("Can't build assignment node", node);
         }
@@ -2146,8 +2137,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
-        } else  {
-            // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
+        } else if (args instanceof MultipleAsgnNode masgn) {
+            // for loops with several targets: destructure the received values like `a, (b, c), *d = values`.
+            Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, false));
+            buildMultipleAssignment(masgn, addResultInstr(new ReceiveRestArgInstr(temp(), keywords, 0, 0)));
+        } else {
+            // for loops with a single target
             buildBlockArgsAssignment(args, null, 0, false);
         }
     }

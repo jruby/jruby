@@ -315,13 +315,13 @@ public class Signature {
             MultipleAsgnNode masgn = (MultipleAsgnNode)var;
             Rest rest = masgn.getRest() == null ? Rest.NONE : restFromArg(masgn.getRest());
 
-            // 'for' can only have rest and pre args (no post or opt).  If var is a masgn then it is either
+            // 'for' can have pre, rest and post args (no opt).  If var is a masgn then it is either
             // n > 1 args, it includes rest, or it is a special case (for th, in @bleh).  In this last case,
             // we need to increase the arg count by one so our iter arg passing code will destructure the
             // incoming args array and not just pass it through as a single value.
             int argCount = masgn.getPreCount();
             if (rest == Rest.NONE && argCount == 1) argCount = 2;
-            return Signature.from(argCount, 0, 0, 0, 0, rest, -1);
+            return Signature.from(argCount, 0, masgn.getPostCount(), 0, 0, rest, -1);
         }
         return Signature.ONE_ARGUMENT;
     }
