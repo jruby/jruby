@@ -130,6 +130,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 info.getParameterDesc(),
                 min,
                 max,
+                desc1.anno.checkArity(),
                 generators[0],
                 generators[1],
                 generators[2],
