@@ -187,7 +187,7 @@ public class TraceType {
         else if (style.equalsIgnoreCase("ruby_framed")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("normal")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("full")) return new TraceType(Gather.FULL, Format.JRUBY);
-        else if (style.equalsIgnoreCase("mri")) return new TraceType(Gather.NORMAL, Format.MRI);
+        else if (style.equalsIgnoreCase("mri")) return new TraceType(Gather.CALLER, Format.MRI);
         else return new TraceType(Gather.NORMAL, Format.JRUBY);
     }
 
@@ -241,7 +241,7 @@ public class TraceType {
         },
 
         /**
-         * Normal Ruby-style backtrace, showing only Ruby and core class methods.
+         * Normal JRuby-style backtrace, showing internal and external Ruby lines and bound core class methods.
          */
         NORMAL {
             public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
