@@ -181,18 +181,19 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    private void setSignature(final int minArity, final int maxArity, final int minVarArgsArity) {
+    public static Signature calculateSignature(final int minArity, final int maxArity, final int minVarArgsArity) {
         if ( minVarArgsArity == -1 ) { // no var-args
             if ( minArity == maxArity ) {
-                setSignature(Signature.from(minArity, 0, 0, 0, 0, Signature.Rest.NONE, -1));
+                return Signature.from(minArity, 0, 0, 0, 0, Signature.Rest.NONE, -1);
             }
-            else { // multiple overloads
-                setSignature(Signature.from(minArity, maxArity - minArity, 0, 0, 0, Signature.Rest.NONE, -1));
-            }
+            // multiple overloads
+            return Signature.from(minArity, maxArity - minArity, 0, 0, 0, Signature.Rest.NONE, -1);
         }
-        else {
-            setSignature(Signature.from(minVarArgsArity < minArity ? minVarArgsArity : minArity, 0, 0, 0, 0, Signature.Rest.NORM, -1));
-        }
+        return Signature.from(minVarArgsArity < minArity ? minVarArgsArity : minArity, 0, 0, 0, 0, Signature.Rest.NORM, -1);
+    }
+
+    private void setSignature(final int minArity, final int maxArity, final int minVarArgsArity) {
+        setSignature(calculateSignature(minArity, maxArity, minVarArgsArity));
     }
 
     final void setupNativeCall() { // if it's not overloaded, set up a NativeCall

@@ -29,7 +29,12 @@ package org.jruby.java.proxies;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -52,6 +57,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -348,32 +354,38 @@ public class JavaInterfaceTemplate {
 
         final Class<?> ifaceClass = JavaUtil.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
+            Map<String, List<Method>> methodsByName = new LinkedHashMap<>();
             for ( Method method : ifaceClass.getMethods() ) {
-                BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());
-                if ( method.isBridge() || method.isSynthetic() ) continue;
-                if ( Modifier.isStatic( method.getModifiers() ) ) continue;
+                if (method.isBridge() || method.isSynthetic() || Modifier.isStatic(method.getModifiers())) continue;
+
                 // override default methods (by default) - users should pass down method names or impl(false) { ... }
                 if ( ! allMethods && ! Modifier.isAbstract( method.getModifiers() ) ) continue;
-                implClass.addMethodInternal(context, method.getName(), implMethod); // might add twice - its fine
+                methodsByName.computeIfAbsent(method.getName(), k -> new ArrayList<>(2)).add(method);
+            }
+            for ( Map.Entry<String, List<Method>> entry : methodsByName.entrySet() ) {
+                final String name = entry.getKey();
+                Signature sig = JavaUtil.getSignatureFromMethods(entry.getValue());
+                BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(name, sig);
+                implClass.addMethodInternal(context, name, implMethod);
             }
         }
         else {
-            final Method[] decMethods = ifaceClass.getDeclaredMethods();
-            loop: for ( IRubyObject methodName : methodNames ) {
+            Map<String, List<Method>> methodsByName = new HashMap<>();
+            for ( Method method : ifaceClass.getMethods() ) {
+                if (method.isBridge() || method.isSynthetic() || Modifier.isStatic(method.getModifiers())) continue;
+
+                methodsByName.computeIfAbsent(method.getName(), k -> new ArrayList<>(2)).add(method);
+            }
+            for ( IRubyObject methodName : methodNames ) {
                 final String name = methodName.toString();
-                final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(name);
-                for ( int i = 0; i < decMethods.length; i++ ) {
-                    final Method method = decMethods[i];
-                    if ( method.isBridge() || method.isSynthetic() ) continue;
-                    if ( Modifier.isStatic( method.getModifiers() ) ) continue;
-                    // add if its a declared method of the interface or its super-interfaces
-                    if ( name.equals(decMethods[i].getName()) ) {
-                        implClass.addMethodInternal(context, name, implMethod);
-                        continue loop;
-                    }
+                final List<Method> methods = methodsByName.get(name);
+                if (methods != null) {
+                    Signature sig = JavaUtil.getSignatureFromMethods(methods);
+                    BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(name, sig);
+                    implClass.addMethodInternal(context, name, implMethod);
+                } else {
+                    warn(context, "'" + name + "' is not a declared method in interface " + ifaceClass.getName());
                 }
-                // did not continue (main) loop - passed method name not found in interface
-                warn(context, "'" + name + "' is not a declared method in interface " + ifaceClass.getName());
             }
         }
 
@@ -431,12 +443,15 @@ public class JavaInterfaceTemplate {
 
         public DynamicMethod dup() { return this; }
 
-        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
+        final ConcreteMethod getConcreteMethod(String name, Signature signature) {
+            return new ConcreteMethod(name, signature);
+        }
 
         private final class ConcreteMethod extends JavaMethod {
 
-            ConcreteMethod(String name) {
+            ConcreteMethod(String name, Signature signature) {
                 super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC, name);
+                setSignature(signature);
             }
 
             @Override
