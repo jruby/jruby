@@ -84,6 +84,21 @@ describe "Fiber#kill" do
     ensure_executed.should == true
   end
 
+  it "finishes the ensure block when the ensure kills a non-resumed fiber" do
+    ScratchPad.record []
+
+    fiber = Fiber.new do
+      while true; Fiber.yield; end
+    ensure
+      Fiber.new {}.kill
+      ScratchPad << :after_kill
+    end
+
+    fiber.resume
+    fiber.kill
+    ScratchPad.recorded.should == [:after_kill]
+  end
+
   it "does not execute rescue block" do
     rescue_executed = false
 
