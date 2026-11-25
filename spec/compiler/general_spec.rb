@@ -1608,19 +1608,25 @@ modes.each do |mode|
         class VariableOperatorCoercer; def coerce(other) = [other, 10]; end
         def __arithmetic(a, b) = [a + b, a - b, a * b, a / b, a % b, a == b, a != b, a < b, a <= b, a > b, a >= b, a <=> b]
         def __bitwise(a, b) = [a & b, a | b, a ^ b, a << b, a >> b]
-        def __plus(a, b) = a + b
         arithmetic = [[3, 4], [2**62, 2**62], [-7, 2], [7, 2.5], [2**64, 3], [3, VariableOperatorCoercer.new]]
         bitwise = [[1, 3], [1, 64], [-8, 1], [2**64, 1]]
         zero = 0
         [
           arithmetic.reject { |a, b| __arithmetic(a, b) == %i[+ - * / % == != < <= > >= <=>].map { a.public_send(_1, b) } },
           bitwise.reject { |a, b| __bitwise(a, b) == %i[& | ^ << >>].map { a.public_send(_1, b) } },
-          (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end),
-          # bound to a normal call site by its first call, which is not on Fixnums
-          [__plus(1.5, 2), __plus(1, 2), __plus(2**62, 2**62)]
+          (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end)
         ]
       RUBY
-        expect(x).to eq [[], [], ZeroDivisionError, [3.5, 3, 2**63]]
+        expect(x).to eq [[], [], ZeroDivisionError]
+      end
+    end
+
+    it "compiles an operator call with a non-literal argument whose first call is not on Fixnums" do
+      run(<<~'RUBY') do |x|
+        def __plus(a, b) = a + b
+        [__plus(1.5, 2), __plus(1, 2), __plus(2**62, 2**62)]
+      RUBY
+        expect(x).to eq [3.5, 3, 2**63]
       end
     end
 
