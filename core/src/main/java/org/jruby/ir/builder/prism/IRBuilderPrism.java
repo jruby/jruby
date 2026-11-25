@@ -558,30 +558,17 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         staticScope.markImplicitVariable(slot & 0xffff);
     }
 
-    protected Variable receiveBlockArg(Variable v, Operand argsArray, int argIndex, boolean isSplat) {
-        if (argsArray != null) {
-            // We are in a nested receive situation -- when we are not at the root of a masgn tree
-            // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
-            addInstr(new RestArgMultipleAsgnInstr(v, argsArray, argIndex));
-        } else {
-            // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
-            // For example, for-nodes
-            // FIXME: We can have keywords here but this is more complicated to get here
-            Variable keywords = copy(UndefinedValue.UNDEFINED);
-            addInstr(isSplat ? new ReceiveRestArgInstr(v, keywords, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
-        }
-
-        return v;
-    }
-
     @Override
     protected void receiveForArgs(Node node) {
         Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
 
         // FIXME: I think this should rip out receivePre and stop sharingh with method defs
         // FIXME: pattern of use seems to be recv pre then assign value so this may be done with less if (or at least through separate methods between value and receiving the value from args).
-        if (node instanceof MultiTargetNode) { // for loops
-            buildBlockArgsAssignment(node, null, 0, false);
+        if (node instanceof MultiTargetNode multi) {
+            // several targets: destructure the received values like `a, (b, c), *d = values`.
+            Variable restKeywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, false));
+            Variable values = addResultInstr(new ReceiveRestArgInstr(temp(), restKeywords, 0, 0));
+            buildMultiWriteOrTargetNode(multi.lefts, multi.rest, multi.rights, values);
         } else if (node instanceof ClassVariableTargetNode || node instanceof LocalVariableTargetNode ||
                 node instanceof InstanceVariableTargetNode || node instanceof ConstantTargetNode ||
                 node instanceof GlobalVariableTargetNode || node instanceof CallTargetNode ||
@@ -626,42 +613,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             ((IRClosure) scope).setArgumentDescriptors(createArgumentDescriptor());
         } else {
             throw notCompilable("missing arg processing for blocks", node);
-        }
-    }
-
-    private void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
-        if (node instanceof CallNode call) { // attribute assignment: a[0], b = 1, 2
-            buildAttrAssignAssignment(call.receiver, symbol((call.name)), call.arguments.arguments,
-                    receiveBlockArg(temp(), argsArray, argIndex, isSplat));
-        } else if (node instanceof LocalVariableTargetNode lvar) {
-            receiveBlockArg(getLocalVariable(symbol((lvar.name)), lvar.depth), argsArray, argIndex, isSplat);
-        } else if (node instanceof ClassVariableTargetNode cvar) {
-            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbol((cvar.name)),
-                    receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
-        } else if (node instanceof ConstantTargetNode constant) {
-            putConstant(symbol((constant.name)), receiveBlockArg(temp(), argsArray, argIndex, isSplat));
-        } else if (node instanceof GlobalVariableTargetNode gvar) {
-            addInstr(new PutGlobalVarInstr(symbol((gvar.name)), receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
-        } else if (node instanceof InstanceVariableTargetNode ivar) {
-            addInstr(new PutFieldInstr(buildSelf(), symbol((ivar.name)), receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
-        } else if (node instanceof MultiTargetNode multi) {
-            for (int i = 0; i < multi.lefts.length; i++) {
-                buildBlockArgsAssignment(multi.lefts[i], null, i, false);
-            }
-
-            int postIndex = multi.lefts.length;
-            if (multi.rest != null) {
-                buildBlockArgsAssignment(multi.rest, null, postIndex, true);
-                postIndex++;
-            }
-            for (int i = 0; i < multi.rights.length; i++) {
-                buildBlockArgsAssignment(multi.rights[i], null, postIndex + i, false);
-            }
-        } else if (node instanceof SplatNode) {
-            // FIXME: we don't work in legacy either?
-        } else if (node instanceof ImplicitRestNode) {
-        } else {
-            throw notCompilable("Can't build assignment node", node);
         }
     }
 
