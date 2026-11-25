@@ -2458,43 +2458,49 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFile fptr;
         RubyIO write_io;
 
-        write_io = GetWriteIO();
-        fptr = write_io.getOpenFileInitialized();
-        if (!fptr.isOpen()) return context.nil;
-
-        boolean locked = fptr.lock();
-        try {
-            if (fptr.socketChannel() != null) {
-                try {
-                    fptr.socketChannel().shutdownOutput();
-                } catch (IOException ioe) {
-                    throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
-                }
-                fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
-                if (!fptr.isReadable()) return write_io.rbIoClose(context);
-                return context.nil;
-            }
-
-            if (fptr.isReadable() && !fptr.isDuplex()) {
-                throw runtime.newIOError("closing non-duplex IO for writing");
-            }
-        } finally {
-            if (locked) fptr.unlock();
+        OpenFile receiverFptr;
+        boolean receiverLocked;
+        boolean closeWriteIO = false;
+        while (true) {
+            receiverFptr = getOpenFileInitialized();
+            receiverLocked = receiverFptr.lock();
+            if (receiverFptr == getOpenFileInitialized()) break;
+            if (receiverLocked) receiverFptr.unlock();
         }
 
+        try {
+            write_io = GetWriteIO();
+            fptr = write_io.getOpenFileInitialized();
 
-        if (this != write_io) {
-            fptr = getOpenFileInitialized();
-
-            locked = fptr.lock();
+            boolean locked = fptr.lock();
             try {
-                fptr.tiedIOForWriting = null;
+                if (!fptr.isOpen()) return context.nil;
+
+                if (fptr.socketChannel() != null) {
+                    try {
+                        fptr.socketChannel().shutdownOutput();
+                    } catch (IOException ioe) {
+                        throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
+                    }
+                    fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
+                    closeWriteIO = !fptr.isReadable();
+                    if (!closeWriteIO) return context.nil;
+                } else {
+                    if (fptr.isReadable() && !fptr.isDuplex()) {
+                        throw runtime.newIOError("closing non-duplex IO for writing");
+                    }
+
+                    if (this != write_io) receiverFptr.tiedIOForWriting = null;
+                    closeWriteIO = true;
+                }
             } finally {
                 if (locked) fptr.unlock();
             }
+        } finally {
+            if (receiverLocked) receiverFptr.unlock();
         }
 
-        write_io.rbIoClose(context);
+        if (closeWriteIO) write_io.rbIoClose(context);
         return context.nil;
     }
 
