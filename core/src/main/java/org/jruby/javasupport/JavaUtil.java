@@ -58,6 +58,8 @@ import static org.jruby.api.Error.typeError;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -90,12 +92,14 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
+import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -257,16 +261,43 @@ public class JavaUtil {
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
             // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
             // getMethods for interface returns all methods (including ones from super-interfaces)
+            Map<String, List<Method>> abstractMethods = new HashMap<>();
             for ( Method method : targetType.getMethods() ) {
-                Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod(method.getName());
                 if ( Modifier.isAbstract(method.getModifiers()) ) {
-                    singletonClass.addMethodInternal(context, method.getName(), implMethod);
+                    abstractMethods.computeIfAbsent(method.getName(), k -> new ArrayList<>(2)).add(method);
                 }
+            }
+            for ( Map.Entry<String, List<Method>> entry : abstractMethods.entrySet() ) {
+                String methodName = entry.getKey();
+                Signature sig = getSignatureFromMethods(entry.getValue());
+                Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod(methodName, sig);
+                singletonClass.addMethodInternal(context, methodName, implMethod);
             }
 
         }
         JavaProxy javaObject = (JavaProxy) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
         return (T) javaObject.getObject();
+    }
+
+    // methods sharing one name (overloads), expected to exclude bridge/static ones
+    public static Signature getSignatureFromMethods(Collection<Method> methods) {
+        int maxArity = -1;
+        int minArity = Integer.MAX_VALUE;
+        int minVarArgsArity = -1;
+
+        for (Method method : methods) {
+            int currentArity = method.getParameterCount();
+            maxArity = Math.max(currentArity, maxArity);
+            minArity = Math.min(currentArity, minArity);
+            if (method.isVarArgs()) {
+                int usableArity = currentArity - 1;
+                minVarArgsArity = minVarArgsArity == -1 ? usableArity : Math.min(usableArity, minVarArgsArity);
+            }
+        }
+
+        if (maxArity == -1) return Signature.OPTIONAL;
+
+        return RubyToJavaInvoker.calculateSignature(minArity, maxArity, minVarArgsArity);
     }
 
     public static <T> NumericConverter<T> getNumericConverter(Class<T> target) {
