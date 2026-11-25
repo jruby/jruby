@@ -3,8 +3,8 @@ require 'tmpdir'
 
 # Use java directly: bin/jruby supplies the module openings whose absence we test.
 describe 'Open3 without native file descriptor access' do
-  io_open = '--add-opens=java.base/java.io=ALL-UNNAMED'
-  nio_open = '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED'
+  io_open = '--add-opens=java.base/java.io=org.jruby.dist'
+  nio_open = '--add-opens=java.base/sun.nio.ch=org.jruby.dist'
   cases = {
     'no module openings' => [[], false],
     'only java.io open' => [[io_open], false],
@@ -17,8 +17,10 @@ describe 'Open3 without native file descriptor access' do
     it "captures streams and exit status with #{description}" do
       java_command = File.join(ENV_JAVA['java.home'], 'bin', 'java')
       home = File.expand_path('../..', __dir__)
-      command = [java_command, "-Djruby.home=#{home}", '-cp', File.join(home, 'lib/jruby.jar'),
-                 'org.jruby.Main', '-I', File.join(home, 'lib/ruby/stdlib')]
+      command = [java_command, '--module-path', File.join(home, 'lib/jruby.jar'),
+                 '--enable-native-access=org.jruby.dist', "-Djruby.home=#{home}",
+                 'org.jruby.main.Main',
+                 '-I', File.join(home, 'lib/ruby/stdlib')]
       script = <<~'CODE'
         require 'open3'
         require 'tmpdir'
