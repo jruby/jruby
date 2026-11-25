@@ -40,7 +40,7 @@ describe :process_exit, shared: true do
     def obj.to_int
       5
     end
-    -> { @object.exit(obj) }.should raise_error(SystemExit) { |e|
+    -> { @object.exit(obj) }.should.raise(SystemExit) { |e|
       e.status.should == 5
     }
   end
