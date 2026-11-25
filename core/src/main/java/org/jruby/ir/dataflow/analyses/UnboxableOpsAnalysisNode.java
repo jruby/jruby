@@ -359,7 +359,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
     private TemporaryLocalVariable getUnboxedVar(Class reqdType, Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, boolean createNew) {
         TemporaryLocalVariable unboxedVar = unboxMap.get(v);
         // FIXME: This is a bit broken -- SSA will eliminate this need for type verification
-        if ((unboxedVar == null && createNew) || !matchingTypes(reqdType, unboxedVar.getType())) {
+        if ((unboxedVar == null && createNew) || (unboxedVar != null && !matchingTypes(reqdType, unboxedVar.getType()))) {
             unboxedVar = problem.getFIC().getNewUnboxedVariable(reqdType);
             unboxMap.put(v, unboxedVar);
         } else if (unboxedVar == null) {
