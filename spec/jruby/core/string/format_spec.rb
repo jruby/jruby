@@ -7,5 +7,5 @@ describe "String#format with %s passed US-ASCII input" do
     expect(formatted).to eq("1 ø")
     expect(formatted.encoding).to eq(Encoding::UTF_8)
   end
-end if RUBY_VERSION >= '1.9'
+end
 

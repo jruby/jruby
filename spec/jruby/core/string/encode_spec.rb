@@ -1,4 +1,15 @@
+# coding: utf-8
+
 require 'base64'
+require 'rspec'
+
+# https://github.com/jruby/jruby/issues/3402
+describe 'String#encode with :replace option' do
+  it 'returns correct value' do
+    str = "testing\xC2".encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "foo123")
+    expect(str).to eq "testingfoo123"
+  end
+end
 
 describe "A badly-encoded UTF-8 String reencoded with replacements as UTF-16 " do
   it "completes for all inputs" do
@@ -12,4 +23,4 @@ describe "A badly-encoded UTF-8 String reencoded with replacements as UTF-16 " d
       expect(data).to_not eq(nil)
     end
   end
-end unless RUBY_VERSION.index('1.8') == 0
+end
