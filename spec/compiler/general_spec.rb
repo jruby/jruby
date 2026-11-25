@@ -1608,11 +1608,16 @@ modes.each do |mode|
         class VariableOperatorCoercer; def coerce(other) = [other, 10]; end
         def __variable_operators(a, b) = [a + b, a - b, a * b, a / b, a % b, a < b, a == b, a <=> b]
         def __variable_bit_operators(a, b) = [a << b, a >> b, a & b, a | b, a ^ b]
+        def __variable_comparisons(a, b) = [a != b, a <= b, a > b, a >= b]
+        def __float_first_plus(a, b) = a + b
         zero = 0
         [
           [[3, 4], [2**62, 2**62], [-7, 2], [7, 2.5], [2**64, 3], [3, VariableOperatorCoercer.new]].map { |a, b| __variable_operators(a, b) },
           [[1, 3], [1, 64], [-8, 1], [2**64, 1]].map { |a, b| __variable_bit_operators(a, b) },
-          (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end)
+          (begin; 1 / zero; rescue ZeroDivisionError => e; e.class; end),
+          [[3, 4], [4, 4], [2**64, 3], [3, 2.5]].map { |a, b| __variable_comparisons(a, b) },
+          # bound to a normal call site by the first call, which is not on Fixnums
+          [__float_first_plus(1.5, 2), __float_first_plus(1, 2), __float_first_plus(2**62, 2**62)]
         ]
       RUBY
         expect(x).to eq [
@@ -1626,7 +1631,9 @@ modes.each do |mode|
            [18446744073709551616, 0, 0, 65, 65],
            [-16, -4, 0, -7, -7],
            [36893488147419103232, 9223372036854775808, 0, 18446744073709551617, 18446744073709551617]],
-          ZeroDivisionError
+          ZeroDivisionError,
+          [[true, true, false, false], [false, true, false, true], [true, false, true, true], [true, false, true, true]],
+          [3.5, 3, 9223372036854775808]
         ]
       end
     end

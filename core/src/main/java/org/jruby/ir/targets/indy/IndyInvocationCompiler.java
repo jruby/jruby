@@ -92,11 +92,6 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOtherFixnumOperator(String file, CallBase call) {
-        if (call.isPotentiallyRefined()) {
-            invokeOther(file, null, call, 1);
-            return;
-        }
-
         compiler.adapter.invokedynamic(
                 "fixnumBinaryOperator:" + JavaNameMangler.mangleMethodName(call.getId()),
                 sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)),

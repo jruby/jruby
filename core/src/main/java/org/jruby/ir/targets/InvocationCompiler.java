@@ -46,7 +46,7 @@ public interface InvocationCompiler {
 
     /**
      * Invoke an operator with a Fixnum fast path (see MethodIndex.hasFastFixnumOps) and one non-literal argument on an
-     * object other than self.
+     * object other than self. The call must not be potentially refined.
      * <p>
      * Stack required: context, caller, receiver, argument
      */
