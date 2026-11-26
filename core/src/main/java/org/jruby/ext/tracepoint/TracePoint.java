@@ -105,7 +105,8 @@ public class TracePoint extends RubyObject {
     }
 
     private class TracePointEventHook extends EventHook {
-        protected ThreadContext threadToTrace;
+        // the fiber's parent thread, so fibers of the traced thread are traced too
+        protected volatile RubyThread threadToTrace;
         private final Block block;
         private final EnumSet<RubyEvent> eventSet;
 
@@ -125,7 +126,9 @@ public class TracePoint extends RubyObject {
             // after, so if target changed in between, a targeted enable or disable is running: skip the event
             // instead of firing it without the right filter.
             Target target = TracePoint.this.target;
-            if (!enabled || (threadToTrace != null && threadToTrace != context) || context.isWithinTrace()) return;
+            if (!enabled || context.isWithinTrace()) return;
+            RubyThread threadToTrace = this.threadToTrace;
+            if (threadToTrace != null && threadToTrace != context.getFiberCurrentThread()) return;
             if (target != TracePoint.this.target) return;
             if (target != null && !target.covers(event, file, line, name)) return;
 
@@ -199,11 +202,12 @@ public class TracePoint extends RubyObject {
         ThreadContext.resetCallInfo(context);
         if (target != null) throw argumentError(context, "can't nest-enable a targeting TracePoint");
 
-        return doToggle(context, null, block, true);
+        // target_thread: :default traces only the current thread in the block form
+        return doToggle(context, block.isGiven() ? context.getFiberCurrentThread() : null, block, true);
     }
 
     @CRuby(value = "tracepoint_enable_m", file = "vm_trace.c",
-            note = "target_thread: :default does not limit a block form enable to the current thread")
+            note = "does not raise \"can not override target_thread filter\"")
     @JRubyMethod(keywords = true)
     public IRubyObject enable(ThreadContext context, IRubyObject opts, Block block) {
         // A ruby2_keywords Hash at the end of a splat does not set CALL_KEYWORD, but is passed as keywords
@@ -219,7 +223,10 @@ public class TracePoint extends RubyObject {
 
         RubyThread targetThread = null;
         IRubyObject thread = args[2];
-        if (thread != null && !thread.isNil() && thread != asSymbol(context, "default")) {
+        if (thread == null || thread == asSymbol(context, "default")) {
+            // The block form traces only the current thread. A targeted TracePoint ignores target_thread.
+            if (block.isGiven() && target.isNil()) targetThread = context.getFiberCurrentThread();
+        } else if (!thread.isNil()) {
             if (!(thread instanceof RubyThread th)) throw argumentError(context, "target must be a Thread");
             targetThread = th;
         }
@@ -237,7 +244,21 @@ public class TracePoint extends RubyObject {
 
     @CRuby(value = "rb_tracepoint_enable_for_target", file = "vm_trace.c",
             note = "only raises \"can not enable any hooks\" with --debug")
-    private synchronized IRubyObject enableForTarget(ThreadContext context, IRubyObject target, IRubyObject targetLine, Block block) {
+    private IRubyObject enableForTarget(ThreadContext context, IRubyObject target, IRubyObject targetLine, Block block) {
+        synchronized (this) {
+            enableTarget(context, target, targetLine);
+        }
+        if (!block.isGiven()) return context.fals;
+
+        // Not holding the monitor while the block runs, so other threads can enable or disable this TracePoint
+        try {
+            return block.yieldSpecific(context);
+        } finally {
+            updateEnabled(context, null, false);
+        }
+    }
+
+    private void enableTarget(ThreadContext context, IRubyObject target, IRubyObject targetLine) {
         IRScope scope = targetScope(context, target);
 
         if (enabled) throw argumentError(context, "can't nest-enable a targeting TracePoint");
@@ -263,13 +284,6 @@ public class TracePoint extends RubyObject {
 
         this.target = Target.of(scope.getFile(), found);
         updateEnabled(context, null, true);
-        if (!block.isGiven()) return context.fals;
-
-        try {
-            return block.yieldSpecific(context);
-        } finally {
-            updateEnabled(context, null, false);
-        }
     }
 
     private static IRScope targetScope(ThreadContext context, IRubyObject target) {
@@ -408,36 +422,39 @@ public class TracePoint extends RubyObject {
                 newArray(context, asFixnum(context, stats[0]), asFixnum(context, stats[1])));
     }
     
-    private synchronized IRubyObject doToggle(ThreadContext context, RubyThread _targetThread, Block block, boolean toggle) {
+    private IRubyObject doToggle(ThreadContext context, RubyThread _targetThread, Block block, boolean toggle) {
         if (block.isGiven()) {
-            boolean old = enabled;
-            try {
+            boolean old;
+            synchronized (this) {
+                old = enabled;
                 updateEnabled(context, _targetThread, toggle);
-                
+            }
+
+            // Not holding the monitor while the block runs, so other threads can enable or disable this TracePoint
+            try {
                 return block.yieldSpecific(context);
             } finally {
                 updateEnabled(context, _targetThread, old);
             }
         }
-        
-        IRubyObject old = asBoolean(context, enabled);
-        updateEnabled(context, _targetThread, toggle);
-        
-        return old;
+
+        synchronized (this) {
+            IRubyObject old = asBoolean(context, enabled);
+            updateEnabled(context, _targetThread, toggle);
+            return old;
+        }
     }
 
-    public void updateEnabled(ThreadContext context, RubyThread targetThread, boolean toggle) {
+    public synchronized void updateEnabled(ThreadContext context, RubyThread targetThread, boolean toggle) {
         if (toggle == enabled) return; // don't re-add or re-remove hook
         
-        enabled = toggle;
-        
         if (toggle) {
-            if (targetThread != null && !targetThread.isNil()) {
-                hook.threadToTrace = targetThread.getContext();
-            }
+            // before enabled, which hooks read first
+            hook.threadToTrace = targetThread == null ? null : targetThread.getFiberCurrentThread();
+            enabled = true;
             context.traceEvents.addEventHook(context, hook);
         } else {
-            hook.threadToTrace = null;
+            enabled = false;
             target = null;
             context.traceEvents.removeEventHook(hook);
         }
