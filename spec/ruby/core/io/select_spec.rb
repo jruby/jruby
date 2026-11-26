@@ -68,6 +68,11 @@ describe "IO.select" do
     rm_r filename
   end
 
+  it "returns an object as many times as it is given when it is ready" do
+    @wr.syswrite("be ready")
+    IO.select([@rd, @rd], [@wr, @wr], nil, 0).should == [[@rd, @rd], [@wr, @wr], []]
+  end
+
   it "returns the pipe read end in read set if the pipe write end is closed concurrently" do
     main = Thread.current
     t = Thread.new {
