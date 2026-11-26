@@ -1,4 +1,5 @@
 require "jruby"
+JRuby::Util.load_ext("org.jruby.ext.objspace.ObjSpaceLibrary")
 
 module ObjectSpace
   def count_symbols

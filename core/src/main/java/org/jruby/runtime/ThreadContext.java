@@ -921,6 +921,20 @@ public final class ThreadContext {
                 (elt) -> consumer.test(RubyThread.Location.newLocation(runtime, elt)));
     }
 
+    /**
+     * The nearest Ruby caller, as caller_locations(0, 1) sees it, or null if there is none.
+     */
+    public RubyStackTraceElement getCallerElement() {
+        return WALKER.walk(stream -> {
+            RubyStackTraceElement[] caller = new RubyStackTraceElement[1];
+            TraceType.Gather.CALLER.getBacktraceData(this, stream).yieldPartialBacktrace(runtime, (elt) -> {
+                caller[0] = elt;
+                return false;
+            });
+            return caller[0];
+        });
+    }
+
     private RubyStackTraceElement[] getPartialTrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
         if (length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);

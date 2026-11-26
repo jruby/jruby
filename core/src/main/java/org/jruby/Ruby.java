@@ -104,6 +104,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.objspace.AllocationTracer;
 import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.ext.fiber.ThreadFiberLibrary;
@@ -5698,11 +5699,61 @@ public final class Ruby implements Constantizable {
         if (useObjectSpace) runtime.objectSpace.add(object);
     };
 
-    private final ObjectSpacer objectSpacer;
+    // Swapped while allocations are traced. A plain read, as an opaque or volatile one would slow down every
+    // allocation: a thread in a hot compiled loop may keep using the previous ObjectSpacer until it leaves the loop.
+    private ObjectSpacer objectSpacer;
 
     public void addToObjectSpace(boolean useObjectSpace, IRubyObject object) {
         objectSpacer.addToObjectSpace(this, useObjectSpace, object);
     }
+
+    /**
+     * Start recording where objects are allocated, for objspace's trace_object_allocations. Calls nest.
+     */
+    @CRuby(value = "trace_object_allocations_start", file = "ext/objspace/object_tracing.c")
+    public void startAllocationTracing() {
+        synchronized (allocationTracingLock) {
+            if (allocationTracingDepth++ > 0) return;
+
+            ObjectSpacer untraced = objectSpacer;
+            AllocationTracer tracer = getAllocationTracer();
+            tracer.startSession();
+            untracedObjectSpacer = untraced;
+            objectSpacer = (runtime, useObjectSpace, object) -> {
+                untraced.addToObjectSpace(runtime, useObjectSpace, object);
+                tracer.record(runtime, object);
+            };
+        }
+    }
+
+    /**
+     * Stop one level of allocation tracing; the last call stops recording. Extra calls do nothing.
+     */
+    @CRuby(value = "trace_object_allocations_stop", file = "ext/objspace/object_tracing.c")
+    public void stopAllocationTracing() {
+        synchronized (allocationTracingLock) {
+            if (allocationTracingDepth == 0 || --allocationTracingDepth > 0) return;
+
+            objectSpacer = untracedObjectSpacer;
+            untracedObjectSpacer = null;
+        }
+    }
+
+    /**
+     * What allocation tracing recorded; it is kept after tracing stops.
+     */
+    @CRuby(value = "get_traceobj_arg", file = "ext/objspace/object_tracing.c")
+    public AllocationTracer getAllocationTracer() {
+        synchronized (allocationTracingLock) {
+            if (allocationTracer == null) allocationTracer = new AllocationTracer();
+            return allocationTracer;
+        }
+    }
+
+    private final Object allocationTracingLock = new Object();
+    private AllocationTracer allocationTracer;
+    private ObjectSpacer untracedObjectSpacer;
+    private int allocationTracingDepth;
 
     public interface ExitFunction extends ToIntFunction<ThreadContext> {
         default boolean matches(Object o) { return o == this; }
