@@ -1,0 +1,41 @@
+jruby(1) -- Interpreted object-oriented scripting language
+==========================================================
+
+## SYNOPSIS
+
+`<%= synopsis %>`
+
+## DESCRIPTION
+
+JRuby is a pure-Java implementation of the Ruby programming language.
+It is an interpreted scripting language for quick and easy
+object-oriented programming, with many features for processing text files
+and for system management tasks.
+The command-line switches accepted by the interpreter are described below;
+they are largely similar to those of `ruby(1)` and `perl(1)`.
+
+## OPTIONS
+
+The switches are also listed in abbreviated form by `jruby --help`.
+
+<% options.each do |option| -%>
+`<%= option.flag %>`
+: <%= option.description %>
+
+<% end -%>
+## ENVIRONMENT
+
+`JRUBY_OPTS`
+: Additional command-line options prepended to the ones given on the command line.
+
+`JRUBY_HOME`
+: The directory of the JRuby installation.
+
+## SEE ALSO
+
+`ruby(1)`, `perl(1)`, <https://www.jruby.org/>
+
+## AUTHORS
+
+JRuby is developed by the JRuby community; see
+<https://github.com/jruby/jruby/graphs/contributors> for contributors.
