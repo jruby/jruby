@@ -637,7 +637,7 @@ public class RubyFileTest {
     }
 
     private static void noFileError(ThreadContext context, IRubyObject filename) {
-        throw context.runtime.newErrnoENOENTError("No such file or directory - " + filename.convertToString());
+        throw context.runtime.newErrnoENOENTError(get_path(context, filename).toString());
     }
 
     @Deprecated(since = "9.4.6.0")
