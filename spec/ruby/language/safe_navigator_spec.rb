@@ -36,6 +36,15 @@ describe "Safe navigator" do
 
       -> { 1&.unknown }.should.raise(NoMethodError)
     end
+
+    it "calls each method of a chain" do
+      "ab"&.upcase&.size.should == 2
+      "abc"&.[](0)&.upcase&.size.should == 1
+    end
+
+    it "stops a chain at the first nil" do
+      "ab"&.then { nil }&.size.should == nil
+    end
   end
 
   it "takes a list of arguments" do

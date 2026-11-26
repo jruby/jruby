@@ -685,13 +685,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         createCall(result, receiver, callType, name, node.arguments, node.block, getLine(node), node.hasNewLineFlag());
 
-        if (node.isSafeNavigation()) {
+        // The receiver call of a chain (a&.b in a&.b&.c) shares the labels of the outer call and falls through to it.
+        // Only the outermost call jumps over the nil case.
+        if (node.isSafeNavigation() && !reusingLabels) {
             addInstr(new JumpInstr(endLabel));
-            if (!reusingLabels) { // This already exists.
-                addInstr(new LabelInstr(lazyLabel));
-                addInstr(new CopyInstr(result, nil()));
-                addInstr(new LabelInstr(endLabel));
-            }
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(result, nil()));
+            addInstr(new LabelInstr(endLabel));
         }
 
         return result;
