@@ -2931,6 +2931,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                addInstr(new LineNumberInstr(line));
                 addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), line + 1, traceValue(retVal)));
             }
             addInstr(new ReturnInstr(retVal));
