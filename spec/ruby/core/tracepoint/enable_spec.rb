@@ -129,10 +129,9 @@ describe 'TracePoint#enable' do
     end
 
     it 'traces the Fibers of the current thread' do
-      lines = []
+      events = []
       trace = TracePoint.new(:line) do |tp|
-        # Thread.current in a Fiber is not the same object on every implementation
-        lines << tp.lineno
+        events << [Thread.current, tp.lineno]
       end
 
       fiber_line = nil
@@ -143,7 +142,7 @@ describe 'TracePoint#enable' do
         fiber.resume
       end
 
-      lines.should.include?(fiber_line)
+      events.should.include?([Thread.current, fiber_line])
     end
 
     it 'lets another thread disable the trace object while the block runs' do
