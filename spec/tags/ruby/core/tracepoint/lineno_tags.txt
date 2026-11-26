@@ -1,3 +1,4 @@
+debug:TracePoint#lineno returns the line of an explicit return run before an ensure clause, which is also the line of the method in the backtrace
 debug:TracePoint#lineno returns the line of end for a :return event at the end of a method
 debug:TracePoint#lineno returns the line where the block ends for a :b_return event, which is also the line of the block in the backtrace
 debug:TracePoint#lineno returns the line number of the event

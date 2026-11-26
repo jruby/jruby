@@ -60,4 +60,22 @@ describe 'TracePoint#lineno' do
     end
     lines.should == [__LINE__ - 2, __LINE__ - 2]
   end
+
+  it 'returns the line of an explicit return run before an ensure clause, which is also the line of the method in the backtrace' do
+    obj = Object.new
+    def obj.m
+      return :m
+    ensure
+      ensure_ran = true
+    end
+
+    lines = nil
+    TracePoint.new(:return) { |tp|
+      next unless TracePointSpec.target_thread? && tp.method_id == :m
+      lines = [tp.lineno, caller_locations(1, 1)[0].lineno]
+    }.enable do
+      obj.m
+    end
+    lines.should == [__LINE__ - 12, __LINE__ - 12]
+  end
 end
