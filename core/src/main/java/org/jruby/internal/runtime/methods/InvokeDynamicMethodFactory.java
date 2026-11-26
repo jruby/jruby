@@ -268,20 +268,27 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .insert(1, RubyEvent.C_CALL)
                     .invokeVirtualQuiet(LOOKUP, "trace");
 
+            // the cleanup handle gets (Throwable, result, context, self, class, name, ...); the cast only guards
+            // against a target typed with a narrower return than IRubyObject
             MethodHandle traceReturn = Binder
-                    .from(target.type().changeReturnType(void.class))
-                    .permute(0, 3, 2) // context, name, class
-                    .insert(1, RubyEvent.C_RETURN)
-                    .invokeVirtualQuiet(LOOKUP, "trace");
+                    .from(target.type().insertParameterTypes(0, Throwable.class, target.type().returnType()))
+                    .permute(0, 1, 2, 5, 4) // throwable, result, context, name, class
+                    .cast(IRubyObject.class, Throwable.class, IRubyObject.class, ThreadContext.class, String.class, RubyModule.class)
+                    .invokeStaticQuiet(LOOKUP, InvokeDynamicMethodFactory.class, "traceCReturn");
 
             target = Binder
                     .from(target.type())
                     .foldVoid(traceCall)
-                    .tryFinally(traceReturn)
-                    .invoke(target);
+                    .invoke(MethodHandles.tryFinally(target, traceReturn));
         }
 
         return target;
+    }
+
+    // :c_return gets the method's result as its return_value; a method that raised has none
+    private static IRubyObject traceCReturn(Throwable error, IRubyObject result, ThreadContext context, String name, RubyModule implClass) {
+        JavaMethod.cReturnTrace(context, name, implClass, error == null ? result : context.nil);
+        return result;
     }
 
     public static Supplier<MethodHandle> adaptHandle(final MethodHandle method, final Ruby runtime, final int actualRequired, final int required, final int optional, final boolean rest, final String rubyName, final Class declaringClass, final boolean isStatic, final boolean hasContext, final boolean hasBlock, final boolean frame, final RubyModule implementationClass) {
