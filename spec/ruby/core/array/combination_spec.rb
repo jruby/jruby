@@ -68,6 +68,12 @@ describe "Array#combination" do
           [].combination(0).size.should == 1
           [].combination(1).size.should == 0
         end
+
+        it "converts the argument with #to_int" do
+          obj = mock("2")
+          obj.should_receive(:to_int).at_least(:once).and_return(2)
+          @array.combination(obj).size.should == 6
+        end
       end
     end
   end

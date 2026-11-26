@@ -1234,9 +1234,7 @@ public class RubyEnumerable {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject eachSliceSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
-
-        long sliceSize = ((RubyNumeric) args[0]).asLong(context);
+        long sliceSize = toLong(context, args[0]);
         if (sliceSize <= 0) throw argumentError(context, "invalid slice size");
 
         IRubyObject size = RubyEnumerable.size(context, self, args);
@@ -1272,8 +1270,7 @@ public class RubyEnumerable {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject eachConsSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
-        long consSize = ((RubyNumeric) args[0]).asLong(context);
+        long consSize = toLong(context, args[0]);
         if (consSize <= 0) throw argumentError(context, "invalid size");
 
         IRubyObject size = size(context, self, args);
