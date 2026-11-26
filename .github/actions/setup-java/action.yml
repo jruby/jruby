@@ -9,11 +9,22 @@ inputs:
     description: Java distribution to set up
     default: zulu
   cache:
-    description: Dependency cache for setup-java
-    default: maven
+    description: Dependency cache for setup-java (empty for none; some jobs restore the cache themselves)
+    default: ''
+  cache-dependency-path:
+    description: Files whose hash keys the dependency cache (setup-java defaults to **/pom.xml)
+    default: ''
+  cache-read-only:
+    description: Restore the dependency cache without saving it after the job
+    default: 'false'
   remove-old-java:
     description: Remove listed Temurin JDK packages on Linux before setup
     default: 'true'
+
+outputs:
+  cache-hit:
+    description: Whether the dependency cache was restored from an exact key match
+    value: ${{ steps.setup-java.outputs.cache-hit }}
 
 runs:
   using: composite
@@ -38,8 +49,12 @@ runs:
           echo 'No listed Temurin JDK packages are installed; skipping removal.'
         fi
     - name: set up Java ${{ inputs.java-version }}
-      uses: actions/setup-java@v5
+      id: setup-java
+      # v6 for cache-read-only, which v5 does not have.
+      uses: actions/setup-java@v6
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
         cache: ${{ inputs.cache }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+        cache-read-only: ${{ inputs.cache-read-only }}
