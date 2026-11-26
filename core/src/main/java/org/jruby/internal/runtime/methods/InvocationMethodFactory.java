@@ -804,7 +804,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // normal finally and exit
         {
             if (FULL_TRACE_ENABLED) {
-                invokeCReturnTrace(method, traceBoolIndex);
+                invokeCReturnTraceWithValue(method, traceBoolIndex);
             }
 
             if (!callConfig.isNoop()) {
@@ -848,6 +848,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.iload(traceBoolIndex); // traceEnable
         method.aload(4); // invokedName
         method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
+    }
+
+    // Expects the method's result on the stack and leaves it there; :c_return gets it as its return_value.
+    private static void invokeCReturnTraceWithValue(SkinnyMethodAdapter method, int traceBoolIndex) {
+        int resultIndex = traceBoolIndex + 1; // free: the trace flag is the last local
+        method.astore(resultIndex);
+        method.aloadMany(0, 1); // method, threadContext
+        method.iload(traceBoolIndex); // traceEnable
+        method.aload(4); // invokedName
+        method.aload(resultIndex);
+        method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(IRubyObject.class, ThreadContext.class, boolean.class, String.class, IRubyObject.class));
     }
 
     // Deprecated but still in use and no replacement

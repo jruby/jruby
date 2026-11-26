@@ -26,6 +26,18 @@ describe 'TracePoint#return_value' do
     end
   end
 
+  it 'returns value from :c_return event' do
+    values = []
+    TracePoint.new(:c_return) { |tp|
+      next unless TracePointSpec.target_thread?
+      values << [tp.method_id, tp.return_value] if tp.method_id == :upcase || tp.method_id == :max
+    }.enable do
+      'test'.upcase
+      [1, 3, 2].max
+    end
+    values.should == [[:upcase, 'TEST'], [:max, 3]]
+  end
+
   it 'returns value from an explicit return' do
     def early(v); return :early if v; :late end
     def ensure_return; x = 1; return x; ensure; x = 2 end

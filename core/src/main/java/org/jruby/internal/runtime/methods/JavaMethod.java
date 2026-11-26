@@ -189,6 +189,20 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         if (enabled) context.trace(RubyEvent.C_RETURN, Helpers.getSuperNameFromCompositeName(name), getImplementationClass());
     }
 
+    protected final IRubyObject returnTrace(ThreadContext context, boolean enabled, String name, IRubyObject value) {
+        if (enabled) cReturnTrace(context, Helpers.getSuperNameFromCompositeName(name), getImplementationClass(), value);
+        return value;
+    }
+
+    /**
+     * Fire :c_return with the native method's result as its return_value, at the same position as
+     * {@link ThreadContext#trace(RubyEvent, String, RubyModule)}.
+     */
+    static void cReturnTrace(ThreadContext context, String name, RubyModule implClass, IRubyObject value) {
+        context.traceEvents.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine() + 1,
+                name, implClass, value == null ? context.nil : value);
+    }
+
     protected final void callTraceCompiled(ThreadContext context, boolean enabled, String name, String file, int line) {
         if (enabled) context.trace(RubyEvent.CALL, Helpers.getSuperNameFromCompositeName(name), getImplementationClass(), file, line);
     }
