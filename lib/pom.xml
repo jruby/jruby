@@ -346,7 +346,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>open3</artifactId>
-      <version>0.3.0</version>
+      <version>0.3.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1155,7 +1155,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/net-http-0.10.0*</include>
           <include>specifications/net-protocol-0.4.0*</include>
           <include>specifications/open-uri-0.5.0*</include>
-          <include>specifications/open3-0.3.0*</include>
+          <include>specifications/open3-0.3.1*</include>
           <include>specifications/optparse-0.8.1*</include>
           <include>specifications/pp-0.6.4*</include>
           <include>specifications/prettyprint-0.2.1*</include>
@@ -1238,7 +1238,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/net-http-0.10.0*/**/*</include>
           <include>gems/net-protocol-0.4.0*/**/*</include>
           <include>gems/open-uri-0.5.0*/**/*</include>
-          <include>gems/open3-0.3.0*/**/*</include>
+          <include>gems/open3-0.3.1*/**/*</include>
           <include>gems/optparse-0.8.1*/**/*</include>
           <include>gems/pp-0.6.4*/**/*</include>
           <include>gems/prettyprint-0.2.1*/**/*</include>
@@ -1321,7 +1321,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/net-http-0.10.0*</include>
           <include>cache/net-protocol-0.4.0*</include>
           <include>cache/open-uri-0.5.0*</include>
-          <include>cache/open3-0.3.0*</include>
+          <include>cache/open3-0.3.1*</include>
           <include>cache/optparse-0.8.1*</include>
           <include>cache/pp-0.6.4*</include>
           <include>cache/prettyprint-0.2.1*</include>
@@ -1404,7 +1404,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/net-http-0.10.0/*</include>
           <include>extensions/universal-java/4.0.0/net-protocol-0.4.0/*</include>
           <include>extensions/universal-java/4.0.0/open-uri-0.5.0/*</include>
-          <include>extensions/universal-java/4.0.0/open3-0.3.0/*</include>
+          <include>extensions/universal-java/4.0.0/open3-0.3.1/*</include>
           <include>extensions/universal-java/4.0.0/optparse-0.8.1/*</include>
           <include>extensions/universal-java/4.0.0/pp-0.6.4/*</include>
           <include>extensions/universal-java/4.0.0/prettyprint-0.2.1/*</include>

@@ -55,7 +55,7 @@ default_gems = [
   ['net-http', '0.10.0'],
   ['net-protocol', '0.4.0'],
   ['open-uri', '0.5.0'],
-  ['open3', '0.3.0'],
+  ['open3', '0.3.1'],
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
   # ['openssl', '4.0.0'],
   ['optparse', '0.8.1'],
