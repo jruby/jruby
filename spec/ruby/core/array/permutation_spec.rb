@@ -118,6 +118,12 @@ describe "Array#permutation" do
             @numbers.permutation(1).size.should == 3
             @numbers.permutation(0).size.should == 1
           end
+
+          it "converts the argument with #to_int" do
+            obj = mock("2")
+            obj.should_receive(:to_int).at_least(:once).and_return(2)
+            @numbers.permutation(obj).size.should == 6
+          end
           it "returns the descending factorial of array size with array size when there's no param" do
             @numbers.permutation.size.should == 6
             [1,2,3,4].permutation.size.should == 24

@@ -85,6 +85,18 @@ describe "Enumerable#each_slice" do
             enum.each_slice(1).size.should == 10
           end
 
+          it "converts the argument with #to_int" do
+            obj = mock("3")
+            obj.should_receive(:to_int).at_least(:once).and_return(3)
+            EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).each_slice(obj).size.should == 4
+          end
+
+          it "returns the ceil of the Array size divided by the argument value for an Array" do
+            [1, 2, 3, 4, 5].each_slice(2).size.should == 3
+            [1, 2, 3, 4, 5].each_slice(5).size.should == 1
+            [].each_slice(2).size.should == 0
+          end
+
           it "returns 0 when the Enumerable is empty" do
             enum = EnumerableSpecs::EmptyWithSize.new
             enum.each_slice(10).size.should == 0

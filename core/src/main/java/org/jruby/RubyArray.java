@@ -2137,7 +2137,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (size <= 0) throw argumentError(context, "invalid slice size");
         return block.isGiven() ?
                 eachSlice(context, size, block) :
-                enumeratorizeWithSize(context, this, "each_slice", arg, arg);
+                enumeratorizeWithSize(context, this, "each_slice", new IRubyObject[] { arg }, RubyArray::eachSliceSize);
     }
 
     /** rb_ary_each_index
@@ -4461,6 +4461,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
+    // like enum_each_slice_size() in CRuby: the number of slices of the current length
+    private static IRubyObject eachSliceSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
+        long sliceSize = toLong(context, args[0]);
+        if (sliceSize <= 0) throw argumentError(context, "invalid slice size");
+        return asFixnum(context, (self.realLength + sliceSize - 1) / sliceSize);
+    }
+
     /**
      * A combination size method suitable for method reference implementation of SizeFn{@link #size(ThreadContext, RubyArray, IRubyObject[])}.
      *
@@ -4468,8 +4475,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private static IRubyObject combinationSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
         long n = self.realLength;
-        assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #combination ensures arg[0] is numeric
-        long k = ((RubyNumeric) args[0]).asLong(context);
+        long k = toLong(context, args[0]);
 
         return binomialCoefficient(context, k, n);
     }
@@ -4513,8 +4519,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private static IRubyObject repeatedCombinationSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
         long n = self.realLength;
-        assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_combination ensures arg[0] is numeric
-        long k = ((RubyNumeric) args[0]).asLong(context);
+        long k = toLong(context, args[0]);
 
         return k == 0 ? asFixnum(context, 1) : binomialCoefficient(context, k, n + k - 1);
     }
@@ -4605,8 +4610,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private static IRubyObject repeatedPermutationSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
         RubyFixnum n = self.length(context);
-        assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_permutation ensures arg[0] is numeric
-        long k = ((RubyNumeric) args[0]).asLong(context);
+        long k = toLong(context, args[0]);
 
         if (k < 0) return asFixnum(context, 0);
 
@@ -4649,8 +4653,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         long k;
 
         if (args != null && args.length > 0) {
-            assert args[0] instanceof RubyNumeric; // #permutation ensures arg[0] is numeric
-            k = ((RubyNumeric) args[0]).asLong(context);
+            k = toLong(context, args[0]);
         } else {
             k = n;
         }
