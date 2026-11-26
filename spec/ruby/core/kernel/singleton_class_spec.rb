@@ -38,6 +38,11 @@ describe "Kernel#singleton_class" do
     -> { a = "string"; (-a).singleton_class }.should raise_error(TypeError, "can't define singleton")
   end
 
+  it "returns a frozen singleton class for a frozen String that is not deduplicated" do
+    "string".dup.freeze.singleton_class.frozen?.should be_true
+    (-"string").clone.singleton_class.frozen?.should be_true
+  end
+
   it "returns a frozen singleton class if object is frozen" do
     obj = Object.new
     obj.freeze
