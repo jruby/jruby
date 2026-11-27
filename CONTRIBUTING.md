@@ -58,7 +58,6 @@ Other documentation in this repository and in the wiki explain in more detail ho
 
 Other `test` and `spec` suites may also be appropriate depending on what functionality you are working on.
 
-<<<<<<< HEAD
 JRuby is mostly Java, built with Maven (`./mvnw`), with Ruby test suites run through Rake and mspec. There is no Makefile, and the repository does not use npm, Python, RuboCop or `bundle exec rspec`.
 
 ## Matching CRuby
@@ -77,8 +76,6 @@ Find out why something fails before you change anything. Reviewers push back on 
 
 If you can't find the cause, say so in the pull request, and describe what you know.
 
-=======
->>>>>>> jruby-10.0
 ### Linking Java code to CRuby
 
 When a method, class or field implements or ports a CRuby C function or macro, annotate it with `@CRuby` (`org.jruby.anno.CRuby`) rather than writing a `// MRI: rb_foo` comment:
@@ -98,7 +95,6 @@ Use `note` whenever the Java code is not a whole, one-to-one port of the C funct
 
 Explain what the code does in its Javadoc, not next to the annotation. When a port is long or subtle, explain it well. CRuby's own comments are often sparse, and JRuby's should do better.
 
-<<<<<<< HEAD
 ### Porting C code
 
 Port behavior, not C idioms. If the Java standard library or an existing JRuby helper already does the job, use it instead of re-creating the C function. For example, parse an environment variable with `Integer.parseInt` rather than writing a Java copy of `atoi`. A small difference in edge cases (like `"128k"` falling back to a default instead of reading as 128) is usually an acceptable price for simpler code. Mention it in the pull request.
@@ -178,8 +174,6 @@ Ruby code in JRuby can be interpreted, compiled to JVM bytecode by the JIT, comp
 * Check that the JIT compiles your code. The JIT uses no runtime profile, so this does not require running the code: `jruby -rjruby -e 'JRuby.compile("...")'` compiles a snippet, `jruby -X+C -Xjit.logging ...` logs every method that fails to compile, and `tool/jit_compile_check.rb` checks whole files. Don't use performance tests to verify that code compiles.
 * To run specs with the JIT compiling everything before it runs, set the JIT threshold to zero: `bin/jruby spec/mspec/bin/mspec ci -T-Xjit.threshold=0 <spec>`, or `rake spec:ruby:fast:jit`. CI already runs the suites this way.
 
-=======
->>>>>>> jruby-10.0
 ## Testing
 
 See [BUILDING.md](BUILDING.md) for more details.
