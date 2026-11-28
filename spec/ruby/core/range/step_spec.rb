@@ -89,6 +89,11 @@ describe "Range#step" do
         ScratchPad.recorded.should eql([-5, -3, -1, 1, 3, 5])
       end
 
+      it "yields begin when begin equals end" do
+        (3..3).step(2) { |x| ScratchPad << x }
+        ScratchPad.recorded.should eql([3])
+      end
+
       it "yields Float values incremented by a Float step" do
         (-2..2).step(1.5) { |x| ScratchPad << x }
         ScratchPad.recorded.should eql([-2.0, -0.5, 1.0])
@@ -103,6 +108,11 @@ describe "Range#step" do
         it "iterates backward if step is negative for backward range" do
           (1..-1).step(-1) { |x| ScratchPad << x }
           ScratchPad.recorded.should eql([1, 0, -1])
+        end
+
+        it "yields begin when begin equals end and step is negative" do
+          (3..3).step(-2) { |x| ScratchPad << x }
+          ScratchPad.recorded.should eql([3])
         end
       end
     end
@@ -293,6 +303,11 @@ describe "Range#step" do
       it "yields Integer values incremented by an Integer step" do
         (-5...5).step(2) { |x| ScratchPad << x }
         ScratchPad.recorded.should eql([-5, -3, -1, 1, 3])
+      end
+
+      it "does not iterate when begin equals end" do
+        (3...3).step(2) { |x| ScratchPad << x }
+        ScratchPad.recorded.should eql([])
       end
 
       it "yields Float values incremented by a Float step" do
