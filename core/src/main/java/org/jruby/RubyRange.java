@@ -907,7 +907,7 @@ public class RubyRange extends RubyObject {
         long shortEnd = end - unit;
         if (unit < 0) {
             long i = b.getValue();
-            if (i > end) block.yield(context, asFixnum(context, i));
+            if (i > end || (!isExclusive && i == end)) block.yield(context, asFixnum(context, i));
             while (i > shortEnd) {
                 i += unit;
                 block.yield(context, asFixnum(context, i));
@@ -916,7 +916,7 @@ public class RubyRange extends RubyObject {
                 block.yield(context, asFixnum(context, i + unit));
         } else {
             long i = b.getValue();
-            if (i < end) block.yield(context, asFixnum(context, i));
+            if (i < end || (!isExclusive && i == end)) block.yield(context, asFixnum(context, i));
             while (i < shortEnd) {
                 i += unit;
                 block.yield(context, asFixnum(context, i));
